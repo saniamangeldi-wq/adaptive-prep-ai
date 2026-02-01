@@ -10,6 +10,8 @@ import Signup from "./pages/Signup";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import PracticeTests from "./pages/PracticeTests";
+import TakeTest from "./pages/TakeTest";
+import TestResults from "./pages/TestResults";
 import AICoach from "./pages/AICoach";
 import Progress from "./pages/Progress";
 import Flashcards from "./pages/Flashcards";
@@ -67,6 +69,8 @@ function AppRoutes() {
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard/tests" element={<ProtectedRoute><PracticeTests /></ProtectedRoute>} />
+      <Route path="/dashboard/tests/:testId" element={<ProtectedRoute><TakeTest /></ProtectedRoute>} />
+      <Route path="/dashboard/tests/:testId/results" element={<ProtectedRoute><TestResults /></ProtectedRoute>} />
       <Route path="/dashboard/coach" element={<ProtectedRoute><AICoach /></ProtectedRoute>} />
       <Route path="/dashboard/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
       <Route path="/dashboard/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
