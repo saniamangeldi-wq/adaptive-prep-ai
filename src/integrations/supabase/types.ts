@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_invite_codes: {
+        Row: {
+          admin_user_id: string
+          created_at: string
+          id: string
+          invite_code: string
+          school_id: string
+        }
+        Insert: {
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          invite_code?: string
+          school_id: string
+        }
+        Update: {
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          invite_code?: string
+          school_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_invite_codes_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_conversations: {
         Row: {
           context_type: string | null
