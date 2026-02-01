@@ -1,1 +1,7 @@
 project_id = "cgoskszhxymcdmiajaai"
+
+[functions.student-chat]
+verify_jwt = false
+
+[functions.teacher-reports]
+verify_jwt = false
