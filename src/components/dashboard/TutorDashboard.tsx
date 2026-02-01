@@ -68,7 +68,7 @@ export function TutorDashboard() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <QuickAction
           icon={Users}
           title="My Students"
@@ -77,11 +77,18 @@ export function TutorDashboard() {
           color="from-primary to-teal-400"
         />
         <QuickAction
+          icon={MessageSquare}
+          title="AI Coach"
+          description="Get AI assistance for teaching"
+          href="/dashboard/coach"
+          color="from-purple-500 to-pink-400"
+        />
+        <QuickAction
           icon={BarChart3}
           title="Student Progress"
           description="Track performance and identify weak areas"
           href="/dashboard/analytics"
-          color="from-purple-500 to-pink-400"
+          color="from-green-500 to-emerald-400"
         />
         <QuickAction
           icon={Calendar}

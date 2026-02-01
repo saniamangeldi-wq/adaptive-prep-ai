@@ -8,10 +8,13 @@ import {
   Sparkles, 
   Zap,
   AlertCircle,
-  Lightbulb
+  Lightbulb,
+  Clock,
+  ArrowUpRight
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface Message {
   id: string;
@@ -26,6 +29,24 @@ const suggestedPrompts = [
   "What are the best strategies for reading comprehension?",
   "Help me understand comma rules in grammar",
 ];
+
+// Get daily credit limit based on tier
+const getTierCredits = (tier: string | undefined) => {
+  switch (tier) {
+    case "tier_3": return 300;
+    case "tier_2": return 150;
+    default: return 50;
+  }
+};
+
+// Get hours until midnight reset
+const getHoursUntilReset = () => {
+  const now = new Date();
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+  const diff = midnight.getTime() - now.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60));
+};
 
 export default function AICoach() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -74,8 +95,11 @@ export default function AICoach() {
     setInput(prompt);
   };
 
-  const creditsLow = (profile?.credits_remaining || 0) < 10;
-  const noCredits = (profile?.credits_remaining || 0) <= 0;
+  const dailyLimit = getTierCredits(profile?.tier);
+  const creditsRemaining = profile?.credits_remaining || 0;
+  const creditsLow = creditsRemaining < 10 && creditsRemaining > 0;
+  const noCredits = creditsRemaining <= 0;
+  const hoursUntilReset = getHoursUntilReset();
 
   return (
     <DashboardLayout>
@@ -94,7 +118,7 @@ export default function AICoach() {
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
             <Zap className="w-4 h-4 text-accent" />
             <span className="text-sm font-medium text-foreground">
-              {profile?.credits_remaining || 0} credits
+              {creditsRemaining}/{dailyLimit} credits
             </span>
           </div>
         </div>
@@ -187,10 +211,33 @@ export default function AICoach() {
         </div>
 
         {/* Credits warning */}
-        {creditsLow && !noCredits && (
+        {creditsLow && (
           <div className="mb-2 p-2 rounded-lg bg-warning/10 border border-warning/20 flex items-center gap-2 text-sm">
             <AlertCircle className="w-4 h-4 text-warning" />
-            <span className="text-muted-foreground">Low credits remaining. Credits reset daily.</span>
+            <span className="text-muted-foreground">Low credits remaining. Credits reset daily at midnight.</span>
+          </div>
+        )}
+
+        {/* No credits - upgrade prompt */}
+        {noCredits && (
+          <div className="mb-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+            <div className="flex items-start gap-3">
+              <Clock className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">
+                  You've used your {dailyLimit} daily credits
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Resets in {hoursUntilReset} hour{hoursUntilReset !== 1 ? 's' : ''}.{" "}
+                  {profile?.tier !== "tier_3" && (
+                    <Link to="/dashboard/settings" className="text-primary hover:underline inline-flex items-center gap-1">
+                      Upgrade for {profile?.tier === "tier_2" ? "300" : "150"}+ credits/day
+                      <ArrowUpRight className="w-3 h-3" />
+                    </Link>
+                  )}
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
