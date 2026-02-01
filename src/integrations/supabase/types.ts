@@ -290,29 +290,41 @@ export type Database = {
       }
       schools: {
         Row: {
+          ai_tier: number
           created_at: string
           created_by: string | null
           id: string
           invite_code: string
+          monthly_cost: number | null
           name: string
+          student_count: number
+          teacher_count: number
           tier: Database["public"]["Enums"]["pricing_tier"]
           updated_at: string
         }
         Insert: {
+          ai_tier?: number
           created_at?: string
           created_by?: string | null
           id?: string
           invite_code?: string
+          monthly_cost?: number | null
           name: string
+          student_count?: number
+          teacher_count?: number
           tier?: Database["public"]["Enums"]["pricing_tier"]
           updated_at?: string
         }
         Update: {
+          ai_tier?: number
           created_at?: string
           created_by?: string | null
           id?: string
           invite_code?: string
+          monthly_cost?: number | null
           name?: string
+          student_count?: number
+          teacher_count?: number
           tier?: Database["public"]["Enums"]["pricing_tier"]
           updated_at?: string
         }
