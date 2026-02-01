@@ -263,10 +263,11 @@ export default function SchoolBilling() {
               </div>
               <div className="flex items-center gap-4">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="icon"
                   onClick={() => handleStudentChange(-25)}
                   disabled={studentCount <= 25}
+                  className="bg-muted hover:bg-muted/80 border border-border"
                 >
                   <Minus className="w-4 h-4" />
                 </Button>
@@ -274,9 +275,10 @@ export default function SchoolBilling() {
                   <span className="text-2xl font-bold text-foreground">{studentCount}</span>
                 </div>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="icon"
                   onClick={() => handleStudentChange(25)}
+                  className="bg-muted hover:bg-muted/80 border border-border"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -294,10 +296,11 @@ export default function SchoolBilling() {
               </div>
               <div className="flex items-center gap-4">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="icon"
                   onClick={() => handleTeacherChange(-1)}
                   disabled={teacherCount <= 1}
+                  className="bg-muted hover:bg-muted/80 border border-border"
                 >
                   <Minus className="w-4 h-4" />
                 </Button>
@@ -305,9 +308,10 @@ export default function SchoolBilling() {
                   <span className="text-2xl font-bold text-foreground">{teacherCount}</span>
                 </div>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="icon"
                   onClick={() => handleTeacherChange(1)}
+                  className="bg-muted hover:bg-muted/80 border border-border"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -344,8 +348,11 @@ export default function SchoolBilling() {
           </div>
 
           <Button
-            variant="hero"
-            className="w-full mt-6"
+            variant={hasChanges ? "hero" : "secondary"}
+            className={cn(
+              "w-full mt-6",
+              !hasChanges && "bg-muted text-muted-foreground border border-border"
+            )}
             onClick={handleSave}
             disabled={!hasChanges || saving}
           >
