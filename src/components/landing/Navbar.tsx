@@ -41,15 +41,8 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Desktop auth buttons */}
-          <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Sign In</Link>
-            </Button>
-            <Button variant="hero" asChild>
-              <Link to="/signup">Get Started</Link>
-            </Button>
-          </div>
+          {/* Spacer to balance layout */}
+          <div className="hidden md:block w-32" />
 
           {/* Mobile menu button */}
           <button
