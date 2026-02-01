@@ -63,6 +63,7 @@ const teacherNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "School Overview", href: "/dashboard/school", icon: Building2 },
+  { name: "AI Insights", href: "/dashboard/coach", icon: MessageSquare },
   { name: "Teachers", href: "/dashboard/school/teachers", icon: Users },
   { name: "Students", href: "/dashboard/school/students", icon: GraduationCap },
   { name: "Analytics", href: "/dashboard/school/analytics", icon: BarChart3 },
