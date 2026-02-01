@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.teacher-reports]
 verify_jwt = false
+
+[functions.admin-analytics]
+verify_jwt = false
