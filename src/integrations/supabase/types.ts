@@ -330,6 +330,80 @@ export type Database = {
         }
         Relationships: []
       }
+      student_portfolios: {
+        Row: {
+          academic_docs: Json
+          created_at: string
+          essays: string | null
+          extracted_data: Json | null
+          extracurricular_docs: Json
+          id: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          academic_docs?: Json
+          created_at?: string
+          essays?: string | null
+          extracted_data?: Json | null
+          extracurricular_docs?: Json
+          id?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          academic_docs?: Json
+          created_at?: string
+          essays?: string | null
+          extracted_data?: Json | null
+          extracurricular_docs?: Json
+          id?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      student_university_matches: {
+        Row: {
+          created_at: string
+          financial_estimate: Json | null
+          id: string
+          match_reason: string | null
+          match_score: number
+          saved: boolean | null
+          student_id: string
+          university_id: string
+        }
+        Insert: {
+          created_at?: string
+          financial_estimate?: Json | null
+          id?: string
+          match_reason?: string | null
+          match_score: number
+          saved?: boolean | null
+          student_id: string
+          university_id: string
+        }
+        Update: {
+          created_at?: string
+          financial_estimate?: Json | null
+          id?: string
+          match_reason?: string | null
+          match_score?: number
+          saved?: boolean | null
+          student_id?: string
+          university_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_university_matches_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "university_database"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teacher_students: {
         Row: {
           created_at: string
@@ -425,6 +499,147 @@ export type Database = {
         }
         Relationships: []
       }
+      university_database: {
+        Row: {
+          acceptance_rate: number | null
+          admission_requirements: Json | null
+          application_deadline: string | null
+          avg_sat_score: number | null
+          career_outcomes: Json | null
+          climate: string | null
+          country: string
+          created_at: string
+          description: string | null
+          id: string
+          language_of_instruction: string[] | null
+          living_cost_monthly: number | null
+          location_type: string | null
+          logo_url: string | null
+          name: string
+          programs: string[] | null
+          ranking_global: number | null
+          scholarship_types: Json | null
+          student_population: number | null
+          tuition_usd: number | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          acceptance_rate?: number | null
+          admission_requirements?: Json | null
+          application_deadline?: string | null
+          avg_sat_score?: number | null
+          career_outcomes?: Json | null
+          climate?: string | null
+          country: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          language_of_instruction?: string[] | null
+          living_cost_monthly?: number | null
+          location_type?: string | null
+          logo_url?: string | null
+          name: string
+          programs?: string[] | null
+          ranking_global?: number | null
+          scholarship_types?: Json | null
+          student_population?: number | null
+          tuition_usd?: number | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          acceptance_rate?: number | null
+          admission_requirements?: Json | null
+          application_deadline?: string | null
+          avg_sat_score?: number | null
+          career_outcomes?: Json | null
+          climate?: string | null
+          country?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          language_of_instruction?: string[] | null
+          living_cost_monthly?: number | null
+          location_type?: string | null
+          logo_url?: string | null
+          name?: string
+          programs?: string[] | null
+          ranking_global?: number | null
+          scholarship_types?: Json | null
+          student_population?: number | null
+          tuition_usd?: number | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      university_preferences: {
+        Row: {
+          budget_monthly: number | null
+          can_work_part_time: string | null
+          climate_preference: string | null
+          created_at: string
+          diversity_importance: string | null
+          fields_of_interest: string[] | null
+          id: string
+          international_support: string | null
+          language_of_instruction: string[] | null
+          needs_on_campus_housing: string | null
+          preferred_countries: string[] | null
+          ranking_importance: string | null
+          research_importance: string | null
+          scholarship_need: string | null
+          social_life_preference: string | null
+          student_id: string
+          teaching_style: string | null
+          university_size: string | null
+          updated_at: string
+        }
+        Insert: {
+          budget_monthly?: number | null
+          can_work_part_time?: string | null
+          climate_preference?: string | null
+          created_at?: string
+          diversity_importance?: string | null
+          fields_of_interest?: string[] | null
+          id?: string
+          international_support?: string | null
+          language_of_instruction?: string[] | null
+          needs_on_campus_housing?: string | null
+          preferred_countries?: string[] | null
+          ranking_importance?: string | null
+          research_importance?: string | null
+          scholarship_need?: string | null
+          social_life_preference?: string | null
+          student_id: string
+          teaching_style?: string | null
+          university_size?: string | null
+          updated_at?: string
+        }
+        Update: {
+          budget_monthly?: number | null
+          can_work_part_time?: string | null
+          climate_preference?: string | null
+          created_at?: string
+          diversity_importance?: string | null
+          fields_of_interest?: string[] | null
+          id?: string
+          international_support?: string | null
+          language_of_instruction?: string[] | null
+          needs_on_campus_housing?: string | null
+          preferred_countries?: string[] | null
+          ranking_importance?: string | null
+          research_importance?: string | null
+          scholarship_need?: string | null
+          social_life_preference?: string | null
+          student_id?: string
+          teaching_style?: string | null
+          university_size?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -462,6 +677,7 @@ export type Database = {
         Args: { _user1_id: string; _user2_id: string }
         Returns: boolean
       }
+      is_school_student: { Args: { _user_id: string }; Returns: boolean }
       is_teacher_of_student: {
         Args: { _student_id: string; _teacher_id: string }
         Returns: boolean
