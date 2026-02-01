@@ -1,21 +1,73 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Users, 
   TrendingUp, 
   School,
-  Settings,
   UserPlus,
   BarChart3,
   Shield,
   CreditCard,
   Building2,
-  GraduationCap
+  GraduationCap,
+  Copy,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 export function AdminDashboard() {
   const { profile } = useAuth();
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [schoolName, setSchoolName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchSchoolInfo = async () => {
+      if (!profile?.user_id) return;
+
+      // Try to get school info where user is admin
+      const { data: memberData } = await supabase
+        .from("school_members")
+        .select("school_id")
+        .eq("user_id", profile.user_id)
+        .eq("role", "school_admin")
+        .single();
+
+      if (memberData?.school_id) {
+        const { data: schoolData } = await supabase
+          .from("schools")
+          .select("name, invite_code")
+          .eq("id", memberData.school_id)
+          .single();
+
+        if (schoolData) {
+          setSchoolName(schoolData.name);
+          setInviteCode(schoolData.invite_code);
+        }
+      }
+    };
+
+    fetchSchoolInfo();
+  }, [profile?.user_id]);
+
+  const handleCopyCode = async () => {
+    if (!inviteCode) {
+      toast.error("No invite code available");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(inviteCode);
+      setCopied(true);
+      toast.success("Invite code copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error("Failed to copy code");
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -23,7 +75,7 @@ export function AdminDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            School Dashboard 🏫
+            {schoolName ? `${schoolName} Dashboard` : "School Dashboard"} 🏫
           </h1>
           <p className="text-muted-foreground mt-1">
             Manage your school, teachers, and student performance
@@ -112,16 +164,41 @@ export function AdminDashboard() {
             <p className="text-xs text-muted-foreground mb-2">Share this code with teachers and students:</p>
             <div className="flex items-center gap-3">
               <code className="text-lg font-mono font-bold text-primary tracking-widest">
-                XXXXXX
+                {inviteCode || "--------"}
               </code>
-              <Button variant="outline" size="sm">
-                Copy
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCopyCode}
+                disabled={!inviteCode}
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy
+                  </>
+                )}
               </Button>
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-3">
-            Teachers and students can use this code to join your school
+            {inviteCode 
+              ? "Teachers and students can use this code to join your school"
+              : "Create a school to get your invite code"}
           </p>
+          {!inviteCode && (
+            <Button variant="outline" className="w-full mt-4" asChild>
+              <Link to="/dashboard/school/create">
+                <Building2 className="w-4 h-4" />
+                Create School
+              </Link>
+            </Button>
+          )}
         </div>
 
         <div className="p-6 rounded-2xl bg-card border border-border/50">
@@ -132,19 +209,26 @@ export function AdminDashboard() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Current Plan</span>
-              <span className="font-medium text-foreground">School Tier 1</span>
+              <span className="font-medium text-foreground">
+                {profile?.tier === "tier_3" ? "School Pro" : profile?.tier === "tier_2" ? "School Plus" : "School Starter"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Student Seats</span>
-              <span className="font-medium text-foreground">0 / 25</span>
+              <span className="font-medium text-foreground">
+                0 / {profile?.tier === "tier_3" ? "Unlimited" : profile?.tier === "tier_2" ? "100" : "25"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Teacher Seats</span>
-              <span className="font-medium text-foreground">0 / 5</span>
+              <span className="font-medium text-foreground">
+                0 / {profile?.tier === "tier_3" ? "Unlimited" : profile?.tier === "tier_2" ? "20" : "5"}
+              </span>
             </div>
           </div>
-          <Button variant="outline" className="w-full mt-4" asChild>
-            <Link to="/dashboard/school/billing">
+          <Button variant="hero" className="w-full mt-4" asChild>
+            <Link to="/dashboard/settings">
+              <CreditCard className="w-4 h-4" />
               Manage Subscription
             </Link>
           </Button>
