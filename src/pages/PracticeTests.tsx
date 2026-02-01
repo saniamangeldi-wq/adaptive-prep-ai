@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { 
@@ -8,10 +9,13 @@ import {
   Play, 
   ChevronRight,
   Zap,
-  FileText
+  FileText,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { generateTest } from "@/lib/test-generator";
+import { useToast } from "@/hooks/use-toast";
 
 type TestType = "math" | "reading_writing" | "combined";
 type TestLength = "quick" | "short" | "medium" | "long" | "full";
@@ -32,13 +36,59 @@ const difficulties: { id: Difficulty; label: string; description: string }[] = [
 ];
 
 export default function PracticeTests() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [testType, setTestType] = useState<TestType>("combined");
   const [length, setLength] = useState<TestLength>("medium");
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [timerEnabled, setTimerEnabled] = useState(true);
-  const { profile } = useAuth();
+  const [isStarting, setIsStarting] = useState(false);
+  const { user, profile } = useAuth();
 
   const selectedLength = testLengths.find(l => l.id === length);
+
+  const handleStartTest = async () => {
+    if (!user || isStarting) return;
+    
+    if ((profile?.tests_remaining || 0) <= 0) {
+      toast({
+        title: "No tests remaining",
+        description: "Upgrade your plan to get more practice tests.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsStarting(true);
+    
+    try {
+      const test = await generateTest(
+        { testType, length, difficulty, timerEnabled },
+        user.id
+      );
+
+      if (!test) {
+        toast({
+          title: "Error",
+          description: "Failed to generate test. Please try again.",
+          variant: "destructive",
+        });
+        setIsStarting(false);
+        return;
+      }
+
+      // Navigate to the test-taking page
+      navigate(`/dashboard/tests/${test.id}`, { state: { test } });
+    } catch (error) {
+      console.error("Error starting test:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start test. Please try again.",
+        variant: "destructive",
+      });
+      setIsStarting(false);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -178,11 +228,21 @@ export default function PracticeTests() {
           <Button 
             variant="hero" 
             size="xl"
-            disabled={(profile?.tests_remaining || 0) <= 0}
+            disabled={(profile?.tests_remaining || 0) <= 0 || isStarting}
+            onClick={handleStartTest}
           >
-            <Play className="w-5 h-5" />
-            Start Test
-            <ChevronRight className="w-5 h-5" />
+            {isStarting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Starting...
+              </>
+            ) : (
+              <>
+                <Play className="w-5 h-5" />
+                Start Test
+                <ChevronRight className="w-5 h-5" />
+              </>
+            )}
           </Button>
         </div>
       </div>
