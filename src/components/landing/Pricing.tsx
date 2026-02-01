@@ -146,8 +146,11 @@ function PricingCard({
       </ul>
 
       <Button
-        variant={popular ? "hero" : "outline"}
-        className="w-full"
+        variant="hero"
+        className={cn(
+          "w-full",
+          !popular && "opacity-80 hover:opacity-100"
+        )}
         asChild
       >
         <Link to="/signup">Get Started</Link>
