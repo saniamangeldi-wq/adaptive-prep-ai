@@ -66,33 +66,94 @@ export default function Signup() {
       if (error) throw error;
 
       if (data.user) {
-        // Update profile with selected role
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ 
-            role: selectedRole,
-            full_name: fullName 
-          })
-          .eq("user_id", data.user.id);
+        // Check if this is an existing user (identities will be empty for duplicate signup)
+        const isExistingUser = data.user.identities?.length === 0;
 
-        if (profileError) {
-          console.error("Profile update error:", profileError);
-        }
-
-        // Add to user_roles table
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: data.user.id,
-            role: selectedRole,
+        if (isExistingUser) {
+          // User already exists - try to sign them in and add the new role
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
           });
 
-        if (roleError) {
-          console.error("Role insert error:", roleError);
-        }
+          if (signInError) {
+            // Wrong password or other auth error
+            toast.error("An account with this email already exists. Please log in to add a new role.");
+            navigate("/login");
+            return;
+          }
 
-        toast.success("Account created! Check your email to confirm.");
-        navigate("/onboarding");
+          if (signInData.user) {
+            // Check if they already have this role
+            const { data: existingRoles } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", signInData.user.id);
+
+            const hasRole = existingRoles?.some(r => r.role === selectedRole);
+
+            if (hasRole) {
+              toast.info(`You already have the ${selectedRole.replace("_", " ")} role!`);
+              navigate("/dashboard");
+              return;
+            }
+
+            // Add the new role to existing account
+            const { error: roleError } = await supabase
+              .from("user_roles")
+              .insert({
+                user_id: signInData.user.id,
+                role: selectedRole,
+              });
+
+            if (roleError) {
+              console.error("Role insert error:", roleError);
+              toast.error("Failed to add new role. Please try again.");
+              return;
+            }
+
+            // Update primary role in profile if needed
+            const { error: profileError } = await supabase
+              .from("profiles")
+              .update({ role: selectedRole })
+              .eq("user_id", signInData.user.id);
+
+            if (profileError) {
+              console.error("Profile update error:", profileError);
+            }
+
+            toast.success(`${selectedRole.replace("_", " ").replace(/\b\w/g, l => l.toUpperCase())} role added to your account!`);
+            navigate("/dashboard");
+          }
+        } else {
+          // New user - proceed with normal signup
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .update({ 
+              role: selectedRole,
+              full_name: fullName 
+            })
+            .eq("user_id", data.user.id);
+
+          if (profileError) {
+            console.error("Profile update error:", profileError);
+          }
+
+          // Add to user_roles table
+          const { error: roleError } = await supabase
+            .from("user_roles")
+            .insert({
+              user_id: data.user.id,
+              role: selectedRole,
+            });
+
+          if (roleError) {
+            console.error("Role insert error:", roleError);
+          }
+
+          toast.success("Account created! Check your email to confirm.");
+          navigate("/onboarding");
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to create account");
