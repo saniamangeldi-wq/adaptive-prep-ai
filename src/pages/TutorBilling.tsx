@@ -17,7 +17,8 @@ const plans = [
     price: 50,
     description: "For tutors getting started",
     features: [
-      "Up to 5 students",
+      "Up to 15 students",
+      "Tier 1 AI quality",
       "Basic AI assistance",
       "Student progress tracking",
       "Email support",
@@ -30,8 +31,8 @@ const plans = [
     description: "For growing tutoring practices",
     popular: true,
     features: [
-      "Up to 15 students",
-      "Enhanced AI models",
+      "Up to 20 students",
+      "Tier 2 AI quality (Enhanced)",
       "Advanced analytics",
       "Priority support",
       "Custom resources",
@@ -43,8 +44,8 @@ const plans = [
     price: 150,
     description: "For established tutoring businesses",
     features: [
-      "Unlimited students",
-      "Premium AI (best quality)",
+      "Up to 30 students",
+      "Tier 3 AI quality (Best)",
       "Full analytics suite",
       "Dedicated support",
       "White-label options",
