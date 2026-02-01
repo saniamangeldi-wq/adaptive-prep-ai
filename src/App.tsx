@@ -16,6 +16,7 @@ import AICoach from "./pages/AICoach";
 import Progress from "./pages/Progress";
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
 
 // School admin pages
 import CreateSchool from "./pages/school/CreateSchool";
@@ -83,7 +84,7 @@ function AppRoutes() {
       <Route path="/dashboard/coach" element={<ProtectedRoute><AICoach /></ProtectedRoute>} />
       <Route path="/dashboard/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
       <Route path="/dashboard/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
-      <Route path="/dashboard/settings" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       
       {/* School admin routes */}
       <Route path="/dashboard/school" element={<ProtectedRoute><SchoolOverview /></ProtectedRoute>} />
