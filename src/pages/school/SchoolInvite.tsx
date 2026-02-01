@@ -32,15 +32,27 @@ export default function SchoolInvite() {
           .maybeSingle();
 
         if (memberData?.school_id) {
+          // Get school name
           const { data: schoolData } = await supabase
             .from("schools")
-            .select("name, invite_code")
+            .select("name")
             .eq("id", memberData.school_id)
             .single();
 
           if (schoolData) {
             setSchoolName(schoolData.name);
-            setInviteCode(schoolData.invite_code);
+          }
+
+          // Get admin's personal invite code
+          const { data: codeData } = await supabase
+            .from("admin_invite_codes")
+            .select("invite_code")
+            .eq("admin_user_id", profile.user_id)
+            .eq("school_id", memberData.school_id)
+            .maybeSingle();
+
+          if (codeData) {
+            setInviteCode(codeData.invite_code);
           }
         }
       } catch (error) {

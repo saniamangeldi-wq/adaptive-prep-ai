@@ -14,7 +14,6 @@ import {
 interface SchoolData {
   id: string;
   name: string;
-  invite_code: string;
   tier: string;
   created_at: string;
 }
@@ -22,6 +21,7 @@ interface SchoolData {
 export default function SchoolOverview() {
   const { profile } = useAuth();
   const [school, setSchool] = useState<SchoolData | null>(null);
+  const [adminInviteCode, setAdminInviteCode] = useState<string | null>(null);
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -47,12 +47,24 @@ export default function SchoolOverview() {
           // Get school info
           const { data: schoolData } = await supabase
             .from("schools")
-            .select("*")
+            .select("id, name, tier, created_at")
             .eq("id", memberData.school_id)
             .single();
 
           if (schoolData) {
             setSchool(schoolData);
+
+            // Get admin's personal invite code
+            const { data: codeData } = await supabase
+              .from("admin_invite_codes")
+              .select("invite_code")
+              .eq("admin_user_id", profile.user_id)
+              .eq("school_id", memberData.school_id)
+              .maybeSingle();
+
+            if (codeData) {
+              setAdminInviteCode(codeData.invite_code);
+            }
 
             // Get member counts
             const { data: members } = await supabase
@@ -145,8 +157,8 @@ export default function SchoolOverview() {
                   <span className="font-medium text-foreground">{school.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Invite Code</span>
-                  <code className="font-mono text-primary">{school.invite_code}</code>
+                  <span className="text-muted-foreground">Your Invite Code</span>
+                  <code className="font-mono text-primary">{adminInviteCode || "--------"}</code>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Plan</span>
