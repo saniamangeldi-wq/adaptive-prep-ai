@@ -10,20 +10,60 @@ import {
   Settings,
   LogOut,
   Menu,
-  X,
   Sparkles,
-  Zap
+  Zap,
+  Users,
+  Calendar,
+  BarChart3,
+  ClipboardList,
+  Building2,
+  CreditCard,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
-const navigation = [
+type NavItem = {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+};
+
+const studentNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Practice Tests", href: "/dashboard/tests", icon: FileText },
   { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
   { name: "Progress", href: "/dashboard/progress", icon: LineChart },
   { name: "Flashcards", href: "/dashboard/flashcards", icon: Layers },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+];
+
+const tutorNav: NavItem[] = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "My Students", href: "/dashboard/students", icon: Users },
+  { name: "Student Progress", href: "/dashboard/analytics", icon: BarChart3 },
+  { name: "Schedule", href: "/dashboard/schedule", icon: Calendar },
+  { name: "Resources", href: "/dashboard/resources", icon: Layers },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+];
+
+const teacherNav: NavItem[] = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "My Classroom", href: "/dashboard/classroom", icon: Users },
+  { name: "Assignments", href: "/dashboard/assignments", icon: ClipboardList },
+  { name: "Class Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { name: "Resources", href: "/dashboard/resources", icon: Layers },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+];
+
+const adminNav: NavItem[] = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "School Overview", href: "/dashboard/school", icon: Building2 },
+  { name: "Teachers", href: "/dashboard/school/teachers", icon: Users },
+  { name: "Students", href: "/dashboard/school/students", icon: GraduationCap },
+  { name: "Analytics", href: "/dashboard/school/analytics", icon: BarChart3 },
+  { name: "Billing", href: "/dashboard/school/billing", icon: CreditCard },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -36,6 +76,37 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+  };
+
+  // Get navigation based on role
+  const getNavigation = (): NavItem[] => {
+    switch (profile?.role) {
+      case "tutor":
+        return tutorNav;
+      case "teacher":
+        return teacherNav;
+      case "school_admin":
+        return adminNav;
+      case "student":
+      default:
+        return studentNav;
+    }
+  };
+
+  const navigation = getNavigation();
+
+  const getRoleLabel = () => {
+    switch (profile?.role) {
+      case "tutor":
+        return "Tutor";
+      case "teacher":
+        return "Teacher";
+      case "school_admin":
+        return "School Admin";
+      case "student":
+      default:
+        return profile?.tier?.replace("_", " ").toUpperCase() || "Tier 1";
+    }
   };
 
   return (
@@ -85,8 +156,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          {/* Credits display */}
-          {profile && (
+          {/* Credits display - only for students */}
+          {profile && profile.role === "student" && (
             <div className="px-3 py-4 border-t border-sidebar-border">
               <div className="p-3 rounded-lg bg-sidebar-accent/50">
                 <div className="flex items-center justify-between mb-2">
@@ -109,10 +180,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-sidebar-foreground truncate">
-                  {profile?.full_name || "Student"}
+                  {profile?.full_name || "User"}
                 </p>
                 <p className="text-xs text-sidebar-foreground/50 truncate">
-                  {profile?.tier?.replace("_", " ").toUpperCase() || "Tier 1"}
+                  {getRoleLabel()}
                 </p>
               </div>
               <button
@@ -139,12 +210,22 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           
           <div className="flex-1" />
 
-          {/* Upgrade button for non-tier-3 users */}
-          {profile?.tier !== "tier_3" && (
+          {/* Upgrade button for non-tier-3 students */}
+          {profile?.role === "student" && profile?.tier !== "tier_3" && (
             <Button variant="hero" size="sm" asChild>
               <Link to="/dashboard/settings">
                 <Sparkles className="w-4 h-4" />
                 Upgrade
+              </Link>
+            </Button>
+          )}
+
+          {/* Invite button for tutors/teachers/admins */}
+          {(profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") && (
+            <Button variant="hero" size="sm" asChild>
+              <Link to={profile?.role === "school_admin" ? "/dashboard/school/invite" : "/dashboard/students/add"}>
+                <UserPlus className="w-4 h-4" />
+                {profile?.role === "school_admin" ? "Invite Members" : "Add Student"}
               </Link>
             </Button>
           )}
