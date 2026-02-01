@@ -10,12 +10,13 @@ export interface Message {
 }
 
 interface StreamChatOptions {
-  endpoint: "student-chat" | "teacher-reports";
+  endpoint: "student-chat" | "teacher-reports" | "admin-analytics";
   isReport?: boolean;
   reportContext?: {
     type: string;
     instructions?: string;
   };
+  analysisType?: "general" | "projection" | "comprehensive";
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -58,6 +59,7 @@ export function useAIChat() {
           messages: allMessages,
           isReport: options.isReport || false,
           reportContext: options.reportContext,
+          analysisType: options.analysisType,
         }),
       });
 

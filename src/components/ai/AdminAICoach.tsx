@@ -12,7 +12,11 @@ import {
   Trash2,
   FileText,
   MessageSquare,
-  Building2
+  Building2,
+  Users,
+  Target,
+  BarChart3,
+  Trophy
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -20,19 +24,26 @@ import { Link } from "react-router-dom";
 import { useAIChat, type Message } from "@/hooks/useAIChat";
 import ReactMarkdown from "react-markdown";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const suggestedPrompts = [
-  "Which teachers have the best student outcomes?",
-  "What's our average SAT improvement rate?",
-  "Generate a monthly report for the school board",
-  "How many students are we paying for vs. actively using?",
+  "Which teacher's class has the best performance?",
+  "Give me enrollment projections for the next 3 months",
+  "What's our ROI on the current subscription plan?",
+  "Which areas need the most improvement school-wide?",
+];
+
+const projectionPrompts = [
+  "Project our student enrollment for the next 6 months",
+  "What's the expected SAT score improvement trajectory?",
+  "Analyze capacity needs based on growth trends",
+  "Budget forecast for scaling to 100 students",
+];
+
+const teacherAnalysisPrompts = [
+  "Rank teachers by student improvement rates",
+  "What teaching methods correlate with best outcomes?",
+  "Which classes are underperforming and why?",
+  "Compare teacher effectiveness across subjects",
 ];
 
 // Get daily credit limit based on tier
@@ -53,18 +64,9 @@ const getHoursUntilReset = () => {
   return Math.ceil(diff / (1000 * 60 * 60));
 };
 
-const reportTypes = [
-  { value: "school_overview", label: "School Performance Overview" },
-  { value: "teacher_comparison", label: "Teacher Effectiveness Report" },
-  { value: "student_trends", label: "Student Improvement Trends" },
-  { value: "capacity", label: "Capacity & Budget Analysis" },
-  { value: "monthly", label: "Monthly Executive Summary" },
-];
-
 export function AdminAICoach() {
   const [input, setInput] = useState("");
   const [activeTab, setActiveTab] = useState("chat");
-  const [reportType, setReportType] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages } = useAIChat();
@@ -77,37 +79,21 @@ export function AdminAICoach() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (customMessage?: string) => {
+    const messageToSend = customMessage || input;
+    if (!messageToSend.trim() || isLoading) return;
     if ((profile?.credits_remaining || 0) <= 0) return;
     
-    const userInput = input;
-    setInput("");
-    await streamChat(userInput, { endpoint: "teacher-reports" });
-  };
-
-  const handleGenerateReport = async () => {
-    if (!reportType || isLoading) return;
-    
-    const reportCost = 10;
-    if ((profile?.credits_remaining || 0) < reportCost) {
-      return;
-    }
-
-    const instruction = `Generate a ${reportTypes.find(r => r.value === reportType)?.label} for our school. Include executive summary, key metrics, comparisons, and strategic recommendations suitable for stakeholders.`;
-    
-    await streamChat(instruction, { 
-      endpoint: "teacher-reports",
-      isReport: true,
-      reportContext: {
-        type: reportType,
-        instructions: instruction,
-      }
-    });
+    if (!customMessage) setInput("");
+    await streamChat(messageToSend, { endpoint: "admin-analytics" });
   };
 
   const handleSuggestedPrompt = (prompt: string) => {
     setInput(prompt);
+  };
+
+  const handleQuickAnalysis = async (prompt: string) => {
+    await handleSend(prompt);
   };
 
   const dailyLimit = getTierCredits(profile?.tier);
@@ -126,7 +112,7 @@ export function AdminAICoach() {
             Analytics Engine
           </h1>
           <p className="text-sm text-muted-foreground">
-            School-wide insights and strategic recommendations
+            School projections, teacher performance, and strategic insights
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -151,14 +137,18 @@ export function AdminAICoach() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid w-full max-w-xs grid-cols-2 mb-4">
+        <TabsList className="grid w-full max-w-md grid-cols-3 mb-4">
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
             Chat
           </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Reports
+          <TabsTrigger value="projections" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            Projections
+          </TabsTrigger>
+          <TabsTrigger value="teachers" className="flex items-center gap-2">
+            <Trophy className="w-4 h-4" />
+            Teachers
           </TabsTrigger>
         </TabsList>
 
@@ -174,7 +164,7 @@ export function AdminAICoach() {
                   School Analytics at Your Fingertips
                 </h2>
                 <p className="text-muted-foreground mb-6 max-w-md">
-                  Ask about school performance, teacher effectiveness, budget optimization, or generate executive reports.
+                  Ask about school projections, teacher class performance, budget optimization, or strategic insights.
                 </p>
                 <div className="grid sm:grid-cols-2 gap-2 w-full max-w-lg">
                   {suggestedPrompts.map((prompt) => (
@@ -218,7 +208,7 @@ export function AdminAICoach() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                placeholder={noCredits ? "No credits remaining..." : "Ask about school performance, trends, or strategies..."}
+                placeholder={noCredits ? "No credits remaining..." : "Ask about projections, teacher performance, or strategy..."}
                 disabled={noCredits || isLoading}
                 className="w-full h-12 px-4 rounded-xl bg-card border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
               />
@@ -227,7 +217,7 @@ export function AdminAICoach() {
               variant="hero"
               size="icon"
               className="w-12 h-12"
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={!input.trim() || noCredits || isLoading}
             >
               <Send className="w-5 h-5" />
@@ -235,51 +225,95 @@ export function AdminAICoach() {
           </div>
         </TabsContent>
 
-        <TabsContent value="reports" className="flex-1 flex flex-col mt-0">
-          {/* Report Generator */}
+        <TabsContent value="projections" className="flex-1 flex flex-col mt-0">
+          {/* Projections Quick Actions */}
           <div className="p-6 rounded-xl bg-card border border-border/50 mb-4">
-            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              Generate Executive Report
-              <span className="text-xs text-muted-foreground ml-auto">10 credits/report</span>
+            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+              <Target className="w-5 h-5 text-primary" />
+              School Projections
+              <span className="text-xs text-muted-foreground ml-auto">5 credits/analysis</span>
             </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Get AI-powered forecasts for enrollment, performance, and resource planning.
+            </p>
             
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-muted-foreground mb-2 block">Report Type</label>
-                <Select value={reportType} onValueChange={setReportType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select report type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {reportTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button 
-                variant="hero" 
-                className="w-full"
-                onClick={handleGenerateReport}
-                disabled={!reportType || isLoading || creditsRemaining < 10}
-              >
-                <FileText className="w-4 h-4" />
-                Generate Report
-              </Button>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {projectionPrompts.map((prompt) => (
+                <Button 
+                  key={prompt}
+                  variant="outline" 
+                  className="h-auto py-3 px-4 text-left justify-start"
+                  onClick={() => handleQuickAnalysis(prompt)}
+                  disabled={isLoading || creditsRemaining < 5}
+                >
+                  <div className="flex items-start gap-3">
+                    <BarChart3 className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                    <span className="text-sm">{prompt}</span>
+                  </div>
+                </Button>
+              ))}
             </div>
           </div>
 
-          {/* Report Output */}
+          {/* Output Area */}
           <div className="flex-1 overflow-y-auto space-y-4 p-4 rounded-xl bg-card/50 border border-border/50">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground">
-                <FileText className="w-12 h-12 mb-4 opacity-50" />
-                <p>Generated reports will appear here</p>
-                <p className="text-xs mt-2">School-wide reports provide strategic insights for stakeholders</p>
+                <Target className="w-12 h-12 mb-4 opacity-50" />
+                <p>Projection results will appear here</p>
+                <p className="text-xs mt-2">Click a quick action above or ask in chat</p>
+              </div>
+            ) : (
+              <>
+                {messages.filter(m => m.role === "assistant").map((message) => (
+                  <div key={message.id} className="p-4 rounded-xl bg-card border border-border/50">
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="teachers" className="flex-1 flex flex-col mt-0">
+          {/* Teacher Performance Quick Actions */}
+          <div className="p-6 rounded-xl bg-card border border-border/50 mb-4">
+            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-accent" />
+              Teacher Class Performance
+              <span className="text-xs text-muted-foreground ml-auto">5 credits/analysis</span>
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Analyze which teachers' classes perform best and identify success patterns.
+            </p>
+            
+            <div className="grid sm:grid-cols-2 gap-3">
+              {teacherAnalysisPrompts.map((prompt) => (
+                <Button 
+                  key={prompt}
+                  variant="outline" 
+                  className="h-auto py-3 px-4 text-left justify-start"
+                  onClick={() => handleQuickAnalysis(prompt)}
+                  disabled={isLoading || creditsRemaining < 5}
+                >
+                  <div className="flex items-start gap-3">
+                    <Users className="w-4 h-4 mt-0.5 text-accent flex-shrink-0" />
+                    <span className="text-sm">{prompt}</span>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Output Area */}
+          <div className="flex-1 overflow-y-auto space-y-4 p-4 rounded-xl bg-card/50 border border-border/50">
+            {messages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground">
+                <Trophy className="w-12 h-12 mb-4 opacity-50" />
+                <p>Teacher analysis results will appear here</p>
+                <p className="text-xs mt-2">Compare class performance and identify best practices</p>
               </div>
             ) : (
               <>
