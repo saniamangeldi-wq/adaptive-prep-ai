@@ -102,7 +102,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex dark">
+    <div className="min-h-screen flex dark text-foreground">
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-background overflow-y-auto">
         <div className="w-full max-w-md space-y-8">
