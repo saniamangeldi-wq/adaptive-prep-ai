@@ -2,6 +2,7 @@ import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useTheme } from "next-themes";
 import { 
   User, 
   Mail, 
@@ -21,14 +22,15 @@ import { useNavigate } from "react-router-dom";
 
 export default function Settings() {
   const { user, profile, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  // Preferences (local state for now)
+  // Preferences
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
+  const isDarkMode = theme === "dark";
 
   const handleSaveProfile = async () => {
     if (!profile?.user_id) return;
@@ -211,8 +213,8 @@ export default function Settings() {
                 <span className="text-foreground">Dark Mode</span>
               </div>
               <Switch
-                checked={darkMode}
-                onCheckedChange={setDarkMode}
+                checked={isDarkMode}
+                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
               />
             </div>
           </div>
