@@ -123,9 +123,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex dark">
+    <div className="min-h-screen flex bg-background dark">
       {/* Left side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
+      <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
           {/* Logo */}
           <div className="text-center">
@@ -150,7 +150,7 @@ export default function Login() {
               {/* Google Sign In */}
               <Button
                 variant="outline"
-                className="w-full h-12"
+                className="w-full h-12 bg-card border-border hover:bg-card/80"
                 onClick={handleGoogleLogin}
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -193,7 +193,7 @@ export default function Login() {
                       id="email"
                       type="email"
                       placeholder="you@example.com"
-                      className="pl-10 h-12"
+                      className="pl-10 h-12 bg-card border-border"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -209,7 +209,7 @@ export default function Login() {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="pl-10 pr-10 h-12"
+                      className="pl-10 pr-10 h-12 bg-card border-border"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -226,7 +226,7 @@ export default function Login() {
 
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" className="rounded border-border" />
+                    <input type="checkbox" className="rounded border-border bg-card" />
                     <span className="text-muted-foreground">Remember me</span>
                   </label>
                   <Link to="/forgot-password" className="text-sm text-primary hover:underline">
@@ -269,7 +269,7 @@ export default function Login() {
                       key={role.id}
                       onClick={() => setSelectedRole(role.id)}
                       className={cn(
-                        "w-full p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-center gap-4",
+                        "w-full p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-center gap-4 bg-card",
                         selectedRole === role.id
                           ? "border-primary bg-primary/10"
                           : "border-border hover:border-primary/50"
@@ -325,10 +325,10 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right side - Image/Gradient */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary/20 via-background to-accent/10 items-center justify-center p-12">
+      {/* Right side - Branding */}
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-background via-background to-primary/5 items-center justify-center p-12">
         <div className="max-w-md text-center space-y-6">
-          <div className="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center animate-float">
+          <div className="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center">
             <GraduationCap className="w-12 h-12 text-primary-foreground" />
           </div>
           <h2 className="text-3xl font-bold text-foreground">Start learning smarter</h2>
