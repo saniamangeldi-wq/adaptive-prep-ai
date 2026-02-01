@@ -195,7 +195,7 @@ export default function Flashcards() {
             <button
               key={deck.id}
               onClick={() => setSelectedDeck(deck)}
-              className="p-6 rounded-xl bg-card border border-border/50 hover:border-primary/30 text-left transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group"
+              className="p-6 rounded-xl bg-secondary/50 border border-border hover:border-primary/50 text-left transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className={cn(
@@ -211,7 +211,7 @@ export default function Flashcards() {
                   )}
                 </div>
                 {deck.source === "ai_generated" && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
+                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary/20 text-primary">
                     AI Generated
                   </span>
                 )}
@@ -222,7 +222,7 @@ export default function Flashcards() {
               <p className="text-sm text-muted-foreground mb-3">
                 {deck.description}
               </p>
-              <p className="text-xs text-muted-foreground/70">
+              <p className="text-xs text-muted-foreground">
                 {deck.cardCount} cards
               </p>
             </button>
