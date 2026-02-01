@@ -225,15 +225,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </Button>
           )}
 
-          {/* Invite button for tutors/teachers/admins */}
-          {(profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") && (
-            <Button variant="hero" size="sm" asChild>
-              <Link to={profile?.role === "school_admin" ? "/dashboard/school/invite" : "/dashboard/students/add"}>
-                <UserPlus className="w-4 h-4" />
-                {profile?.role === "school_admin" ? "Invite Members" : "Add Student"}
-              </Link>
-            </Button>
-          )}
         </header>
 
         {/* Page content */}
