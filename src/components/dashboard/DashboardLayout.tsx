@@ -42,6 +42,7 @@ const studentNav: NavItem[] = [
 const tutorNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "My Students", href: "/dashboard/students", icon: Users },
+  { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
   { name: "Student Progress", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "Schedule", href: "/dashboard/schedule", icon: Calendar },
   { name: "Resources", href: "/dashboard/resources", icon: Layers },
@@ -52,6 +53,7 @@ const tutorNav: NavItem[] = [
 const teacherNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "My Classroom", href: "/dashboard/classroom", icon: Users },
+  { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
   { name: "Assignments", href: "/dashboard/assignments", icon: ClipboardList },
   { name: "Class Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "Resources", href: "/dashboard/resources", icon: Layers },
@@ -157,8 +159,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          {/* Credits display - only for students */}
-          {profile && profile.role === "student" && (
+          {/* Credits display - for all users with AI access */}
+          {profile && (
             <div className="px-3 py-4 border-t border-sidebar-border">
               <div className="p-3 rounded-lg bg-sidebar-accent/50">
                 <div className="flex items-center justify-between mb-2">

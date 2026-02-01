@@ -18,8 +18,8 @@ const plans = [
     description: "For tutors getting started",
     features: [
       "Up to 15 students",
-      "Tier 1 AI quality",
-      "Basic AI assistance",
+      "AI Coach for you & all students",
+      "Tier 1 AI quality (50 credits/day)",
       "Student progress tracking",
       "Email support",
     ],
@@ -32,7 +32,8 @@ const plans = [
     popular: true,
     features: [
       "Up to 20 students",
-      "Tier 2 AI quality (Enhanced)",
+      "AI Coach for you & all students",
+      "Tier 2 AI quality (150 credits/day)",
       "Advanced analytics",
       "Priority support",
       "Custom resources",
@@ -45,7 +46,9 @@ const plans = [
     description: "For established tutoring businesses",
     features: [
       "Up to 30 students",
-      "Tier 3 AI quality (Best)",
+      "AI Coach for you & all students",
+      "Tier 3 AI quality (300 credits/day)",
+      "Voice chat with AI",
       "Full analytics suite",
       "Dedicated support",
       "White-label options",

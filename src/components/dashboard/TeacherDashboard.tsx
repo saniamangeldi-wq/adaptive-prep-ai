@@ -7,7 +7,8 @@ import {
   UserPlus,
   BarChart3,
   FileText,
-  Award
+  Award,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -68,7 +69,7 @@ export function TeacherDashboard() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <QuickAction
           icon={Users}
           title="My Classroom"
@@ -77,11 +78,18 @@ export function TeacherDashboard() {
           color="from-primary to-teal-400"
         />
         <QuickAction
+          icon={MessageSquare}
+          title="AI Coach"
+          description="Get AI assistance for teaching"
+          href="/dashboard/coach"
+          color="from-purple-500 to-pink-400"
+        />
+        <QuickAction
           icon={ClipboardList}
           title="Assignments"
           description="Create and manage test assignments"
           href="/dashboard/assignments"
-          color="from-purple-500 to-pink-400"
+          color="from-green-500 to-emerald-400"
         />
         <QuickAction
           icon={BarChart3}
