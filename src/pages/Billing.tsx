@@ -101,8 +101,9 @@ export default function Billing() {
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
                 <p className="text-xs text-muted-foreground mb-1">AI Model</p>
                 <p className="text-xl font-bold text-foreground">
-                  {currentTierLimits.aiModel === "gpt-4o" ? "GPT-4o" : 
-                   currentTierLimits.aiModel === "gpt-4o-mini" ? "GPT-4o Mini" : 
+                  {currentTierLimits.aiModel === "gpt-5.2" ? "GPT-5.2 Reasoning" : 
+                   currentTierLimits.aiModel === "gpt-5" ? "GPT-5" : 
+                   currentTierLimits.aiModel === "gpt-5-mini" ? "GPT-5 Mini" : 
                    "Gemini Flash"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">

@@ -11,8 +11,8 @@ export interface TierLimits {
   flashcardsPerDay: number;
   hasVoiceChat: boolean;
   hasUniversityMatch: boolean;
-  aiModel: "gemini-flash" | "gpt-4o-mini" | "gpt-4o";
-  aiProvider: "gemini" | "openai";
+  aiModel: "gemini-flash-lite" | "gpt-5-mini" | "gpt-5" | "gpt-5.2";
+  aiProvider: "gemini" | "openai" | "perplexity";
   features: string[];
 }
 
@@ -27,7 +27,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     flashcardsPerDay: 5,
     hasVoiceChat: false,
     hasUniversityMatch: false,
-    aiModel: "gemini-flash",
+    aiModel: "gemini-flash-lite",
     aiProvider: "gemini",
     features: [
       "20 AI credits/day",
@@ -48,7 +48,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     flashcardsPerDay: 20,
     hasVoiceChat: false,
     hasUniversityMatch: false,
-    aiModel: "gpt-4o-mini",
+    aiModel: "gpt-5-mini",
     aiProvider: "openai",
     features: [
       "50 AI credits/day",
@@ -72,7 +72,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     flashcardsPerDay: 50,
     hasVoiceChat: false,
     hasUniversityMatch: false,
-    aiModel: "gpt-4o",
+    aiModel: "gpt-5",
     aiProvider: "openai",
     features: [
       "150 AI credits/day",
@@ -94,7 +94,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     flashcardsPerDay: -1, // Unlimited
     hasVoiceChat: true,
     hasUniversityMatch: true,
-    aiModel: "gpt-4o",
+    aiModel: "gpt-5.2",
     aiProvider: "openai",
     features: [
       "300 AI credits/day",
