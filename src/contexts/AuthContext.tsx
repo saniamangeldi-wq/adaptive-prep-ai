@@ -40,6 +40,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const clearPersistedAuth = () => {
+    try {
+      // supabase-js stores sessions under keys like: sb-<project-ref>-auth-token
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        if (key.startsWith("sb-") && key.endsWith("-auth-token")) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch {
+      // ignore
+    }
+  };
+
+  const hardSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      clearPersistedAuth();
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+    }
+  };
+
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
@@ -48,10 +76,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (error) {
-      console.error("Error fetching profile:", error);
+      // 406 = "No rows" when using .single() with object accept header
+      if ((error as any)?.code !== "PGRST116") {
+        console.error("Error fetching profile:", error);
+      }
       return null;
     }
     return data as Profile;
+  };
+
+  const ensureProfileExists = async (currentUser: User) => {
+    const existing = await fetchProfile(currentUser.id);
+    if (existing) return existing;
+
+    // Create a minimal profile if it's missing.
+    // This prevents login from breaking when profiles were wiped or never created.
+    const fullName =
+      (currentUser.user_metadata as any)?.full_name ||
+      (currentUser.user_metadata as any)?.name ||
+      null;
+    const avatarUrl = (currentUser.user_metadata as any)?.avatar_url || null;
+    const role = ((currentUser.user_metadata as any)?.role as Profile["role"]) || "student";
+
+    const { data: inserted, error: insertError } = await supabase
+      .from("profiles")
+      .insert({
+        user_id: currentUser.id,
+        email: currentUser.email ?? "",
+        full_name: fullName,
+        avatar_url: avatarUrl,
+        role,
+        // Align with trial defaults used elsewhere in the app
+        tier: "tier_2",
+        is_trial: true,
+        trial_started_at: new Date().toISOString(),
+        trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        credits_remaining: 100,
+        tests_remaining: 2,
+        questions_used_today: 0,
+        onboarding_completed: false,
+      })
+      .select("*")
+      .single();
+
+    if (insertError) {
+      // If RLS or constraints block insert, don't break auth; just proceed without profile.
+      console.error("Error creating missing profile:", insertError);
+      return null;
+    }
+
+    return inserted as Profile;
+  };
+
+  const validateSession = async (currentSession: Session | null) => {
+    if (!currentSession) return true;
+    const { error } = await supabase.auth.getUser();
+    return !error;
   };
 
   const refreshProfile = async () => {
@@ -65,13 +145,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        // If an account was deleted but a local session still exists, validate and hard-signout.
+        const isValid = await validateSession(currentSession);
+        if (!isValid) {
+          await hardSignOut();
+          setLoading(false);
+          return;
+        }
+
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
         if (currentSession?.user) {
-          // Defer profile fetch to avoid blocking
+          // Defer profile creation/fetch to avoid blocking paint
           setTimeout(async () => {
-            const profileData = await fetchProfile(currentSession.user.id);
+            const profileData = await ensureProfileExists(currentSession.user);
             setProfile(profileData);
             setLoading(false);
           }, 0);
@@ -84,17 +172,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Then check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        fetchProfile(currentSession.user.id).then((profileData) => {
-          setProfile(profileData);
+      (async () => {
+        const isValid = await validateSession(currentSession);
+        if (!isValid) {
+          await hardSignOut();
           setLoading(false);
-        });
-      } else {
+          return;
+        }
+
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          const profileData = await ensureProfileExists(currentSession.user);
+          setProfile(profileData);
+        }
         setLoading(false);
-      }
+      })();
     });
 
     return () => {
@@ -103,10 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
+    await hardSignOut();
   };
 
   return (
