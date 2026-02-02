@@ -118,7 +118,8 @@ export default function TakeTest() {
 
       if (error) throw error;
 
-      // Decrement tests remaining - fetch current value and decrement
+      // Decrement questions remaining by the number of questions taken
+      const questionsUsed = test.questions.length;
       const { data: profile } = await supabase
         .from("profiles")
         .select("tests_remaining")
@@ -128,7 +129,7 @@ export default function TakeTest() {
       if (profile) {
         await supabase
           .from("profiles")
-          .update({ tests_remaining: Math.max(0, (profile.tests_remaining || 0) - 1) })
+          .update({ tests_remaining: Math.max(0, (profile.tests_remaining || 0) - questionsUsed) })
           .eq("user_id", user.id);
       }
 

@@ -49,8 +49,8 @@ export function StudentDashboard() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={FileText}
-          label="Tests Remaining"
-          value={profile?.tests_remaining?.toString() || "2"}
+          label="Questions Remaining"
+          value={profile?.tests_remaining?.toString() || "200"}
           subtext="this month"
           color="from-primary to-teal-400"
         />
