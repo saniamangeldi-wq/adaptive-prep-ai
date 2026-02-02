@@ -71,7 +71,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     testsPerMonth: 4,
     flashcardsPerDay: 50,
     hasVoiceChat: false,
-    hasUniversityMatch: false,
+    hasUniversityMatch: true, // University Match unlocks at Tier 2 for schools
     aiModel: "gpt-5",
     aiProvider: "perplexity",
     features: [
@@ -79,6 +79,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
       "4 practice tests/month",
       "Everything in Starter",
       "Perplexity Pro AI models",
+      "University Match (schools)",
       "Enhanced feedback quality",
       "Priority support",
       "50 flashcards/day",
