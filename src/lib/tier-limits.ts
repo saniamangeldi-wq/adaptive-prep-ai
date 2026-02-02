@@ -12,7 +12,7 @@ export interface TierLimits {
   hasVoiceChat: boolean;
   hasUniversityMatch: boolean;
   aiModel: "gemini-flash-lite" | "gpt-4o" | "gpt-5" | "gpt-5-all";
-  aiProvider: "gemini" | "openai" | "multi";
+  aiProvider: "gemini" | "openai" | "perplexity";
   features: string[];
 }
 
@@ -73,12 +73,12 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     hasVoiceChat: false,
     hasUniversityMatch: false,
     aiModel: "gpt-5",
-    aiProvider: "multi",
+    aiProvider: "perplexity",
     features: [
       "150 AI credits/day",
       "4 practice tests/month",
       "Everything in Starter",
-      "GPT-5 + Gemini Pro AI",
+      "Perplexity Pro AI models",
       "Enhanced feedback quality",
       "Priority support",
       "50 flashcards/day",
@@ -95,14 +95,14 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     hasVoiceChat: true,
     hasUniversityMatch: true,
     aiModel: "gpt-5-all",
-    aiProvider: "multi",
+    aiProvider: "perplexity",
     features: [
       "300 AI credits/day",
       "12 practice tests/month",
       "Everything in Pro",
-      "All AI models (GPT-5, Gemini, Perplexity)",
+      "All Perplexity Pro models",
+      "Deep Research + Reasoning Pro",
       "Premium AI with voice chat",
-      "Premium feedback quality",
       "Unlimited flashcards",
       "1-on-1 coaching session",
     ],

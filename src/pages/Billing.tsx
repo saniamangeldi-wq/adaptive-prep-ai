@@ -236,13 +236,13 @@ export default function Billing() {
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Pro</p>
-                <p className="font-medium text-sm text-foreground">GPT-5 + Gemini</p>
-                <p className="text-xs text-muted-foreground mt-1">Smart routing</p>
+                <p className="font-medium text-sm text-foreground">Perplexity Pro</p>
+                <p className="text-xs text-muted-foreground mt-1">Premium models</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Elite</p>
-                <p className="font-medium text-sm text-foreground">All AI + Perplexity</p>
-                <p className="text-xs text-muted-foreground mt-1">Premium access</p>
+                <p className="font-medium text-sm text-foreground">Perplexity All</p>
+                <p className="text-xs text-muted-foreground mt-1">Deep Research + Reasoning</p>
               </div>
             </div>
           </CardContent>
