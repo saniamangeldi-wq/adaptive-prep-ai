@@ -8,17 +8,32 @@ type PricingRole = "student" | "tutor" | "school";
 
 const studentPlans = [
   {
+    name: "Free",
+    tier: "Forever Free",
+    price: 0,
+    description: "Get started with SAT prep basics",
+    features: [
+      "10 SAT questions per day",
+      "20 AI credits/day",
+      "Adaptive learning style",
+      "Basic AI Coach",
+      "Progress dashboard",
+      "5 flashcards/day",
+    ],
+    popular: false,
+  },
+  {
     name: "Starter",
     tier: "Tier 1",
     price: 7,
     description: "Perfect for getting started with SAT prep",
     features: [
       "2 practice tests per month",
-      "AI Study Coach included",
-      "Basic AI assistance (50 credits/day)",
-      "Study planner access",
-      "Progress dashboard",
-      "Full feedback on tests",
+      "Unlimited SAT questions",
+      "50 AI credits/day",
+      "Full test feedback",
+      "20 flashcards/day",
+      "Priority support",
     ],
     popular: false,
   },
@@ -28,12 +43,12 @@ const studentPlans = [
     price: 10,
     description: "Most popular for serious test prep",
     features: [
-      "4 practice tests per month",
-      "AI Study Coach included",
-      "Enhanced AI with better reasoning (150 credits/day)",
-      "Everything in Starter",
-      "Enhanced feedback quality",
-      "Priority support",
+      "5 practice tests per month",
+      "150 AI credits/day",
+      "Voice chat with AI",
+      "GPT-4o model",
+      "50 flashcards/day",
+      "Detailed analytics",
     ],
     popular: true,
   },
@@ -43,12 +58,12 @@ const studentPlans = [
     price: 21,
     description: "Maximum preparation power",
     features: [
-      "12 practice tests per month",
-      "AI Study Coach included",
-      "Premium AI with voice chat (300 credits/day)",
-      "Everything in Pro",
-      "Premium feedback quality",
-      "Best AI quality",
+      "Unlimited practice tests",
+      "300 AI credits/day",
+      "University Match feature",
+      "Voice chat with AI",
+      "GPT-4o model",
+      "1-on-1 coaching session",
     ],
     popular: false,
   },
@@ -210,7 +225,10 @@ export function Pricing() {
         </div>
 
         {/* Pricing cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className={cn(
+          "grid gap-8 max-w-6xl mx-auto",
+          selectedRole === "student" ? "md:grid-cols-4" : "md:grid-cols-3"
+        )}>
           {currentPlans.map((plan) => (
             <PricingCard key={`${selectedRole}-${plan.name}`} {...plan} role={selectedRole} />
           ))}
@@ -220,13 +238,10 @@ export function Pricing() {
         <div className="text-center mt-12">
           {selectedRole === "student" && (
             <p className="text-muted-foreground">
-              🎓 Schools and tutors?{" "}
-              <button 
-                onClick={() => setSelectedRole("school")} 
-                className="text-primary hover:underline font-medium"
-              >
-                Check our institutional pricing
-              </button>
+              🎉 Start with our free plan, or try Pro features free for 7 days!{" "}
+              <Link to="/signup" className="text-primary hover:underline font-medium">
+                Sign up now
+              </Link>
             </p>
           )}
           {selectedRole === "tutor" && (
@@ -300,8 +315,14 @@ function PricingCard({
 
       <div className="mb-6">
         <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-bold text-foreground">${price}</span>
-          <span className="text-muted-foreground">/month</span>
+          {price === 0 ? (
+            <span className="text-4xl font-bold text-foreground">Free</span>
+          ) : (
+            <>
+              <span className="text-4xl font-bold text-foreground">${price}</span>
+              <span className="text-muted-foreground">/month</span>
+            </>
+          )}
         </div>
         {priceNote && (
           <p className="text-xs text-muted-foreground mt-1">{priceNote}</p>

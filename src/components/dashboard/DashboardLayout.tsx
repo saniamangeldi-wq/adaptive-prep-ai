@@ -23,6 +23,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { TierBadge } from "./TierBadge";
+import { TrialBanner } from "./TrialBanner";
 
 type NavItem = {
   name: string;
@@ -161,21 +163,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          {/* Credits display - for all users with AI access */}
-          {profile && (
-            <div className="px-3 py-4 border-t border-sidebar-border">
-              <div className="p-3 rounded-lg bg-sidebar-accent/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-sidebar-foreground/70">AI Credits</span>
-                  <Zap className="w-4 h-4 text-accent" />
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold text-sidebar-foreground">{profile.credits_remaining}</span>
-                  <span className="text-xs text-sidebar-foreground/50">remaining today</span>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Tier Badge */}
+          <TierBadge />
 
           {/* User profile */}
           <div className="p-3 border-t border-sidebar-border">
@@ -226,6 +215,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           )}
 
         </header>
+
+        {/* Trial Banner */}
+        <TrialBanner />
 
         {/* Page content */}
         <main className="p-4 lg:p-6">

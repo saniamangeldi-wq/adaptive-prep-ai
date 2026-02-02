@@ -11,7 +11,10 @@ import {
   Save,
   Bell,
   Moon,
-  Globe
+  Globe,
+  Sparkles,
+  Check,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +22,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { getTierLimits, getDaysRemaining, TIER_LIMITS, PricingTier } from "@/lib/tier-limits";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function Settings() {
   const { user, profile, signOut } = useAuth();
@@ -78,19 +84,20 @@ export default function Settings() {
   };
 
   const getTierBadge = () => {
-    switch (profile?.tier) {
-      case "tier_3":
-        return "Premium";
-      case "tier_2":
-        return "Plus";
-      default:
-        return "Free";
-    }
+    const tierLimits = getTierLimits(profile?.tier as PricingTier);
+    if (profile?.is_trial) return "Pro Trial";
+    return tierLimits.displayName;
   };
+
+  const isTrialUser = profile?.is_trial && profile?.trial_ends_at;
+  const daysRemaining = isTrialUser ? getDaysRemaining(profile.trial_ends_at) : 0;
+  const currentTierLimits = getTierLimits(profile?.tier as PricingTier);
+
+  const pricingTiers: PricingTier[] = ["tier_0", "tier_1", "tier_2", "tier_3"];
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl space-y-8">
+      <div className="max-w-4xl space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Settings</h1>
@@ -187,6 +194,77 @@ export default function Settings() {
             )}
           </div>
         </div>
+
+        {/* Pricing Plans - for students */}
+        {profile?.role === "student" && (
+          <div className="p-6 rounded-2xl bg-card border border-border/50">
+            <div className="flex items-center gap-3 mb-6">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <div>
+                <h3 className="font-semibold text-foreground">Plans & Billing</h3>
+                {isTrialUser && daysRemaining > 0 && (
+                  <p className="text-xs text-yellow-400 flex items-center gap-1 mt-0.5">
+                    <Clock className="w-3 h-3" />
+                    Trial ends in {daysRemaining} day{daysRemaining !== 1 ? "s" : ""}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {pricingTiers.map((tierKey) => {
+                const tier = TIER_LIMITS[tierKey];
+                const isCurrentTier = profile?.tier === tierKey && !profile?.is_trial;
+                const isTrialTier = profile?.is_trial && tierKey === "tier_2";
+
+                return (
+                  <Card 
+                    key={tierKey} 
+                    className={`relative ${isCurrentTier || isTrialTier ? "border-primary ring-1 ring-primary" : ""}`}
+                  >
+                    {(isCurrentTier || isTrialTier) && (
+                      <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
+                        {isTrialTier ? "Current (Trial)" : "Current"}
+                      </Badge>
+                    )}
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">{tier.displayName}</CardTitle>
+                      <CardDescription>
+                        {tier.price === 0 ? (
+                          <span className="text-2xl font-bold text-foreground">Free</span>
+                        ) : (
+                          <>
+                            <span className="text-2xl font-bold text-foreground">${tier.price}</span>
+                            <span className="text-muted-foreground">/mo</span>
+                          </>
+                        )}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <ul className="space-y-1.5 text-xs">
+                        {tier.features.slice(0, 4).map((feature, i) => (
+                          <li key={i} className="flex items-center gap-1.5 text-muted-foreground">
+                            <Check className="w-3 h-3 text-primary flex-shrink-0" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                      {!isCurrentTier && !isTrialTier && tierKey !== "tier_0" && (
+                        <Button 
+                          variant={tierKey === "tier_3" ? "hero" : "outline"} 
+                          size="sm" 
+                          className="w-full mt-3"
+                        >
+                          Upgrade
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Preferences */}
         <div className="p-6 rounded-2xl bg-card border border-border/50">
