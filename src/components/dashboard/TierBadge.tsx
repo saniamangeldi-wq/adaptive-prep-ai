@@ -1,18 +1,24 @@
 import { Link } from "react-router-dom";
-import { Crown, Sparkles, Clock } from "lucide-react";
+import { Crown, Sparkles, Clock, Zap, CreditCard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getTierLimits, getDaysRemaining } from "@/lib/tier-limits";
+import { getTierLimits, getDaysRemaining, TRIAL_LIMITS, PricingTier } from "@/lib/tier-limits";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 export function TierBadge() {
   const { profile } = useAuth();
   
   if (!profile) return null;
 
-  const tierLimits = getTierLimits(profile.tier);
+  const tierLimits = getTierLimits(profile.tier as PricingTier);
   const isTrialUser = profile.is_trial && profile.trial_ends_at;
   const daysRemaining = isTrialUser ? getDaysRemaining(profile.trial_ends_at) : 0;
-  const showUpgrade = profile.tier === "tier_0" || profile.tier === "tier_1";
+  const showUpgrade = profile.tier === "tier_0" || profile.tier === "tier_1" || profile.tier === "tier_2";
+
+  // Calculate credits usage
+  const maxCredits = isTrialUser ? TRIAL_LIMITS.creditsPerDay : tierLimits.creditsPerDay;
+  const creditsUsed = maxCredits - (profile.credits_remaining || 0);
+  const creditsPercentage = Math.min(100, (creditsUsed / maxCredits) * 100);
 
   const getBadgeColor = () => {
     if (isTrialUser) return "from-yellow-500/20 to-orange-500/20 border-yellow-500/30";
@@ -29,10 +35,17 @@ export function TierBadge() {
   };
 
   const getIcon = () => {
-    if (isTrialUser) return <Clock className="w-3.5 h-3.5 text-yellow-400" />;
-    if (profile.tier === "tier_3") return <Crown className="w-3.5 h-3.5 text-purple-400" />;
-    if (profile.tier === "tier_2") return <Sparkles className="w-3.5 h-3.5 text-primary" />;
-    return null;
+    if (isTrialUser) return <Clock className="w-4 h-4 text-yellow-400" />;
+    if (profile.tier === "tier_3") return <Crown className="w-4 h-4 text-purple-400" />;
+    if (profile.tier === "tier_2") return <Sparkles className="w-4 h-4 text-primary" />;
+    if (profile.tier === "tier_1") return <CreditCard className="w-4 h-4 text-blue-400" />;
+    return <Zap className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  const getPriceDisplay = () => {
+    if (isTrialUser) return "7-day trial";
+    if (profile.tier === "tier_0") return "Free forever";
+    return `$${tierLimits.price}/month`;
   };
 
   return (
@@ -41,45 +54,69 @@ export function TierBadge() {
         "p-3 rounded-lg bg-gradient-to-r border",
         getBadgeColor()
       )}>
-        <div className="flex items-center justify-between">
+        {/* Plan name and price */}
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {getIcon()}
             <div>
-              <p className="text-xs text-sidebar-foreground/70">Current Plan</p>
               <p className="text-sm font-semibold text-sidebar-foreground">
                 {isTrialUser ? "Pro Trial" : tierLimits.displayName}
               </p>
+              <p className="text-xs text-sidebar-foreground/60">
+                {getPriceDisplay()}
+              </p>
             </div>
           </div>
-          {showUpgrade && !isTrialUser && (
-            <Link
-              to="/dashboard/settings"
-              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
-            >
-              Upgrade
-            </Link>
-          )}
         </div>
-        
+
+        {/* Credits usage */}
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-sidebar-foreground/70">AI Credits</span>
+            <span className="text-xs font-medium text-sidebar-foreground">
+              {profile.credits_remaining}/{maxCredits}
+            </span>
+          </div>
+          <Progress value={100 - creditsPercentage} className="h-1.5" />
+        </div>
+
+        {/* Trial countdown */}
         {isTrialUser && daysRemaining > 0 && (
-          <div className="mt-2 pt-2 border-t border-sidebar-border/30">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-yellow-400">
-                {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} left
-              </span>
-              <Link
-                to="/dashboard/settings"
-                className="text-xs text-yellow-400 hover:text-yellow-300 font-medium"
-              >
-                Subscribe now
-              </Link>
-            </div>
+          <div className="flex items-center justify-between py-2 border-t border-sidebar-border/30">
+            <span className="text-xs text-yellow-400 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} left
+            </span>
           </div>
         )}
-        
+
         {isTrialUser && daysRemaining === 0 && (
-          <div className="mt-2 pt-2 border-t border-sidebar-border/30">
+          <div className="py-2 border-t border-sidebar-border/30">
             <span className="text-xs text-red-400">Trial expired</span>
+          </div>
+        )}
+
+        {/* Upgrade button */}
+        {showUpgrade && (
+          <Link
+            to="/dashboard/settings"
+            className={cn(
+              "block w-full mt-2 py-2 px-3 rounded-md text-center text-xs font-medium transition-colors",
+              isTrialUser 
+                ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                : "bg-primary hover:bg-primary/90 text-primary-foreground"
+            )}
+          >
+            {isTrialUser ? "Subscribe Now" : "Upgrade Plan"}
+          </Link>
+        )}
+
+        {profile.tier === "tier_3" && !isTrialUser && (
+          <div className="mt-2 py-2 text-center">
+            <span className="text-xs text-purple-400 flex items-center justify-center gap-1">
+              <Crown className="w-3 h-3" />
+              Premium Member
+            </span>
           </div>
         )}
       </div>

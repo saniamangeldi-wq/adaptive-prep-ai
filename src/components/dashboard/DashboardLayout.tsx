@@ -39,6 +39,7 @@ const studentNav: NavItem[] = [
   { name: "University Match", href: "/dashboard/university-match", icon: GraduationCap },
   { name: "Progress", href: "/dashboard/progress", icon: LineChart },
   { name: "Flashcards", href: "/dashboard/flashcards", icon: Layers },
+  { name: "Billing", href: "/dashboard/settings", icon: CreditCard },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
