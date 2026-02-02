@@ -11,7 +11,8 @@ export interface TierLimits {
   flashcardsPerDay: number;
   hasVoiceChat: boolean;
   hasUniversityMatch: boolean;
-  aiModel: "gpt-4o-mini" | "gpt-4o";
+  aiModel: "gemini-flash" | "gpt-4o-mini" | "gpt-4o";
+  aiProvider: "gemini" | "openai";
   features: string[];
 }
 
@@ -22,16 +23,17 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     price: 0,
     creditsPerDay: 20,
     questionsPerDay: 10,
-    testsPerMonth: 0, // No full tests
+    testsPerMonth: 0,
     flashcardsPerDay: 5,
     hasVoiceChat: false,
     hasUniversityMatch: false,
-    aiModel: "gpt-4o-mini",
+    aiModel: "gemini-flash",
+    aiProvider: "gemini",
     features: [
       "20 AI credits/day",
       "10 SAT questions/day",
-      "Adaptive learning",
-      "Basic AI Coach",
+      "Adaptive learning enabled",
+      "Basic AI Coach (Gemini Flash)",
       "Progress dashboard",
       "5 flashcards/day",
     ],
@@ -41,19 +43,23 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     displayName: "Starter",
     price: 7,
     creditsPerDay: 50,
-    questionsPerDay: -1, // Unlimited (uses tests_remaining)
+    questionsPerDay: -1, // Unlimited
     testsPerMonth: 2,
     flashcardsPerDay: 20,
     hasVoiceChat: false,
     hasUniversityMatch: false,
     aiModel: "gpt-4o-mini",
+    aiProvider: "openai",
     features: [
       "50 AI credits/day",
       "2 practice tests/month",
       "Unlimited SAT questions",
-      "Full test feedback",
+      "AI Study Coach included",
+      "Basic AI assistance (GPT-4o-mini)",
+      "Study planner access",
+      "Progress dashboard",
+      "Full feedback on tests",
       "20 flashcards/day",
-      "Priority support",
     ],
   },
   tier_2: {
@@ -62,18 +68,20 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     price: 10,
     creditsPerDay: 150,
     questionsPerDay: -1,
-    testsPerMonth: 5,
+    testsPerMonth: 4,
     flashcardsPerDay: 50,
-    hasVoiceChat: true,
+    hasVoiceChat: false,
     hasUniversityMatch: false,
     aiModel: "gpt-4o",
+    aiProvider: "openai",
     features: [
       "150 AI credits/day",
-      "5 practice tests/month",
-      "Voice chat with AI",
-      "GPT-4o model",
+      "4 practice tests/month",
+      "Everything in Starter",
+      "Enhanced AI with better reasoning",
+      "Enhanced feedback quality",
+      "Priority support",
       "50 flashcards/day",
-      "Detailed analytics",
     ],
   },
   tier_3: {
@@ -82,17 +90,19 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     price: 21,
     creditsPerDay: 300,
     questionsPerDay: -1,
-    testsPerMonth: "unlimited",
+    testsPerMonth: 12,
     flashcardsPerDay: -1, // Unlimited
     hasVoiceChat: true,
     hasUniversityMatch: true,
     aiModel: "gpt-4o",
+    aiProvider: "openai",
     features: [
       "300 AI credits/day",
-      "Unlimited practice tests",
-      "University Match feature",
-      "Voice chat with AI",
-      "GPT-4o model",
+      "12 practice tests/month",
+      "Everything in Pro",
+      "Premium AI with voice chat",
+      "Premium feedback quality",
+      "Best AI quality (GPT-4o)",
       "Unlimited flashcards",
       "1-on-1 coaching session",
     ],
