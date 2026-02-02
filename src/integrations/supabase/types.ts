@@ -161,6 +161,8 @@ export type Database = {
           credits_remaining: number
           credits_reset_at: string | null
           email: string
+          flashcards_created_today: number
+          flashcards_reset_at: string | null
           full_name: string | null
           id: string
           is_trial: boolean
@@ -183,6 +185,8 @@ export type Database = {
           credits_remaining?: number
           credits_reset_at?: string | null
           email: string
+          flashcards_created_today?: number
+          flashcards_reset_at?: string | null
           full_name?: string | null
           id?: string
           is_trial?: boolean
@@ -205,6 +209,8 @@ export type Database = {
           credits_remaining?: number
           credits_reset_at?: string | null
           email?: string
+          flashcards_created_today?: number
+          flashcards_reset_at?: string | null
           full_name?: string | null
           id?: string
           is_trial?: boolean

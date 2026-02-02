@@ -114,7 +114,7 @@ export const TRIAL_LIMITS = {
   creditsPerDay: 100,
   testsTotal: 2,
   questionsPerDay: 50,
-  flashcardsPerDay: 10,
+  flashcardsPerDay: 20,
   durationDays: 7,
 };
 
