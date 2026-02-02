@@ -19,6 +19,8 @@ interface Profile {
   trial_started_at: string | null;
   questions_used_today: number;
   questions_reset_at: string | null;
+  flashcards_created_today: number;
+  flashcards_reset_at: string | null;
 }
 
 interface AuthContextType {
