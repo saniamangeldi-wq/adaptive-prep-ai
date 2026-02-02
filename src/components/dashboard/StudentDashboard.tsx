@@ -8,13 +8,20 @@ import {
   ArrowRight,
   Target,
   FileText,
-  Zap
+  Zap,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { getTierLimits, getDaysRemaining, PricingTier, TRIAL_LIMITS } from "@/lib/tier-limits";
 
 export function StudentDashboard() {
   const { profile } = useAuth();
+
+  const tierLimits = getTierLimits(profile?.tier as PricingTier);
+  const isTrialUser = profile?.is_trial && profile?.trial_ends_at;
+  const daysRemaining = isTrialUser ? getDaysRemaining(profile.trial_ends_at) : 0;
+  const isTier0 = profile?.tier === "tier_0";
 
   const learningStyleLabel = {
     visual: "Visual",
@@ -25,6 +32,23 @@ export function StudentDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Trial Banner */}
+      {isTrialUser && daysRemaining > 0 && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-yellow-400" />
+            <span className="text-foreground">
+              <strong>Pro Trial:</strong> {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining • {TRIAL_LIMITS.creditsPerDay} credits/day • {TRIAL_LIMITS.testsTotal} tests total
+            </span>
+          </div>
+          <Button variant="hero" size="sm" asChild>
+            <Link to="/dashboard/settings">
+              Subscribe Now
+            </Link>
+          </Button>
+        </div>
+      )}
+
       {/* Welcome header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -39,7 +63,7 @@ export function StudentDashboard() {
         </div>
         <Button variant="hero" asChild>
           <Link to="/dashboard/tests">
-            Start Practice Test
+            {isTier0 ? "Practice Questions" : "Start Practice Test"}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </Button>
@@ -49,15 +73,15 @@ export function StudentDashboard() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={FileText}
-          label="Questions Remaining"
-          value={profile?.tests_remaining?.toString() || "200"}
-          subtext="this month"
+          label={isTier0 ? "Questions Today" : "Questions Remaining"}
+          value={isTier0 ? `${profile?.questions_used_today || 0}/${tierLimits.questionsPerDay}` : (profile?.tests_remaining?.toString() || "200")}
+          subtext={isTier0 ? "daily limit" : "this month"}
           color="from-primary to-teal-400"
         />
         <StatCard
           icon={Zap}
           label="AI Credits"
-          value={profile?.credits_remaining?.toString() || "50"}
+          value={`${profile?.credits_remaining || 0}/${isTrialUser ? TRIAL_LIMITS.creditsPerDay : tierLimits.creditsPerDay}`}
           subtext="today"
           color="from-accent to-orange-400"
         />

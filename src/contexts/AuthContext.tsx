@@ -9,11 +9,16 @@ interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   role: "student" | "tutor" | "teacher" | "school_admin";
-  tier: "tier_1" | "tier_2" | "tier_3";
+  tier: "tier_0" | "tier_1" | "tier_2" | "tier_3";
   learning_style: "visual" | "auditory" | "reading_writing" | "kinesthetic" | null;
   credits_remaining: number;
   tests_remaining: number;
   onboarding_completed: boolean;
+  is_trial: boolean;
+  trial_ends_at: string | null;
+  trial_started_at: string | null;
+  questions_used_today: number;
+  questions_reset_at: string | null;
 }
 
 interface AuthContextType {

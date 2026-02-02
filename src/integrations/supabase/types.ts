@@ -163,12 +163,17 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          is_trial: boolean
           learning_style: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed: boolean
+          questions_reset_at: string | null
+          questions_used_today: number
           role: Database["public"]["Enums"]["user_role"]
           tests_remaining: number
           tests_reset_at: string | null
           tier: Database["public"]["Enums"]["pricing_tier"]
+          trial_ends_at: string | null
+          trial_started_at: string | null
           updated_at: string
           user_id: string
         }
@@ -180,12 +185,17 @@ export type Database = {
           email: string
           full_name?: string | null
           id?: string
+          is_trial?: boolean
           learning_style?: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed?: boolean
+          questions_reset_at?: string | null
+          questions_used_today?: number
           role?: Database["public"]["Enums"]["user_role"]
           tests_remaining?: number
           tests_reset_at?: string | null
           tier?: Database["public"]["Enums"]["pricing_tier"]
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -197,12 +207,17 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          is_trial?: boolean
           learning_style?: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed?: boolean
+          questions_reset_at?: string | null
+          questions_used_today?: number
           role?: Database["public"]["Enums"]["user_role"]
           tests_remaining?: number
           tests_reset_at?: string | null
           tier?: Database["public"]["Enums"]["pricing_tier"]
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -666,6 +681,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_trial_expiration: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -689,7 +705,7 @@ export type Database = {
     }
     Enums: {
       learning_style: "visual" | "auditory" | "reading_writing" | "kinesthetic"
-      pricing_tier: "tier_1" | "tier_2" | "tier_3"
+      pricing_tier: "tier_0" | "tier_1" | "tier_2" | "tier_3"
       test_difficulty: "easy" | "normal" | "hard"
       test_length: "quick" | "short" | "medium" | "long" | "full"
       user_role: "student" | "tutor" | "teacher" | "school_admin"
@@ -821,7 +837,7 @@ export const Constants = {
   public: {
     Enums: {
       learning_style: ["visual", "auditory", "reading_writing", "kinesthetic"],
-      pricing_tier: ["tier_1", "tier_2", "tier_3"],
+      pricing_tier: ["tier_0", "tier_1", "tier_2", "tier_3"],
       test_difficulty: ["easy", "normal", "hard"],
       test_length: ["quick", "short", "medium", "long", "full"],
       user_role: ["student", "tutor", "teacher", "school_admin"],

@@ -10,12 +10,15 @@ import {
   ChevronRight,
   Zap,
   FileText,
-  Loader2
+  Loader2,
+  Lock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { generateTest } from "@/lib/test-generator";
 import { useToast } from "@/hooks/use-toast";
+import { getTierLimits, PricingTier } from "@/lib/tier-limits";
+import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 
 type TestType = "math" | "reading_writing" | "combined";
 type TestLength = "quick" | "short" | "medium" | "long" | "full";
@@ -46,9 +49,21 @@ export default function PracticeTests() {
   const { user, profile } = useAuth();
 
   const selectedLength = testLengths.find(l => l.id === length);
+  const tierLimits = getTierLimits(profile?.tier as PricingTier);
+  const isTier0 = profile?.tier === "tier_0";
 
   const handleStartTest = async () => {
     if (!user || isStarting) return;
+
+    // Block tier 0 users from taking full practice tests
+    if (isTier0) {
+      toast({
+        title: "Upgrade Required",
+        description: "Practice tests are only available on paid plans. Upgrade to Starter for $7/month to unlock full tests!",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const questionsNeeded = selectedLength?.questions || 0;
     if ((profile?.tests_remaining || 0) < questionsNeeded) {
@@ -102,23 +117,30 @@ export default function PracticeTests() {
           </p>
         </div>
 
+        {/* Tier 0 Upgrade Prompt */}
+        {isTier0 && (
+          <UpgradePrompt type="tests" />
+        )}
+
         {/* Questions remaining notice */}
-        <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileText className="w-5 h-5 text-primary" />
-            <span className="text-foreground">
-              You have <strong>{profile?.tests_remaining || 0}</strong> practice questions remaining this month
-            </span>
+        {!isTier0 && (
+          <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileText className="w-5 h-5 text-primary" />
+              <span className="text-foreground">
+                You have <strong>{profile?.tests_remaining || 0}</strong> practice questions remaining this month
+              </span>
+            </div>
+            {profile?.tier !== "tier_3" && (
+              <Button variant="hero" size="sm" asChild>
+                <Link to="/dashboard/settings">
+                  <Zap className="w-4 h-4" />
+                  Get More
+                </Link>
+              </Button>
+            )}
           </div>
-          {profile?.tier !== "tier_3" && (
-            <Button variant="hero" size="sm" asChild>
-              <Link to="/dashboard/settings">
-                <Zap className="w-4 h-4" />
-                Get More
-              </Link>
-            </Button>
-          )}
-        </div>
+        )}
 
         {/* Test Type Selection */}
         <div className="space-y-4">
