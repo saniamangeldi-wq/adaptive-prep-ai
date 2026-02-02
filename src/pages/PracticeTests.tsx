@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { 
@@ -111,9 +111,11 @@ export default function PracticeTests() {
             </span>
           </div>
           {profile?.tier !== "tier_3" && (
-            <Button variant="hero" size="sm">
-              <Zap className="w-4 h-4" />
-              Get More
+            <Button variant="hero" size="sm" asChild>
+              <Link to="/dashboard/settings">
+                <Zap className="w-4 h-4" />
+                Get More
+              </Link>
             </Button>
           )}
         </div>
