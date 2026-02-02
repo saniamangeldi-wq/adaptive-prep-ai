@@ -50,10 +50,11 @@ export default function PracticeTests() {
   const handleStartTest = async () => {
     if (!user || isStarting) return;
     
-    if ((profile?.tests_remaining || 0) <= 0) {
+    const questionsNeeded = selectedLength?.questions || 0;
+    if ((profile?.tests_remaining || 0) < questionsNeeded) {
       toast({
-        title: "No tests remaining",
-        description: "Upgrade your plan to get more practice tests.",
+        title: "Not enough questions remaining",
+        description: `You need ${questionsNeeded} questions but only have ${profile?.tests_remaining || 0}. Choose a shorter test or upgrade your plan.`,
         variant: "destructive",
       });
       return;
@@ -101,12 +102,12 @@ export default function PracticeTests() {
           </p>
         </div>
 
-        {/* Tests remaining notice */}
+        {/* Questions remaining notice */}
         <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <FileText className="w-5 h-5 text-primary" />
             <span className="text-foreground">
-              You have <strong>{profile?.tests_remaining || 0}</strong> practice tests remaining this month
+              You have <strong>{profile?.tests_remaining || 0}</strong> practice questions remaining this month
             </span>
           </div>
           {profile?.tier !== "tier_3" && (
@@ -228,7 +229,7 @@ export default function PracticeTests() {
           <Button 
             variant="hero" 
             size="xl"
-            disabled={(profile?.tests_remaining || 0) <= 0 || isStarting}
+            disabled={(profile?.tests_remaining || 0) < (selectedLength?.questions || 0) || isStarting}
             onClick={handleStartTest}
           >
             {isStarting ? (
