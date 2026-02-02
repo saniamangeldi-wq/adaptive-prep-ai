@@ -17,6 +17,7 @@ import Progress from "./pages/Progress";
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+import Billing from "./pages/Billing";
 import TutorBilling from "./pages/TutorBilling";
 import UniversityMatch from "./pages/UniversityMatch";
 
@@ -88,7 +89,8 @@ function AppRoutes() {
       <Route path="/dashboard/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
       <Route path="/dashboard/university-match" element={<ProtectedRoute><UniversityMatch /></ProtectedRoute>} />
       <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/dashboard/billing" element={<ProtectedRoute><TutorBilling /></ProtectedRoute>} />
+      <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+      <Route path="/dashboard/tutor-billing" element={<ProtectedRoute><TutorBilling /></ProtectedRoute>} />
       
       {/* School admin routes */}
       <Route path="/dashboard/school" element={<ProtectedRoute><SchoolOverview /></ProtectedRoute>} />

@@ -39,7 +39,7 @@ const studentNav: NavItem[] = [
   { name: "University Match", href: "/dashboard/university-match", icon: GraduationCap },
   { name: "Progress", href: "/dashboard/progress", icon: LineChart },
   { name: "Flashcards", href: "/dashboard/flashcards", icon: Layers },
-  { name: "Billing", href: "/dashboard/settings", icon: CreditCard },
+  { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -208,7 +208,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {/* Upgrade button for non-tier-3 students */}
           {profile?.role === "student" && profile?.tier !== "tier_3" && (
             <Button variant="hero" size="sm" asChild>
-              <Link to="/dashboard/settings">
+              <Link to="/dashboard/billing">
                 <Sparkles className="w-4 h-4" />
                 Upgrade
               </Link>
