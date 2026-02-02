@@ -20,34 +20,68 @@ type AIProvider = "gemini" | "openai" | "perplexity";
 interface AIModelConfig {
   provider: AIProvider;
   model: string;
+  displayName: string;
   qualityNote: string;
 }
 
-function getAIModelForTier(tier: string): AIModelConfig {
+// Detect if message requires complex reasoning (for Elite tier routing)
+function isComplexReasoning(message: string): boolean {
+  const complexPatterns = [
+    /step.?by.?step/i,
+    /explain.*(how|why)/i,
+    /solve.*(problem|equation)/i,
+    /analyze/i,
+    /compare.*contrast/i,
+    /create.*(plan|strategy|schedule)/i,
+    /study.?plan/i,
+    /what.*(best|optimal)/i,
+    /multiple.*(steps|parts)/i,
+  ];
+  return complexPatterns.some(pattern => pattern.test(message));
+}
+
+function getAIModelForTier(tier: string, taskType?: string, message?: string): AIModelConfig {
   switch (tier) {
-    case "tier_3":
+    case "tier_3": {
+      // Elite tier - GPT-5.2 for complex reasoning, GPT-5 for regular chat
+      const needsAdvancedReasoning = message && isComplexReasoning(message);
+      const isStudyPlan = taskType === 'study_plan';
+      
+      if (needsAdvancedReasoning || isStudyPlan) {
+        return {
+          provider: "openai",
+          model: "openai/gpt-5.2", // Latest model with enhanced reasoning (o1/o3 equivalent)
+          displayName: "GPT-5.2 Reasoning",
+          qualityNote: "You have access to advanced reasoning capabilities. Break down complex problems into clear steps. Provide thorough, multi-step explanations with strategic insights.",
+        };
+      }
       return {
         provider: "openai",
-        model: "openai/gpt-5", // Maps to GPT-4o equivalent
+        model: "openai/gpt-5", // GPT-4o equivalent for regular chat
+        displayName: "GPT-5",
         qualityNote: "Provide detailed, in-depth explanations with multiple examples. You have access to premium AI capabilities.",
       };
+    }
     case "tier_2":
       return {
         provider: "openai",
-        model: "openai/gpt-5", // Maps to GPT-4o equivalent
+        model: "openai/gpt-5", // GPT-4o equivalent
+        displayName: "GPT-5",
         qualityNote: "Provide clear explanations with good depth and enhanced reasoning.",
       };
     case "tier_1":
       return {
         provider: "openai",
-        model: "openai/gpt-5-mini", // Maps to GPT-4o-mini equivalent
-        qualityNote: "Provide clear, focused explanations with good detail.",
+        model: "openai/gpt-5-mini", // GPT-4 Turbo equivalent
+        displayName: "GPT-5 Mini",
+        qualityNote: "Provide clear, focused explanations with good detail. You have access to capable AI for complex SAT problems.",
       };
     case "tier_0":
     default:
       return {
         provider: "gemini",
         model: "google/gemini-2.5-flash-lite", // Fast & free tier
+        displayName: "Gemini Flash",
         qualityNote: "Provide concise, focused explanations.",
       };
   }
@@ -221,17 +255,17 @@ serve(async (req) => {
       console.error("Failed to deduct credit:", updateError);
     }
 
-    // Get AI model config based on tier
-    const modelConfig = getAIModelForTier(profile.tier);
-    const systemPrompt = getStudentSystemPrompt(profile.learning_style, modelConfig.qualityNote);
-
     // Get the last user message to determine routing
     const lastUserMessage = messages.filter((m: {role: string}) => m.role === "user").pop()?.content || "";
+
+    // Get AI model config based on tier, task type, and message complexity
+    const modelConfig = getAIModelForTier(profile.tier, taskType, lastUserMessage);
+    const systemPrompt = getStudentSystemPrompt(profile.learning_style, modelConfig.qualityNote);
 
     let response: Response;
 
     // Route to appropriate AI provider
-    // Only use Perplexity for research if user has tier 1 or higher
+    // Use Perplexity for research if user has tier 1 or higher
     if (taskType === "research" || (needsResearch(lastUserMessage) && profile.tier !== "tier_0")) {
       console.log("Routing to Perplexity for research query");
       try {
@@ -243,7 +277,7 @@ serve(async (req) => {
       }
     } else {
       // Default: Use Lovable AI with tier-appropriate model
-      console.log(`Routing to Lovable AI with model: ${modelConfig.model}`);
+      console.log(`Routing to Lovable AI with model: ${modelConfig.model} (${modelConfig.displayName})`);
       response = await callLovableAI(messages, systemPrompt, modelConfig.model);
     }
 
