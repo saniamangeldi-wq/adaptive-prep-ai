@@ -43,55 +43,70 @@ function isComplexReasoning(message: string): boolean {
 function getAIModelForTier(tier: string, taskType?: string, message?: string): AIModelConfig {
   switch (tier) {
     case "tier_3": {
-      // Elite tier - Access to ALL providers: GPT-5, Gemini, Perplexity
-      // Route based on task type
-      if (taskType === "research" || (message && needsResearch(message))) {
+      // Elite tier - Perplexity Pro with access to ALL premium models
+      // Use sonar-reasoning-pro for complex reasoning (based on DeepSeek R1)
+      // Use sonar-deep-research for research queries
+      // Use sonar-pro for general chat
+      const needsAdvancedReasoning = message && isComplexReasoning(message);
+      const needsResearchMode = message && needsResearch(message);
+      
+      if (needsResearchMode || taskType === "research") {
         return {
           provider: "perplexity",
-          model: "sonar-pro",
-          displayName: "Perplexity Pro",
-          qualityNote: "Provide well-researched, factual responses with citations. You have access to real-time web search.",
+          model: "sonar-deep-research", // Expert research with multi-query analysis
+          displayName: "Perplexity Deep Research",
+          qualityNote: "You have access to expert-level research capabilities. Provide comprehensive, well-sourced responses with citations.",
         };
       }
       
-      const needsAdvancedReasoning = message && isComplexReasoning(message);
       if (needsAdvancedReasoning || taskType === 'study_plan') {
         return {
-          provider: "openai",
-          model: "openai/gpt-5", // Best reasoning
-          displayName: "GPT-5",
-          qualityNote: "You have access to premium AI capabilities. Break down complex problems into clear steps with strategic insights.",
+          provider: "perplexity",
+          model: "sonar-reasoning-pro", // Advanced reasoning based on DeepSeek R1
+          displayName: "Perplexity Reasoning Pro",
+          qualityNote: "You have access to advanced chain-of-thought reasoning. Break down complex problems into clear steps with strategic insights.",
         };
       }
       
-      // Default to Gemini for general chat (fast + high quality)
       return {
-        provider: "gemini",
-        model: "google/gemini-2.5-pro",
-        displayName: "Gemini Pro",
-        qualityNote: "Provide detailed, in-depth explanations with multiple examples.",
+        provider: "perplexity",
+        model: "sonar-pro", // Multi-step reasoning with 2x more citations
+        displayName: "Perplexity Pro",
+        qualityNote: "Provide detailed, in-depth explanations with multiple examples. You have access to premium AI capabilities.",
       };
     }
     case "tier_2": {
-      // Pro tier - GPT-5 + Gemini Pro
+      // Pro tier - Perplexity Pro models
       const needsAdvancedReasoning = message && isComplexReasoning(message);
-      if (needsAdvancedReasoning || taskType === 'study_plan') {
+      const needsResearchMode = message && needsResearch(message);
+      
+      if (needsResearchMode || taskType === "research") {
         return {
-          provider: "openai",
-          model: "openai/gpt-5",
-          displayName: "GPT-5",
-          qualityNote: "Provide clear explanations with good depth and enhanced reasoning.",
+          provider: "perplexity",
+          model: "sonar-pro", // Pro search with citations
+          displayName: "Perplexity Pro",
+          qualityNote: "Provide well-researched, factual responses with citations.",
         };
       }
+      
+      if (needsAdvancedReasoning || taskType === 'study_plan') {
+        return {
+          provider: "perplexity",
+          model: "sonar-reasoning", // Chain-of-thought reasoning
+          displayName: "Perplexity Reasoning",
+          qualityNote: "Provide clear explanations with step-by-step reasoning.",
+        };
+      }
+      
       return {
-        provider: "gemini",
-        model: "google/gemini-2.5-pro",
-        displayName: "Gemini Pro",
+        provider: "perplexity",
+        model: "sonar-pro",
+        displayName: "Perplexity Pro",
         qualityNote: "Provide clear explanations with good depth and enhanced reasoning.",
       };
     }
     case "tier_1":
-      // Starter tier - GPT-4o
+      // Starter tier - GPT-4o via Lovable AI
       return {
         provider: "openai",
         model: "openai/gpt-5-mini", // Maps to GPT-4o equivalent
@@ -153,8 +168,12 @@ Your capabilities:
 Remember: You're building their problem-solving skills, not just giving answers!`;
 };
 
-// Call Perplexity API for research-based questions
-async function callPerplexity(messages: Array<{role: string; content: string}>, systemPrompt: string): Promise<Response> {
+// Call Perplexity API with specified model
+async function callPerplexity(
+  messages: Array<{role: string; content: string}>, 
+  systemPrompt: string,
+  model: string = "sonar"
+): Promise<Response> {
   const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY");
   if (!PERPLEXITY_API_KEY) {
     throw new Error("PERPLEXITY_API_KEY is not configured");
@@ -167,7 +186,7 @@ async function callPerplexity(messages: Array<{role: string; content: string}>, 
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "sonar",
+      model: model,
       messages: [
         { role: "system", content: systemPrompt + "\n\nProvide factual, well-sourced information. Cite sources when relevant." },
         ...messages,
@@ -286,19 +305,19 @@ serve(async (req) => {
 
     let response: Response;
 
-    // Route to appropriate AI provider
-    // Use Perplexity for research if user has tier 1 or higher
-    if (taskType === "research" || (needsResearch(lastUserMessage) && profile.tier !== "tier_0")) {
-      console.log("Routing to Perplexity for research query");
+    // Route based on provider from model config
+    if (modelConfig.provider === "perplexity") {
+      // Pro and Elite tiers use Perplexity Pro models
+      console.log(`Routing to Perplexity with model: ${modelConfig.model} (${modelConfig.displayName})`);
       try {
-        response = await callPerplexity(messages, systemPrompt);
+        response = await callPerplexity(messages, systemPrompt, modelConfig.model);
       } catch (e) {
         // Fallback to Lovable AI if Perplexity fails
         console.error("Perplexity failed, falling back to Lovable AI:", e);
-        response = await callLovableAI(messages, systemPrompt, modelConfig.model);
+        response = await callLovableAI(messages, systemPrompt, "google/gemini-2.5-flash");
       }
     } else {
-      // Default: Use Lovable AI with tier-appropriate model
+      // Free and Starter tiers use Lovable AI (Gemini/OpenAI)
       console.log(`Routing to Lovable AI with model: ${modelConfig.model} (${modelConfig.displayName})`);
       response = await callLovableAI(messages, systemPrompt, modelConfig.model);
     }
