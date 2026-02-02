@@ -11,8 +11,8 @@ export interface TierLimits {
   flashcardsPerDay: number;
   hasVoiceChat: boolean;
   hasUniversityMatch: boolean;
-  aiModel: "gemini-flash-lite" | "gpt-5-mini" | "gpt-5" | "gpt-5.2";
-  aiProvider: "gemini" | "openai" | "perplexity";
+  aiModel: "gemini-flash-lite" | "gpt-4o" | "gpt-5" | "gpt-5-all";
+  aiProvider: "gemini" | "openai" | "multi";
   features: string[];
 }
 
@@ -48,14 +48,14 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     flashcardsPerDay: 20,
     hasVoiceChat: false,
     hasUniversityMatch: false,
-    aiModel: "gpt-5-mini",
+    aiModel: "gpt-4o",
     aiProvider: "openai",
     features: [
       "50 AI credits/day",
       "2 practice tests/month",
       "Unlimited SAT questions",
       "AI Study Coach included",
-      "Basic AI assistance (GPT-5 Mini)",
+      "GPT-4o AI assistance",
       "Study planner access",
       "Progress dashboard",
       "Full feedback on tests",
@@ -73,12 +73,12 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     hasVoiceChat: false,
     hasUniversityMatch: false,
     aiModel: "gpt-5",
-    aiProvider: "openai",
+    aiProvider: "multi",
     features: [
       "150 AI credits/day",
       "4 practice tests/month",
       "Everything in Starter",
-      "Enhanced AI with better reasoning",
+      "GPT-5 + Gemini Pro AI",
       "Enhanced feedback quality",
       "Priority support",
       "50 flashcards/day",
@@ -94,15 +94,15 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     flashcardsPerDay: -1, // Unlimited
     hasVoiceChat: true,
     hasUniversityMatch: true,
-    aiModel: "gpt-5.2",
-    aiProvider: "openai",
+    aiModel: "gpt-5-all",
+    aiProvider: "multi",
     features: [
       "300 AI credits/day",
       "12 practice tests/month",
       "Everything in Pro",
+      "All AI models (GPT-5, Gemini, Perplexity)",
       "Premium AI with voice chat",
       "Premium feedback quality",
-      "Best AI quality (GPT-5.2)",
       "Unlimited flashcards",
       "1-on-1 coaching session",
     ],

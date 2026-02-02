@@ -43,38 +43,60 @@ function isComplexReasoning(message: string): boolean {
 function getAIModelForTier(tier: string, taskType?: string, message?: string): AIModelConfig {
   switch (tier) {
     case "tier_3": {
-      // Elite tier - GPT-5.2 for complex reasoning, GPT-5 for regular chat
-      const needsAdvancedReasoning = message && isComplexReasoning(message);
-      const isStudyPlan = taskType === 'study_plan';
+      // Elite tier - Access to ALL providers: GPT-5, Gemini, Perplexity
+      // Route based on task type
+      if (taskType === "research" || (message && needsResearch(message))) {
+        return {
+          provider: "perplexity",
+          model: "sonar-pro",
+          displayName: "Perplexity Pro",
+          qualityNote: "Provide well-researched, factual responses with citations. You have access to real-time web search.",
+        };
+      }
       
-      if (needsAdvancedReasoning || isStudyPlan) {
+      const needsAdvancedReasoning = message && isComplexReasoning(message);
+      if (needsAdvancedReasoning || taskType === 'study_plan') {
         return {
           provider: "openai",
-          model: "openai/gpt-5.2", // Latest model with enhanced reasoning (o1/o3 equivalent)
-          displayName: "GPT-5.2 Reasoning",
-          qualityNote: "You have access to advanced reasoning capabilities. Break down complex problems into clear steps. Provide thorough, multi-step explanations with strategic insights.",
+          model: "openai/gpt-5", // Best reasoning
+          displayName: "GPT-5",
+          qualityNote: "You have access to premium AI capabilities. Break down complex problems into clear steps with strategic insights.",
+        };
+      }
+      
+      // Default to Gemini for general chat (fast + high quality)
+      return {
+        provider: "gemini",
+        model: "google/gemini-2.5-pro",
+        displayName: "Gemini Pro",
+        qualityNote: "Provide detailed, in-depth explanations with multiple examples.",
+      };
+    }
+    case "tier_2": {
+      // Pro tier - GPT-5 + Gemini Pro
+      const needsAdvancedReasoning = message && isComplexReasoning(message);
+      if (needsAdvancedReasoning || taskType === 'study_plan') {
+        return {
+          provider: "openai",
+          model: "openai/gpt-5",
+          displayName: "GPT-5",
+          qualityNote: "Provide clear explanations with good depth and enhanced reasoning.",
         };
       }
       return {
-        provider: "openai",
-        model: "openai/gpt-5", // GPT-4o equivalent for regular chat
-        displayName: "GPT-5",
-        qualityNote: "Provide detailed, in-depth explanations with multiple examples. You have access to premium AI capabilities.",
-      };
-    }
-    case "tier_2":
-      return {
-        provider: "openai",
-        model: "openai/gpt-5", // GPT-4o equivalent
-        displayName: "GPT-5",
+        provider: "gemini",
+        model: "google/gemini-2.5-pro",
+        displayName: "Gemini Pro",
         qualityNote: "Provide clear explanations with good depth and enhanced reasoning.",
       };
+    }
     case "tier_1":
+      // Starter tier - GPT-4o
       return {
         provider: "openai",
-        model: "openai/gpt-5-mini", // GPT-4 Turbo equivalent
-        displayName: "GPT-5 Mini",
-        qualityNote: "Provide clear, focused explanations with good detail. You have access to capable AI for complex SAT problems.",
+        model: "openai/gpt-5-mini", // Maps to GPT-4o equivalent
+        displayName: "GPT-4o",
+        qualityNote: "Provide clear, focused explanations with good detail.",
       };
     case "tier_0":
     default:

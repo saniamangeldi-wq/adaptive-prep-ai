@@ -101,9 +101,9 @@ export default function Billing() {
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
                 <p className="text-xs text-muted-foreground mb-1">AI Model</p>
                 <p className="text-xl font-bold text-foreground">
-                  {currentTierLimits.aiModel === "gpt-5.2" ? "GPT-5.2 Reasoning" : 
-                   currentTierLimits.aiModel === "gpt-5" ? "GPT-5" : 
-                   currentTierLimits.aiModel === "gpt-5-mini" ? "GPT-5 Mini" : 
+                  {currentTierLimits.aiModel === "gpt-5-all" ? "All AI Models" : 
+                   currentTierLimits.aiModel === "gpt-5" ? "GPT-5 + Gemini" : 
+                   currentTierLimits.aiModel === "gpt-4o" ? "GPT-4o" : 
                    "Gemini Flash"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -226,23 +226,23 @@ export default function Billing() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Free</p>
-                <p className="font-medium text-sm text-foreground">Gemini Flash Lite</p>
+                <p className="font-medium text-sm text-foreground">Gemini Flash</p>
                 <p className="text-xs text-muted-foreground mt-1">Fast & efficient</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Starter</p>
-                <p className="font-medium text-sm text-foreground">GPT-5 Mini</p>
+                <p className="font-medium text-sm text-foreground">GPT-4o</p>
                 <p className="text-xs text-muted-foreground mt-1">Balanced quality</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Pro</p>
-                <p className="font-medium text-sm text-foreground">GPT-5</p>
-                <p className="text-xs text-muted-foreground mt-1">Enhanced reasoning</p>
+                <p className="font-medium text-sm text-foreground">GPT-5 + Gemini</p>
+                <p className="text-xs text-muted-foreground mt-1">Smart routing</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Elite</p>
-                <p className="font-medium text-sm text-foreground">GPT-5.2 + Voice</p>
-                <p className="text-xs text-muted-foreground mt-1">Premium experience</p>
+                <p className="font-medium text-sm text-foreground">All AI + Perplexity</p>
+                <p className="text-xs text-muted-foreground mt-1">Premium access</p>
               </div>
             </div>
           </CardContent>
