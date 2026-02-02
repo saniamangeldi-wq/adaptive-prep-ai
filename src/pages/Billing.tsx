@@ -226,22 +226,22 @@ export default function Billing() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Free</p>
-                <p className="font-medium text-sm text-foreground">Gemini Flash</p>
+                <p className="font-medium text-sm text-foreground">Gemini Flash Lite</p>
                 <p className="text-xs text-muted-foreground mt-1">Fast & efficient</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Starter</p>
-                <p className="font-medium text-sm text-foreground">GPT-4o Mini</p>
+                <p className="font-medium text-sm text-foreground">GPT-5 Mini</p>
                 <p className="text-xs text-muted-foreground mt-1">Balanced quality</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Pro</p>
-                <p className="font-medium text-sm text-foreground">GPT-4o</p>
+                <p className="font-medium text-sm text-foreground">GPT-5</p>
                 <p className="text-xs text-muted-foreground mt-1">Enhanced reasoning</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Elite</p>
-                <p className="font-medium text-sm text-foreground">GPT-4o + Voice</p>
+                <p className="font-medium text-sm text-foreground">GPT-5.2 + Voice</p>
                 <p className="text-xs text-muted-foreground mt-1">Premium experience</p>
               </div>
             </div>
