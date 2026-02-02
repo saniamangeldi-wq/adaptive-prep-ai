@@ -14,16 +14,66 @@ const learningStylePrompts: Record<string, string> = {
   kinesthetic: "Use action-oriented language, relate concepts to physical experiences, and suggest hands-on practice. Break learning into short active segments.",
 };
 
-const getStudentSystemPrompt = (learningStyle: string | null, tier: string) => {
+// AI Model selection based on tier
+type AIProvider = "gemini" | "openai" | "perplexity";
+
+interface AIModelConfig {
+  provider: AIProvider;
+  model: string;
+  qualityNote: string;
+}
+
+function getAIModelForTier(tier: string): AIModelConfig {
+  switch (tier) {
+    case "tier_3":
+      return {
+        provider: "openai",
+        model: "openai/gpt-5", // Maps to GPT-4o equivalent
+        qualityNote: "Provide detailed, in-depth explanations with multiple examples. You have access to premium AI capabilities.",
+      };
+    case "tier_2":
+      return {
+        provider: "openai",
+        model: "openai/gpt-5", // Maps to GPT-4o equivalent
+        qualityNote: "Provide clear explanations with good depth and enhanced reasoning.",
+      };
+    case "tier_1":
+      return {
+        provider: "openai",
+        model: "openai/gpt-5-mini", // Maps to GPT-4o-mini equivalent
+        qualityNote: "Provide clear, focused explanations with good detail.",
+      };
+    case "tier_0":
+    default:
+      return {
+        provider: "gemini",
+        model: "google/gemini-2.5-flash-lite", // Fast & free tier
+        qualityNote: "Provide concise, focused explanations.",
+      };
+  }
+}
+
+// Detect if message needs research (for Perplexity routing)
+function needsResearch(message: string): boolean {
+  const researchPatterns = [
+    /tell me about/i,
+    /what is/i,
+    /who is/i,
+    /when did/i,
+    /where is/i,
+    /explain the history/i,
+    /current events/i,
+    /latest news/i,
+    /research on/i,
+    /facts about/i,
+  ];
+  return researchPatterns.some(pattern => pattern.test(message));
+}
+
+const getStudentSystemPrompt = (learningStyle: string | null, qualityNote: string) => {
   const styleGuidance = learningStyle && learningStylePrompts[learningStyle] 
     ? `\n\nStudent Learning Style: ${learningStyle.replace('_', '/')}\n${learningStylePrompts[learningStyle]}`
     : "";
-  
-  const qualityNote = tier === "tier_3" 
-    ? "Provide detailed, in-depth explanations with multiple examples."
-    : tier === "tier_2"
-    ? "Provide clear explanations with good depth."
-    : "Provide concise, focused explanations.";
 
   return `You are a patient and encouraging SAT study coach. Your role is to help students learn and understand concepts.
 
@@ -46,6 +96,62 @@ Your capabilities:
 
 Remember: You're building their problem-solving skills, not just giving answers!`;
 };
+
+// Call Perplexity API for research-based questions
+async function callPerplexity(messages: Array<{role: string; content: string}>, systemPrompt: string): Promise<Response> {
+  const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY");
+  if (!PERPLEXITY_API_KEY) {
+    throw new Error("PERPLEXITY_API_KEY is not configured");
+  }
+
+  const response = await fetch("https://api.perplexity.ai/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${PERPLEXITY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "sonar",
+      messages: [
+        { role: "system", content: systemPrompt + "\n\nProvide factual, well-sourced information. Cite sources when relevant." },
+        ...messages,
+      ],
+      stream: true,
+    }),
+  });
+
+  return response;
+}
+
+// Call Lovable AI Gateway (supports both OpenAI and Gemini models)
+async function callLovableAI(
+  messages: Array<{role: string; content: string}>, 
+  systemPrompt: string, 
+  model: string
+): Promise<Response> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) {
+    throw new Error("LOVABLE_API_KEY is not configured");
+  }
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+      stream: true,
+    }),
+  });
+
+  return response;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -95,7 +201,7 @@ serve(async (req) => {
     // Check credits
     if (profile.credits_remaining <= 0) {
       return new Response(JSON.stringify({ 
-        error: "No credits remaining",
+        error: "No credits remaining. Please upgrade your plan for more credits.",
         credits_remaining: 0 
       }), {
         status: 402,
@@ -103,12 +209,7 @@ serve(async (req) => {
       });
     }
 
-    const { messages } = await req.json();
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    const { messages, taskType } = await req.json();
 
     // Deduct 1 credit
     const { error: updateError } = await supabase
@@ -120,24 +221,31 @@ serve(async (req) => {
       console.error("Failed to deduct credit:", updateError);
     }
 
-    // Call Lovable AI with streaming
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: profile.tier === "tier_3" ? "google/gemini-2.5-pro" : 
-               profile.tier === "tier_2" ? "google/gemini-2.5-flash" : 
-               "google/gemini-2.5-flash-lite",
-        messages: [
-          { role: "system", content: getStudentSystemPrompt(profile.learning_style, profile.tier) },
-          ...messages,
-        ],
-        stream: true,
-      }),
-    });
+    // Get AI model config based on tier
+    const modelConfig = getAIModelForTier(profile.tier);
+    const systemPrompt = getStudentSystemPrompt(profile.learning_style, modelConfig.qualityNote);
+
+    // Get the last user message to determine routing
+    const lastUserMessage = messages.filter((m: {role: string}) => m.role === "user").pop()?.content || "";
+
+    let response: Response;
+
+    // Route to appropriate AI provider
+    // Only use Perplexity for research if user has tier 1 or higher
+    if (taskType === "research" || (needsResearch(lastUserMessage) && profile.tier !== "tier_0")) {
+      console.log("Routing to Perplexity for research query");
+      try {
+        response = await callPerplexity(messages, systemPrompt);
+      } catch (e) {
+        // Fallback to Lovable AI if Perplexity fails
+        console.error("Perplexity failed, falling back to Lovable AI:", e);
+        response = await callLovableAI(messages, systemPrompt, modelConfig.model);
+      }
+    } else {
+      // Default: Use Lovable AI with tier-appropriate model
+      console.log(`Routing to Lovable AI with model: ${modelConfig.model}`);
+      response = await callLovableAI(messages, systemPrompt, modelConfig.model);
+    }
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -147,14 +255,14 @@ serve(async (req) => {
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI service credits exhausted." }), {
+        return new Response(JSON.stringify({ error: "AI service credits exhausted. Please add funds to continue." }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "AI service error" }), {
+      console.error("AI service error:", response.status, errorText);
+      return new Response(JSON.stringify({ error: "AI service error. Please try again." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
