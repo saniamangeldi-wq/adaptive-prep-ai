@@ -153,19 +153,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        // IMPORTANT: do not block the UI on profile fetch/repair.
+        // Auth loading should represent "do we know if the user is logged in?".
+        // Profile can hydrate in the background.
         setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+        const nextUser = currentSession?.user ?? null;
+        setUser(nextUser);
+        setLoading(false);
 
-        if (currentSession?.user) {
-          // Defer profile creation/fetch to avoid blocking paint
-          setTimeout(async () => {
-            const profileData = await ensureProfileExists(currentSession.user);
-            setProfile(profileData);
-            setLoading(false);
+        if (nextUser) {
+          setTimeout(() => {
+            (async () => {
+              const profileData = await ensureProfileExists(nextUser);
+              setProfile(profileData);
+            })();
           }, 0);
         } else {
           setProfile(null);
-          setLoading(false);
         }
       }
     );
@@ -181,13 +185,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-
-        if (currentSession?.user) {
-          const profileData = await ensureProfileExists(currentSession.user);
-          setProfile(profileData);
-        }
+        const nextUser = currentSession?.user ?? null;
+        setUser(nextUser);
         setLoading(false);
+
+        if (nextUser) {
+          // Hydrate profile in background so routes don't hang on a slow DB call.
+          const profileData = await ensureProfileExists(nextUser);
+          setProfile(profileData);
+        } else {
+          setProfile(null);
+        }
       })();
     });
 
