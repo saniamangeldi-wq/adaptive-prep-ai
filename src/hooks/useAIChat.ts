@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export interface Message {
@@ -20,7 +21,6 @@ interface StreamChatOptions {
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export function useAIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -44,6 +44,15 @@ export function useAIChat() {
     setIsLoading(true);
 
     try {
+      // Get user's session token for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("You must be logged in to use AI chat");
+        setIsLoading(false);
+        setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+        return;
+      }
+
       const allMessages = [...messages, userMessage].map(m => ({
         role: m.role,
         content: m.content,
@@ -53,7 +62,7 @@ export function useAIChat() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Authorization": `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           messages: allMessages,
