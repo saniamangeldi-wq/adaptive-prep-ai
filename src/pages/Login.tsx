@@ -39,53 +39,19 @@ export default function Login() {
       if (error) throw error;
 
       if (data.user) {
-        // Fetch user's roles
-        const { data: rolesData, error: rolesError } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", data.user.id);
-
-        if (rolesError) {
-          console.error("Error fetching roles:", rolesError);
-          toast.success("Welcome back!");
-          navigate("/dashboard");
-          return;
-        }
-
-        const availableRoles = rolesData?.map(r => r.role as UserRole) || [];
-
-        // Check if selected role matches user's actual roles
-        if (availableRoles.length > 0 && !availableRoles.includes(selectedRole)) {
-          const roleLabels = availableRoles.map(r => roles.find(role => role.id === r)?.label).join(", ");
-          toast.error(`This email is registered as: ${roleLabels}. Please select the correct role to continue.`);
-          setStep("role");
-          setLoading(false);
-          return;
-        }
-
-        // Update active role in profile
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({ role: selectedRole })
-          .eq("user_id", data.user.id);
-
-        if (updateError) {
-          console.error("Error updating active role:", updateError);
-        }
-
         toast.success("Welcome back!");
         
-        // Redirect based on role
+        // Fire-and-forget: update active role in background
+        supabase
+          .from("profiles")
+          .update({ role: selectedRole })
+          .eq("user_id", data.user.id)
+          .then(({ error }) => {
+            if (error) console.error("Error updating active role:", error);
+          });
+
+        // Navigate immediately based on role - don't wait for DB
         switch (selectedRole) {
-          case "student":
-            navigate("/dashboard");
-            break;
-          case "tutor":
-            navigate("/dashboard");
-            break;
-          case "teacher":
-            navigate("/dashboard");
-            break;
           case "school_admin":
             navigate("/school/billing");
             break;
