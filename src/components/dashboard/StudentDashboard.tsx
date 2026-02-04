@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   BookOpen, 
@@ -14,14 +15,34 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { getTierLimits, getDaysRemaining, PricingTier, TRIAL_LIMITS } from "@/lib/tier-limits";
+import { DashboardTutorial } from "./DashboardTutorial";
 
 export function StudentDashboard() {
   const { profile } = useAuth();
+  const [showTutorial, setShowTutorial] = useState(false);
 
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
   const isTrialUser = profile?.is_trial && profile?.trial_ends_at;
   const daysRemaining = isTrialUser ? getDaysRemaining(profile.trial_ends_at) : 0;
   const isTier0 = profile?.tier === "tier_0";
+
+  // Check if user should see the tutorial (first time visiting dashboard)
+  useEffect(() => {
+    const tutorialKey = `adaptiveprep_tutorial_seen_${profile?.id}`;
+    const hasSeenTutorial = localStorage.getItem(tutorialKey);
+    
+    if (!hasSeenTutorial && profile) {
+      // Show tutorial for new users
+      setShowTutorial(true);
+    }
+  }, [profile]);
+
+  const handleTutorialComplete = () => {
+    if (profile?.id) {
+      localStorage.setItem(`adaptiveprep_tutorial_seen_${profile.id}`, "true");
+    }
+    setShowTutorial(false);
+  };
 
   const learningStyleLabel = {
     visual: "Visual",
@@ -31,7 +52,14 @@ export function StudentDashboard() {
   };
 
   return (
-    <div className="space-y-8">
+    <>
+      {/* Tutorial for new users */}
+      <DashboardTutorial 
+        isOpen={showTutorial} 
+        onComplete={handleTutorialComplete} 
+      />
+
+      <div className="space-y-8">
       {/* Trial Banner */}
       {isTrialUser && daysRemaining > 0 && (
         <div className="p-4 rounded-xl bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 flex items-center justify-between">
@@ -145,6 +173,7 @@ export function StudentDashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
