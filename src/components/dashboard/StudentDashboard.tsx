@@ -18,6 +18,29 @@ import { getTierLimits, getDaysRemaining, PricingTier, TRIAL_LIMITS } from "@/li
 import { DashboardTutorial } from "./DashboardTutorial";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
+// Subject icons map
+const subjectIcons: Record<string, string> = {
+  SAT: "📝",
+  ACT: "📊",
+  "AP Calculus": "📐",
+  "AP English": "📖",
+  Math: "🔢",
+  Science: "🧪",
+  English: "📚",
+  History: "🏛️",
+  "Essay Writing": "✍️",
+  "Homework Help": "📝",
+};
+
+function getSubjectIcon(subject: string): string {
+  return subjectIcons[subject] || "📚";
+}
+
+function hasSATorACT(profile: { study_subjects?: string[] | null } | null): boolean {
+  if (!profile?.study_subjects) return true; // Default to SAT behavior
+  return profile.study_subjects.some(s => s === "SAT" || s === "ACT");
+}
+
 export function StudentDashboard() {
   const { profile } = useAuth();
   const [showTutorial, setShowTutorial] = useState(false);
@@ -148,20 +171,44 @@ export function StudentDashboard() {
         />
       </div>
 
+      {/* Subject Quick Actions */}
+      {profile?.study_subjects && (profile.study_subjects as string[]).length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-muted-foreground">Quick Help by Subject</h3>
+          <div className="flex flex-wrap gap-2">
+            {(profile.study_subjects as string[]).slice(0, 6).map((subject: string) => (
+              <Tooltip key={subject}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={`/dashboard/coach?subject=${encodeURIComponent(subject)}`}
+                    className="px-4 py-2 rounded-full bg-secondary hover:bg-secondary/80 text-secondary-foreground text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    {getSubjectIcon(subject)} {subject}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Get AI help with {subject}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Quick actions */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <QuickAction
           icon={BookOpen}
           title="Practice Tests"
-          description="Take a full SAT practice test or quick quiz"
+          description={hasSATorACT(profile) ? "Take a full practice test or quick quiz" : "Practice questions across subjects"}
           href="/dashboard/tests"
           color="from-primary to-teal-400"
-          tooltip="Access timed SAT practice tests and question drills"
+          tooltip="Access timed practice tests and question drills"
         />
         <QuickAction
           icon={MessageSquare}
-          title="AI Coach"
-          description="Get help with concepts and study plans"
+          title="AI Study Coach"
+          description="Get help with any subject"
           href="/dashboard/coach"
           color="from-purple-500 to-pink-400"
           tooltip="Chat with your AI tutor for personalized help"
@@ -172,7 +219,7 @@ export function StudentDashboard() {
           description="Review key concepts with smart flashcards"
           href="/dashboard/flashcards"
           color="from-accent to-orange-400"
-          tooltip="Study SAT vocabulary, math formulas, and more"
+          tooltip="Study vocabulary, formulas, and more"
         />
       </div>
 

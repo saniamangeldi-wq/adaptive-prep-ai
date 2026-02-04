@@ -230,13 +230,16 @@ export type Database = {
           flashcards_created_today: number
           flashcards_reset_at: string | null
           full_name: string | null
+          grade_level: string | null
           id: string
           is_trial: boolean
           learning_style: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed: boolean
+          primary_goal: string | null
           questions_reset_at: string | null
           questions_used_today: number
           role: Database["public"]["Enums"]["user_role"]
+          study_subjects: Json | null
           tests_remaining: number
           tests_reset_at: string | null
           tier: Database["public"]["Enums"]["pricing_tier"]
@@ -254,13 +257,16 @@ export type Database = {
           flashcards_created_today?: number
           flashcards_reset_at?: string | null
           full_name?: string | null
+          grade_level?: string | null
           id?: string
           is_trial?: boolean
           learning_style?: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed?: boolean
+          primary_goal?: string | null
           questions_reset_at?: string | null
           questions_used_today?: number
           role?: Database["public"]["Enums"]["user_role"]
+          study_subjects?: Json | null
           tests_remaining?: number
           tests_reset_at?: string | null
           tier?: Database["public"]["Enums"]["pricing_tier"]
@@ -278,13 +284,16 @@ export type Database = {
           flashcards_created_today?: number
           flashcards_reset_at?: string | null
           full_name?: string | null
+          grade_level?: string | null
           id?: string
           is_trial?: boolean
           learning_style?: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed?: boolean
+          primary_goal?: string | null
           questions_reset_at?: string | null
           questions_used_today?: number
           role?: Database["public"]["Enums"]["user_role"]
+          study_subjects?: Json | null
           tests_remaining?: number
           tests_reset_at?: string | null
           tier?: Database["public"]["Enums"]["pricing_tier"]
@@ -502,6 +511,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      study_subjects: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          icon: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
       }
       teacher_students: {
         Row: {
