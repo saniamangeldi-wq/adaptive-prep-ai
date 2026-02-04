@@ -11,7 +11,10 @@ import {
   Sparkles, 
   Crown, 
   Zap, 
-  CreditCard
+  CreditCard,
+  Search,
+  Brain,
+  Globe
 } from "lucide-react";
 
 export default function Billing() {
@@ -101,13 +104,17 @@ export default function Billing() {
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
                 <p className="text-xs text-muted-foreground mb-1">AI Model</p>
                 <p className="text-xl font-bold text-foreground">
-                  {currentTierLimits.aiModel === "gpt-5-all" ? "All AI Models" : 
-                   currentTierLimits.aiModel === "gpt-5" ? "GPT-5 + Gemini" : 
-                   currentTierLimits.aiModel === "gpt-4o" ? "GPT-4o" : 
-                   "Gemini Flash"}
+                  {currentTierLimits.aiProvider === "perplexity" 
+                    ? (currentTierLimits.aiModel === "gpt-5-all" ? "Perplexity All" : "Perplexity Pro")
+                    : currentTierLimits.aiModel === "gpt-4o" ? "GPT-4o" 
+                    : "Gemini Flash"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  {currentTierLimits.aiProvider === "openai" ? "OpenAI" : "Google Gemini"}
+                  {currentTierLimits.aiProvider === "perplexity" 
+                    ? "Multi-AI Search" 
+                    : currentTierLimits.aiProvider === "openai" 
+                      ? "OpenAI" 
+                      : "Google Gemini"}
                 </p>
               </div>
             </div>
@@ -234,16 +241,74 @@ export default function Billing() {
                 <p className="font-medium text-sm text-foreground">GPT-4o</p>
                 <p className="text-xs text-muted-foreground mt-1">Balanced quality</p>
               </div>
-              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                <p className="text-xs text-muted-foreground mb-1">Pro</p>
+              <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+                <p className="text-xs text-primary mb-1">Pro</p>
                 <p className="font-medium text-sm text-foreground">Perplexity Pro</p>
-                <p className="text-xs text-muted-foreground mt-1">Premium models</p>
+                <p className="text-xs text-muted-foreground mt-1">Multi-AI Search</p>
               </div>
-              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                <p className="text-xs text-muted-foreground mb-1">Elite</p>
+              <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                <p className="text-xs text-yellow-400 mb-1">Elite</p>
                 <p className="font-medium text-sm text-foreground">Perplexity All</p>
                 <p className="text-xs text-muted-foreground mt-1">Deep Research + Reasoning</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* What is Perplexity Section */}
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/20">
+                <Search className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">What is Perplexity AI?</CardTitle>
+                <CardDescription>The power behind Pro & Elite tiers</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Perplexity is an advanced AI platform that <span className="text-foreground font-medium">combines multiple AI models</span> to deliver the most accurate and comprehensive answers. Unlike single-model systems, Perplexity intelligently routes your questions to the best AI for each task.
+            </p>
+            
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                <div className="p-1.5 rounded-md bg-primary/20">
+                  <Globe className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Real-Time Search</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Access current information with web-grounded answers</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                <div className="p-1.5 rounded-md bg-accent/20">
+                  <Brain className="w-4 h-4 text-accent" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Multi-AI Reasoning</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">GPT, Gemini, Claude & more working together</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                <div className="p-1.5 rounded-md bg-yellow-500/20">
+                  <Sparkles className="w-4 h-4 text-yellow-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Deep Research</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Elite tier unlocks advanced reasoning models</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
+              <Badge variant="outline" className="text-xs">Pro</Badge>
+              <span>sonar-pro model with enhanced citations</span>
+              <span className="mx-2">•</span>
+              <Badge variant="outline" className="text-xs border-yellow-500/50 text-yellow-400">Elite</Badge>
+              <span>sonar-reasoning-pro + deep-research models</span>
             </div>
           </CardContent>
         </Card>
