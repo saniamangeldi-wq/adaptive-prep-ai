@@ -127,7 +127,8 @@ export function getDaysRemaining(trialEndsAt: string | null): number {
   const endDate = new Date(trialEndsAt);
   const now = new Date();
   const diff = endDate.getTime() - now.getTime();
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  // Use floor to show accurate remaining full days (5.8 days = "5 days left")
+  return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
 export function isTrialExpired(trialEndsAt: string | null): boolean {
