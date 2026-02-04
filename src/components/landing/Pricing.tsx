@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 type PricingRole = "student" | "tutor" | "school";
 const studentPlans = [{
   name: "Free",
-  tier: "Forever Free",
+  tier: "Tier 0",
   price: 0,
   description: "Get started with SAT prep basics",
   features: ["10 SAT questions per day", "20 AI credits/day", "Gemini Flash AI (Quick Chat)", "Adaptive learning style", "Progress dashboard", "5 flashcards/day"],
