@@ -24,7 +24,7 @@ import ReactMarkdown from "react-markdown";
 import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { AISuggestions } from "./AISuggestions";
-
+import { CreditsInfoPopover } from "./CreditsInfoPopover";
 // Get daily credit limit based on tier and trial status
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return 100; // Trial users get 100 credits/day
@@ -113,12 +113,14 @@ export function StudentAICoach() {
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-            <Zap className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium text-foreground">
-              {creditsRemaining}/{dailyLimit}
-            </span>
-          </div>
+          <CreditsInfoPopover creditsRemaining={creditsRemaining} dailyLimit={dailyLimit}>
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 hover:bg-accent/20 transition-colors cursor-pointer">
+              <Zap className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium text-foreground">
+                {creditsRemaining}/{dailyLimit}
+              </span>
+            </button>
+          </CreditsInfoPopover>
         </div>
       </div>
 
