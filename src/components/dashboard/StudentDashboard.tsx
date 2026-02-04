@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { getTierLimits, getDaysRemaining, PricingTier, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { DashboardTutorial } from "./DashboardTutorial";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function StudentDashboard() {
   const { profile } = useAuth();
@@ -69,11 +70,18 @@ export function StudentDashboard() {
               <strong>Pro Trial:</strong> {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining • {TRIAL_LIMITS.creditsPerDay} credits/day • {TRIAL_LIMITS.testsTotal} tests total
             </span>
           </div>
-          <Button variant="hero" size="sm" asChild>
-            <Link to="/dashboard/settings">
-              Subscribe Now
-            </Link>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="hero" size="sm" asChild>
+                <Link to="/dashboard/settings">
+                  Subscribe Now
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Upgrade to unlock unlimited features and remove trial limits</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       )}
 
@@ -89,12 +97,19 @@ export function StudentDashboard() {
               : "Let's continue your SAT prep journey"}
           </p>
         </div>
-        <Button variant="hero" asChild>
-          <Link to="/dashboard/tests">
-            {isTier0 ? "Practice Questions" : "Start Practice Test"}
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="hero" asChild>
+              <Link to="/dashboard/tests">
+                {isTier0 ? "Practice Questions" : "Start Practice Test"}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isTier0 ? "Practice individual SAT questions to sharpen your skills" : "Take a timed SAT practice test to measure your progress"}</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Stats cards */}
@@ -105,6 +120,7 @@ export function StudentDashboard() {
           value={isTier0 ? `${profile?.questions_used_today || 0}/${tierLimits.questionsPerDay}` : (profile?.tests_remaining?.toString() || "200")}
           subtext={isTier0 ? "daily limit" : "this month"}
           color="from-primary to-teal-400"
+          tooltip={isTier0 ? "Number of practice questions you've used today" : "Practice tests remaining this month"}
         />
         <StatCard
           icon={Zap}
@@ -112,6 +128,7 @@ export function StudentDashboard() {
           value={`${profile?.credits_remaining || 0}/${isTrialUser ? TRIAL_LIMITS.creditsPerDay : tierLimits.creditsPerDay}`}
           subtext="today"
           color="from-accent to-orange-400"
+          tooltip="AI credits for chatting with your study coach. Resets daily."
         />
         <StatCard
           icon={Trophy}
@@ -119,6 +136,7 @@ export function StudentDashboard() {
           value="--"
           subtext="no tests yet"
           color="from-green-500 to-emerald-400"
+          tooltip="Your highest SAT practice test score"
         />
         <StatCard
           icon={Target}
@@ -126,6 +144,7 @@ export function StudentDashboard() {
           value="--"
           subtext="start practicing"
           color="from-blue-500 to-blue-400"
+          tooltip="Your overall answer accuracy across all practice"
         />
       </div>
 
@@ -137,6 +156,7 @@ export function StudentDashboard() {
           description="Take a full SAT practice test or quick quiz"
           href="/dashboard/tests"
           color="from-primary to-teal-400"
+          tooltip="Access timed SAT practice tests and question drills"
         />
         <QuickAction
           icon={MessageSquare}
@@ -144,6 +164,7 @@ export function StudentDashboard() {
           description="Get help with concepts and study plans"
           href="/dashboard/coach"
           color="from-purple-500 to-pink-400"
+          tooltip="Chat with your AI tutor for personalized help"
         />
         <QuickAction
           icon={Layers}
@@ -151,6 +172,7 @@ export function StudentDashboard() {
           description="Review key concepts with smart flashcards"
           href="/dashboard/flashcards"
           color="from-accent to-orange-400"
+          tooltip="Study SAT vocabulary, math formulas, and more"
         />
       </div>
 
@@ -182,16 +204,18 @@ function StatCard({
   label, 
   value, 
   subtext,
-  color 
+  color,
+  tooltip
 }: { 
   icon: React.ElementType; 
   label: string; 
   value: string; 
   subtext: string;
   color: string;
+  tooltip?: string;
 }) {
-  return (
-    <div className="p-5 rounded-xl bg-card border border-border/50">
+  const content = (
+    <div className="p-5 rounded-xl bg-card border border-border/50 cursor-default">
       <div className="flex items-center justify-between mb-3">
         <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} p-0.5`}>
           <div className="w-full h-full rounded-[6px] bg-card flex items-center justify-center">
@@ -206,6 +230,21 @@ function StatCard({
       </div>
     </div>
   );
+
+  if (tooltip) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {content}
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return content;
 }
 
 function QuickAction({
@@ -214,14 +253,16 @@ function QuickAction({
   description,
   href,
   color,
+  tooltip,
 }: {
   icon: React.ElementType;
   title: string;
   description: string;
   href: string;
   color: string;
+  tooltip?: string;
 }) {
-  return (
+  const content = (
     <Link 
       to={href}
       className="group p-5 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
@@ -237,4 +278,19 @@ function QuickAction({
       <p className="text-sm text-muted-foreground">{description}</p>
     </Link>
   );
+
+  if (tooltip) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {content}
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return content;
 }
