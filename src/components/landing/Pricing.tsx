@@ -30,7 +30,7 @@ const studentPlans = [{
   tier: "Tier 3",
   price: 21,
   description: "Maximum preparation power",
-  features: ["Unlimited practice tests", "300 AI credits/day", "All Perplexity Models", "Deep Research + Advanced Reasoning", "University Match feature", "1-on-1 coaching session"],
+  features: ["Unlimited practice tests", "300 AI credits/day", "All Perplexity Models", "Deep Research + Advanced Reasoning", "University Match feature"],
   popular: false
 }];
 const tutorPlans = [{
