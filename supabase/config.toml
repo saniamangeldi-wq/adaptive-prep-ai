@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.university-matcher]
 verify_jwt = false
+
+[functions.process-sat-pdf]
+verify_jwt = false

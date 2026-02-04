@@ -23,6 +23,7 @@ import UniversityMatch from "./pages/UniversityMatch";
 
 // School admin pages
 import CreateSchool from "./pages/school/CreateSchool";
+import UploadTests from "./pages/admin/UploadTests";
 import SchoolOverview from "./pages/school/SchoolOverview";
 import SchoolTeachers from "./pages/school/SchoolTeachers";
 import SchoolStudents from "./pages/school/SchoolStudents";
@@ -91,6 +92,9 @@ function AppRoutes() {
       <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
       <Route path="/dashboard/tutor-billing" element={<ProtectedRoute><TutorBilling /></ProtectedRoute>} />
+      
+      {/* Admin routes */}
+      <Route path="/admin/upload-tests" element={<ProtectedRoute><UploadTests /></ProtectedRoute>} />
       
       {/* School admin routes */}
       <Route path="/dashboard/school" element={<ProtectedRoute><SchoolOverview /></ProtectedRoute>} />
