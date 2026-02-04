@@ -32,6 +32,11 @@ export function GenerateWithAIDialog({ open, onOpenChange, onCreateDeck }: Gener
       return;
     }
 
+    if (sourceType === "custom" && !additionalInfo.trim()) {
+      toast.error("Please provide your content to generate flashcards from");
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
@@ -42,69 +47,39 @@ export function GenerateWithAIDialog({ open, onOpenChange, onCreateDeck }: Gener
         return;
       }
 
-      // Call the AI to generate flashcards
-      const prompt = sourceType === "internet" 
-        ? `Generate ${cardCount} SAT-style flashcards about "${topic}". Use current, accurate information from the web. Each card should have a clear question/term on the front and a detailed answer/explanation on the back.`
-        : `Generate ${cardCount} SAT-style flashcards about "${topic}" using this information: ${additionalInfo}. Each card should have a clear question/term on the front and a detailed answer/explanation on the back.`;
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/student-chat`, {
+      // Call the dedicated flashcard generation endpoint
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-flashcards`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          messages: [
-            { 
-              role: "user", 
-              content: `${prompt}\n\nRespond ONLY with a JSON array of flashcard objects in this exact format:\n[{"front": "question/term", "back": "answer/definition"}, ...]\n\nNo other text, just the JSON array.`
-            }
-          ],
-          taskType: "flashcard_generation"
+          topic: topic.trim(),
+          cardCount: parseInt(cardCount),
+          sourceType,
+          customContent: sourceType === "custom" ? additionalInfo.trim() : undefined,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to generate flashcards");
-      }
-
-      // Read the streaming response
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullContent = "";
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n");
-          
-          for (const line of lines) {
-            if (line.startsWith("data: ") && !line.includes("[DONE]")) {
-              try {
-                const json = JSON.parse(line.slice(6));
-                const content = json.choices?.[0]?.delta?.content;
-                if (content) fullContent += content;
-              } catch {
-                // Ignore parse errors for incomplete chunks
-              }
-            }
-          }
+        if (response.status === 402) {
+          toast.error("No credits remaining. Please upgrade your plan.");
+        } else if (response.status === 429) {
+          toast.error("Rate limit exceeded. Please try again later.");
+        } else {
+          toast.error(data.error || "Failed to generate flashcards");
         }
+        setIsGenerating(false);
+        return;
       }
 
-      // Try to extract JSON from the response
-      const jsonMatch = fullContent.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) {
-        throw new Error("Could not parse flashcard data");
-      }
-
-      const cards = JSON.parse(jsonMatch[0]);
-      
-      if (!Array.isArray(cards) || cards.length === 0) {
-        throw new Error("No flashcards generated");
+      if (!data.cards || data.cards.length === 0) {
+        toast.error("No flashcards were generated. Please try again.");
+        setIsGenerating(false);
+        return;
       }
 
       const newDeck: FlashcardDeck = {
@@ -112,7 +87,7 @@ export function GenerateWithAIDialog({ open, onOpenChange, onCreateDeck }: Gener
         title: topic.trim(),
         description: `AI-generated flashcards about ${topic}`,
         category,
-        cards: cards.map((c: { front: string; back: string }, i: number) => ({
+        cards: data.cards.map((c: { front: string; back: string }, i: number) => ({
           id: `ai-card-${Date.now()}-${i}`,
           front: c.front || "",
           back: c.back || "",
