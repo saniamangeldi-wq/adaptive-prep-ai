@@ -14,6 +14,76 @@ const learningStylePrompts: Record<string, string> = {
   kinesthetic: "Use action-oriented language, relate concepts to physical experiences, and suggest hands-on practice. Break learning into short active segments.",
 };
 
+// Subject-specific system prompts
+const subjectPrompts: Record<string, string> = {
+  SAT: `You are a specialized SAT tutor. Help students prepare for the Digital SAT with:
+- Math strategies for both calculator and no-calculator sections
+- Reading and Writing passage analysis techniques
+- Time management tips for the test
+- Common trap answer patterns to avoid
+Never give direct answers to practice questions - guide students to find answers themselves.`,
+  
+  ACT: `You are a specialized ACT tutor. Help students prepare for the ACT with:
+- Strategies for Science, Reading, English, and Math sections
+- Time management (the ACT is faster-paced than SAT)
+- Understanding ACT-specific question types
+Never give direct answers to practice questions - guide students to find answers themselves.`,
+  
+  Math: `You are a friendly math tutor. Help students understand mathematical concepts:
+- Algebra, geometry, pre-calculus, and calculus
+- Break down complex problems into manageable steps
+- Use visual explanations and real-world examples when helpful
+- Show multiple solution approaches when applicable`,
+  
+  Science: `You are a science tutor covering biology, chemistry, and physics:
+- Explain scientific concepts using real-world examples
+- Help with understanding experiments and the scientific method
+- Connect abstract concepts to everyday observations
+- Clarify the "why" behind scientific principles`,
+  
+  English: `You are an English and writing tutor:
+- Help with grammar, punctuation, and sentence structure
+- Guide essay writing and thesis development
+- Assist with literary analysis and reading comprehension
+- Provide constructive feedback on writing samples`,
+  
+  History: `You are a history tutor:
+- Help students understand historical events, causes, and effects
+- Connect past events to present-day relevance
+- Assist with analyzing primary sources
+- Help with essay structure for history assignments`,
+  
+  "AP Calculus": `You are an AP Calculus tutor:
+- Help with derivatives, integrals, and limits
+- Prepare students for the AP exam format
+- Explain concepts using visual and intuitive approaches
+- Practice problem-solving strategies for free response questions`,
+  
+  "AP English": `You are an AP English tutor:
+- Help with rhetorical analysis and argument essays
+- Prepare students for multiple choice and free response sections
+- Guide literary analysis and close reading skills
+- Provide feedback on writing style and argument structure`,
+  
+  "Essay Writing": `You are a writing coach specializing in essays:
+- Help with college application essays
+- Guide creative writing and personal narratives
+- Assist with thesis development and argument structure
+- Provide constructive feedback without writing for the student`,
+  
+  "Homework Help": `You are a versatile homework helper:
+- Assist with any subject the student needs help with
+- Guide students to find answers without doing the work for them
+- Break down complex problems into steps
+- Explain concepts clearly and check for understanding`,
+  
+  General: `You are a versatile study coach:
+- Adapt to whatever subject the student needs help with
+- Ask clarifying questions to understand their needs
+- Provide clear explanations and study strategies
+- Encourage active learning and problem-solving`,
+};
+
 // AI Model selection based on tier
 type AIProvider = "gemini" | "openai" | "perplexity";
 
@@ -22,6 +92,38 @@ interface AIModelConfig {
   model: string;
   displayName: string;
   qualityNote: string;
+}
+
+// Detect subject from user message
+function detectSubject(message: string, userSubjects: string[]): string {
+  const subjectKeywords: Record<string, string[]> = {
+    'SAT': ['sat', 'sat question', 'sat practice', 'reading and writing', 'sat math', 'sat strategy', 'digital sat', 'bluebook'],
+    'ACT': ['act', 'act question', 'act practice', 'act science', 'act reading'],
+    'Math': ['algebra', 'equation', 'geometry', 'calculus', 'derivative', 'integral', 'solve for x', 'polynomial', 'quadratic', 'trigonometry', 'sine', 'cosine'],
+    'Science': ['chemistry', 'physics', 'biology', 'molecule', 'atom', 'cell', 'force', 'energy', 'chemical', 'organism', 'evolution'],
+    'English': ['essay', 'grammar', 'paragraph', 'sentence', 'write', 'literature', 'author', 'punctuation', 'thesis'],
+    'History': ['war', 'president', 'ancient', 'civilization', 'treaty', 'revolution', 'historical', 'century', 'empire'],
+    'AP Calculus': ['ap calc', 'ap calculus', 'derivatives', 'integrals', 'limits'],
+    'AP English': ['ap english', 'ap lit', 'ap lang', 'rhetorical', 'literary analysis'],
+    'Essay Writing': ['college essay', 'personal statement', 'application essay', 'write my essay'],
+    'Homework Help': ['homework', 'assignment', 'due tomorrow', 'help with my'],
+  };
+  
+  const lowerMessage = message.toLowerCase();
+  
+  // First, check for explicit subject matches
+  for (const [subject, keywords] of Object.entries(subjectKeywords)) {
+    if (keywords.some(kw => lowerMessage.includes(kw))) {
+      return subject;
+    }
+  }
+  
+  // If no explicit match, default to user's primary subject or General
+  if (userSubjects && userSubjects.length > 0) {
+    return userSubjects[0]; // Use their first/primary subject
+  }
+  
+  return 'General';
 }
 
 // Detect if message requires complex reasoning (for Elite tier routing)
@@ -38,74 +140,6 @@ function isComplexReasoning(message: string): boolean {
     /multiple.*(steps|parts)/i,
   ];
   return complexPatterns.some(pattern => pattern.test(message));
-}
-
-function getAIModelForTier(tier: string, taskType?: string, message?: string): AIModelConfig {
-  switch (tier) {
-    case "tier_3": {
-      // Elite tier - Perplexity Pro with access to ALL premium models
-      // Use sonar-reasoning-pro for complex reasoning (based on DeepSeek R1)
-      // Use sonar-deep-research for research queries
-      // Use sonar-pro for general chat
-      const needsAdvancedReasoning = message && isComplexReasoning(message);
-      const needsResearchMode = message && needsResearch(message);
-      
-      if (needsResearchMode || taskType === "research") {
-        return {
-          provider: "perplexity",
-          model: "sonar-deep-research", // Expert research with multi-query analysis
-          displayName: "Perplexity Deep Research",
-          qualityNote: "You have access to expert-level research capabilities. Provide comprehensive, well-sourced responses with citations.",
-        };
-      }
-      
-      if (needsAdvancedReasoning || taskType === 'study_plan') {
-        return {
-          provider: "perplexity",
-          model: "sonar-reasoning-pro", // Advanced reasoning based on DeepSeek R1
-          displayName: "Perplexity Reasoning Pro",
-          qualityNote: "You have access to advanced chain-of-thought reasoning. Break down complex problems into clear steps with strategic insights.",
-        };
-      }
-      
-      return {
-        provider: "perplexity",
-        model: "sonar-pro", // Multi-step reasoning with 2x more citations
-        displayName: "Perplexity Pro",
-        qualityNote: "Provide detailed, in-depth explanations with multiple examples. You have access to premium AI capabilities.",
-      };
-    }
-    case "tier_2": {
-      // Pro tier - Perplexity Pro (sonar-pro only, sonar-reasoning is deprecated)
-      const needsResearchMode = message && needsResearch(message);
-      
-      // Use sonar-pro for all tier_2 requests (reasoning and research)
-      return {
-        provider: "perplexity",
-        model: "sonar-pro", // Multi-step reasoning with 2x more citations
-        displayName: "Perplexity Pro",
-        qualityNote: needsResearchMode 
-          ? "Provide well-researched, factual responses with citations."
-          : "Provide clear explanations with good depth and enhanced reasoning.",
-      };
-    }
-    case "tier_1":
-      // Starter tier - GPT-4o via Lovable AI
-      return {
-        provider: "openai",
-        model: "openai/gpt-5-mini", // Maps to GPT-4o equivalent
-        displayName: "GPT-4o",
-        qualityNote: "Provide clear, focused explanations with good detail.",
-      };
-    case "tier_0":
-    default:
-      return {
-        provider: "gemini",
-        model: "google/gemini-2.5-flash-lite", // Fast & free tier
-        displayName: "Gemini Flash",
-        qualityNote: "Provide concise, focused explanations.",
-      };
-  }
 }
 
 // Detect if message needs research (for Perplexity routing)
@@ -125,12 +159,82 @@ function needsResearch(message: string): boolean {
   return researchPatterns.some(pattern => pattern.test(message));
 }
 
-const getStudentSystemPrompt = (learningStyle: string | null, qualityNote: string) => {
+function getAIModelForTier(tier: string, taskType?: string, message?: string): AIModelConfig {
+  switch (tier) {
+    case "tier_3": {
+      const needsAdvancedReasoning = message && isComplexReasoning(message);
+      const needsResearchMode = message && needsResearch(message);
+      
+      if (needsResearchMode || taskType === "research") {
+        return {
+          provider: "perplexity",
+          model: "sonar-deep-research",
+          displayName: "Perplexity Deep Research",
+          qualityNote: "You have access to expert-level research capabilities. Provide comprehensive, well-sourced responses with citations.",
+        };
+      }
+      
+      if (needsAdvancedReasoning || taskType === 'study_plan') {
+        return {
+          provider: "perplexity",
+          model: "sonar-reasoning-pro",
+          displayName: "Perplexity Reasoning Pro",
+          qualityNote: "You have access to advanced chain-of-thought reasoning. Break down complex problems into clear steps with strategic insights.",
+        };
+      }
+      
+      return {
+        provider: "perplexity",
+        model: "sonar-pro",
+        displayName: "Perplexity Pro",
+        qualityNote: "Provide detailed, in-depth explanations with multiple examples. You have access to premium AI capabilities.",
+      };
+    }
+    case "tier_2": {
+      const needsResearchMode = message && needsResearch(message);
+      
+      return {
+        provider: "perplexity",
+        model: "sonar-pro",
+        displayName: "Perplexity Pro",
+        qualityNote: needsResearchMode 
+          ? "Provide well-researched, factual responses with citations."
+          : "Provide clear explanations with good depth and enhanced reasoning.",
+      };
+    }
+    case "tier_1":
+      return {
+        provider: "openai",
+        model: "openai/gpt-5-mini",
+        displayName: "GPT-4o",
+        qualityNote: "Provide clear, focused explanations with good detail.",
+      };
+    case "tier_0":
+    default:
+      return {
+        provider: "gemini",
+        model: "google/gemini-2.5-flash-lite",
+        displayName: "Gemini Flash",
+        qualityNote: "Provide concise, focused explanations.",
+      };
+  }
+}
+
+const getStudentSystemPrompt = (
+  learningStyle: string | null, 
+  qualityNote: string,
+  detectedSubject: string
+) => {
   const styleGuidance = learningStyle && learningStylePrompts[learningStyle] 
     ? `\n\nStudent Learning Style: ${learningStyle.replace('_', '/')}\n${learningStylePrompts[learningStyle]}`
     : "";
 
-  return `You are a friendly and encouraging SAT study coach named "Study Coach."
+  const subjectContext = subjectPrompts[detectedSubject] || subjectPrompts['General'];
+
+  return `You are a friendly and encouraging study coach named "Study Coach."
+
+CURRENT SUBJECT CONTEXT: ${detectedSubject}
+${subjectContext}
 
 CRITICAL RULES:
 1. NEVER give direct answers to test or practice questions - guide students to find answers themselves
@@ -144,7 +248,7 @@ ${qualityNote}
 ${styleGuidance}
 
 Your capabilities:
-- Explain SAT concepts (Math, Reading, Writing)
+- Explain concepts in ${detectedSubject} and related subjects
 - Create personalized study plans
 - Help break down difficult problems
 - Suggest practice strategies
@@ -251,10 +355,10 @@ serve(async (req) => {
 
     const userId = user.id;
 
-    // Get user profile for learning style and credits
+    // Get user profile for learning style, subjects, and credits
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("learning_style, tier, credits_remaining")
+      .select("learning_style, tier, credits_remaining, study_subjects")
       .eq("user_id", userId)
       .single();
 
@@ -276,7 +380,7 @@ serve(async (req) => {
       });
     }
 
-    const { messages, taskType } = await req.json();
+    const { messages, taskType, subject: explicitSubject } = await req.json();
 
     // Deduct 1 credit
     const { error: updateError } = await supabase
@@ -288,28 +392,31 @@ serve(async (req) => {
       console.error("Failed to deduct credit:", updateError);
     }
 
-    // Get the last user message to determine routing
+    // Get the last user message to determine routing and subject
     const lastUserMessage = messages.filter((m: {role: string}) => m.role === "user").pop()?.content || "";
+
+    // Detect or use explicit subject
+    const userSubjects = profile.study_subjects || ['SAT'];
+    const detectedSubject = explicitSubject || detectSubject(lastUserMessage, userSubjects);
+    
+    console.log(`Detected subject: ${detectedSubject} for user with subjects: ${userSubjects.join(', ')}`);
 
     // Get AI model config based on tier, task type, and message complexity
     const modelConfig = getAIModelForTier(profile.tier, taskType, lastUserMessage);
-    const systemPrompt = getStudentSystemPrompt(profile.learning_style, modelConfig.qualityNote);
+    const systemPrompt = getStudentSystemPrompt(profile.learning_style, modelConfig.qualityNote, detectedSubject);
 
     let response: Response;
 
     // Route based on provider from model config
     if (modelConfig.provider === "perplexity") {
-      // Pro and Elite tiers use Perplexity Pro models
       console.log(`Routing to Perplexity with model: ${modelConfig.model} (${modelConfig.displayName})`);
       try {
         response = await callPerplexity(messages, systemPrompt, modelConfig.model);
       } catch (e) {
-        // Fallback to Lovable AI if Perplexity fails
         console.error("Perplexity failed, falling back to Lovable AI:", e);
         response = await callLovableAI(messages, systemPrompt, "google/gemini-2.5-flash");
       }
     } else {
-      // Free and Starter tiers use Lovable AI (Gemini/OpenAI)
       console.log(`Routing to Lovable AI with model: ${modelConfig.model} (${modelConfig.displayName})`);
       response = await callLovableAI(messages, systemPrompt, modelConfig.model);
     }

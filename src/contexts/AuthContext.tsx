@@ -21,6 +21,10 @@ interface Profile {
   questions_reset_at: string | null;
   flashcards_created_today: number;
   flashcards_reset_at: string | null;
+  // Multi-subject fields
+  study_subjects: string[] | null;
+  grade_level: string | null;
+  primary_goal: string | null;
 }
 
 interface AuthContextType {
