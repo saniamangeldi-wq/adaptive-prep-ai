@@ -8,10 +8,13 @@ import {
   ChevronLeft, 
   ChevronRight,
   RotateCcw,
-  Brain
+  Brain,
+  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
+import { useAuth } from "@/contexts/AuthContext";
+import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
+import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 interface Flashcard {
   id: string;
   front: string;
@@ -60,10 +63,19 @@ const mockCards: Flashcard[] = [
 ];
 
 export default function Flashcards() {
+  const { profile } = useAuth();
   const [selectedDeck, setSelectedDeck] = useState<FlashcardDeck | null>(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
+  // Calculate flashcard limits
+  const tierLimits = getTierLimits(profile?.tier);
+  const isTrialUser = profile?.is_trial && profile?.trial_ends_at;
+  const dailyLimit = isTrialUser ? TRIAL_LIMITS.flashcardsPerDay : tierLimits.flashcardsPerDay;
+  const usedToday = profile?.flashcards_created_today || 0;
+  const isUnlimited = dailyLimit === -1;
+  const remaining = isUnlimited ? Infinity : Math.max(0, dailyLimit - usedToday);
+  const hasReachedLimit = !isUnlimited && remaining <= 0;
   if (selectedDeck) {
     const currentCard = mockCards[currentCardIndex];
     const progress = ((currentCardIndex + 1) / mockCards.length) * 100;
@@ -177,17 +189,32 @@ export default function Flashcards() {
               Review key concepts with smart flashcards
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
+          <div className="flex items-center gap-3">
+            {/* Flashcard limit indicator */}
+            {!isUnlimited && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 border border-border">
+                <Zap className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">
+                  {remaining}/{dailyLimit}
+                </span>
+                <span className="text-xs text-muted-foreground">today</span>
+              </div>
+            )}
+            <Button variant="outline" disabled={hasReachedLimit}>
               <Plus className="w-4 h-4 mr-2" />
               Create Deck
             </Button>
-            <Button variant="hero">
+            <Button variant="hero" disabled={hasReachedLimit}>
               <Sparkles className="w-4 h-4 mr-2" />
               Generate with AI
             </Button>
           </div>
         </div>
+
+        {/* Upgrade prompt when limit reached */}
+        {hasReachedLimit && (
+          <UpgradePrompt type="feature" featureName="More flashcards" />
+        )}
 
         {/* Decks grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
