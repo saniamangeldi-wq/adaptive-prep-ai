@@ -149,7 +149,8 @@ export default function Flashcards() {
             
             <Button
               variant="ghost"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setCurrentCardIndex(0);
                 setIsFlipped(false);
               }}
