@@ -1,13 +1,10 @@
 import { Link } from "react-router-dom";
-import { GraduationCap, Twitter, Github, Linkedin } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 
 const footerLinks = {
   product: [
     { label: "Features", href: "#features" },
     { label: "Pricing", href: "#pricing" },
-    { label: "For Students", href: "#" },
-    { label: "For Tutors", href: "#tutors" },
-    { label: "For Schools", href: "#schools" },
   ],
   resources: [
     { label: "SAT Tips", href: "#" },
@@ -40,11 +37,6 @@ export function Footer() {
             <p className="text-sm text-muted-foreground mb-4">
               AI-powered SAT preparation that adapts to your learning style and helps you achieve your best score.
             </p>
-            <div className="flex items-center gap-3">
-              <SocialLink icon={Twitter} href="#" />
-              <SocialLink icon={Github} href="#" />
-              <SocialLink icon={Linkedin} href="#" />
-            </div>
           </div>
 
           {/* Links */}
@@ -99,16 +91,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  );
-}
-
-function SocialLink({ icon: Icon, href }: { icon: React.ElementType; href: string }) {
-  return (
-    <a
-      href={href}
-      className="w-9 h-9 rounded-lg bg-secondary/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-    >
-      <Icon className="w-4 h-4" />
-    </a>
   );
 }
