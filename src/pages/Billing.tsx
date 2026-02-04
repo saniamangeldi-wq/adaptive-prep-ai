@@ -1,6 +1,6 @@
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { getTierLimits, getDaysRemaining, TIER_LIMITS, PricingTier } from "@/lib/tier-limits";
+import { getTierLimits, getDaysRemaining, TIER_LIMITS, TRIAL_LIMITS, PricingTier } from "@/lib/tier-limits";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,11 +83,11 @@ export default function Billing() {
                 <p className="text-xl font-bold text-foreground">
                   {profile?.credits_remaining || 0}
                   <span className="text-sm font-normal text-muted-foreground">
-                    /{currentTierLimits.creditsPerDay}
+                    /{isTrialUser ? TRIAL_LIMITS.creditsPerDay : currentTierLimits.creditsPerDay}
                   </span>
                 </p>
                 <Progress 
-                  value={((profile?.credits_remaining || 0) / currentTierLimits.creditsPerDay) * 100} 
+                  value={((profile?.credits_remaining || 0) / (isTrialUser ? TRIAL_LIMITS.creditsPerDay : currentTierLimits.creditsPerDay)) * 100} 
                   className="h-1.5 mt-2" 
                 />
               </div>
