@@ -76,32 +76,22 @@ function getAIModelForTier(tier: string, taskType?: string, message?: string): A
       };
     }
     case "tier_2": {
-      // Pro tier - Perplexity Pro models
+      // Pro tier - Use Lovable AI (Perplexity deprecated sonar-reasoning)
       const needsAdvancedReasoning = message && isComplexReasoning(message);
-      const needsResearchMode = message && needsResearch(message);
-      
-      if (needsResearchMode || taskType === "research") {
-        return {
-          provider: "perplexity",
-          model: "sonar-pro", // Pro search with citations
-          displayName: "Perplexity Pro",
-          qualityNote: "Provide well-researched, factual responses with citations.",
-        };
-      }
       
       if (needsAdvancedReasoning || taskType === 'study_plan') {
         return {
-          provider: "perplexity",
-          model: "sonar-reasoning", // Chain-of-thought reasoning
-          displayName: "Perplexity Reasoning",
+          provider: "openai",
+          model: "google/gemini-2.5-flash", // Good reasoning via Lovable AI
+          displayName: "Gemini Flash",
           qualityNote: "Provide clear explanations with step-by-step reasoning.",
         };
       }
       
       return {
-        provider: "perplexity",
-        model: "sonar-pro",
-        displayName: "Perplexity Pro",
+        provider: "openai",
+        model: "google/gemini-2.5-flash",
+        displayName: "Gemini Flash",
         qualityNote: "Provide clear explanations with good depth and enhanced reasoning.",
       };
     }
