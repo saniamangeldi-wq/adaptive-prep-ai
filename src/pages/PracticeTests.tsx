@@ -11,7 +11,9 @@ import {
   Zap,
   FileText,
   Loader2,
-  Lock
+  Lock,
+  GraduationCap,
+  Timer
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getTierLimits, PricingTier } from "@/lib/tier-limits";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 
+type TestMode = "practice" | "official";
 type TestType = "math" | "reading_writing" | "combined";
 type TestLength = "quick" | "short" | "medium" | "long" | "full";
 type Difficulty = "easy" | "normal" | "hard";
@@ -41,6 +44,7 @@ const difficulties: { id: Difficulty; label: string; description: string }[] = [
 export default function PracticeTests() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [testMode, setTestMode] = useState<TestMode>("official");
   const [testType, setTestType] = useState<TestType>("combined");
   const [length, setLength] = useState<TestLength>("medium");
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
@@ -93,8 +97,12 @@ export default function PracticeTests() {
         return;
       }
 
-      // Navigate to the test-taking page
-      navigate(`/dashboard/tests/${test.id}`, { state: { test } });
+      // Navigate to the appropriate test-taking page based on mode
+      if (testMode === "official") {
+        navigate(`/dashboard/sat-test/${test.id}`, { state: { test } });
+      } else {
+        navigate(`/dashboard/tests/${test.id}`, { state: { test } });
+      }
     } catch (error) {
       console.error("Error starting test:", error);
       toast({
@@ -142,118 +150,197 @@ export default function PracticeTests() {
           </div>
         )}
 
-        {/* Test Type Selection */}
+        {/* Test Mode Selection */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Test Type</h2>
-          <div className="grid sm:grid-cols-3 gap-3">
-            <TestTypeCard
-              icon={Calculator}
-              title="Math Only"
-              description="Focus on algebra, geometry & data analysis"
-              selected={testType === "math"}
-              onClick={() => setTestType("math")}
-            />
-            <TestTypeCard
-              icon={BookOpen}
-              title="Reading & Writing"
-              description="Comprehension, grammar & vocabulary"
-              selected={testType === "reading_writing"}
-              onClick={() => setTestType("reading_writing")}
-            />
-            <TestTypeCard
-              icon={FileText}
-              title="Full SAT"
-              description="Both sections combined"
-              selected={testType === "combined"}
-              onClick={() => setTestType("combined")}
-            />
+          <h2 className="text-lg font-semibold text-foreground">Test Mode</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <button
+              onClick={() => setTestMode("official")}
+              className={cn(
+                "p-5 rounded-xl border-2 text-left transition-all duration-200 relative overflow-hidden",
+                testMode === "official"
+                  ? "border-primary bg-primary/10"
+                  : "border-border hover:border-primary/50"
+              )}
+            >
+              <div className="absolute top-3 right-3">
+                <span className="px-2 py-1 rounded-full bg-gradient-to-r from-primary to-teal-400 text-[10px] font-bold text-white">
+                  RECOMMENDED
+                </span>
+              </div>
+              <GraduationCap className={cn(
+                "w-8 h-8 mb-3",
+                testMode === "official" ? "text-primary" : "text-muted-foreground"
+              )} />
+              <div className="font-semibold text-foreground">Official SAT Format</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                4 modules with sections, breaks, directions & review screens
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
+                  98 Questions
+                </span>
+                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
+                  ~2h 14m
+                </span>
+                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
+                  Adaptive
+                </span>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => setTestMode("practice")}
+              className={cn(
+                "p-5 rounded-xl border-2 text-left transition-all duration-200",
+                testMode === "practice"
+                  ? "border-primary bg-primary/10"
+                  : "border-border hover:border-primary/50"
+              )}
+            >
+              <Timer className={cn(
+                "w-8 h-8 mb-3",
+                testMode === "practice" ? "text-primary" : "text-muted-foreground"
+              )} />
+              <div className="font-semibold text-foreground">Quick Practice</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Custom question count & difficulty for focused practice
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
+                  10-154 Qs
+                </span>
+                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
+                  Custom Time
+                </span>
+                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
+                  Flexible
+                </span>
+              </div>
+            </button>
           </div>
         </div>
 
-        {/* Test Length */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Test Length</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {testLengths.map((option) => (
-              <button
-                key={option.id}
-                onClick={() => setLength(option.id)}
-                className={cn(
-                  "p-4 rounded-xl border-2 text-center transition-all duration-200",
-                  length === option.id
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
-                )}
-              >
-                <div className="text-xl font-bold text-foreground">{option.questions}</div>
-                <div className="text-xs text-muted-foreground">{option.label}</div>
-                <div className="text-xs text-muted-foreground/70 mt-1">{option.time}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Difficulty */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Difficulty</h2>
-          <div className="grid sm:grid-cols-3 gap-3">
-            {difficulties.map((option) => (
-              <button
-                key={option.id}
-                onClick={() => setDifficulty(option.id)}
-                className={cn(
-                  "p-4 rounded-xl border-2 text-left transition-all duration-200",
-                  difficulty === option.id
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
-                )}
-              >
-                <div className="font-semibold text-foreground">{option.label}</div>
-                <div className="text-xs text-muted-foreground mt-1">{option.description}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Timer Toggle */}
-        <div className="flex items-center justify-between p-4 rounded-xl bg-card border border-border/50">
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-muted-foreground" />
-            <div>
-              <div className="font-medium text-foreground">Timer</div>
-              <div className="text-sm text-muted-foreground">
-                Practice under test conditions
+        {/* Quick Practice Options - Only show if practice mode selected */}
+        {testMode === "practice" && (
+          <>
+            {/* Test Type Selection */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground">Test Type</h2>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <TestTypeCard
+                  icon={Calculator}
+                  title="Math Only"
+                  description="Focus on algebra, geometry & data analysis"
+                  selected={testType === "math"}
+                  onClick={() => setTestType("math")}
+                />
+                <TestTypeCard
+                  icon={BookOpen}
+                  title="Reading & Writing"
+                  description="Comprehension, grammar & vocabulary"
+                  selected={testType === "reading_writing"}
+                  onClick={() => setTestType("reading_writing")}
+                />
+                <TestTypeCard
+                  icon={FileText}
+                  title="Full SAT"
+                  description="Both sections combined"
+                  selected={testType === "combined"}
+                  onClick={() => setTestType("combined")}
+                />
               </div>
             </div>
-          </div>
-          <button
-            onClick={() => setTimerEnabled(!timerEnabled)}
-            className={cn(
-              "relative w-12 h-6 rounded-full transition-colors duration-200",
-              timerEnabled ? "bg-primary" : "bg-secondary"
-            )}
-          >
-            <span
-              className={cn(
-                "absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform duration-200",
-                timerEnabled && "translate-x-6"
-              )}
-            />
-          </button>
-        </div>
+
+            {/* Test Length */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground">Test Length</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {testLengths.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => setLength(option.id)}
+                    className={cn(
+                      "p-4 rounded-xl border-2 text-center transition-all duration-200",
+                      length === option.id
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    <div className="text-xl font-bold text-foreground">{option.questions}</div>
+                    <div className="text-xs text-muted-foreground">{option.label}</div>
+                    <div className="text-xs text-muted-foreground/70 mt-1">{option.time}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Difficulty */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground">Difficulty</h2>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {difficulties.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => setDifficulty(option.id)}
+                    className={cn(
+                      "p-4 rounded-xl border-2 text-left transition-all duration-200",
+                      difficulty === option.id
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    <div className="font-semibold text-foreground">{option.label}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{option.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Timer Toggle */}
+            <div className="flex items-center justify-between p-4 rounded-xl bg-card border border-border/50">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <div className="font-medium text-foreground">Timer</div>
+                  <div className="text-sm text-muted-foreground">
+                    Practice under test conditions
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setTimerEnabled(!timerEnabled)}
+                className={cn(
+                  "relative w-12 h-6 rounded-full transition-colors duration-200",
+                  timerEnabled ? "bg-primary" : "bg-secondary"
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform duration-200",
+                    timerEnabled && "translate-x-6"
+                  )}
+                />
+              </button>
+            </div>
+          </>
+        )}
 
         {/* Start Button */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
           <div>
             <h3 className="font-semibold text-foreground">Ready to start?</h3>
             <p className="text-sm text-muted-foreground">
-              {selectedLength?.questions} questions • {selectedLength?.time} • {difficulty} difficulty
+              {testMode === "official" 
+                ? "98 questions • 4 modules • Official SAT format"
+                : `${selectedLength?.questions} questions • ${selectedLength?.time} • ${difficulty} difficulty`
+              }
             </p>
           </div>
           <Button 
             variant="hero" 
             size="xl"
-            disabled={(profile?.tests_remaining || 0) < (selectedLength?.questions || 0) || isStarting}
+            disabled={(testMode === "practice" && (profile?.tests_remaining || 0) < (selectedLength?.questions || 0)) || isStarting}
             onClick={handleStartTest}
           >
             {isStarting ? (

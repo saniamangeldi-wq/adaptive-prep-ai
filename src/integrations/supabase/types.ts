@@ -154,6 +154,72 @@ export type Database = {
         }
         Relationships: []
       }
+      module_attempts: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          correct_answers: number | null
+          created_at: string
+          flagged_questions: Json
+          id: string
+          module_id: string | null
+          module_number: number
+          score: number | null
+          section: string
+          started_at: string
+          test_attempt_id: string | null
+          time_spent_seconds: number | null
+          total_questions: number | null
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          correct_answers?: number | null
+          created_at?: string
+          flagged_questions?: Json
+          id?: string
+          module_id?: string | null
+          module_number: number
+          score?: number | null
+          section: string
+          started_at?: string
+          test_attempt_id?: string | null
+          time_spent_seconds?: number | null
+          total_questions?: number | null
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          correct_answers?: number | null
+          created_at?: string
+          flagged_questions?: Json
+          id?: string
+          module_id?: string | null
+          module_number?: number
+          score?: number | null
+          section?: string
+          started_at?: string
+          test_attempt_id?: string | null
+          time_spent_seconds?: number | null
+          total_questions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_attempts_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_attempts_test_attempt_id_fkey"
+            columns: ["test_attempt_id"]
+            isOneToOne: false
+            referencedRelation: "test_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -235,12 +301,16 @@ export type Database = {
           created_by: string | null
           description: string | null
           difficulty: Database["public"]["Enums"]["test_difficulty"]
+          directions: string | null
           id: string
           is_official: boolean
           length: Database["public"]["Enums"]["test_length"]
+          module_number: number | null
           questions: Json
+          section: string | null
           test_type: string
           time_limit_minutes: number | null
+          time_limit_seconds: number | null
           title: string
           updated_at: string
         }
@@ -249,12 +319,16 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           difficulty?: Database["public"]["Enums"]["test_difficulty"]
+          directions?: string | null
           id?: string
           is_official?: boolean
           length?: Database["public"]["Enums"]["test_length"]
+          module_number?: number | null
           questions?: Json
+          section?: string | null
           test_type: string
           time_limit_minutes?: number | null
+          time_limit_seconds?: number | null
           title: string
           updated_at?: string
         }
@@ -263,12 +337,16 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           difficulty?: Database["public"]["Enums"]["test_difficulty"]
+          directions?: string | null
           id?: string
           is_official?: boolean
           length?: Database["public"]["Enums"]["test_length"]
+          module_number?: number | null
           questions?: Json
+          section?: string | null
           test_type?: string
           time_limit_minutes?: number | null
+          time_limit_seconds?: number | null
           title?: string
           updated_at?: string
         }
@@ -492,6 +570,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "test_attempts_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "sat_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_modules: {
+        Row: {
+          created_at: string
+          difficulty: string | null
+          directions: string | null
+          id: string
+          module_number: number
+          questions: Json
+          section: string
+          test_id: string | null
+          time_limit_seconds: number
+          total_questions: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string | null
+          directions?: string | null
+          id?: string
+          module_number: number
+          questions?: Json
+          section: string
+          test_id?: string | null
+          time_limit_seconds: number
+          total_questions: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string | null
+          directions?: string | null
+          id?: string
+          module_number?: number
+          questions?: Json
+          section?: string
+          test_id?: string | null
+          time_limit_seconds?: number
+          total_questions?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_modules_test_id_fkey"
             columns: ["test_id"]
             isOneToOne: false
             referencedRelation: "sat_tests"
