@@ -80,23 +80,48 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    // Build the prompt
+    // Build the prompt with strict guidelines to prevent answer leakage
+    const qualityRules = `
+CRITICAL RULES FOR HIGH-QUALITY FLASHCARDS:
+1. NEVER include the answer or any part of the answer in the question
+2. NEVER use questions that are too obvious or give hints to the answer
+3. Questions should test actual knowledge, not just recognition
+4. Use varied question formats: "Describe...", "Explain...", "What concept...", "How does..."
+5. For terms/vocabulary: Put just the TERM on the front, definition on back
+6. For concepts: Ask about the concept WITHOUT naming it in the question
+7. Avoid yes/no questions - require substantive answers
+
+BAD EXAMPLES (DO NOT DO THIS):
+- "What are the four houses at Hogwarts?" (reveals there are houses)
+- "What is the name of the school Harry Potter attends?" (too obvious, context gives it away)
+- "What color is the sky?" (trivial)
+
+GOOD EXAMPLES:
+- "Name all student dormitory groups at the wizarding school" (doesn't reveal the answer)
+- "Where do young witches and wizards receive their magical education in Britain?"
+- "Explain the sorting ceremony and its significance"
+`;
+
     let prompt: string;
     if (sourceType === "custom" && customContent) {
-      prompt = `Create exactly ${cardCount} educational flashcards about "${topic}" using this content:
+      prompt = `Create exactly ${cardCount} high-quality educational flashcards about "${topic}" using this content:
 
 ${customContent}
 
-Each flashcard should have:
-- A clear, specific question or term on the front
-- A detailed, accurate answer or definition on the back`;
-    } else {
-      prompt = `Create exactly ${cardCount} SAT-level educational flashcards about "${topic}".
+${qualityRules}
 
-Each flashcard should have:
-- A clear, specific question or term on the front  
-- A detailed, accurate answer or definition on the back
-- Content appropriate for SAT preparation`;
+Each flashcard must:
+- Have a challenging question that doesn't reveal the answer
+- Have a detailed, accurate answer on the back`;
+    } else {
+      prompt = `Create exactly ${cardCount} high-quality educational flashcards about "${topic}".
+
+${qualityRules}
+
+Each flashcard must:
+- Have a challenging question that doesn't reveal the answer
+- Have a detailed, accurate answer on the back
+- Be educational and test real knowledge`;
     }
 
     // Call Lovable AI with tool calling for structured output
@@ -111,7 +136,18 @@ Each flashcard should have:
         messages: [
           {
             role: "system",
-            content: "You are an expert educator creating high-quality flashcards. Generate flashcards that are clear, accurate, and educational."
+            content: `You are an expert educator creating high-quality flashcards. 
+
+CRITICAL: Never create questions that give away or hint at the answer. The question should test knowledge, not recognition. 
+
+For example:
+- BAD: "What are the four houses at Hogwarts?" (reveals there are four houses)
+- GOOD: "Name the student dormitory groups at the wizarding school"
+
+- BAD: "What is the capital of France?" (if topic is Paris)
+- GOOD: "Which European city serves as the political center of France?"
+
+Always ensure the question requires the learner to recall information from memory, not guess from context clues in the question itself.`
           },
           {
             role: "user",
