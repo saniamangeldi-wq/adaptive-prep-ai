@@ -10,13 +10,19 @@ import {
   Lightbulb,
   Clock,
   ArrowUpRight,
-  Trash2
+  Trash2,
+  Volume2,
+  VolumeX,
+  Loader2,
+  Crown
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { useAIChat, type Message } from "@/hooks/useAIChat";
 import ReactMarkdown from "react-markdown";
+import { VoiceChat } from "./VoiceChat";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 const suggestedPrompts = [
   "Create a 2-week SAT study plan for me",
@@ -51,6 +57,11 @@ export function StudentAICoach() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages } = useAIChat();
+  const isTier3 = profile?.tier === "tier_3";
+
+  const handleVoiceTranscript = (text: string) => {
+    setInput(text);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -151,7 +162,7 @@ export function StudentAICoach() {
         ) : (
           <>
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble key={message.id} message={message} isTier3={isTier3} />
             ))}
             {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
               <LoadingBubble />
@@ -193,13 +204,20 @@ export function StudentAICoach() {
 
       {/* Input area */}
       <div className="flex gap-2">
+        {/* Voice chat for Tier 3 users */}
+        {isTier3 && (
+          <VoiceChat 
+            onTranscript={handleVoiceTranscript}
+            isDisabled={noCredits || isLoading}
+          />
+        )}
         <div className="flex-1 relative">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder={noCredits ? "No credits remaining..." : "Ask me anything about SAT prep..."}
+            placeholder={noCredits ? "No credits remaining..." : isTier3 ? "Type or use voice chat..." : "Ask me anything about SAT prep..."}
             disabled={noCredits || isLoading}
             className="w-full h-12 px-4 rounded-xl bg-card border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           />
@@ -218,7 +236,17 @@ export function StudentAICoach() {
   );
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({ message, isTier3 }: { message: Message; isTier3: boolean }) {
+  const { speak, stop, isPlaying, isLoading } = useTextToSpeech();
+
+  const handleTTS = () => {
+    if (isPlaying) {
+      stop();
+    } else {
+      speak(message.content);
+    }
+  };
+
   return (
     <div className={cn(
       "flex gap-3",
@@ -243,12 +271,37 @@ function MessageBubble({ message }: { message: Message }) {
           : "bg-primary text-primary-foreground rounded-tr-sm"
       )}>
         {message.role === "assistant" ? (
-          <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown>
-              {/* Strip citation brackets like [1][2][3] from AI responses */}
-              {message.content.replace(/\[\d+\]/g, '')}
-            </ReactMarkdown>
-          </div>
+          <>
+            <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown>
+                {/* Strip citation brackets like [1][2][3] from AI responses */}
+                {message.content.replace(/\[\d+\]/g, '')}
+              </ReactMarkdown>
+            </div>
+            {/* TTS button for Tier 3 users */}
+            {isTier3 && message.content && (
+              <div className="mt-2 pt-2 border-t border-border/30 flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleTTS}
+                  disabled={isLoading}
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                  title={isPlaying ? "Stop reading" : "Read aloud"}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : isPlaying ? (
+                    <VolumeX className="w-3 h-3" />
+                  ) : (
+                    <Volume2 className="w-3 h-3" />
+                  )}
+                  <span>{isPlaying ? "Stop" : "Listen"}</span>
+                  <Crown className="w-3 h-3 text-warning" />
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
         )}
