@@ -25,11 +25,14 @@ const suggestedPrompts = [
   "Help me understand comma rules in grammar",
 ];
 
-// Get daily credit limit based on tier
-const getTierCredits = (tier: string | undefined) => {
+// Get daily credit limit based on tier and trial status
+const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
+  if (isTrial) return 100; // Trial users get 100 credits/day
   switch (tier) {
     case "tier_3": return 300;
     case "tier_2": return 150;
+    case "tier_1": return 50;
+    case "tier_0": return 20;
     default: return 50;
   }
 };
@@ -70,7 +73,7 @@ export function StudentAICoach() {
     setInput(prompt);
   };
 
-  const dailyLimit = getTierCredits(profile?.tier);
+  const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
   const creditsRemaining = profile?.credits_remaining || 0;
   const creditsLow = creditsRemaining < 10 && creditsRemaining > 0;
   const noCredits = creditsRemaining <= 0;
@@ -241,7 +244,10 @@ function MessageBubble({ message }: { message: Message }) {
       )}>
         {message.role === "assistant" ? (
           <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown>{message.content}</ReactMarkdown>
+            <ReactMarkdown>
+              {/* Strip citation brackets like [1][2][3] from AI responses */}
+              {message.content.replace(/\[\d+\]/g, '')}
+            </ReactMarkdown>
           </div>
         ) : (
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
