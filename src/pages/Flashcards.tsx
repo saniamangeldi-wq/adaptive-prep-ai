@@ -49,6 +49,9 @@ export default function Flashcards() {
   const usedToday = profile?.flashcards_created_today || 0;
   const isUnlimited = dailyLimit === -1;
   const remaining = isUnlimited ? Infinity : Math.max(0, dailyLimit - usedToday);
+  
+  // AI flashcard generation requires Tier 2+
+  const canUseAIGeneration = profile?.tier === "tier_2" || profile?.tier === "tier_3" || isTrialUser;
   const hasReachedLimit = !isUnlimited && remaining <= 0;
 
   const handleCreateDeck = (deck: FlashcardDeck) => {
@@ -223,11 +226,13 @@ export default function Flashcards() {
             </Button>
             <Button 
               variant="hero" 
-              disabled={hasReachedLimit}
+              disabled={!canUseAIGeneration}
               onClick={() => setShowAIDialog(true)}
+              title={!canUseAIGeneration ? "AI generation requires Pro plan or higher" : undefined}
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Generate with AI
+              {!canUseAIGeneration && <Badge variant="secondary" className="ml-2 text-xs">Pro+</Badge>}
             </Button>
           </div>
         </div>
@@ -349,9 +354,10 @@ export default function Flashcards() {
                   <Plus className="w-4 h-4 mr-2" />
                   Create Deck
                 </Button>
-                <Button variant="hero" onClick={() => setShowAIDialog(true)}>
+                <Button variant="hero" onClick={() => setShowAIDialog(true)} disabled={!canUseAIGeneration}>
                   <Sparkles className="w-4 h-4 mr-2" />
                   Generate with AI
+                  {!canUseAIGeneration && <Badge variant="secondary" className="ml-2 text-xs">Pro+</Badge>}
                 </Button>
               </div>
             )}
