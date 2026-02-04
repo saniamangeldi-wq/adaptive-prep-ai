@@ -23,13 +23,7 @@ import { useAIChat, type Message } from "@/hooks/useAIChat";
 import ReactMarkdown from "react-markdown";
 import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
-
-const suggestedPrompts = [
-  "Create a 2-week SAT study plan for me",
-  "Explain how to solve quadratic equations",
-  "What are the best strategies for reading comprehension?",
-  "Help me understand comma rules in grammar",
-];
+import { AISuggestions } from "./AISuggestions";
 
 // Get daily credit limit based on tier and trial status
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
@@ -58,6 +52,11 @@ export function StudentAICoach() {
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages } = useAIChat();
   const isTier3 = profile?.tier === "tier_3";
+
+  // Determine the primary subject for suggestions
+  const primarySubject = profile?.primary_goal === "homework" 
+    ? "General" 
+    : profile?.primary_goal || "SAT";
 
   const handleVoiceTranscript = (text: string) => {
     setInput(text);
@@ -145,19 +144,13 @@ export function StudentAICoach() {
               How can I help you today?
             </h2>
             <p className="text-muted-foreground mb-6 max-w-md">
-              I'm your AI study coach. Ask me about SAT concepts, study strategies, or help with practice problems.
+              I'm your AI study coach. Ask me about any subject, study strategies, or help with practice problems.
             </p>
-            <div className="grid sm:grid-cols-2 gap-2 w-full max-w-lg">
-              {suggestedPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  onClick={() => handleSuggestedPrompt(prompt)}
-                  className="p-3 text-sm text-left rounded-lg bg-secondary/50 border border-border/50 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
+            <AISuggestions 
+              subject={primarySubject}
+              onSelectSuggestion={handleSuggestedPrompt}
+              className="w-full max-w-lg"
+            />
           </div>
         ) : (
           <>

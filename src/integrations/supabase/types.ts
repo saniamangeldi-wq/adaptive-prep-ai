@@ -52,8 +52,12 @@ export type Database = {
           created_at: string
           credits_used: number
           id: string
+          is_archived: boolean | null
+          is_pinned: boolean | null
           messages: Json
           related_test_id: string | null
+          space_id: string | null
+          title: string | null
           updated_at: string
           user_id: string
         }
@@ -62,8 +66,12 @@ export type Database = {
           created_at?: string
           credits_used?: number
           id?: string
+          is_archived?: boolean | null
+          is_pinned?: boolean | null
           messages?: Json
           related_test_id?: string | null
+          space_id?: string | null
+          title?: string | null
           updated_at?: string
           user_id: string
         }
@@ -72,8 +80,12 @@ export type Database = {
           created_at?: string
           credits_used?: number
           id?: string
+          is_archived?: boolean | null
+          is_pinned?: boolean | null
           messages?: Json
           related_test_id?: string | null
+          space_id?: string | null
+          title?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -85,43 +97,154 @@ export type Database = {
             referencedRelation: "sat_tests"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_conversations_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_spaces"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      ai_suggestions: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          subject: string
+          suggestion_text: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          subject: string
+          suggestion_text: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          subject?: string
+          suggestion_text?: string
+        }
+        Relationships: []
+      }
+      conversation_spaces: {
+        Row: {
+          color: string | null
+          conversation_count: number | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          conversation_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          conversation_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       flashcard_decks: {
         Row: {
+          card_count: number | null
           cards: Json
           created_at: string
           description: string | null
           id: string
           is_public: boolean
+          last_studied_at: string | null
           source: string | null
+          subject: string | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          card_count?: number | null
           cards?: Json
           created_at?: string
           description?: string | null
           id?: string
           is_public?: boolean
+          last_studied_at?: string | null
           source?: string | null
+          subject?: string | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          card_count?: number | null
           cards?: Json
           created_at?: string
           description?: string | null
           id?: string
           is_public?: boolean
+          last_studied_at?: string | null
           source?: string | null
+          subject?: string | null
           title?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      flashcard_reviews: {
+        Row: {
+          card_index: number
+          deck_id: string
+          difficulty: string | null
+          id: string
+          reviewed_at: string | null
+          user_id: string
+        }
+        Insert: {
+          card_index: number
+          deck_id: string
+          difficulty?: string | null
+          id?: string
+          reviewed_at?: string | null
+          user_id: string
+        }
+        Update: {
+          card_index?: number
+          deck_id?: string
+          difficulty?: string | null
+          id?: string
+          reviewed_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_reviews_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_decks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       learning_style_responses: {
         Row: {
