@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,8 @@ import {
   Zap,
   BookOpen,
   Calculator,
-  FileText
+  FileText,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,17 +23,29 @@ import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 import { CreateDeckDialog } from "@/components/flashcards/CreateDeckDialog";
 import { GenerateWithAIDialog } from "@/components/flashcards/GenerateWithAIDialog";
 import { premadeDecks, FlashcardDeck, Flashcard } from "@/lib/flashcard-data";
+import { useFlashcardDecks } from "@/hooks/useFlashcardDecks";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Flashcards() {
   const { profile } = useAuth();
+  const { decks: userDecks, loading: decksLoading, createDeck, deleteDeck } = useFlashcardDecks();
   const [selectedDeck, setSelectedDeck] = useState<FlashcardDeck | null>(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showAIDialog, setShowAIDialog] = useState(false);
-  const [userDecks, setUserDecks] = useState<FlashcardDeck[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<FlashcardDeck["category"] | "all">("all");
+  const [deckToDelete, setDeckToDelete] = useState<FlashcardDeck | null>(null);
 
   // Combine premade and user decks
   const allDecks = [...userDecks, ...premadeDecks];
@@ -54,8 +67,18 @@ export default function Flashcards() {
   const canUseAIGeneration = profile?.tier === "tier_2" || profile?.tier === "tier_3" || isTrialUser;
   const hasReachedLimit = !isUnlimited && remaining <= 0;
 
-  const handleCreateDeck = (deck: FlashcardDeck) => {
-    setUserDecks(prev => [deck, ...prev]);
+  const handleCreateDeck = async (deck: FlashcardDeck) => {
+    // Only save non-premade decks to database
+    if (deck.source !== "premade") {
+      const source = deck.source === "ai_generated" ? "ai_generated" : "manual";
+      await createDeck(deck.title, deck.description, deck.cards, deck.category, source);
+    }
+  };
+
+  const handleDeleteDeck = async () => {
+    if (!deckToDelete) return;
+    await deleteDeck(deckToDelete.id);
+    setDeckToDelete(null);
   };
 
   const getCategoryIcon = (category: FlashcardDeck["category"]) => {
@@ -290,52 +313,83 @@ export default function Flashcards() {
 
         {/* Decks grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDecks.map((deck) => (
-            <button
-              key={deck.id}
-              onClick={() => setSelectedDeck(deck)}
-              className="p-6 rounded-xl bg-secondary/50 border border-border hover:border-primary/50 text-left transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center",
-                  getCategoryColor(deck.category)
-                )}>
-                  {deck.source === "ai_generated" ? (
-                    <Brain className="w-5 h-5" />
-                  ) : (
-                    getCategoryIcon(deck.category)
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  {deck.source === "ai_generated" && (
-                    <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border-0">
-                      AI Generated
-                    </Badge>
-                  )}
-                  {deck.source === "manual" && (
-                    <Badge variant="secondary" className="text-xs bg-accent/20 text-accent border-0">
-                      Custom
-                    </Badge>
-                  )}
-                </div>
+          {decksLoading ? (
+            // Loading skeleton
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="p-6 rounded-xl bg-secondary/50 border border-border animate-pulse">
+                <div className="w-10 h-10 rounded-lg bg-secondary mb-3" />
+                <div className="h-5 bg-secondary rounded w-3/4 mb-2" />
+                <div className="h-4 bg-secondary rounded w-full mb-3" />
+                <div className="h-3 bg-secondary rounded w-1/4" />
               </div>
-              <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                {deck.title}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                {deck.description}
-              </p>
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  {deck.cards.length} cards
-                </p>
-                <Badge variant="outline" className="text-xs capitalize">
-                  {deck.category}
-                </Badge>
+            ))
+          ) : (
+            filteredDecks.map((deck) => (
+              <div
+                key={deck.id}
+                className="p-6 rounded-xl bg-secondary/50 border border-border hover:border-primary/50 text-left transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group relative"
+              >
+                <button
+                  onClick={() => setSelectedDeck(deck)}
+                  className="w-full text-left"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center",
+                      getCategoryColor(deck.category)
+                    )}>
+                      {deck.source === "ai_generated" ? (
+                        <Brain className="w-5 h-5" />
+                      ) : (
+                        getCategoryIcon(deck.category)
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      {deck.source === "ai_generated" && (
+                        <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border-0">
+                          AI Generated
+                        </Badge>
+                      )}
+                      {deck.source === "manual" && (
+                        <Badge variant="secondary" className="text-xs bg-accent/20 text-accent border-0">
+                          Custom
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+                    {deck.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                    {deck.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      {deck.cards.length} cards
+                    </p>
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {deck.category}
+                    </Badge>
+                  </div>
+                </button>
+                
+                {/* Delete button for user-created decks */}
+                {deck.source !== "premade" && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeckToDelete(deck);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
-            </button>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Empty state */}
@@ -376,6 +430,24 @@ export default function Flashcards() {
         onOpenChange={setShowAIDialog}
         onCreateDeck={handleCreateDeck}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deckToDelete} onOpenChange={() => setDeckToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Deck</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deckToDelete?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteDeck} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
