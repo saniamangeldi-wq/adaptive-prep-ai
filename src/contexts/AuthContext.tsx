@@ -128,40 +128,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return inserted as Profile;
   };
 
-  const validateSession = async (currentSession: Session | null) => {
-    if (!currentSession) return true;
-    const { error } = await supabase.auth.getUser();
-    return !error;
-  };
-
-  const refreshProfile = async () => {
-    if (user) {
-      const profileData = await fetchProfile(user.id);
-      setProfile(profileData);
-    }
-  };
-
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
-        // If an account was deleted but a local session still exists, validate and hard-signout.
-        const isValid = await validateSession(currentSession);
-        if (!isValid) {
-          await hardSignOut();
-          setLoading(false);
-          return;
-        }
-
-        // IMPORTANT: do not block the UI on profile fetch/repair.
-        // Auth loading should represent "do we know if the user is logged in?".
-        // Profile can hydrate in the background.
+        // Update state immediately - don't block on validation
         setSession(currentSession);
         const nextUser = currentSession?.user ?? null;
         setUser(nextUser);
         setLoading(false);
 
         if (nextUser) {
+          // Hydrate profile in background
           setTimeout(() => {
             (async () => {
               const profileData = await ensureProfileExists(nextUser);
@@ -174,35 +152,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Then check for existing session
+    // Check for existing session - don't block on getUser validation
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      (async () => {
-        const isValid = await validateSession(currentSession);
-        if (!isValid) {
-          await hardSignOut();
-          setLoading(false);
-          return;
-        }
+      setSession(currentSession);
+      const nextUser = currentSession?.user ?? null;
+      setUser(nextUser);
+      setLoading(false);
 
-        setSession(currentSession);
-        const nextUser = currentSession?.user ?? null;
-        setUser(nextUser);
-        setLoading(false);
-
-        if (nextUser) {
-          // Hydrate profile in background so routes don't hang on a slow DB call.
-          const profileData = await ensureProfileExists(nextUser);
-          setProfile(profileData);
-        } else {
-          setProfile(null);
-        }
-      })();
+      if (nextUser) {
+        // Hydrate profile in background
+        ensureProfileExists(nextUser).then(setProfile);
+      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  const refreshProfile = async () => {
+    if (user) {
+      const profileData = await fetchProfile(user.id);
+      setProfile(profileData);
+    }
+  };
 
   const signOut = async () => {
     await hardSignOut();
