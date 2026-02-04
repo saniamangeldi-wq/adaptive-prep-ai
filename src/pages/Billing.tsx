@@ -248,7 +248,7 @@ export default function Billing() {
               </div>
               <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
                 <p className="text-xs text-yellow-400 mb-1">Elite</p>
-                <p className="font-medium text-sm text-foreground">Perplexity All</p>
+                <p className="font-medium text-sm text-foreground">Perplexity + All</p>
                 <p className="text-xs text-muted-foreground mt-1">Deep Research + Reasoning</p>
               </div>
             </div>
