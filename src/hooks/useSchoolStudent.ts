@@ -3,10 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function useSchoolStudent() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [isSchoolStudent, setIsSchoolStudent] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [schoolId, setSchoolId] = useState<string | null>(null);
+  
+  // Elite users (Tier 3) have access regardless of school status
+  const isElite = profile?.tier === "tier_3";
 
   useEffect(() => {
     async function checkSchoolMembership() {
@@ -45,5 +48,8 @@ export function useSchoolStudent() {
     checkSchoolMembership();
   }, [user]);
 
-  return { isSchoolStudent, loading, schoolId };
+  // User has access if they're a school student OR Elite tier
+  const hasUniversityMatchAccess = isSchoolStudent || isElite;
+  
+  return { isSchoolStudent, loading, schoolId, isElite, hasUniversityMatchAccess };
 }

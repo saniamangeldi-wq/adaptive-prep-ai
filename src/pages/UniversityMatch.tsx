@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react";
 type Step = "portfolio" | "preferences" | "matches";
 
 export default function UniversityMatch() {
-  const { isSchoolStudent, loading: schoolLoading } = useSchoolStudent();
+  const { isSchoolStudent, loading: schoolLoading, hasUniversityMatchAccess, isElite } = useSchoolStudent();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<Step>("portfolio");
   const [showLockedModal, setShowLockedModal] = useState(false);
@@ -22,7 +22,7 @@ export default function UniversityMatch() {
   // Check existing progress
   useEffect(() => {
     async function checkProgress() {
-      if (!user || !isSchoolStudent) {
+      if (!user || !hasUniversityMatchAccess) {
         setLoadingProgress(false);
         return;
       }
@@ -67,18 +67,18 @@ export default function UniversityMatch() {
       }
     }
 
-    if (!schoolLoading && isSchoolStudent) {
+    if (!schoolLoading && hasUniversityMatchAccess) {
       checkProgress();
     } else if (!schoolLoading) {
       setLoadingProgress(false);
     }
-  }, [user, isSchoolStudent, schoolLoading]);
+  }, [user, hasUniversityMatchAccess, schoolLoading]);
 
   useEffect(() => {
-    if (!schoolLoading && isSchoolStudent === false) {
+    if (!schoolLoading && !hasUniversityMatchAccess) {
       setShowLockedModal(true);
     }
-  }, [isSchoolStudent, schoolLoading]);
+  }, [hasUniversityMatchAccess, schoolLoading]);
 
   const getProgress = () => {
     switch (currentStep) {
@@ -112,7 +112,7 @@ export default function UniversityMatch() {
         onOpenChange={setShowLockedModal} 
       />
 
-      {isSchoolStudent && (
+      {hasUniversityMatchAccess && (
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Progress Header */}
           <div className="space-y-4">
