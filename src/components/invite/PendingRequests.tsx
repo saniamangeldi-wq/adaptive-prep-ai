@@ -16,9 +16,10 @@
  interface PendingRequestsProps {
    targetType: "tutor" | "school";
    targetId: string;
+  onApprove?: () => void;
  }
  
- export function PendingRequests({ targetType, targetId }: PendingRequestsProps) {
+export function PendingRequests({ targetType, targetId, onApprove }: PendingRequestsProps) {
    const [requests, setRequests] = useState<JoinRequest[]>([]);
    const [loading, setLoading] = useState(true);
  
@@ -70,6 +71,7 @@
  
        toast.success("Student approved!");
        fetchRequests();
+      onApprove?.();
      } catch (error: any) {
        console.error("Error approving:", error);
        toast.error(error.message || "Failed to approve");
