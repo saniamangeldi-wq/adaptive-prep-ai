@@ -341,7 +341,7 @@ export default function Billing() {
            </CardHeader>
            <CardContent className="space-y-4">
              <p className="text-sm text-muted-foreground leading-relaxed">
-               Get <span className="text-foreground font-medium">personalized university recommendations</span> based on your academic profile, test scores, and preferences. Our AI analyzes your portfolio to match you with the best-fit universities in Kazakhstan, USA, UK, Canada, and Europe.
+              Get <span className="text-foreground font-medium">personalized university recommendations</span> based on your academic profile, test scores, and preferences. Our AI analyzes your portfolio to match you with the best-fit universities across the globe.
              </p>
              
              <div className="grid gap-3 sm:grid-cols-3">
@@ -360,7 +360,7 @@ export default function Billing() {
                  </div>
                  <div>
                    <p className="text-sm font-medium text-foreground">Global Universities</p>
-                   <p className="text-xs text-muted-foreground mt-0.5">KZ, USA, UK, Canada & Europe</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Universities worldwide</p>
                  </div>
                </div>
                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
