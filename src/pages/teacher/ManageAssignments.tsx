@@ -36,6 +36,9 @@ export default function ManageAssignments() {
   const [dueDate, setDueDate] = useState("");
   const [totalPoints, setTotalPoints] = useState("100");
   const [subject, setSubject] = useState("");
+  const [assignmentType, setAssignmentType] = useState("Homework");
+  const [gradeLevel, setGradeLevel] = useState("all");
+  const [status, setStatus] = useState("published");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -96,13 +99,14 @@ export default function ManageAssignments() {
           title,
           description: description || null,
           due_date: dueDate || null,
-          total_points: parseInt(totalPoints) || 100,
-          subject: subject || null,
-          created_by: user!.id,
-          school_id: affiliation.type === "school" ? affiliation.id : null,
-          tutor_id: affiliation.type === "tutor" ? affiliation.id : null,
-          status: "published",
-        })
+        total_points: parseInt(totalPoints) || 100,
+        subject: subject || null,
+        grade_level: gradeLevel !== "all" ? gradeLevel : null,
+        created_by: user!.id,
+        school_id: affiliation.type === "school" ? affiliation.id : null,
+        tutor_id: affiliation.type === "tutor" ? affiliation.id : null,
+        status,
+      })
         .select()
         .single();
 
@@ -155,6 +159,9 @@ export default function ManageAssignments() {
     setDueDate("");
     setTotalPoints("100");
     setSubject("");
+    setAssignmentType("Homework");
+    setGradeLevel("all");
+    setStatus("published");
   }
 
   if (loading) {
@@ -186,13 +193,15 @@ export default function ManageAssignments() {
                 Create Assignment
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Assignment</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Title</label>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Title <span className="text-destructive">*</span>
+                  </label>
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
@@ -200,12 +209,14 @@ export default function ManageAssignments() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Description / Instructions <span className="text-destructive">*</span>
+                  </label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Instructions for students..."
-                    rows={3}
+                    placeholder="Detailed instructions for students..."
+                    rows={4}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -213,16 +224,48 @@ export default function ManageAssignments() {
                     <label className="text-sm font-medium text-foreground mb-2 block">Subject</label>
                     <Select value={subject} onValueChange={setSubject}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select" />
+                        <SelectValue placeholder="Select subject" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Math">Math</SelectItem>
+                        <SelectItem value="Reading & Writing">Reading & Writing</SelectItem>
                         <SelectItem value="English">English</SelectItem>
                         <SelectItem value="Science">Science</SelectItem>
                         <SelectItem value="History">History</SelectItem>
-                        <SelectItem value="SAT">SAT</SelectItem>
+                        <SelectItem value="SAT">SAT Prep</SelectItem>
+                        <SelectItem value="ACT">ACT Prep</SelectItem>
+                        <SelectItem value="Computer Science">Computer Science</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Type</label>
+                    <Select value={assignmentType} onValueChange={setAssignmentType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Homework">Homework</SelectItem>
+                        <SelectItem value="Quiz">Quiz</SelectItem>
+                        <SelectItem value="Exam">Exam</SelectItem>
+                        <SelectItem value="Practice Test">Practice Test</SelectItem>
+                        <SelectItem value="Project">Project</SelectItem>
+                        <SelectItem value="Essay">Essay</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                      Due Date <span className="text-destructive">*</span>
+                    </label>
+                    <Input
+                      type="datetime-local"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                    />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground mb-2 block">Points</label>
@@ -231,25 +274,59 @@ export default function ManageAssignments() {
                       value={totalPoints}
                       onChange={(e) => setTotalPoints(e.target.value)}
                       min="1"
+                      max="1000"
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Due Date</label>
-                  <Input
-                    type="datetime-local"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Grade Level</label>
+                    <Select value={gradeLevel} onValueChange={setGradeLevel}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All grades" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Grades</SelectItem>
+                        <SelectItem value="9th">9th Grade</SelectItem>
+                        <SelectItem value="10th">10th Grade</SelectItem>
+                        <SelectItem value="11th">11th Grade</SelectItem>
+                        <SelectItem value="12th">12th Grade</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Status</label>
+                    <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="published">Published (Visible to students)</SelectItem>
+                        <SelectItem value="draft">Draft (Save for later)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <Button
-                  variant="hero"
-                  className="w-full"
-                  onClick={handleCreate}
-                  disabled={creating || !title.trim()}
-                >
-                  {creating ? "Creating..." : "Create Assignment"}
-                </Button>
+                
+                <div className="flex gap-3 pt-4 border-t border-border">
+                  <Button
+                    variant="hero"
+                    className="flex-1"
+                    onClick={handleCreate}
+                    disabled={creating || !title.trim() || !dueDate}
+                  >
+                    {creating ? "Creating..." : status === "draft" ? "Save as Draft" : "Create Assignment"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setCreateOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>

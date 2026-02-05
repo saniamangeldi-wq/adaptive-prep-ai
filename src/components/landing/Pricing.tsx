@@ -36,51 +36,64 @@ const studentPlans = [{
 const tutorPlans = [{
   name: "Solo Tutor",
   tier: "Tier 1",
-  price: 29,
+  price: 59,
   description: "For individual tutors with a few students",
   features: ["Up to 5 students", "Student progress tracking", "AI Coach for all students", "Basic analytics dashboard", "Email support", "Custom test assignments"],
   popular: false
 }, {
-  name: "Pro Tutor",
+  name: "Professional",
   tier: "Tier 2",
-  price: 59,
+  price: 169,
   description: "For growing tutoring practices",
-  features: ["Up to 15 students", "Advanced progress analytics", "Enhanced AI for students", "Parent progress reports", "Priority support", "Custom branding"],
+  features: ["Up to 15 students", "Advanced progress analytics", "Enhanced AI for students", "Parent progress reports", "Priority support", "Custom branding", "White-label reports"],
   popular: true
 }, {
   name: "Tutor Business",
   tier: "Tier 3",
-  price: 99,
+  price: 449,
   description: "For established tutoring businesses",
-  features: ["Up to 30 students", "Premium AI for all students", "White-label reports", "API access", "Dedicated account manager", "Custom integrations"],
+  features: ["Up to 40 students", "Premium AI for all students", "White-label reports", "API access", "Multi-tutor management", "Dedicated account manager", "Custom integrations"],
   popular: false
 }];
 const schoolPlans = [{
-  name: "Basic",
+  name: "Starter",
   tier: "Tier 1",
-  price: 170,
+  price: 249,
   priceNote: "per 25 students",
   teacherPrice: 30,
+  addOnPrice: 10,
   description: "Essential tools for school SAT prep",
   features: ["Basic AI assistance for students", "Teacher dashboard", "Class progress tracking", "Standard analytics", "Email support", "Bulk student onboarding"],
   popular: false
 }, {
-  name: "Enhanced",
+  name: "Professional",
   tier: "Tier 2",
-  price: 200,
-  priceNote: "per 25 students",
+  price: 499,
+  priceNote: "per 50 students",
   teacherPrice: 35,
+  addOnPrice: 9,
   description: "Advanced features for better outcomes",
   features: ["Enhanced AI with reasoning", "Advanced analytics & reports", "Parent portal access", "Custom test creation", "Priority support", "Department organization"],
   popular: true
 }, {
   name: "Premium",
   tier: "Tier 3",
-  price: 300,
-  priceNote: "per 25 students",
+  price: 999,
+  priceNote: "per 100 students",
   teacherPrice: 40,
+  addOnPrice: 8,
   description: "Full-featured institutional solution",
   features: ["Premium AI with voice chat", "University Match tool access", "Custom branding", "API & LMS integration", "Dedicated success manager", "On-site training available"],
+  popular: false
+}, {
+  name: "Enterprise",
+  tier: "Tier 4",
+  price: 1999,
+  priceNote: "per 200 students",
+  teacherPrice: 40,
+  addOnPrice: 7,
+  description: "For large institutions",
+  features: ["Everything in Premium", "Multi-campus support", "Custom integrations", "Dedicated support team", "13+ teachers included", "Volume discounts available"],
   popular: false
 }];
 const roleConfig = {
@@ -138,7 +151,10 @@ export function Pricing() {
         </div>
 
         {/* Pricing cards */}
-        <div className={cn("grid gap-8 max-w-6xl mx-auto", selectedRole === "student" ? "md:grid-cols-4" : "md:grid-cols-3")}>
+        <div className={cn("grid gap-8 max-w-6xl mx-auto", 
+          selectedRole === "student" ? "md:grid-cols-4" : 
+          selectedRole === "school" ? "md:grid-cols-4" : "md:grid-cols-3"
+        )}>
           {currentPlans.map(plan => <PricingCard key={`${selectedRole}-${plan.name}`} {...plan} role={selectedRole} />)}
         </div>
 
@@ -151,13 +167,13 @@ export function Pricing() {
               </Link>
             </p>}
           {selectedRole === "tutor" && <p className="text-muted-foreground">
-              📚 Need more than 30 students?{" "}
+              🚀 Need more than 40 students?{" "}
               <Link to="/signup" className="text-primary hover:underline font-medium">
-                Contact us for custom pricing
+                Contact us for custom enterprise pricing
               </Link>
             </p>}
           {selectedRole === "school" && <p className="text-muted-foreground">
-              🏫 Prices shown are base rates. Teacher seats are ${schoolPlans[0].teacherPrice}-${schoolPlans[2].teacherPrice}/month each.{" "}
+              🏫 Base price includes teachers. Additional teachers: $30-40/month.{" "}
               <Link to="/signup" className="text-primary hover:underline font-medium">
                 Request a quote
               </Link>
@@ -172,6 +188,7 @@ function PricingCard({
   price,
   priceNote,
   teacherPrice,
+  addOnPrice,
   description,
   features,
   popular,
@@ -182,6 +199,7 @@ function PricingCard({
   price: number;
   priceNote?: string;
   teacherPrice?: number;
+  addOnPrice?: number;
   description: string;
   features: string[];
   popular: boolean;
@@ -212,6 +230,7 @@ function PricingCard({
         </div>
         {priceNote && <p className="text-xs text-muted-foreground mt-1">{priceNote}</p>}
         {teacherPrice && <p className="text-xs text-muted-foreground mt-1">+ ${teacherPrice}/teacher/month</p>}
+        {addOnPrice && role === "school" && <p className="text-xs text-muted-foreground">+ ${addOnPrice}/additional student</p>}
       </div>
 
       <ul className="space-y-3 mb-8">
