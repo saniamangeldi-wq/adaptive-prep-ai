@@ -1,23 +1,89 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Users, 
   TrendingUp, 
   ClipboardList,
   BookOpen,
-  UserPlus,
   BarChart3,
   FileText,
   Award,
-  MessageSquare
+  MessageSquare,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
+
+interface SchoolInfo {
+  id: string;
+  name: string;
+}
 
 export function TeacherDashboard() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const [schoolInfo, setSchoolInfo] = useState<SchoolInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadSchoolInfo() {
+      if (!user?.id) return;
+
+      try {
+        const { data: membership } = await supabase
+          .from("school_members")
+          .select("school_id, schools(id, name)")
+          .eq("user_id", user.id)
+          .eq("role", "teacher")
+          .maybeSingle();
+
+        if (membership?.schools) {
+          const school = membership.schools as { id: string; name: string };
+          setSchoolInfo({ id: school.id, name: school.name });
+        }
+      } catch (error) {
+        console.error("Error loading school info:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadSchoolInfo();
+  }, [user?.id]);
 
   return (
     <div className="space-y-8">
+      {/* School affiliation banner */}
+      {!loading && (
+        <>
+          {schoolInfo ? (
+            <div className="p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+              <div className="flex items-center gap-3">
+                <Building2 className="w-6 h-6 text-purple-400" />
+                <div>
+                  <p className="text-sm text-muted-foreground">You're teaching at</p>
+                  <h2 className="text-lg font-semibold text-foreground">{schoolInfo.name}</h2>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-6 h-6 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-foreground">Not affiliated with a school yet</p>
+                    <p className="text-sm text-muted-foreground">Join a school using an invite code</p>
+                  </div>
+                </div>
+                <JoinCodeEntry userRole="teacher" />
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       {/* Welcome header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -29,9 +95,9 @@ export function TeacherDashboard() {
           </p>
         </div>
         <Button variant="hero" asChild>
-          <Link to="/dashboard/classroom/assign">
+          <Link to="/dashboard/manage-assignments">
             <ClipboardList className="w-4 h-4" />
-            Assign Test
+            Create Assignment
           </Link>
         </Button>
       </div>
@@ -73,7 +139,7 @@ export function TeacherDashboard() {
         <QuickAction
           icon={Users}
           title="My Classroom"
-          description="View students and their progress"
+          description="View students in your class"
           href="/dashboard/classroom"
           color="from-primary to-teal-400"
         />
@@ -87,8 +153,8 @@ export function TeacherDashboard() {
         <QuickAction
           icon={ClipboardList}
           title="Assignments"
-          description="Create and manage test assignments"
-          href="/dashboard/assignments"
+          description="Create and manage assignments"
+          href="/dashboard/manage-assignments"
           color="from-green-500 to-emerald-400"
         />
         <QuickAction
@@ -106,14 +172,8 @@ export function TeacherDashboard() {
           <h3 className="font-semibold text-foreground mb-4">Students Needing Attention</h3>
           <div className="text-center py-8 text-muted-foreground">
             <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No students added yet</p>
-            <p className="text-sm mt-1">Add students to track their progress</p>
-            <Button variant="outline" className="mt-4" asChild>
-              <Link to="/dashboard/classroom/add">
-                <UserPlus className="w-4 h-4" />
-                Add Students
-              </Link>
-            </Button>
+            <p>No students in your class yet</p>
+            <p className="text-sm mt-1">Students are assigned by your school admin</p>
           </div>
         </div>
 
@@ -122,11 +182,11 @@ export function TeacherDashboard() {
           <div className="text-center py-8 text-muted-foreground">
             <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>No tests assigned yet</p>
-            <p className="text-sm mt-1">Assign a test to your class to get started</p>
+            <p className="text-sm mt-1">Create an assignment to get started</p>
             <Button variant="outline" className="mt-4" asChild>
-              <Link to="/dashboard/classroom/assign">
+              <Link to="/dashboard/manage-assignments">
                 <ClipboardList className="w-4 h-4" />
-                Assign First Test
+                Create Assignment
               </Link>
             </Button>
           </div>

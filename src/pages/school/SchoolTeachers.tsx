@@ -4,12 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Users, 
-  UserPlus, 
   Mail,
-  MoreVertical,
   Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
 import { toast } from "sonner";
 
 interface Teacher {
@@ -115,12 +114,11 @@ export default function SchoolTeachers() {
               Manage teachers in your school
             </p>
           </div>
-          <Button variant="hero" asChild>
-            <a href="/dashboard/school/invite">
-              <UserPlus className="w-4 h-4" />
-              Invite Teacher
-            </a>
-          </Button>
+          <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+            <p className="text-sm text-muted-foreground">
+              Teachers can join using your school invite code
+            </p>
+          </div>
         </div>
 
         {/* Teachers List */}
@@ -129,7 +127,7 @@ export default function SchoolTeachers() {
             <div className="text-center py-12 text-muted-foreground">
               <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No teachers yet</p>
-              <p className="text-sm mt-1">Invite teachers using your school invite code</p>
+              <p className="text-sm mt-1">Share your school invite code with teachers to let them join</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
