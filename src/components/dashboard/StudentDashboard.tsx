@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { 
   BookOpen, 
   Brain, 
@@ -43,6 +44,7 @@ function hasSATorACT(profile: { study_subjects?: string[] | null } | null): bool
 
 export function StudentDashboard() {
   const { profile } = useAuth();
+  const { bestScore, avgAccuracy, testsTaken, hasProgress, isLoading: statsLoading } = useDashboardStats();
   const [showTutorial, setShowTutorial] = useState(false);
 
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
@@ -156,16 +158,16 @@ export function StudentDashboard() {
         <StatCard
           icon={Trophy}
           label="Best Score"
-          value="--"
-          subtext="no tests yet"
+          value={hasProgress ? bestScore.toString() : "--"}
+          subtext={hasProgress ? `${testsTaken} test${testsTaken !== 1 ? "s" : ""} taken` : "no tests yet"}
           color="from-green-500 to-emerald-400"
           tooltip="Your highest SAT practice test score"
         />
         <StatCard
           icon={Target}
           label="Accuracy"
-          value="--"
-          subtext="start practicing"
+          value={hasProgress ? `${avgAccuracy}%` : "--"}
+          subtext={hasProgress ? "overall" : "start practicing"}
           color="from-blue-500 to-blue-400"
           tooltip="Your overall answer accuracy across all practice"
         />
