@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { UniversityAIAdvisor } from "./UniversityAIAdvisor";
+ import { Progress } from "@/components/ui/progress";
+ import { TrendingUp, Sparkles } from "lucide-react";
 
 interface UniversityMatch {
   id: string;
@@ -51,11 +53,49 @@ interface UniversityMatchesProps {
 }
 
 export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const [matches, setMatches] = useState<UniversityMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [selectedUniversity, setSelectedUniversity] = useState<string | null>(null);
+
+  // Calculate acceptance chance based on student profile vs university requirements
+  const calculateAcceptanceChance = (university: UniversityMatch["university"]) => {
+    let chance = 50; // Base chance
+    
+    // Factor in acceptance rate (lower acceptance = lower base chance)
+    if (university.acceptance_rate) {
+      chance = Math.min(50, university.acceptance_rate * 0.8 + 10);
+    }
+    
+    // Boost based on profile completeness
+    if (profile?.study_subjects && (profile.study_subjects as string[]).length > 0) {
+      chance += 5;
+    }
+    if (profile?.primary_goal) {
+      chance += 5;
+    }
+    if (profile?.grade_level) {
+      chance += 5;
+    }
+    
+    return Math.min(85, Math.max(5, Math.round(chance)));
+  };
+
+  const getChanceColor = (chance: number) => {
+    if (chance >= 60) return "text-green-500";
+    if (chance >= 40) return "text-yellow-500";
+    if (chance >= 20) return "text-orange-500";
+    return "text-red-500";
+  };
+
+  const getChanceLabel = (chance: number) => {
+    if (chance >= 60) return "Good";
+    if (chance >= 40) return "Moderate";
+    if (chance >= 20) return "Reach";
+    return "Dream";
+  };
 
   useEffect(() => {
     loadMatches();
@@ -232,6 +272,8 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
           country: m.university.country,
           match_score: m.match_score
         }))}
+        initialUniversity={selectedUniversity}
+        onUniversityChange={setSelectedUniversity}
       />
 
       {/* Matches Header */}
@@ -336,6 +378,31 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
                   </p>
                 )}
 
+                {/* Acceptance Chance */}
+                <div className="mt-3 p-3 bg-muted/30 rounded-lg border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Your Acceptance Chance</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-semibold ${getChanceColor(calculateAcceptanceChance(match.university))}`}>
+                        {calculateAcceptanceChance(match.university)}%
+                      </span>
+                      <Badge variant="outline" className={getChanceColor(calculateAcceptanceChance(match.university))}>
+                        {getChanceLabel(calculateAcceptanceChance(match.university))}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Progress 
+                    value={calculateAcceptanceChance(match.university)} 
+                    className="h-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Based on your profile. Click "Get My Plan" to improve your chances!
+                  </p>
+                </div>
+
                 {/* Programs */}
                 {match.university.programs && match.university.programs.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
@@ -354,6 +421,17 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-4">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setSelectedUniversity(match.university.name);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Get My Plan
+                  </Button>
                   <Button
                     variant={match.saved ? "default" : "outline"}
                     size="sm"
