@@ -41,13 +41,21 @@ export default function Login() {
       if (data.user) {
         toast.success("Welcome back!");
         
-        // Fire-and-forget: update active role in background
+        // Fire-and-forget: update active role and ensure role exists in user_roles
         supabase
           .from("profiles")
           .update({ role: selectedRole })
           .eq("user_id", data.user.id)
           .then(({ error }) => {
             if (error) console.error("Error updating active role:", error);
+          });
+
+        // Ensure the role exists in user_roles table
+        supabase
+          .from("user_roles")
+          .upsert({ user_id: data.user.id, role: selectedRole }, { onConflict: "user_id,role" })
+          .then(({ error }) => {
+            if (error) console.error("Error ensuring role in user_roles:", error);
           });
 
         // Navigate immediately based on role - don't wait for DB

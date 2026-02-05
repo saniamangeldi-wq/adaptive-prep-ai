@@ -25,6 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { TierBadge } from "./TierBadge";
 import { TrialBanner } from "./TrialBanner";
+import { RoleSwitcher } from "./RoleSwitcher";
 
 type NavItem = {
   name: string;
@@ -143,6 +144,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {/* Role Switcher */}
+            <RoleSwitcher />
+            
+            <div className="pt-2 border-t border-sidebar-border/50 mt-2" />
+            
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
