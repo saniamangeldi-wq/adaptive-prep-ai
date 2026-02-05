@@ -83,8 +83,23 @@
        deadline: (m.university as any)?.application_deadline
      }));
  
+    // Get current date info for planning
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    const currentMonth = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
      const systemPrompt = `You are a university admissions advisor AI assistant for AdaptivePrep, a comprehensive educational platform. Your role is to help students create personalized 1-year plans to get accepted into their dream universities.
  
+CURRENT DATE: ${currentDate}
+CURRENT MONTH: ${currentMonth}
+
+Use this date information when creating timelines and plans. All deadlines and milestones should be based on real calendar dates starting from today.
+
  STUDENT PROFILE:
  - Name: ${profile?.full_name || "Student"}
  - Grade Level: ${profile?.grade_level || "Not specified"}
