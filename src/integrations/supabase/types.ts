@@ -130,6 +130,56 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_attachments: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          extracted_text: string | null
+          file_name: string | null
+          file_size: number | null
+          file_url: string | null
+          id: string
+          metadata: Json | null
+          mime_type: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          extracted_text?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          mime_type?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          extracted_text?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          mime_type?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_attachments_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_spaces: {
         Row: {
           color: string | null
