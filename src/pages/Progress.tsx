@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
-  Rocket
+  Rocket,
+  PenLine
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -26,6 +27,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
+// Convert raw accuracy (0-100%) to SAT scaled score (200-800)
+function toSATScore(accuracy: number): number {
+  return Math.round(200 + (accuracy / 100) * 600);
+}
+
+interface SectionFeedback {
+  correct: number;
+  total: number;
+}
+
+interface TestFeedback {
+  bySection?: {
+    math?: SectionFeedback;
+    reading_writing?: SectionFeedback;
+  };
+}
+
 export default function Progress() {
   const { user } = useAuth();
 
@@ -36,7 +54,7 @@ export default function Progress() {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from("test_attempts")
-        .select("*")
+        .select("id, score, correct_answers, total_questions, completed_at, feedback, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: true });
       
@@ -50,10 +68,37 @@ export default function Progress() {
   const completedAttempts = testAttempts?.filter(a => a.completed_at) || [];
   const hasProgress = completedAttempts.length > 0;
 
+  // Calculate section-specific scores
+  let totalMathCorrect = 0;
+  let totalMathQuestions = 0;
+  let totalRWCorrect = 0;
+  let totalRWQuestions = 0;
+
+  for (const attempt of completedAttempts) {
+    const feedback = attempt.feedback as TestFeedback | null;
+    if (feedback?.bySection) {
+      if (feedback.bySection.math) {
+        totalMathCorrect += feedback.bySection.math.correct;
+        totalMathQuestions += feedback.bySection.math.total;
+      }
+      if (feedback.bySection.reading_writing) {
+        totalRWCorrect += feedback.bySection.reading_writing.correct;
+        totalRWQuestions += feedback.bySection.reading_writing.total;
+      }
+    }
+  }
+
+  const mathAccuracy = totalMathQuestions > 0 ? (totalMathCorrect / totalMathQuestions) * 100 : 0;
+  const rwAccuracy = totalRWQuestions > 0 ? (totalRWCorrect / totalRWQuestions) * 100 : 0;
+  
+  const mathScore = hasProgress ? toSATScore(mathAccuracy) : 0;
+  const rwScore = hasProgress ? toSATScore(rwAccuracy) : 0;
+  const totalSATScore = hasProgress ? mathScore + rwScore : 0;
+
   const stats = {
-    bestScore: hasProgress 
-      ? Math.max(...completedAttempts.map(a => a.score || 0)) 
-      : 0,
+    totalSATScore,
+    mathScore,
+    rwScore,
     avgAccuracy: hasProgress 
       ? Math.round(completedAttempts.reduce((sum, a) => sum + ((a.correct_answers || 0) / (a.total_questions || 1) * 100), 0) / completedAttempts.length)
       : 0,
@@ -63,11 +108,31 @@ export default function Progress() {
       : 0,
   };
 
-  // Format progress data for chart
-  const progressData = completedAttempts.map((attempt, index) => ({
-    date: `Test ${index + 1}`,
-    score: attempt.score || 0,
-  }));
+  // Format progress data for chart - calculate SAT score per test
+  const progressData = completedAttempts.map((attempt, index) => {
+    const feedback = attempt.feedback as TestFeedback | null;
+    let testMathAcc = 0;
+    let testRWAcc = 0;
+    
+    if (feedback?.bySection) {
+      if (feedback.bySection.math && feedback.bySection.math.total > 0) {
+        testMathAcc = (feedback.bySection.math.correct / feedback.bySection.math.total) * 100;
+      }
+      if (feedback.bySection.reading_writing && feedback.bySection.reading_writing.total > 0) {
+        testRWAcc = (feedback.bySection.reading_writing.correct / feedback.bySection.reading_writing.total) * 100;
+      }
+    }
+    
+    const testMathScore = toSATScore(testMathAcc);
+    const testRWScore = toSATScore(testRWAcc);
+    
+    return {
+      date: `Test ${index + 1}`,
+      score: testMathScore + testRWScore,
+      math: testMathScore,
+      rw: testRWScore,
+    };
+  });
 
   if (isLoading) {
     return (
@@ -97,34 +162,31 @@ export default function Progress() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={Award}
-            label="Best Score"
-            value={stats.bestScore > 0 ? stats.bestScore.toString() : "—"}
-            change={hasProgress ? `${stats.bestScore} pts` : "No tests yet"}
-            positive={stats.bestScore > 0}
+            label="Total SAT Score"
+            value={hasProgress ? stats.totalSATScore.toString() : "—"}
+            change={hasProgress ? "400-1600 scale" : "No tests yet"}
+            positive={stats.totalSATScore >= 1000}
           />
           <StatCard
-            icon={Target}
-            label="Avg Accuracy"
-            value={hasProgress ? `${stats.avgAccuracy}%` : "—"}
-            change={hasProgress ? "overall" : "No tests yet"}
-            positive={stats.avgAccuracy >= 70}
+            icon={Calculator}
+            label="Math"
+            value={hasProgress ? stats.mathScore.toString() : "—"}
+            change={hasProgress ? "200-800 scale" : "No tests yet"}
+            positive={stats.mathScore >= 500}
           />
           <StatCard
-            icon={BookOpen}
-            label="Tests Taken"
-            value={stats.testsTaken.toString()}
-            change={stats.testsTaken > 0 ? "completed" : "Start practicing!"}
+            icon={PenLine}
+            label="Reading & Writing"
+            value={hasProgress ? stats.rwScore.toString() : "—"}
+            change={hasProgress ? "200-800 scale" : "No tests yet"}
+            positive={stats.rwScore >= 500}
           />
           <StatCard
             icon={TrendingUp}
-            label="Score Trend"
-            value={stats.scoreChange > 0 ? "↑" : stats.scoreChange < 0 ? "↓" : "—"}
-            change={
-              completedAttempts.length >= 2
-                ? `${stats.scoreChange > 0 ? "+" : ""}${stats.scoreChange} pts`
-                : "Need 2+ tests"
-            }
-            positive={stats.scoreChange > 0}
+            label="Tests Taken"
+            value={stats.testsTaken.toString()}
+            change={stats.testsTaken > 0 ? `${stats.avgAccuracy}% accuracy` : "Start practicing!"}
+            positive={stats.testsTaken > 0}
           />
         </div>
 
@@ -154,7 +216,7 @@ export default function Progress() {
                     <YAxis 
                       stroke="hsl(215, 20%, 65%)" 
                       fontSize={12}
-                      domain={[0, 'auto']}
+                      domain={[400, 1600]}
                     />
                     <Tooltip
                       contentStyle={{
@@ -184,7 +246,7 @@ export default function Progress() {
                   <h2 className="text-lg font-semibold text-foreground">Math Skills</h2>
                 </div>
                 <div className="space-y-4">
-                  <SkillBar skill="Overall Math" proficiency={stats.avgAccuracy} status={getStatus(stats.avgAccuracy)} />
+                  <SkillBar skill="Overall Math" proficiency={Math.round(mathAccuracy)} status={getStatus(mathAccuracy)} />
                 </div>
                 <p className="text-sm text-muted-foreground mt-4">
                   Detailed skill breakdown will appear as you complete more tests.
@@ -197,7 +259,7 @@ export default function Progress() {
                   <h2 className="text-lg font-semibold text-foreground">Reading & Writing Skills</h2>
                 </div>
                 <div className="space-y-4">
-                  <SkillBar skill="Overall Reading" proficiency={stats.avgAccuracy} status={getStatus(stats.avgAccuracy)} />
+                  <SkillBar skill="Overall Reading" proficiency={Math.round(rwAccuracy)} status={getStatus(rwAccuracy)} />
                 </div>
                 <p className="text-sm text-muted-foreground mt-4">
                   Detailed skill breakdown will appear as you complete more tests.
