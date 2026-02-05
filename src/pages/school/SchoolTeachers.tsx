@@ -5,11 +5,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Users, 
   Mail,
-  Trash2
+  Trash2,
+  BookOpen,
+  GraduationCap,
+  Pencil
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { TeacherAssignmentDialog } from "@/components/school/TeacherAssignmentDialog";
+
+interface TeacherAssignment {
+  subjects: string[];
+  grade_levels: string[];
+}
 
 interface Teacher {
   id: string;
@@ -20,6 +29,7 @@ interface Teacher {
     full_name: string | null;
     email: string;
   };
+  assignment?: TeacherAssignment;
 }
 
 export default function SchoolTeachers() {
@@ -27,58 +37,69 @@ export default function SchoolTeachers() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [schoolId, setSchoolId] = useState<string | null>(null);
+  const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
 
-  useEffect(() => {
-    const fetchTeachers = async () => {
-      if (!profile?.user_id) return;
+  const fetchTeachers = async () => {
+    if (!profile?.user_id) return;
 
-      try {
-        // Get school
-        const { data: memberData } = await supabase
+    try {
+      // Get school
+      const { data: memberData } = await supabase
+        .from("school_members")
+        .select("school_id")
+        .eq("user_id", profile.user_id)
+        .eq("role", "school_admin")
+        .maybeSingle();
+
+      if (memberData?.school_id) {
+        setSchoolId(memberData.school_id);
+
+        // Get teachers
+        const { data: teacherMembers } = await supabase
           .from("school_members")
-          .select("school_id")
-          .eq("user_id", profile.user_id)
-          .eq("role", "school_admin")
-          .maybeSingle();
+          .select("*")
+          .eq("school_id", memberData.school_id)
+          .eq("role", "teacher");
 
-        if (memberData?.school_id) {
-          setSchoolId(memberData.school_id);
-
-          // Get teachers
-          const { data: teacherMembers } = await supabase
-            .from("school_members")
-            .select("*")
-            .eq("school_id", memberData.school_id)
-            .eq("role", "teacher");
-
-          if (teacherMembers) {
-            // Get profiles for teachers
-            const teacherIds = teacherMembers.map(t => t.user_id);
-            const { data: profiles } = await supabase
+        if (teacherMembers) {
+          // Get profiles for teachers
+          const teacherIds = teacherMembers.map(t => t.user_id);
+          
+          const [profilesRes, assignmentsRes] = await Promise.all([
+            supabase
               .from("profiles")
               .select("user_id, full_name, email")
-              .in("user_id", teacherIds);
+              .in("user_id", teacherIds),
+            supabase
+              .from("teacher_assignments")
+              .select("teacher_user_id, subjects, grade_levels")
+              .eq("school_id", memberData.school_id)
+              .in("teacher_user_id", teacherIds)
+          ]);
 
-            const teachersWithProfiles = teacherMembers.map(t => ({
-              ...t,
-              profile: profiles?.find(p => p.user_id === t.user_id),
-            }));
+          const teachersWithData = teacherMembers.map(t => ({
+            ...t,
+            profile: profilesRes.data?.find(p => p.user_id === t.user_id),
+            assignment: assignmentsRes.data?.find(a => a.teacher_user_id === t.user_id) as TeacherAssignment | undefined,
+          }));
 
-            setTeachers(teachersWithProfiles);
-          }
+          setTeachers(teachersWithData);
         }
-      } catch (error) {
-        console.error("Error fetching teachers:", error);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching teachers:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchTeachers();
   }, [profile?.user_id]);
 
-  const handleRemoveTeacher = async (memberId: string) => {
+  const handleRemoveTeacher = async (memberId: string, teacherUserId: string) => {
     try {
+      // Remove from school_members
       const { error } = await supabase
         .from("school_members")
         .delete()
@@ -86,10 +107,43 @@ export default function SchoolTeachers() {
 
       if (error) throw error;
 
+      // Also remove their assignment
+      await supabase
+        .from("teacher_assignments")
+        .delete()
+        .eq("school_id", schoolId)
+        .eq("teacher_user_id", teacherUserId);
+
       setTeachers(prev => prev.filter(t => t.id !== memberId));
       toast.success("Teacher removed from school");
     } catch (error: any) {
       toast.error("Failed to remove teacher");
+    }
+  };
+
+  const handleUpdateAssignment = async (teacher: Teacher, subjects: string[], gradeLevels: string[]) => {
+    if (!schoolId) return;
+
+    try {
+      const { error } = await supabase
+        .from("teacher_assignments")
+        .upsert({
+          school_id: schoolId,
+          teacher_user_id: teacher.user_id,
+          subjects,
+          grade_levels: gradeLevels,
+        }, {
+          onConflict: "school_id,teacher_user_id"
+        });
+
+      if (error) throw error;
+
+      toast.success("Teacher assignment updated");
+      setEditingTeacher(null);
+      fetchTeachers();
+    } catch (error: any) {
+      console.error("Error updating assignment:", error);
+      toast.error("Failed to update assignment");
     }
   };
 
@@ -106,12 +160,27 @@ export default function SchoolTeachers() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Edit Assignment Dialog */}
+        {editingTeacher && (
+          <TeacherAssignmentDialog
+            open={!!editingTeacher}
+            onOpenChange={(open) => !open && setEditingTeacher(null)}
+            teacherName={editingTeacher.profile?.full_name || "Teacher"}
+            initialSubjects={editingTeacher.assignment?.subjects || []}
+            initialGradeLevels={editingTeacher.assignment?.grade_levels || []}
+            onSave={(subjects, gradeLevels) => 
+              handleUpdateAssignment(editingTeacher, subjects, gradeLevels)
+            }
+            mode="edit"
+          />
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Teachers</h1>
             <p className="text-muted-foreground mt-1">
-              Manage teachers in your school
+              Manage teachers and their subject/grade assignments
             </p>
           </div>
           <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
@@ -132,37 +201,86 @@ export default function SchoolTeachers() {
           ) : (
             <div className="divide-y divide-border">
               {teachers.map((teacher) => (
-                <div key={teacher.id} className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-400 flex items-center justify-center text-sm font-medium text-white">
-                      {teacher.profile?.full_name?.[0] || teacher.profile?.email?.[0]?.toUpperCase() || "T"}
+                <div key={teacher.id} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-400 flex items-center justify-center text-sm font-medium text-white">
+                        {teacher.profile?.full_name?.[0] || teacher.profile?.email?.[0]?.toUpperCase() || "T"}
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {teacher.profile?.full_name || "Unknown Teacher"}
+                        </p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Mail className="w-3 h-3" />
+                          {teacher.profile?.email || "No email"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {teacher.profile?.full_name || "Unknown Teacher"}
-                      </p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
-                        {teacher.profile?.email || "No email"}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        teacher.status === "active" 
+                          ? "bg-green-500/20 text-green-400" 
+                          : "bg-yellow-500/20 text-yellow-400"
+                      }`}>
+                        {teacher.status}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingTeacher(teacher)}
+                        className="text-muted-foreground hover:text-primary"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveTeacher(teacher.id, teacher.user_id)}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      teacher.status === "active" 
-                        ? "bg-green-500/20 text-green-400" 
-                        : "bg-yellow-500/20 text-yellow-400"
-                    }`}>
-                      {teacher.status}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveTeacher(teacher.id)}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  
+                  {/* Assignment Info */}
+                  <div className="pl-14 space-y-2">
+                    {teacher.assignment ? (
+                      <>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <BookOpen className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Subjects:</span>
+                          {teacher.assignment.subjects.map((subject) => (
+                            <Badge key={subject} variant="secondary" className="text-xs">
+                              {subject}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Grades:</span>
+                          {teacher.assignment.grade_levels.map((grade) => (
+                            <Badge key={grade} variant="outline" className="text-xs">
+                              {grade}
+                            </Badge>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-sm text-amber-500 flex items-center gap-1">
+                        <span>⚠️</span>
+                        No subjects/grades assigned yet
+                        <Button 
+                          variant="link" 
+                          size="sm" 
+                          className="text-primary p-0 h-auto"
+                          onClick={() => setEditingTeacher(teacher)}
+                        >
+                          Assign now
+                        </Button>
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
