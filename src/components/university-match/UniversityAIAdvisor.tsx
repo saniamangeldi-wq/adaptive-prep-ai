@@ -27,11 +27,13 @@
      country: string;
      match_score: number;
    }>;
+  initialUniversity?: string | null;
+  onUniversityChange?: (university: string | null) => void;
  }
  
  const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/university-advisor`;
  
- export function UniversityAIAdvisor({ topUniversities }: UniversityAIAdvisorProps) {
+export function UniversityAIAdvisor({ topUniversities, initialUniversity, onUniversityChange }: UniversityAIAdvisorProps) {
   const { user, profile, refreshProfile } = useAuth();
    const { toast } = useToast();
    const [messages, setMessages] = useState<Message[]>([]);
@@ -48,6 +50,16 @@
        setMessages([{ role: "assistant", content: greeting }]);
      }
    }, [topUniversities]);
+
+  // Handle when a university is selected from the matches list
+  useEffect(() => {
+    if (initialUniversity && initialUniversity !== targetUniversity) {
+      setTargetUniversity(initialUniversity);
+      // Auto-send a message to get the plan
+      const autoMessage = `I want to focus on ${initialUniversity}. Please analyze my profile and create a detailed 12-month action plan to maximize my chances of getting accepted there.`;
+      streamChat(autoMessage);
+    }
+  }, [initialUniversity]);
  
    useEffect(() => {
      if (scrollRef.current) {
@@ -70,6 +82,7 @@
      const currentTarget = mentionedUniversity?.name || targetUniversity;
      if (mentionedUniversity && !targetUniversity) {
        setTargetUniversity(mentionedUniversity.name);
+      onUniversityChange?.(mentionedUniversity.name);
      }
  
      let assistantContent = "";
