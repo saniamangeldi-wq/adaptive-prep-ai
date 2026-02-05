@@ -6,6 +6,33 @@
    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
  };
  
+ // Tier credit limits for daily reset
+ const TIER_CREDIT_LIMITS: Record<string, number> = {
+   tier_0: 20,
+   tier_1: 50,
+   tier_2: 150,
+   tier_3: 300,
+ };
+ 
+ const TRIAL_CREDITS_PER_DAY = 100;
+ const ADVISOR_CREDIT_COST = 2; // University advisor costs 2 credits per message
+ 
+ // Check if credits should be reset (new day)
+ function shouldResetCredits(creditsResetAt: string | null): boolean {
+   if (!creditsResetAt) return true;
+   
+   const resetDate = new Date(creditsResetAt);
+   const now = new Date();
+   
+   return now.toDateString() !== resetDate.toDateString();
+ }
+ 
+ // Get daily credit limit based on tier and trial status
+ function getDailyCredits(tier: string, isTrial: boolean): number {
+   if (isTrial) return TRIAL_CREDITS_PER_DAY;
+   return TIER_CREDIT_LIMITS[tier] || TIER_CREDIT_LIMITS.tier_0;
+ }
+ 
  serve(async (req) => {
    if (req.method === "OPTIONS") {
      return new Response(null, { headers: corsHeaders });
@@ -18,8 +45,11 @@
      }
  
      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-     const supabase = createClient(supabaseUrl, supabaseKey);
+     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+     
+     // Use service role for data access
+     const supabase = createClient(supabaseUrl, supabaseServiceKey);
  
      const { student_id, target_university, messages = [] } = await req.json();
  
@@ -30,7 +60,60 @@
        );
      }
  
-     // Get student's matches
+     // Get user profile for credits
+     const { data: userProfile, error: profileError } = await supabase
+       .from("profiles")
+       .select("tier, credits_remaining, credits_reset_at, is_trial")
+       .eq("user_id", student_id)
+       .single();
+ 
+     if (profileError || !userProfile) {
+       return new Response(
+         JSON.stringify({ error: "Profile not found" }),
+         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+       );
+     }
+ 
+     // Check if credits need to be reset (new day)
+     let currentCredits = userProfile.credits_remaining;
+     const needsReset = shouldResetCredits(userProfile.credits_reset_at);
+     
+     if (needsReset) {
+       const dailyLimit = getDailyCredits(userProfile.tier, userProfile.is_trial);
+       currentCredits = dailyLimit;
+       
+       // Reset credits in database
+       await supabase
+         .from("profiles")
+         .update({ 
+           credits_remaining: dailyLimit,
+           credits_reset_at: new Date().toISOString()
+         })
+         .eq("user_id", student_id);
+     }
+ 
+     // Check if user has enough credits
+     if (currentCredits < ADVISOR_CREDIT_COST) {
+       return new Response(
+         JSON.stringify({ 
+           error: `Not enough credits. University advisor requires ${ADVISOR_CREDIT_COST} credits per message.`,
+           credits_remaining: currentCredits
+         }),
+         { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+       );
+     }
+ 
+     // Deduct credits
+     const { error: updateError } = await supabase
+       .from("profiles")
+       .update({ credits_remaining: currentCredits - ADVISOR_CREDIT_COST })
+       .eq("user_id", student_id);
+ 
+     if (updateError) {
+       console.error("Failed to deduct credits:", updateError);
+     }
+ 
+    // Get student's matches
      const { data: matches } = await supabase
        .from("student_university_matches")
        .select(`

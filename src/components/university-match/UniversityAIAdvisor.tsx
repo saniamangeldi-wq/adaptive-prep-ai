@@ -11,7 +11,8 @@
    Sparkles,
    Calendar,
    Target,
-   GraduationCap
+  GraduationCap,
+  Coins
  } from "lucide-react";
  import ReactMarkdown from "react-markdown";
  
@@ -31,7 +32,7 @@
  const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/university-advisor`;
  
  export function UniversityAIAdvisor({ topUniversities }: UniversityAIAdvisorProps) {
-   const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
    const { toast } = useToast();
    const [messages, setMessages] = useState<Message[]>([]);
    const [input, setInput] = useState("");
@@ -103,6 +104,17 @@
          }),
        });
  
+       if (resp.status === 402) {
+         const errorData = await resp.json();
+         toast({
+           title: "Not enough credits",
+           description: errorData.error || "You need more credits to use the University Advisor.",
+           variant: "destructive"
+         });
+         refreshProfile();
+         return;
+       }
+
        if (!resp.ok) {
          const errorData = await resp.json();
          throw new Error(errorData.error || "Failed to get response");
@@ -151,6 +163,7 @@
        });
      } finally {
        setIsLoading(false);
+      refreshProfile(); // Refresh to update credit count
      }
    }
  
@@ -187,6 +200,13 @@
                  : "Your personal admissions strategist"}
              </p>
            </div>
+          {profile && (
+            <div className="ml-auto flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Coins className="w-4 h-4" />
+              <span>{profile.credits_remaining}</span>
+              <span className="text-xs">(2/msg)</span>
+            </div>
+          )}
          </div>
        </div>
  
