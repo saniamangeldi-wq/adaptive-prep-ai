@@ -20,7 +20,8 @@ import { Link } from "react-router-dom";
 import { getTierLimits, getDaysRemaining, PricingTier, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { DashboardTutorial } from "./DashboardTutorial";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
- import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
+import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
+import { StudentAffiliationBanner } from "./StudentAffiliationBanner";
 
 // Subject icons map
 const subjectIcons: Record<string, string> = {
@@ -88,7 +89,9 @@ export function StudentDashboard() {
         onComplete={handleTutorialComplete} 
       />
 
-      <div className="space-y-8">
+    <div className="space-y-8">
+      {/* Affiliation Banner */}
+      <StudentAffiliationBanner />
       {/* Trial Banner */}
       {isTrialUser && daysRemaining > 0 && (
         <div className="p-4 rounded-xl bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 flex items-center justify-between">
