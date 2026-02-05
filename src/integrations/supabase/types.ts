@@ -879,6 +879,7 @@ export type Database = {
           living_cost_monthly: number | null
           location_type: string | null
           logo_url: string | null
+          min_grade_requirement: number | null
           name: string
           programs: string[] | null
           ranking_global: number | null
@@ -903,6 +904,7 @@ export type Database = {
           living_cost_monthly?: number | null
           location_type?: string | null
           logo_url?: string | null
+          min_grade_requirement?: number | null
           name: string
           programs?: string[] | null
           ranking_global?: number | null
@@ -927,6 +929,7 @@ export type Database = {
           living_cost_monthly?: number | null
           location_type?: string | null
           logo_url?: string | null
+          min_grade_requirement?: number | null
           name?: string
           programs?: string[] | null
           ranking_global?: number | null
