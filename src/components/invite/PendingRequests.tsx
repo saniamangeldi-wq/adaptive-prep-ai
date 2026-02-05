@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Check, X, Clock, User, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
+import { TeacherAssignmentDialog } from "@/components/school/TeacherAssignmentDialog";
 
 interface JoinRequest {
   id: string;
@@ -23,6 +24,7 @@ interface PendingRequestsProps {
 export function PendingRequests({ targetType, targetId, onApprove }: PendingRequestsProps) {
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTeacherRequest, setSelectedTeacherRequest] = useState<JoinRequest | null>(null);
 
   const fetchRequests = async () => {
     if (!targetId) return;
@@ -64,7 +66,7 @@ export function PendingRequests({ targetType, targetId, onApprove }: PendingRequ
     fetchRequests();
   }, [targetId, targetType]);
 
-  const handleApprove = async (request: JoinRequest) => {
+  const handleApproveStudent = async (request: JoinRequest) => {
     try {
       // Update request status
       const { error: updateError } = await supabase
@@ -80,33 +82,62 @@ export function PendingRequests({ targetType, targetId, onApprove }: PendingRequ
           .from("tutor_students")
           .insert({ tutor_id: targetId, student_id: request.student_user_id });
         if (relationError && !relationError.message.includes("duplicate")) throw relationError;
-        toast.success("Student approved!");
       } else if (request.target_type === "school") {
         const { error: memberError } = await supabase
           .from("school_members")
           .insert({ school_id: targetId, user_id: request.student_user_id, role: "student", status: "active" });
         if (memberError && !memberError.message.includes("duplicate")) throw memberError;
-        toast.success("Student approved!");
-      } else if (request.target_type === "school_teacher") {
-        const { error: memberError } = await supabase
-          .from("school_members")
-          .insert({ school_id: targetId, user_id: request.student_user_id, role: "teacher", status: "active" });
-        if (memberError && !memberError.message.includes("duplicate")) throw memberError;
-        
-        // Also update the user's role in profiles if needed
-        await supabase
-          .from("profiles")
-          .update({ role: "teacher" })
-          .eq("user_id", request.student_user_id);
-          
-        toast.success("Teacher approved!");
       }
 
+      toast.success("Student approved!");
       fetchRequests();
       onApprove?.();
     } catch (error: any) {
       console.error("Error approving:", error);
       toast.error(error.message || "Failed to approve");
+    }
+  };
+
+  const handleApproveTeacher = async (request: JoinRequest, subjects: string[], gradeLevels: string[]) => {
+    try {
+      // Update request status
+      const { error: updateError } = await supabase
+        .from("join_requests")
+        .update({ status: "approved" })
+        .eq("id", request.id);
+
+      if (updateError) throw updateError;
+
+      // Add to school_members
+      const { error: memberError } = await supabase
+        .from("school_members")
+        .insert({ school_id: targetId, user_id: request.student_user_id, role: "teacher", status: "active" });
+      if (memberError && !memberError.message.includes("duplicate")) throw memberError;
+
+      // Create teacher assignment with subjects and grades
+      const { error: assignmentError } = await supabase
+        .from("teacher_assignments")
+        .insert({
+          school_id: targetId,
+          teacher_user_id: request.student_user_id,
+          subjects,
+          grade_levels: gradeLevels,
+        });
+      if (assignmentError) throw assignmentError;
+
+      // Update the user's role in profiles
+      await supabase
+        .from("profiles")
+        .update({ role: "teacher" })
+        .eq("user_id", request.student_user_id);
+
+      toast.success("Teacher approved and assigned!");
+      setSelectedTeacherRequest(null);
+      fetchRequests();
+      onApprove?.();
+    } catch (error: any) {
+      console.error("Error approving teacher:", error);
+      toast.error(error.message || "Failed to approve teacher");
     }
   };
 
@@ -139,6 +170,19 @@ export function PendingRequests({ targetType, targetId, onApprove }: PendingRequ
 
   return (
     <div className="space-y-4">
+      {/* Teacher Assignment Dialog */}
+      {selectedTeacherRequest && (
+        <TeacherAssignmentDialog
+          open={!!selectedTeacherRequest}
+          onOpenChange={(open) => !open && setSelectedTeacherRequest(null)}
+          teacherName={selectedTeacherRequest.student_name || "Teacher"}
+          onSave={(subjects, gradeLevels) => 
+            handleApproveTeacher(selectedTeacherRequest, subjects, gradeLevels)
+          }
+          mode="approve"
+        />
+      )}
+
       {/* Teacher Requests (for school admins) */}
       {teacherRequests.length > 0 && (
         <div className="p-6 rounded-2xl bg-card border border-border/50">
@@ -149,6 +193,9 @@ export function PendingRequests({ targetType, targetId, onApprove }: PendingRequ
               {teacherRequests.length}
             </span>
           </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Click approve to assign subjects and grade levels to each teacher.
+          </p>
           <div className="space-y-3">
             {teacherRequests.map((request) => (
               <div key={request.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
@@ -166,8 +213,9 @@ export function PendingRequests({ targetType, targetId, onApprove }: PendingRequ
                   <Button size="sm" variant="outline" onClick={() => handleReject(request.id)}>
                     <X className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="hero" onClick={() => handleApprove(request)}>
-                    <Check className="w-4 h-4" />
+                  <Button size="sm" onClick={() => setSelectedTeacherRequest(request)}>
+                    <Check className="w-4 h-4 mr-1" />
+                    Assign & Approve
                   </Button>
                 </div>
               </div>
@@ -207,7 +255,7 @@ export function PendingRequests({ targetType, targetId, onApprove }: PendingRequ
                   <Button size="sm" variant="outline" onClick={() => handleReject(request.id)}>
                     <X className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="hero" onClick={() => handleApprove(request)}>
+                  <Button size="sm" onClick={() => handleApproveStudent(request)}>
                     <Check className="w-4 h-4" />
                   </Button>
                 </div>
