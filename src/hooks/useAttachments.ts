@@ -3,6 +3,45 @@
  import { useAuth } from "@/contexts/AuthContext";
  import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+// Extract text from PDF file
+async function extractPDFText(file: File): Promise<{ text: string; pageCount: number }> {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pageCount = pdf.numPages;
+    
+    let fullText = "";
+    const maxPages = Math.min(pageCount, 15); // Limit to first 15 pages
+    
+    for (let i = 1; i <= maxPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .join(" ");
+      fullText += `\n--- Page ${i} ---\n${pageText}`;
+    }
+    
+    if (pageCount > maxPages) {
+      fullText += `\n\n[... ${pageCount - maxPages} more pages not extracted]`;
+    }
+    
+    // Truncate if too long
+    if (fullText.length > 15000) {
+      fullText = fullText.substring(0, 15000) + "... [truncated]";
+    }
+    
+    return { text: fullText.trim(), pageCount };
+  } catch (error) {
+    console.error("PDF extraction failed:", error);
+    return { text: "", pageCount: 0 };
+  }
+}
  
  export interface Attachment {
    id: string;
@@ -106,6 +145,11 @@ import type { Json } from "@/integrations/supabase/types";
          if (extractedText.length > 10000) {
            extractedText = extractedText.substring(0, 10000) + "... [truncated]";
          }
+      } else if (file.type === "application/pdf" || (file.name && file.name.endsWith(".pdf"))) {
+        // Extract text from PDF
+        const pdfResult = await extractPDFText(file);
+        extractedText = pdfResult.text;
+        metadata = { pageCount: pdfResult.pageCount };
        }
  
        // Create the final attachment
