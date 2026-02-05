@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
   GraduationCap
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { UniversityAIAdvisor } from "./UniversityAIAdvisor";
 
 interface UniversityMatch {
   id: string;
@@ -224,7 +225,16 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* University AI Advisor */}
+      <UniversityAIAdvisor 
+        topUniversities={matches.map(m => ({
+          name: m.university.name,
+          country: m.university.country,
+          match_score: m.match_score
+        }))}
+      />
+
+      {/* Matches Header */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-foreground">

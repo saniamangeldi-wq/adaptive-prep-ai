@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.analyze-image]
 verify_jwt = false
+
+[functions.university-advisor]
+verify_jwt = false
