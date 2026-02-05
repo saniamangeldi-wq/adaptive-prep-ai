@@ -14,7 +14,8 @@ import {
   CreditCard,
   Search,
   Brain,
-  Globe
+   Globe,
+   GraduationCap
 } from "lucide-react";
 
 export default function Billing() {
@@ -312,6 +313,69 @@ export default function Billing() {
             </div>
           </CardContent>
         </Card>
+
+         {/* Elite University Match Highlight */}
+         <Card className="border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 via-transparent to-primary/5">
+           <CardHeader>
+             <div className="flex items-center gap-3">
+               <div className="p-2 rounded-lg bg-yellow-500/20">
+                 <GraduationCap className="w-5 h-5 text-yellow-400" />
+               </div>
+               <div>
+                 <CardTitle className="text-lg">University Match</CardTitle>
+                 <CardDescription>Exclusive to Elite subscribers</CardDescription>
+               </div>
+             </div>
+           </CardHeader>
+           <CardContent className="space-y-4">
+             <p className="text-sm text-muted-foreground leading-relaxed">
+               Get <span className="text-foreground font-medium">personalized university recommendations</span> based on your academic profile, test scores, and preferences. Our AI analyzes your portfolio to match you with the best-fit universities in Kazakhstan, USA, UK, Canada, and Europe.
+             </p>
+             
+             <div className="grid gap-3 sm:grid-cols-3">
+               <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                 <div className="p-1.5 rounded-md bg-yellow-500/20">
+                   <Brain className="w-4 h-4 text-yellow-400" />
+                 </div>
+                 <div>
+                   <p className="text-sm font-medium text-foreground">AI-Powered Matching</p>
+                   <p className="text-xs text-muted-foreground mt-0.5">Smart analysis of your academic portfolio</p>
+                 </div>
+               </div>
+               <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                 <div className="p-1.5 rounded-md bg-primary/20">
+                   <Globe className="w-4 h-4 text-primary" />
+                 </div>
+                 <div>
+                   <p className="text-sm font-medium text-foreground">Global Universities</p>
+                   <p className="text-xs text-muted-foreground mt-0.5">KZ, USA, UK, Canada & Europe</p>
+                 </div>
+               </div>
+               <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                 <div className="p-1.5 rounded-md bg-accent/20">
+                   <Sparkles className="w-4 h-4 text-accent" />
+                 </div>
+                 <div>
+                   <p className="text-sm font-medium text-foreground">Financial Estimates</p>
+                   <p className="text-xs text-muted-foreground mt-0.5">Scholarship & tuition insights</p>
+                 </div>
+               </div>
+             </div>
+
+             <div className="flex items-center justify-between pt-2">
+               <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                 <Badge variant="outline" className="text-xs border-yellow-500/50 text-yellow-400">Elite Only</Badge>
+                 <span>Included with $21/month subscription</span>
+               </div>
+               {profile?.tier !== "tier_3" && (
+                 <Button variant="hero" size="sm">
+                   <Crown className="w-3.5 h-3.5 mr-1.5" />
+                   Go Elite
+                 </Button>
+               )}
+             </div>
+           </CardContent>
+         </Card>
       </div>
     </DashboardLayout>
   );
