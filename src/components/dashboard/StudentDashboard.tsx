@@ -11,7 +11,9 @@ import {
   Target,
   FileText,
   Zap,
-  Clock
+  Clock,
+  Calculator,
+  PenLine
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -44,7 +46,7 @@ function hasSATorACT(profile: { study_subjects?: string[] | null } | null): bool
 
 export function StudentDashboard() {
   const { profile } = useAuth();
-  const { bestScore, avgAccuracy, testsTaken, hasProgress, isLoading: statsLoading } = useDashboardStats();
+  const { totalSATScore, mathScore, rwScore, testsTaken, hasProgress } = useDashboardStats();
   const [showTutorial, setShowTutorial] = useState(false);
 
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
@@ -148,28 +150,28 @@ export function StudentDashboard() {
           tooltip={isTier0 ? "Number of practice questions you've used today" : "Practice tests remaining this month"}
         />
         <StatCard
-          icon={Zap}
-          label="AI Credits"
-          value={`${profile?.credits_remaining || 0}/${isTrialUser ? TRIAL_LIMITS.creditsPerDay : tierLimits.creditsPerDay}`}
-          subtext="today"
-          color="from-accent to-orange-400"
-          tooltip="AI credits for chatting with your study coach. Resets daily."
-        />
-        <StatCard
           icon={Trophy}
-          label="Best Score"
-          value={hasProgress ? bestScore.toString() : "--"}
-          subtext={hasProgress ? `${testsTaken} test${testsTaken !== 1 ? "s" : ""} taken` : "no tests yet"}
-          color="from-green-500 to-emerald-400"
-          tooltip="Your highest SAT practice test score"
+          label="SAT Score"
+          value={hasProgress ? totalSATScore.toString() : "--"}
+          subtext={hasProgress ? "400-1600 scale" : "no tests yet"}
+          color="from-yellow-500 to-amber-400"
+          tooltip="Your estimated SAT total score based on practice tests"
         />
         <StatCard
-          icon={Target}
-          label="Accuracy"
-          value={hasProgress ? `${avgAccuracy}%` : "--"}
-          subtext={hasProgress ? "overall" : "start practicing"}
-          color="from-blue-500 to-blue-400"
-          tooltip="Your overall answer accuracy across all practice"
+          icon={Calculator}
+          label="Math"
+          value={hasProgress ? mathScore.toString() : "--"}
+          subtext={hasProgress ? "200-800" : "start practicing"}
+          color="from-primary to-teal-400"
+          tooltip="Your estimated SAT Math section score"
+        />
+        <StatCard
+          icon={PenLine}
+          label="Reading & Writing"
+          value={hasProgress ? rwScore.toString() : "--"}
+          subtext={hasProgress ? "200-800" : "start practicing"}
+          color="from-purple-500 to-pink-400"
+          tooltip="Your estimated SAT Reading & Writing section score"
         />
       </div>
 
