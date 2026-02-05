@@ -33,7 +33,7 @@ export function UpgradePrompt({ type, featureName, className }: UpgradePromptPro
           return "Practice questions are only available on paid plans.";
         }
         if (isTrialUser) {
-          return `You've used your ${TRIAL_LIMITS.testsTotal * 100} trial questions. Upgrade to continue!`;
+          return `You've used your ${TRIAL_LIMITS.questionsTotal} trial questions. Upgrade to continue!`;
         }
         return "You've used all your practice questions this month.";
       case "feature":

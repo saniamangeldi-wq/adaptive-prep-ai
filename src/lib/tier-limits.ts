@@ -112,7 +112,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
 
 export const TRIAL_LIMITS = {
   creditsPerDay: 100,
-  testsTotal: 2,
+  questionsTotal: 200,
   questionsPerDay: 50,
   flashcardsPerDay: 20,
   durationDays: 7,

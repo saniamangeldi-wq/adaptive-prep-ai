@@ -94,7 +94,7 @@ export function StudentDashboard() {
           <div className="flex items-center gap-3">
             <Clock className="w-5 h-5 text-yellow-400" />
             <span className="text-foreground">
-              <strong>Pro Trial:</strong> {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining • {TRIAL_LIMITS.creditsPerDay} credits/day • {TRIAL_LIMITS.testsTotal} tests total
+              <strong>Pro Trial:</strong> {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining • {TRIAL_LIMITS.creditsPerDay} credits/day • {TRIAL_LIMITS.questionsTotal} questions total
             </span>
           </div>
           <Tooltip>
