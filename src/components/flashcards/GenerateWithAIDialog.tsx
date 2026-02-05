@@ -227,7 +227,7 @@ export function GenerateWithAIDialog({ open, onOpenChange, onCreateDeck }: Gener
           <div className="p-3 rounded-lg bg-secondary/50 border border-border">
             <p className="text-xs text-muted-foreground">
               <Sparkles className="w-3 h-3 inline mr-1 text-primary" />
-              This will use 1 AI credit. You have {profile?.credits_remaining || 0} credits remaining.
+              This will use 2 AI credits. You have {profile?.credits_remaining || 0} remaining.
             </p>
           </div>
         </div>
