@@ -7,7 +7,7 @@ export interface TierLimits {
   price: number;
   creditsPerDay: number;
   questionsPerDay: number; // For tier 0 only, others get unlimited via tests_remaining
-  testsPerMonth: number | "unlimited";
+  questionsPerMonth: number; // Monthly question quota for practice tests
   flashcardsPerDay: number;
   hasVoiceChat: boolean;
   hasUniversityMatch: boolean;
@@ -23,7 +23,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     price: 0,
     creditsPerDay: 20,
     questionsPerDay: 10,
-    testsPerMonth: 0,
+    questionsPerMonth: 0,
     flashcardsPerDay: 5,
     hasVoiceChat: false,
     hasUniversityMatch: false,
@@ -32,7 +32,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     features: [
       "20 AI credits/day",
       "10 SAT questions/day",
-      "Adaptive learning enabled",
+      "No practice tests",
       "Basic AI Coach (Gemini Flash)",
       "Progress dashboard",
       "5 flashcards/day",
@@ -44,7 +44,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     price: 7,
     creditsPerDay: 50,
     questionsPerDay: -1, // Unlimited
-    testsPerMonth: 2,
+    questionsPerMonth: 200,
     flashcardsPerDay: 20,
     hasVoiceChat: false,
     hasUniversityMatch: false,
@@ -52,7 +52,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     aiProvider: "openai",
     features: [
       "50 AI credits/day",
-      "2 practice tests/month",
+      "200 practice questions/month",
       "Unlimited SAT questions",
       "AI Study Coach included",
       "GPT-4o AI assistance",
@@ -68,7 +68,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     price: 10,
     creditsPerDay: 150,
     questionsPerDay: -1,
-    testsPerMonth: 4,
+    questionsPerMonth: 400,
     flashcardsPerDay: 50,
     hasVoiceChat: false,
     hasUniversityMatch: true, // University Match unlocks at Tier 2 for schools
@@ -76,7 +76,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     aiProvider: "perplexity",
     features: [
       "150 AI credits/day",
-      "4 practice tests/month",
+      "400 practice questions/month",
       "Everything in Starter",
       "Perplexity Pro AI models",
       "University Match (schools)",
@@ -91,7 +91,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     price: 21,
     creditsPerDay: 300,
     questionsPerDay: -1,
-    testsPerMonth: 12,
+    questionsPerMonth: 1200,
     flashcardsPerDay: -1, // Unlimited
     hasVoiceChat: true,
     hasUniversityMatch: true,
@@ -99,7 +99,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     aiProvider: "perplexity",
     features: [
       "300 AI credits/day",
-      "12 practice tests/month",
+      "1200 practice questions/month",
       "Everything in Pro",
       "All Perplexity Pro models",
       "Deep Research + Reasoning Pro",

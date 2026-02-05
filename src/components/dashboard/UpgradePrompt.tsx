@@ -30,12 +30,12 @@ export function UpgradePrompt({ type, featureName, className }: UpgradePromptPro
         return `You've used your ${tierLimits.questionsPerDay} daily questions. Upgrade for unlimited access!`;
       case "tests":
         if (profile.tier === "tier_0") {
-          return "Practice tests are only available on paid plans.";
+          return "Practice questions are only available on paid plans.";
         }
         if (isTrialUser) {
-          return `You've used your ${TRIAL_LIMITS.testsTotal} trial tests. Upgrade to continue!`;
+          return `You've used your ${TRIAL_LIMITS.testsTotal * 100} trial questions. Upgrade to continue!`;
         }
-        return "You've used all your tests this month.";
+        return "You've used all your practice questions this month.";
       case "feature":
         return `${featureName || "This feature"} is only available on higher plans.`;
       default:
@@ -66,7 +66,7 @@ export function UpgradePrompt({ type, featureName, className }: UpgradePromptPro
           <p className="text-sm font-medium text-foreground mb-1">
             {type === "credits" ? "Daily Limit Reached" : 
              type === "questions" ? "Question Limit Reached" :
-             type === "tests" ? "No Tests Available" : "Feature Locked"}
+             type === "tests" ? "Question Quota Reached" : "Feature Locked"}
           </p>
           <p className="text-xs text-muted-foreground mb-3">
             {getMessage()}
