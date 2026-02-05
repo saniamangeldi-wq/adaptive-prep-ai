@@ -11,11 +11,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+ import { PendingRequests } from "@/components/invite/PendingRequests";
 
 export default function SchoolInvite() {
   const { profile } = useAuth();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [schoolName, setSchoolName] = useState<string | null>(null);
+   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -32,6 +34,7 @@ export default function SchoolInvite() {
           .maybeSingle();
 
         if (memberData?.school_id) {
+           setSchoolId(memberData.school_id);
           // Get school name
           const { data: schoolData } = await supabase
             .from("schools")
@@ -159,6 +162,11 @@ export default function SchoolInvite() {
           </div>
         </div>
 
+         {/* Pending Requests */}
+         {schoolId && (
+           <PendingRequests targetType="school" targetId={schoolId} />
+         )}
+ 
         {/* Instructions */}
         <div className="p-6 rounded-2xl bg-card border border-border/50">
           <h3 className="font-semibold text-foreground mb-4">How it works</h3>

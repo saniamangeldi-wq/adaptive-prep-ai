@@ -20,6 +20,7 @@ import { Link } from "react-router-dom";
 import { getTierLimits, getDaysRemaining, PricingTier, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { DashboardTutorial } from "./DashboardTutorial";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+ import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
 
 // Subject icons map
 const subjectIcons: Record<string, string> = {
@@ -124,19 +125,22 @@ export function StudentDashboard() {
               : "Let's continue your SAT prep journey"}
           </p>
         </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="hero" asChild>
-              <Link to="/dashboard/tests">
-                {isTier0 ? "Practice Questions" : "Start Practice Test"}
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{isTier0 ? "Practice individual SAT questions to sharpen your skills" : "Take a timed SAT practice test to measure your progress"}</p>
-          </TooltipContent>
-        </Tooltip>
+         <div className="flex items-center gap-2">
+           <JoinCodeEntry />
+           <Tooltip>
+             <TooltipTrigger asChild>
+               <Button variant="hero" asChild>
+                 <Link to="/dashboard/tests">
+                   {isTier0 ? "Practice Questions" : "Start Practice Test"}
+                   <ArrowRight className="w-4 h-4" />
+                 </Link>
+               </Button>
+             </TooltipTrigger>
+             <TooltipContent>
+               <p>{isTier0 ? "Practice individual SAT questions to sharpen your skills" : "Take a timed SAT practice test to measure your progress"}</p>
+             </TooltipContent>
+           </Tooltip>
+         </div>
       </div>
 
       {/* Stats cards */}

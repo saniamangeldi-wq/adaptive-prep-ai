@@ -31,6 +31,9 @@ import SchoolStudents from "./pages/school/SchoolStudents";
 import SchoolAnalytics from "./pages/school/SchoolAnalytics";
 import SchoolInvite from "./pages/school/SchoolInvite";
 import SchoolBilling from "./pages/school/SchoolBilling";
+ 
+ // Tutor pages
+ import TutorInvite from "./pages/tutor/TutorInvite";
 
 const queryClient = new QueryClient();
 
@@ -109,7 +112,7 @@ function AppRoutes() {
       
       {/* Tutor/Teacher routes - redirect to appropriate pages */}
       <Route path="/dashboard/students" element={<ProtectedRoute><SchoolStudents /></ProtectedRoute>} />
-      <Route path="/dashboard/students/add" element={<ProtectedRoute><SchoolInvite /></ProtectedRoute>} />
+       <Route path="/dashboard/students/add" element={<ProtectedRoute><TutorInvite /></ProtectedRoute>} />
       <Route path="/dashboard/analytics" element={<ProtectedRoute><SchoolAnalytics /></ProtectedRoute>} />
       <Route path="/dashboard/classroom" element={<ProtectedRoute><SchoolStudents /></ProtectedRoute>} />
       <Route path="/dashboard/classroom/add" element={<ProtectedRoute><SchoolInvite /></ProtectedRoute>} />
