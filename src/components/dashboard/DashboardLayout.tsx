@@ -18,7 +18,9 @@ import {
   ClipboardList,
   Building2,
   CreditCard,
-  UserPlus
+  UserPlus,
+  BookOpen,
+  Trophy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +39,10 @@ const studentNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Practice Tests", href: "/dashboard/tests", icon: FileText },
   { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
+  { name: "Assignments", href: "/dashboard/assignments", icon: ClipboardList },
+  { name: "Grades", href: "/dashboard/grades", icon: BarChart3 },
+  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar },
+  { name: "Curriculum", href: "/dashboard/curriculum", icon: BookOpen },
   { name: "University Match", href: "/dashboard/university-match", icon: GraduationCap },
   { name: "Progress", href: "/dashboard/progress", icon: LineChart },
   { name: "Flashcards", href: "/dashboard/flashcards", icon: Layers },
@@ -47,6 +53,8 @@ const studentNav: NavItem[] = [
 const tutorNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "My Students", href: "/dashboard/students", icon: Users },
+  { name: "Assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
+  { name: "Leaderboard", href: "/dashboard/leaderboard", icon: Trophy },
   { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
   { name: "Student Progress", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "Schedule", href: "/dashboard/schedule", icon: Calendar },
@@ -58,9 +66,10 @@ const tutorNav: NavItem[] = [
 const teacherNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "My Classroom", href: "/dashboard/classroom", icon: Users },
+  { name: "Assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
   { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
-  { name: "Assignments", href: "/dashboard/assignments", icon: ClipboardList },
   { name: "Class Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar },
   { name: "Resources", href: "/dashboard/resources", icon: Layers },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
@@ -69,6 +78,7 @@ const adminNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "School Overview", href: "/dashboard/school", icon: Building2 },
   { name: "AI Insights", href: "/dashboard/coach", icon: MessageSquare },
+  { name: "Assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
   { name: "Teachers", href: "/dashboard/school/teachers", icon: Users },
   { name: "Students", href: "/dashboard/school/students", icon: GraduationCap },
   { name: "Analytics", href: "/dashboard/school/analytics", icon: BarChart3 },

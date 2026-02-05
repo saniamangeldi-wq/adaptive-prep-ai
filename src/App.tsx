@@ -32,8 +32,18 @@ import SchoolAnalytics from "./pages/school/SchoolAnalytics";
 import SchoolInvite from "./pages/school/SchoolInvite";
 import SchoolBilling from "./pages/school/SchoolBilling";
  
- // Tutor pages
- import TutorInvite from "./pages/tutor/TutorInvite";
+// Tutor pages
+import TutorInvite from "./pages/tutor/TutorInvite";
+import TutorLeaderboard from "./pages/tutor/TutorLeaderboard";
+
+// Teacher pages
+import ManageAssignments from "./pages/teacher/ManageAssignments";
+
+// Student pages
+import Grades from "./pages/Grades";
+import Calendar from "./pages/Calendar";
+import Curriculum from "./pages/Curriculum";
+import Assignments from "./pages/Assignments";
 
 const queryClient = new QueryClient();
 
@@ -110,16 +120,23 @@ function AppRoutes() {
       <Route path="/dashboard/school/invite" element={<ProtectedRoute><SchoolInvite /></ProtectedRoute>} />
       <Route path="/dashboard/school/billing" element={<ProtectedRoute><SchoolBilling /></ProtectedRoute>} />
       
-      {/* Tutor/Teacher routes - redirect to appropriate pages */}
+      {/* Tutor/Teacher routes */}
       <Route path="/dashboard/students" element={<ProtectedRoute><SchoolStudents /></ProtectedRoute>} />
-       <Route path="/dashboard/students/add" element={<ProtectedRoute><TutorInvite /></ProtectedRoute>} />
+      <Route path="/dashboard/students/add" element={<ProtectedRoute><TutorInvite /></ProtectedRoute>} />
       <Route path="/dashboard/analytics" element={<ProtectedRoute><SchoolAnalytics /></ProtectedRoute>} />
       <Route path="/dashboard/classroom" element={<ProtectedRoute><SchoolStudents /></ProtectedRoute>} />
       <Route path="/dashboard/classroom/add" element={<ProtectedRoute><SchoolInvite /></ProtectedRoute>} />
       <Route path="/dashboard/classroom/assign" element={<ProtectedRoute><PracticeTests /></ProtectedRoute>} />
-      <Route path="/dashboard/assignments" element={<ProtectedRoute><PracticeTests /></ProtectedRoute>} />
-      <Route path="/dashboard/schedule" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard/manage-assignments" element={<ProtectedRoute><ManageAssignments /></ProtectedRoute>} />
+      <Route path="/dashboard/leaderboard" element={<ProtectedRoute><TutorLeaderboard /></ProtectedRoute>} />
+      <Route path="/dashboard/schedule" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       <Route path="/dashboard/resources" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
+      
+      {/* Student pages */}
+      <Route path="/dashboard/assignments" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
+      <Route path="/dashboard/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
+      <Route path="/dashboard/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+      <Route path="/dashboard/curriculum" element={<ProtectedRoute><Curriculum /></ProtectedRoute>} />
       
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
