@@ -4,11 +4,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getTierLimits, getDaysRemaining, TRIAL_LIMITS, PricingTier } from "@/lib/tier-limits";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { SchoolTierBadge } from "./SchoolTierBadge";
 
 export function TierBadge() {
   const { profile } = useAuth();
   
   if (!profile) return null;
+
+  // School admins see school subscription instead
+  if (profile.role === "school_admin") {
+    return <SchoolTierBadge />;
+  }
+
+  // Teachers don't need to see subscription badge (they're part of school)
+  if (profile.role === "teacher") {
+    return null;
+  }
 
   const tierLimits = getTierLimits(profile.tier as PricingTier);
   const isTrialUser = profile.is_trial && profile.trial_ends_at;
@@ -19,6 +30,11 @@ export function TierBadge() {
   const maxCredits = isTrialUser ? TRIAL_LIMITS.creditsPerDay : tierLimits.creditsPerDay;
   const creditsUsed = maxCredits - (profile.credits_remaining || 0);
   const creditsPercentage = Math.min(100, (creditsUsed / maxCredits) * 100);
+
+  const getBillingPath = () => {
+    if (profile.role === "tutor") return "/dashboard/billing";
+    return "/dashboard/billing";
+  };
 
   const getBadgeColor = () => {
     if (isTrialUser) return "from-yellow-500/20 to-orange-500/20 border-yellow-500/30";
@@ -99,7 +115,7 @@ export function TierBadge() {
         {/* Upgrade button */}
         {showUpgrade && (
           <Link
-            to="/dashboard/settings"
+            to={getBillingPath()}
             className={cn(
               "block w-full mt-2 py-2 px-3 rounded-md text-center text-xs font-medium transition-colors",
               isTrialUser 

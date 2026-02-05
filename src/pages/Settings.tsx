@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getTierLimits, PricingTier } from "@/lib/tier-limits";
+import { SchoolSettingsSection } from "@/components/settings/SchoolSettingsSection";
 
 export default function Settings() {
   const { user, profile, signOut } = useAuth();
@@ -94,6 +95,9 @@ export default function Settings() {
             Manage your account and preferences
           </p>
         </div>
+
+        {/* School Settings - Only for School Admins */}
+        {profile?.role === "school_admin" && <SchoolSettingsSection />}
 
         {/* Profile Section */}
         <div className="p-6 rounded-2xl bg-card border border-border/50">
