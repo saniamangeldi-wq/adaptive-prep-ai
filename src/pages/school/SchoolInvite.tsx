@@ -187,9 +187,9 @@ export default function SchoolInvite() {
                 <span className="text-sm font-bold text-primary">2</span>
               </div>
               <div>
-                <p className="font-medium text-foreground">They sign up</p>
+                <p className="font-medium text-foreground">They request to join</p>
                 <p className="text-sm text-muted-foreground">
-                  Members create an account and enter the invite code during signup
+                  Teachers and students enter the code in their dashboard to request access
                 </p>
               </div>
             </div>
@@ -198,9 +198,9 @@ export default function SchoolInvite() {
                 <span className="text-sm font-bold text-primary">3</span>
               </div>
               <div>
-                <p className="font-medium text-foreground">Start learning</p>
+                <p className="font-medium text-foreground">Approve and manage</p>
                 <p className="text-sm text-muted-foreground">
-                  Members get access to school features and you can track their progress
+                  Review pending requests above and approve teachers and students separately
                 </p>
               </div>
             </div>
