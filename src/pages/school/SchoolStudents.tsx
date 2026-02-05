@@ -30,32 +30,32 @@ export default function SchoolStudents() {
   const [loading, setLoading] = useState(true);
   const [schoolId, setSchoolId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      if (!profile?.user_id) return;
+  const fetchStudents = async () => {
+    if (!profile?.user_id) return;
 
-      try {
-        // Get school
-        const { data: memberData } = await supabase
+    try {
+      // Get school
+      const { data: memberData } = await supabase
+        .from("school_members")
+        .select("school_id")
+        .eq("user_id", profile.user_id)
+        .eq("role", "school_admin")
+        .maybeSingle();
+
+      if (memberData?.school_id) {
+        setSchoolId(memberData.school_id);
+        
+        // Get students
+        const { data: studentMembers } = await supabase
           .from("school_members")
-          .select("school_id")
-          .eq("user_id", profile.user_id)
-          .eq("role", "school_admin")
-          .maybeSingle();
+          .select("*")
+          .eq("school_id", memberData.school_id)
+          .eq("role", "student");
 
-        if (memberData?.school_id) {
-          setSchoolId(memberData.school_id);
-          
-          // Get students
-          const { data: studentMembers } = await supabase
-            .from("school_members")
-            .select("*")
-            .eq("school_id", memberData.school_id)
-            .eq("role", "student");
-
-          if (studentMembers) {
-            // Get profiles
-            const studentIds = studentMembers.map(s => s.user_id);
+        if (studentMembers && studentMembers.length > 0) {
+          // Get profiles
+          const studentIds = studentMembers.map(s => s.user_id);
+          if (studentIds.length > 0) {
             const { data: profiles } = await supabase
               .from("profiles")
               .select("user_id, full_name, email")
@@ -67,15 +67,21 @@ export default function SchoolStudents() {
             }));
 
             setStudents(studentsWithProfiles);
+          } else {
+            setStudents(studentMembers.map(s => ({ ...s, profile: undefined })));
           }
+        } else {
+          setStudents([]);
         }
-      } catch (error) {
-        console.error("Error fetching students:", error);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchStudents();
   }, [profile?.user_id]);
 
@@ -126,7 +132,11 @@ export default function SchoolStudents() {
 
         {/* Pending Requests */}
         {schoolId && (
-          <PendingRequests targetType="school" targetId={schoolId} />
+          <PendingRequests 
+            targetType="school" 
+            targetId={schoolId} 
+            onApprove={fetchStudents}
+          />
         )}
 
         {/* Students List */}
