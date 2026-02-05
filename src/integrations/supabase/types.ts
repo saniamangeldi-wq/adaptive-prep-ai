@@ -949,6 +949,7 @@ export type Database = {
           created_at: string
           diversity_importance: string | null
           fields_of_interest: string[] | null
+          graduation_year: number | null
           id: string
           international_support: string | null
           language_of_instruction: string[] | null
@@ -970,6 +971,7 @@ export type Database = {
           created_at?: string
           diversity_importance?: string | null
           fields_of_interest?: string[] | null
+          graduation_year?: number | null
           id?: string
           international_support?: string | null
           language_of_instruction?: string[] | null
@@ -991,6 +993,7 @@ export type Database = {
           created_at?: string
           diversity_importance?: string | null
           fields_of_interest?: string[] | null
+          graduation_year?: number | null
           id?: string
           international_support?: string | null
           language_of_instruction?: string[] | null
