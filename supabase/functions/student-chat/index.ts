@@ -1,6 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Tier credit limits for daily reset
+const TIER_CREDIT_LIMITS: Record<string, number> = {
+  tier_0: 20,
+  tier_1: 50,
+  tier_2: 150,
+  tier_3: 300,
+};
+
+const TRIAL_CREDITS_PER_DAY = 100;
+
+// Check if credits should be reset (new day)
+function shouldResetCredits(creditsResetAt: string | null): boolean {
+  if (!creditsResetAt) return true;
+  
+  const resetDate = new Date(creditsResetAt);
+  const now = new Date();
+  
+  // Check if it's a new day (compare dates in UTC)
+  return now.toDateString() !== resetDate.toDateString();
+}
+
+// Get daily credit limit based on tier and trial status
+function getDailyCredits(tier: string, isTrial: boolean): number {
+  if (isTrial) return TRIAL_CREDITS_PER_DAY;
+  return TIER_CREDIT_LIMITS[tier] || TIER_CREDIT_LIMITS.tier_0;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -358,7 +385,7 @@ serve(async (req) => {
     // Get user profile for learning style, subjects, and credits
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("learning_style, tier, credits_remaining, study_subjects")
+      .select("learning_style, tier, credits_remaining, credits_reset_at, is_trial, study_subjects")
       .eq("user_id", userId)
       .single();
 
@@ -369,8 +396,32 @@ serve(async (req) => {
       });
     }
 
-    // Check credits
-    if (profile.credits_remaining <= 0) {
+    // Check if credits need to be reset (new day)
+    let currentCredits = profile.credits_remaining;
+    const needsReset = shouldResetCredits(profile.credits_reset_at);
+    
+    if (needsReset) {
+      const dailyLimit = getDailyCredits(profile.tier, profile.is_trial);
+      currentCredits = dailyLimit;
+      
+      // Reset credits in database
+      const { error: resetError } = await supabase
+        .from("profiles")
+        .update({ 
+          credits_remaining: dailyLimit,
+          credits_reset_at: new Date().toISOString()
+        })
+        .eq("user_id", userId);
+      
+      if (resetError) {
+        console.error("Failed to reset credits:", resetError);
+      } else {
+        console.log(`Credits reset for user ${userId}: ${dailyLimit} credits`);
+      }
+    }
+
+    // Check credits after potential reset
+    if (currentCredits <= 0) {
       return new Response(JSON.stringify({ 
         error: "No credits remaining. Please upgrade your plan for more credits.",
         credits_remaining: 0 
@@ -385,7 +436,7 @@ serve(async (req) => {
     // Deduct 1 credit
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ credits_remaining: profile.credits_remaining - 1 })
+      .update({ credits_remaining: currentCredits - 1 })
       .eq("user_id", userId);
 
     if (updateError) {
