@@ -18,14 +18,14 @@
      if (!user?.id || !code.trim()) return;
  
      setLoading(true);
-     const upperCode = code.trim().toUpperCase();
+    const normalizedCode = code.trim().toUpperCase();
  
      try {
-       // First check tutor codes
+      // First check tutor codes (stored as UPPERCASE)
        const { data: tutorCode } = await supabase
          .from("tutor_invite_codes")
          .select("tutor_user_id")
-         .eq("invite_code", upperCode)
+        .eq("invite_code", normalizedCode)
          .maybeSingle();
  
        if (tutorCode) {
@@ -55,7 +55,7 @@
            student_user_id: user.id,
            target_type: "tutor",
            target_id: tutorCode.tutor_user_id,
-           invite_code: upperCode,
+          invite_code: normalizedCode,
            student_email: profile?.email,
            student_name: profile?.full_name,
          });
@@ -68,11 +68,11 @@
          return;
        }
  
-       // Check school admin codes
+      // Check school admin codes (stored as lowercase, use case-insensitive match)
        const { data: adminCode } = await supabase
          .from("admin_invite_codes")
          .select("school_id")
-         .eq("invite_code", upperCode)
+        .ilike("invite_code", normalizedCode)
          .maybeSingle();
  
        if (adminCode) {
@@ -102,7 +102,7 @@
            student_user_id: user.id,
            target_type: "school",
            target_id: adminCode.school_id,
-           invite_code: upperCode,
+          invite_code: normalizedCode,
            student_email: profile?.email,
            student_name: profile?.full_name,
          });
