@@ -93,14 +93,26 @@ export default function Billing() {
                 />
               </div>
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                <p className="text-xs text-muted-foreground mb-1">Tests Remaining</p>
+                <p className="text-xs text-muted-foreground mb-1">Questions Remaining</p>
                 <p className="text-xl font-bold text-foreground">
-                  {currentTierLimits.testsPerMonth === "unlimited" 
-                    ? "Unlimited" 
-                    : profile?.tests_remaining || 0
-                  }
+                  {currentTierLimits.questionsPerMonth === 0 
+                    ? "0" 
+                    : (profile?.tests_remaining || 0)}
+                  {currentTierLimits.questionsPerMonth > 0 && (
+                    <span className="text-sm font-normal text-muted-foreground">
+                      /{currentTierLimits.questionsPerMonth}
+                    </span>
+                  )}
                 </p>
-                <p className="text-xs text-muted-foreground mt-2">This month</p>
+                {currentTierLimits.questionsPerMonth > 0 && (
+                  <Progress 
+                    value={((profile?.tests_remaining || 0) / currentTierLimits.questionsPerMonth) * 100} 
+                    className="h-1.5 mt-2" 
+                  />
+                )}
+                <p className="text-xs text-muted-foreground mt-2">
+                  {currentTierLimits.questionsPerMonth === 0 ? "Upgrade to unlock" : "This month"}
+                </p>
               </div>
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
                 <p className="text-xs text-muted-foreground mb-1">AI Model</p>

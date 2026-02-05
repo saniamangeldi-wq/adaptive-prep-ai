@@ -144,10 +144,10 @@ export function StudentDashboard() {
         <StatCard
           icon={FileText}
           label={isTier0 ? "Questions Today" : "Questions Remaining"}
-          value={isTier0 ? `${profile?.questions_used_today || 0}/${tierLimits.questionsPerDay}` : (profile?.tests_remaining?.toString() || "200")}
-          subtext={isTier0 ? "daily limit" : "this month"}
+          value={isTier0 ? `${profile?.questions_used_today || 0}/${tierLimits.questionsPerDay}` : `${profile?.tests_remaining || 0}/${tierLimits.questionsPerMonth}`}
+          subtext={isTier0 ? "daily limit" : "monthly quota"}
           color="from-primary to-teal-400"
-          tooltip={isTier0 ? "Number of practice questions you've used today" : "Practice tests remaining this month"}
+          tooltip={isTier0 ? "Number of practice questions you've used today" : "Practice questions remaining this month"}
         />
         <StatCard
           icon={Trophy}
