@@ -296,6 +296,45 @@ export type Database = {
           },
         ]
       }
+      join_requests: {
+        Row: {
+          created_at: string
+          id: string
+          invite_code: string
+          status: string
+          student_email: string | null
+          student_name: string | null
+          student_user_id: string
+          target_id: string
+          target_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invite_code: string
+          status?: string
+          student_email?: string | null
+          student_name?: string | null
+          student_user_id: string
+          target_id: string
+          target_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          status?: string
+          student_email?: string | null
+          student_name?: string | null
+          student_user_id?: string
+          target_id?: string
+          target_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       learning_style_responses: {
         Row: {
           calculated_style: Database["public"]["Enums"]["learning_style"] | null
@@ -841,6 +880,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tutor_invite_codes: {
+        Row: {
+          created_at: string
+          id: string
+          invite_code: string
+          tutor_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          tutor_user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          tutor_user_id?: string
+        }
+        Relationships: []
       }
       tutor_students: {
         Row: {
