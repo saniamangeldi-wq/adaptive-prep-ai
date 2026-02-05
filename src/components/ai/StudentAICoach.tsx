@@ -25,6 +25,8 @@ import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { AISuggestions } from "./AISuggestions";
 import { CreditsInfoPopover } from "./CreditsInfoPopover";
+import { ChatAttachments } from "./ChatAttachments";
+import { useAttachments } from "@/hooks/useAttachments";
 // Get daily credit limit based on tier and trial status
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return 100; // Trial users get 100 credits/day
@@ -52,6 +54,18 @@ export function StudentAICoach() {
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages } = useAIChat();
   const isTier3 = profile?.tier === "tier_3";
+  
+  // Attachments hook
+  const {
+    attachments,
+    isUploading,
+    uploadFile,
+    attachUrl,
+    performWebSearch,
+    removeAttachment,
+    clearAttachments,
+    getAttachmentContext,
+  } = useAttachments();
 
   // Determine the primary subject for suggestions
   const primarySubject = profile?.primary_goal === "homework" 
@@ -74,8 +88,12 @@ export function StudentAICoach() {
     if (!input.trim() || isLoading) return;
     if ((profile?.credits_remaining || 0) <= 0) return;
     
-    const userInput = input;
+    // Combine message with attachment context
+    const attachmentContext = getAttachmentContext();
+    const userInput = input + attachmentContext;
+    
     setInput("");
+    clearAttachments();
     await streamChat(userInput, { endpoint: "student-chat" });
   };
 
@@ -198,7 +216,18 @@ export function StudentAICoach() {
       )}
 
       {/* Input area */}
-      <div className="flex gap-2">
+      <div className="space-y-2">
+        <ChatAttachments
+          attachments={attachments}
+          isUploading={isUploading}
+          onUploadFile={uploadFile}
+          onAttachUrl={attachUrl}
+          onWebSearch={performWebSearch}
+          onRemove={removeAttachment}
+          disabled={noCredits || isLoading}
+        />
+        
+        <div className="flex gap-2">
         {/* Voice chat for Tier 3 users */}
         {isTier3 && (
           <VoiceChat 
@@ -212,7 +241,7 @@ export function StudentAICoach() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder={noCredits ? "No credits remaining..." : isTier3 ? "Type or use voice chat..." : "Ask me anything about SAT prep..."}
+            placeholder={noCredits ? "No credits remaining..." : isTier3 ? "Type, paste image, or use voice..." : "Type or paste an image (Ctrl+V)..."}
             disabled={noCredits || isLoading}
             className="w-full h-12 px-4 rounded-xl bg-card border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           />
@@ -222,10 +251,11 @@ export function StudentAICoach() {
           size="icon"
           className="w-12 h-12"
           onClick={handleSend}
-          disabled={!input.trim() || noCredits || isLoading}
+          disabled={(!input.trim() && attachments.length === 0) || noCredits || isLoading}
         >
           <Send className="w-5 h-5" />
         </Button>
+        </div>
       </div>
     </div>
   );
