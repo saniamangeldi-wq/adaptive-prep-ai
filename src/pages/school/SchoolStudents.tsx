@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { PendingRequests } from "@/components/invite/PendingRequests";
 import { 
   GraduationCap, 
   UserPlus, 
@@ -27,6 +28,7 @@ export default function SchoolStudents() {
   const { profile } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [schoolId, setSchoolId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -42,6 +44,8 @@ export default function SchoolStudents() {
           .maybeSingle();
 
         if (memberData?.school_id) {
+          setSchoolId(memberData.school_id);
+          
           // Get students
           const { data: studentMembers } = await supabase
             .from("school_members")
@@ -109,7 +113,7 @@ export default function SchoolStudents() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Students</h1>
             <p className="text-muted-foreground mt-1">
-              View all students in your school
+              Manage students and approve join requests
             </p>
           </div>
           <Button variant="hero" asChild>
@@ -119,6 +123,11 @@ export default function SchoolStudents() {
             </a>
           </Button>
         </div>
+
+        {/* Pending Requests */}
+        {schoolId && (
+          <PendingRequests targetType="school" targetId={schoolId} />
+        )}
 
         {/* Students List */}
         <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
