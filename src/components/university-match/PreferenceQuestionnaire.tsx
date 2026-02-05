@@ -64,7 +64,8 @@ export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuesti
     ranking_importance: "",
     language_of_instruction: [] as string[],
     international_support: "",
-    diversity_importance: ""
+    diversity_importance: "",
+    graduation_year: null as number | null
   });
 
   // Load existing preferences
@@ -95,7 +96,8 @@ export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuesti
             ranking_importance: data.ranking_importance || "",
             language_of_instruction: data.language_of_instruction || [],
             international_support: data.international_support || "",
-            diversity_importance: data.diversity_importance || ""
+            diversity_importance: data.diversity_importance || "",
+            graduation_year: (data as any).graduation_year || null
           });
         }
       } catch (err) {
@@ -351,6 +353,33 @@ export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuesti
       case 2: // Academic
         return (
           <div className="space-y-6">
+            <div>
+              <h4 className="font-medium text-foreground mb-3">
+                When do you expect to graduate high school?
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                This helps us find universities that match your timeline. Some universities require 12 years of schooling.
+              </p>
+              <RadioGroup
+                value={preferences.graduation_year?.toString() || ""}
+                onValueChange={(v) => setPreferences(p => ({ ...p, graduation_year: parseInt(v) }))}
+                className="space-y-2"
+              >
+                {[
+                  { label: "2025", value: "2025" },
+                  { label: "2026", value: "2026" },
+                  { label: "2027", value: "2027" },
+                  { label: "2028", value: "2028" },
+                  { label: "Already graduated", value: "2024" }
+                ].map(option => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <RadioGroupItem value={option.value} id={`grad-${option.value}`} />
+                    <Label htmlFor={`grad-${option.value}`}>{option.label}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+
             <div>
               <h4 className="font-medium text-foreground mb-3">
                 What fields are you interested in?
