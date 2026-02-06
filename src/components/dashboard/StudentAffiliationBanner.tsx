@@ -1,9 +1,20 @@
-import { School, GraduationCap } from "lucide-react";
+import { useState } from "react";
+import { School, GraduationCap, BookOpen } from "lucide-react";
 import { useStudentAffiliation } from "@/hooks/useStudentAffiliation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export function StudentAffiliationBanner() {
   const { affiliation, loading } = useStudentAffiliation();
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
 
   if (loading) {
     return (
@@ -13,8 +24,45 @@ export function StudentAffiliationBanner() {
     );
   }
 
+  // Show join school banner for non-affiliated students
   if (!affiliation) {
-    return null;
+    return (
+      <>
+        <div className="p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/30">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-foreground">Join Your School</h3>
+              <p className="text-sm text-muted-foreground">
+                Get access to assignments, grades, and school calendar by joining your school with an invite code.
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowJoinDialog(true)}
+              className="ml-auto shrink-0"
+            >
+              Join with Code
+            </Button>
+          </div>
+        </div>
+
+        <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Join Your School</DialogTitle>
+              <DialogDescription>
+                Enter the invite code provided by your school administrator.
+              </DialogDescription>
+            </DialogHeader>
+            <JoinCodeEntry />
+          </DialogContent>
+        </Dialog>
+      </>
+    );
   }
 
   return (
