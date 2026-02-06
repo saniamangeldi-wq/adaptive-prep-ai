@@ -57,11 +57,18 @@ serve(async (req) => {
       });
     }
 
-    // Generate a single-use token for real-time speech-to-text
+    const ELEVENLABS_AGENT_ID = Deno.env.get("ELEVENLABS_AGENT_ID");
+    if (!ELEVENLABS_AGENT_ID) {
+      return new Response(JSON.stringify({ error: "ElevenLabs Agent ID not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Generate a conversation token for the conversational AI agent
     const response = await fetch(
-      "https://api.elevenlabs.io/v1/single-use-token/realtime_scribe",
+      `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${ELEVENLABS_AGENT_ID}`,
       {
-        method: "POST",
         headers: {
           "xi-api-key": ELEVENLABS_API_KEY,
         },

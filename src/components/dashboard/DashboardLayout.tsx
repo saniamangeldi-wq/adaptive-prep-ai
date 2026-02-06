@@ -28,21 +28,23 @@ import { cn } from "@/lib/utils";
 import { TierBadge } from "./TierBadge";
 import { TrialBanner } from "./TrialBanner";
 import { RoleSwitcher } from "./RoleSwitcher";
+import { useSchoolStudent } from "@/hooks/useSchoolStudent";
 
 type NavItem = {
   name: string;
   href: string;
   icon: React.ElementType;
+  schoolOnly?: boolean;
 };
 
 const studentNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Practice Tests", href: "/dashboard/tests", icon: FileText },
   { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
-  { name: "Assignments", href: "/dashboard/assignments", icon: ClipboardList },
-  { name: "Grades", href: "/dashboard/grades", icon: BarChart3 },
-  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar },
-  { name: "Curriculum", href: "/dashboard/curriculum", icon: BookOpen },
+  { name: "Assignments", href: "/dashboard/assignments", icon: ClipboardList, schoolOnly: true },
+  { name: "Grades", href: "/dashboard/grades", icon: BarChart3, schoolOnly: true },
+  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar, schoolOnly: true },
+  { name: "Curriculum", href: "/dashboard/curriculum", icon: BookOpen, schoolOnly: true },
   { name: "University Match", href: "/dashboard/university-match", icon: GraduationCap },
   { name: "Progress", href: "/dashboard/progress", icon: LineChart },
   { name: "Flashcards", href: "/dashboard/flashcards", icon: Layers },
@@ -91,6 +93,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { isSchoolStudent } = useSchoolStudent();
 
   const handleSignOut = async () => {
     await signOut();
@@ -108,7 +111,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         return adminNav;
       case "student":
       default:
-        return studentNav;
+        // Filter out school-only items if student is not affiliated with a school
+        return studentNav.filter(item => !item.schoolOnly || isSchoolStudent);
     }
   };
 
