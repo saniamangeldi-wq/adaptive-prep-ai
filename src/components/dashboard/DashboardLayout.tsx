@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   GraduationCap, 
@@ -20,7 +20,8 @@ import {
   CreditCard,
   UserPlus,
   BookOpen,
-  Trophy
+  Trophy,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +38,10 @@ type NavItem = {
   schoolOnly?: boolean;
 };
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
 const studentNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Practice Tests", href: "/dashboard/tests", icon: FileText },
@@ -94,6 +99,38 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isSchoolStudent } = useSchoolStudent();
+
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsStandalone(true);
+      return;
+    }
+    const ua = navigator.userAgent;
+    setIsIOS(/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream);
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (isIOS) {
+      alert("Tap the Share button in your browser, then select 'Add to Home Screen'");
+      return;
+    }
+    if (!deferredPrompt) return;
+    await deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") setDeferredPrompt(null);
+  };
+
+  const showInstallButton = !isStandalone && (deferredPrompt || isIOS);
 
   const handleSignOut = async () => {
     await signOut();
@@ -183,6 +220,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
+
+          {/* Install App */}
+          {showInstallButton && (
+            <div className="px-3 pb-2">
+              <button
+                onClick={handleInstall}
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+              >
+                <Download className="w-5 h-5" />
+                Install App
+              </button>
+            </div>
+          )}
 
           {/* Tier Badge */}
           <TierBadge />
