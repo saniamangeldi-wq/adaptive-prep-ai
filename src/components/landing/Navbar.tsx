@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, GraduationCap } from "lucide-react";
+import { Menu, X, GraduationCap, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
 
 const navLinks = [
   { href: "#features", label: "Features" },
@@ -13,6 +18,38 @@ const navLinks = [
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsStandalone(true);
+      return;
+    }
+    const ua = navigator.userAgent;
+    setIsIOS(/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream);
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (isIOS) {
+      alert("Tap the Share button in your browser, then select 'Add to Home Screen'");
+      return;
+    }
+    if (!deferredPrompt) return;
+    await deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") setDeferredPrompt(null);
+  };
+
+  const showInstallButton = !isStandalone && (deferredPrompt || isIOS);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
@@ -40,6 +77,19 @@ export function Navbar() {
               </a>
             ))}
           </div>
+
+          {/* Install App button - tablet/phone only */}
+          {showInstallButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden max-md:flex items-center gap-1.5 mr-2"
+              onClick={handleInstall}
+            >
+              <Download className="w-4 h-4" />
+              <span className="text-xs">Get App</span>
+            </Button>
+          )}
 
           {/* Spacer to balance layout */}
           <div className="hidden md:block w-32" />
@@ -72,6 +122,12 @@ export function Navbar() {
               </a>
             ))}
             <div className="pt-4 border-t border-border/50 space-y-2">
+              {showInstallButton && (
+                <Button variant="secondary" className="w-full gap-2" onClick={handleInstall}>
+                  <Download className="w-4 h-4" />
+                  Get the App
+                </Button>
+              )}
               <Button variant="outline" className="w-full" asChild>
                 <Link to="/login">Sign In</Link>
               </Button>
