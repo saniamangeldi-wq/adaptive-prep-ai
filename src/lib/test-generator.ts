@@ -42,8 +42,53 @@ const lengthToMinutes: Record<string, number> = {
   full: 180,
 };
 
+type DifficultyLevel = "easy" | "normal" | "hard";
+
+// Calculate adaptive difficulty based on past performance
+async function getAdaptiveDifficulty(userId: string, baseDifficulty: DifficultyLevel): Promise<DifficultyLevel> {
+  const { data: recentAttempts } = await supabase
+    .from("test_attempts")
+    .select("correct_answers, total_questions, time_spent_seconds")
+    .eq("user_id", userId)
+    .not("completed_at", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (!recentAttempts || recentAttempts.length < 3) {
+    return baseDifficulty; // Not enough data, use selected difficulty
+  }
+
+  const accuracy = recentAttempts.reduce((sum, a) => {
+    return sum + ((a.correct_answers || 0) / (a.total_questions || 1));
+  }, 0) / recentAttempts.length;
+
+  const avgTimePerQuestion = recentAttempts.reduce((sum, a) => {
+    const time = a.time_spent_seconds || 0;
+    const qs = a.total_questions || 1;
+    return sum + (time / qs);
+  }, 0) / recentAttempts.length;
+
+  // Progressive difficulty calibration algorithm
+  if (accuracy > 0.8 && avgTimePerQuestion < 90) {
+    // Student mastering current level - increase difficulty
+    if (baseDifficulty === "easy") return "normal";
+    if (baseDifficulty === "normal") return "hard";
+    return "hard";
+  } else if (accuracy < 0.5) {
+    // Student struggling - decrease difficulty
+    if (baseDifficulty === "hard") return "normal";
+    if (baseDifficulty === "normal") return "easy";
+    return "easy";
+  }
+
+  return baseDifficulty; // Maintain current level
+}
+
 export async function generateTest(config: TestConfig, userId: string): Promise<GeneratedTest | null> {
   const targetQuestions = lengthToQuestions[config.length];
+  
+  // Apply adaptive difficulty calibration
+  const adaptedDifficulty = await getAdaptiveDifficulty(userId, config.difficulty);
   
   // Determine which test types to fetch
   let testTypes: string[] = [];
@@ -53,13 +98,25 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     testTypes = [config.testType];
   }
   
-  // Fetch questions from sat_tests table (include id for test_attempts)
-  const { data: tests, error } = await supabase
+  // Fetch questions from sat_tests table - try adapted difficulty first, fallback to original
+  let { data: tests, error } = await supabase
     .from("sat_tests")
     .select("id, questions, difficulty, test_type")
-    .eq("difficulty", config.difficulty)
+    .eq("difficulty", adaptedDifficulty)
     .in("test_type", testTypes)
     .eq("is_official", true);
+  
+  // Fallback to original difficulty if adapted yields no results
+  if ((!tests || tests.length === 0) && adaptedDifficulty !== config.difficulty) {
+    const fallback = await supabase
+      .from("sat_tests")
+      .select("id, questions, difficulty, test_type")
+      .eq("difficulty", config.difficulty)
+      .in("test_type", testTypes)
+      .eq("is_official", true);
+    tests = fallback.data;
+    error = fallback.error;
+  }
 
   if (error || !tests || tests.length === 0) {
     console.error("Error fetching tests:", error);

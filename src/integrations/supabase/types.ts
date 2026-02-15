@@ -954,6 +954,39 @@ export type Database = {
         }
         Relationships: []
       }
+      student_badges: {
+        Row: {
+          badge_description: string | null
+          badge_icon: string
+          badge_name: string
+          badge_type: string
+          earned_at: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          badge_description?: string | null
+          badge_icon?: string
+          badge_name: string
+          badge_type: string
+          earned_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          badge_description?: string | null
+          badge_icon?: string
+          badge_name?: string
+          badge_type?: string
+          earned_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       student_groups: {
         Row: {
           created_at: string | null

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useBadges, BADGE_DEFINITIONS } from "@/hooks/useBadges";
+import { useStreakTracker } from "@/hooks/useStreakTracker";
 import { 
   BookOpen, 
   Brain, 
@@ -13,7 +15,9 @@ import {
   Zap,
   Clock,
   Calculator,
-  PenLine
+  PenLine,
+  Flame,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -49,6 +53,8 @@ function hasSATorACT(profile: { study_subjects?: string[] | null } | null): bool
 export function StudentDashboard() {
   const { profile } = useAuth();
   const { totalSATScore, mathScore, rwScore, testsTaken, hasProgress } = useDashboardStats();
+  const { earnedBadges, checkAndAwardBadges, allBadges } = useBadges();
+  const { streakData } = useStreakTracker();
   const [showTutorial, setShowTutorial] = useState(false);
 
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
@@ -147,7 +153,7 @@ export function StudentDashboard() {
       </div>
 
       {/* Stats cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           icon={FileText}
           label={isTier0 ? "Questions Today" : "Questions Remaining"}
@@ -180,6 +186,51 @@ export function StudentDashboard() {
           color="from-purple-500 to-pink-400"
           tooltip="Your estimated SAT Reading & Writing section score"
         />
+        <StatCard
+          icon={Flame}
+          label="Streak"
+          value={streakData.streakDays > 0 ? `${streakData.streakDays}d` : "--"}
+          subtext={streakData.points > 0 ? `${streakData.points} pts` : "start studying"}
+          color="from-orange-500 to-red-400"
+          tooltip="Your daily study streak and total points earned"
+        />
+      </div>
+
+      {/* Achievement Badges */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Star className="w-4 h-4" /> Achievement Badges
+          </h3>
+          <span className="text-xs text-muted-foreground">
+            {earnedBadges.length}/{allBadges.length} earned
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {allBadges.map((badge) => {
+            const isEarned = earnedBadges.some(b => b.badge_type === badge.type);
+            return (
+              <Tooltip key={badge.type}>
+                <TooltipTrigger asChild>
+                  <div
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all ${
+                      isEarned
+                        ? "bg-primary/20 border border-primary/40 shadow-sm"
+                        : "bg-secondary/50 border border-border/30 opacity-40 grayscale"
+                    }`}
+                  >
+                    {badge.icon}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-medium">{badge.name}</p>
+                  <p className="text-xs text-muted-foreground">{badge.description}</p>
+                  {!isEarned && <p className="text-xs text-muted-foreground italic mt-1">Not yet earned</p>}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
       </div>
 
       {/* Subject Quick Actions */}
