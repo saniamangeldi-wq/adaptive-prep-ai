@@ -108,7 +108,7 @@ export function CreditsInfoPopover({ creditsRemaining, dailyLimit, children }: C
         {profile?.tier !== "tier_3" && (
           <div className="p-3 bg-primary/5 border-t border-border">
             <p className="text-xs text-muted-foreground text-center">
-              <span className="font-medium text-primary">Upgrade</span> to get up to 300 credits/day
+              <span className="font-medium text-primary">Upgrade</span> to get up to 200 credits/day
             </p>
           </div>
         )}
