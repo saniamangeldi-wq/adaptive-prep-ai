@@ -9,28 +9,28 @@ const studentPlans = [{
   tier: "Tier 0",
   price: 0,
   description: "Get started with SAT prep basics",
-  features: ["10 SAT questions per day", "20 AI credits/day", "Gemini Flash AI (Quick Chat)", "Adaptive learning style", "Progress dashboard", "5 flashcards/day"],
+  features: ["10 SAT questions per day", "15 AI credits/day", "Gemini Flash AI (Quick Chat)", "Adaptive learning style", "Progress dashboard", "3 flashcards/day"],
   popular: false
 }, {
   name: "Starter",
   tier: "Tier 1",
   price: 7,
   description: "Perfect for getting started with SAT prep",
-  features: ["2 practice tests per month", "Unlimited SAT questions", "50 AI credits/day", "GPT-4o AI Model", "Full test feedback", "20 flashcards/day"],
+  features: ["150 practice questions/month", "Unlimited SAT questions", "40 AI credits/day", "GPT-4o AI Model", "Full test feedback", "15 flashcards/day"],
   popular: false
 }, {
   name: "Pro",
   tier: "Tier 2",
   price: 10,
   description: "Most popular for serious test prep",
-  features: ["5 practice tests per month", "150 AI credits/day", "Perplexity Pro (Research + Citations)", "Perplexity Reasoning", "50 flashcards/day", "Detailed analytics"],
+  features: ["300 practice questions/month", "100 AI credits/day", "Perplexity Pro (Research + Citations)", "Perplexity Reasoning", "30 flashcards/day", "Detailed analytics"],
   popular: true
 }, {
   name: "Elite",
   tier: "Tier 3",
   price: 21,
   description: "Maximum preparation power",
-  features: ["Unlimited practice tests", "300 AI credits/day", "All Perplexity Models", "Deep Research + Advanced Reasoning", "University Match feature"],
+  features: ["1000 practice questions/month", "200 AI credits/day", "All Perplexity Models", "Deep Research + Advanced Reasoning", "University Match feature"],
   popular: false
 }];
 const tutorPlans = [{
