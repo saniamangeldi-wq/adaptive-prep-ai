@@ -3,13 +3,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Tier credit limits for daily reset
 const TIER_CREDIT_LIMITS: Record<string, number> = {
-  tier_0: 20,
-  tier_1: 50,
-  tier_2: 150,
-  tier_3: 300,
+  tier_0: 15,
+  tier_1: 40,
+  tier_2: 100,
+  tier_3: 200,
 };
 
-const TRIAL_CREDITS_PER_DAY = 100;
+const TRIAL_CREDITS_PER_DAY = 75;
 
 // Check if credits should be reset (new day)
 function shouldResetCredits(creditsResetAt: string | null): boolean {
