@@ -30,11 +30,7 @@ export function getEstimatedMinutes(questionCount: number): number {
 }
 
 export function getRetakeDays(tier: string): number {
-  switch (tier) {
-    case "tier_3": return 7;
-    case "tier_2": return 14;
-    default: return 30;
-  }
+  return 7; // All tiers: 1 week cooldown
 }
 
 // Spatial visual indicator questions (for Elite sub-typing)
