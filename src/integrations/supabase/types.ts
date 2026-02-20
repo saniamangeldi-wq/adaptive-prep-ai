@@ -763,6 +763,15 @@ export type Database = {
           trial_started_at: string | null
           updated_at: string
           user_id: string
+          vak_auditory_pct: number | null
+          vak_kinesthetic_pct: number | null
+          vak_last_taken_at: string | null
+          vak_primary_style: string | null
+          vak_progress: Json | null
+          vak_secondary_style: string | null
+          vak_sub_type: string | null
+          vak_tier_taken: string | null
+          vak_visual_pct: number | null
         }
         Insert: {
           avatar_url?: string | null
@@ -790,6 +799,15 @@ export type Database = {
           trial_started_at?: string | null
           updated_at?: string
           user_id: string
+          vak_auditory_pct?: number | null
+          vak_kinesthetic_pct?: number | null
+          vak_last_taken_at?: string | null
+          vak_primary_style?: string | null
+          vak_progress?: Json | null
+          vak_secondary_style?: string | null
+          vak_sub_type?: string | null
+          vak_tier_taken?: string | null
+          vak_visual_pct?: number | null
         }
         Update: {
           avatar_url?: string | null
@@ -817,6 +835,15 @@ export type Database = {
           trial_started_at?: string | null
           updated_at?: string
           user_id?: string
+          vak_auditory_pct?: number | null
+          vak_kinesthetic_pct?: number | null
+          vak_last_taken_at?: string | null
+          vak_primary_style?: string | null
+          vak_progress?: Json | null
+          vak_secondary_style?: string | null
+          vak_sub_type?: string | null
+          vak_tier_taken?: string | null
+          vak_visual_pct?: number | null
         }
         Relationships: []
       }

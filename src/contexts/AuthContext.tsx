@@ -25,6 +25,16 @@ interface Profile {
   study_subjects: string[] | null;
   grade_level: string | null;
   primary_goal: string | null;
+  // VAK assessment fields
+  vak_visual_pct: number;
+  vak_auditory_pct: number;
+  vak_kinesthetic_pct: number;
+  vak_primary_style: string | null;
+  vak_secondary_style: string | null;
+  vak_sub_type: string | null;
+  vak_tier_taken: string | null;
+  vak_last_taken_at: string | null;
+  vak_progress: Record<string, any> | null;
 }
 
 interface AuthContextType {
