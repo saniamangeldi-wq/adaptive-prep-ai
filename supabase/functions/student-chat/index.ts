@@ -267,9 +267,12 @@ CRITICAL RULES:
 1. NEVER give direct answers to test or practice questions - guide students to find answers themselves
 2. Keep responses concise (2-3 paragraphs maximum) unless the student asks for more detail
 3. DO NOT use citation brackets like [1][2][3] - write naturally without references
-4. Ask follow-up questions to engage the student in a conversation
-5. If they're stuck, break the problem into smaller steps
-6. Celebrate their progress and encourage persistence
+4. DO NOT use <think> tags or expose internal reasoning. Never wrap any part of your response in <think>...</think> blocks. Only output the final answer.
+5. Ask follow-up questions to engage the student in a conversation
+6. If they're stuck, break the problem into smaller steps
+7. Celebrate their progress and encourage persistence
+8. For quick questions, give quick answers. Match response length to question complexity.
+9. If the user says "FAST" or mentions a deadline, keep response under 200 words.
 
 ${qualityNote}
 ${styleGuidance}
@@ -310,7 +313,7 @@ async function callPerplexity(
     body: JSON.stringify({
       model: model,
       messages: [
-        { role: "system", content: systemPrompt + "\n\nProvide factual, well-sourced information. Cite sources when relevant." },
+        { role: "system", content: systemPrompt + "\n\nProvide factual, well-sourced information. Cite sources when relevant. NEVER use <think> tags or expose internal reasoning." },
         ...messages,
       ],
       stream: true,
@@ -348,6 +351,71 @@ async function callLovableAI(
   });
 
   return response;
+}
+
+// Transform stream to strip <think>...</think> blocks from SSE content deltas
+function stripThinkTagsFromStream(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let insideThink = false;
+  let buffer = "";
+
+  return new ReadableStream({
+    async pull(controller) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          controller.close();
+          return;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        let output = "";
+
+        // Process character by character to handle think tags spanning chunks
+        while (buffer.length > 0) {
+          if (insideThink) {
+            const endIdx = buffer.indexOf("</think>");
+            if (endIdx === -1) {
+              // Still inside think block, might need more data
+              if (buffer.length > 100) {
+                // Discard accumulated think content
+                buffer = "";
+              }
+              break;
+            }
+            // Skip everything up to and including </think>
+            buffer = buffer.slice(endIdx + 8);
+            insideThink = false;
+          } else {
+            const startIdx = buffer.indexOf("<think>");
+            if (startIdx === -1) {
+              // Check if buffer ends with a partial "<think" tag
+              let safeEnd = buffer.length;
+              for (let i = 1; i < 7 && i <= buffer.length; i++) {
+                if ("<think>".startsWith(buffer.slice(-i))) {
+                  safeEnd = buffer.length - i;
+                  break;
+                }
+              }
+              output += buffer.slice(0, safeEnd);
+              buffer = buffer.slice(safeEnd);
+              break;
+            }
+            output += buffer.slice(0, startIdx);
+            buffer = buffer.slice(startIdx + 7);
+            insideThink = true;
+          }
+        }
+
+        if (output) {
+          controller.enqueue(encoder.encode(output));
+          return;
+        }
+      }
+    },
+  });
 }
 
 serve(async (req) => {
@@ -493,7 +561,10 @@ serve(async (req) => {
       });
     }
 
-    return new Response(response.body, {
+    // Strip <think>...</think> blocks from SSE stream before sending to client
+    const transformedBody = stripThinkTagsFromStream(response.body!);
+
+    return new Response(transformedBody, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {

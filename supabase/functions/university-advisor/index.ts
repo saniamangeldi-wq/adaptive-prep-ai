@@ -33,7 +33,50 @@
    return TIER_CREDIT_LIMITS[tier] || TIER_CREDIT_LIMITS.tier_0;
  }
  
- serve(async (req) => {
+// Transform stream to strip <think>...</think> blocks from SSE content deltas
+function stripThinkTagsFromStream(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let insideThink = false;
+  let buffer = "";
+
+  return new ReadableStream({
+    async pull(controller) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) { controller.close(); return; }
+        buffer += decoder.decode(value, { stream: true });
+        let output = "";
+        while (buffer.length > 0) {
+          if (insideThink) {
+            const endIdx = buffer.indexOf("</think>");
+            if (endIdx === -1) { if (buffer.length > 100) buffer = ""; break; }
+            buffer = buffer.slice(endIdx + 8);
+            insideThink = false;
+          } else {
+            const startIdx = buffer.indexOf("<think>");
+            if (startIdx === -1) {
+              let safeEnd = buffer.length;
+              for (let i = 1; i < 7 && i <= buffer.length; i++) {
+                if ("<think>".startsWith(buffer.slice(-i))) { safeEnd = buffer.length - i; break; }
+              }
+              output += buffer.slice(0, safeEnd);
+              buffer = buffer.slice(safeEnd);
+              break;
+            }
+            output += buffer.slice(0, startIdx);
+            buffer = buffer.slice(startIdx + 7);
+            insideThink = true;
+          }
+        }
+        if (output) { controller.enqueue(encoder.encode(output)); return; }
+      }
+    },
+  });
+}
+
+serve(async (req) => {
    if (req.method === "OPTIONS") {
      return new Response(null, { headers: corsHeaders });
    }
@@ -177,11 +220,18 @@
     const currentMonth = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
      const systemPrompt = `You are a university admissions advisor AI assistant for AdaptivePrep, a comprehensive educational platform. Your role is to help students create personalized 1-year plans to get accepted into their dream universities.
- 
+
 CURRENT DATE: ${currentDate}
 CURRENT MONTH: ${currentMonth}
 
 Use this date information when creating timelines and plans. All deadlines and milestones should be based on real calendar dates starting from today.
+
+CRITICAL OUTPUT RULES:
+- NEVER use <think> tags or expose internal reasoning. Only output the final answer.
+- DO NOT wrap any part of your response in <think>...</think> blocks.
+- Keep responses focused and under 600 words unless creating a full plan.
+- For quick questions, give quick answers (2-4 paragraphs max).
+- If the user says "FAST" or mentions a deadline, keep response under 200 words.
 
  STUDENT PROFILE:
  - Name: ${profile?.full_name || "Student"}
@@ -219,7 +269,6 @@ Use this date information when creating timelines and plans. All deadlines and m
  - Use clear structure with headers and bullet points
  - Break down complex tasks into actionable steps
  - Celebrate progress and acknowledge challenges
- - Keep responses focused and under 600 words unless creating a full plan
  - When creating a full 12-month plan, structure it clearly by month`;
  
      const aiMessages = [
@@ -261,7 +310,10 @@ Use this date information when creating timelines and plans. All deadlines and m
        });
      }
  
-     return new Response(response.body, {
+     // Strip <think> tags from stream
+     const transformedBody = stripThinkTagsFromStream(response.body!);
+
+     return new Response(transformedBody, {
        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
      });
    } catch (error) {
