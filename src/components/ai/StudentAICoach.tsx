@@ -250,7 +250,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
             placeholder={noCredits ? "No credits remaining..." : isTier3 ? "Type, paste image, or use voice..." : "Type or paste an image (Ctrl+V)..."}
             disabled={noCredits || isLoading}
-            className="w-full h-12 px-4 rounded-xl bg-card border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+            className="w-full h-12 px-4 rounded-xl bg-card border-2 border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 shadow-sm"
           />
         </div>
         <Button
