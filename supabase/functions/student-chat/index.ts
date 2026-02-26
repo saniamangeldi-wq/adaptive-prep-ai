@@ -511,8 +511,38 @@ serve(async (req) => {
       console.error("Failed to deduct credit:", updateError);
     }
 
+    // Ensure messages alternate correctly: must start with user, alternate user/assistant
+    const sanitizedMessages: Array<{role: string; content: string}> = [];
+    for (const msg of messages) {
+      // Strip think tags from stored messages
+      const cleanContent = msg.content
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/<\/?think>/gi, '')
+        .trim();
+      if (!cleanContent) continue;
+      
+      const lastRole = sanitizedMessages.length > 0 ? sanitizedMessages[sanitizedMessages.length - 1].role : null;
+      // Skip consecutive same-role messages and ensure starts with user
+      if (sanitizedMessages.length === 0 && msg.role !== 'user') continue;
+      if (lastRole === msg.role) continue;
+      
+      sanitizedMessages.push({ role: msg.role, content: cleanContent });
+    }
+    
+    // Ensure the last message is from the user
+    while (sanitizedMessages.length > 0 && sanitizedMessages[sanitizedMessages.length - 1].role !== 'user') {
+      sanitizedMessages.pop();
+    }
+
+    if (sanitizedMessages.length === 0) {
+      return new Response(JSON.stringify({ error: "No valid user message found." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Get the last user message to determine routing and subject
-    const lastUserMessage = messages.filter((m: {role: string}) => m.role === "user").pop()?.content || "";
+    const lastUserMessage = sanitizedMessages.filter((m) => m.role === "user").pop()?.content || "";
 
     // Detect or use explicit subject
     const userSubjects = profile.study_subjects || ['SAT'];
@@ -530,14 +560,14 @@ serve(async (req) => {
     if (modelConfig.provider === "perplexity") {
       console.log(`Routing to Perplexity with model: ${modelConfig.model} (${modelConfig.displayName})`);
       try {
-        response = await callPerplexity(messages, systemPrompt, modelConfig.model);
+        response = await callPerplexity(sanitizedMessages, systemPrompt, modelConfig.model);
       } catch (e) {
         console.error("Perplexity failed, falling back to Lovable AI:", e);
-        response = await callLovableAI(messages, systemPrompt, "google/gemini-2.5-flash");
+        response = await callLovableAI(sanitizedMessages, systemPrompt, "google/gemini-2.5-flash");
       }
     } else {
       console.log(`Routing to Lovable AI with model: ${modelConfig.model} (${modelConfig.displayName})`);
-      response = await callLovableAI(messages, systemPrompt, modelConfig.model);
+      response = await callLovableAI(sanitizedMessages, systemPrompt, modelConfig.model);
     }
 
     if (!response.ok) {
