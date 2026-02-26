@@ -163,16 +163,6 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
         </div>
       </div>
 
-      {/* Important notice */}
-      <div className="mb-4 p-4 rounded-xl bg-info/10 border border-info/20 flex items-start gap-3">
-        <Lightbulb className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
-        <div className="text-sm">
-          <span className="font-medium text-foreground">Learning Mode:</span>{" "}
-          <span className="text-muted-foreground">
-            I'll help you understand concepts and guide you to solutions, but I won't give you direct answers to test questions. This helps you learn better!
-          </span>
-        </div>
-      </div>
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 rounded-xl bg-card/50 border border-border/50">
