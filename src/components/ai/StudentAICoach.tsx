@@ -161,7 +161,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
 
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 rounded-xl bg-card/50 border border-border/50">
+      <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 rounded-xl">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-8">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-4">
