@@ -163,14 +163,14 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto space-y-4 mb-2 p-3 rounded-xl bg-card/50 border border-border/50">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-3">
-              <Bot className="w-6 h-6 text-primary-foreground" />
+          <div className="h-full flex flex-col items-center justify-center text-center p-2">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-2">
+              <Bot className="w-5 h-5 text-primary-foreground" />
             </div>
-            <h2 className="text-lg font-semibold text-foreground mb-1">
+            <h2 className="text-base font-semibold text-foreground mb-0.5">
               How can I help you today?
             </h2>
-            <p className="text-sm text-muted-foreground mb-4 max-w-md">
+            <p className="text-xs text-muted-foreground mb-3 max-w-md">
               Ask me about any subject, study strategies, or practice problems.
             </p>
             <AISuggestions 
