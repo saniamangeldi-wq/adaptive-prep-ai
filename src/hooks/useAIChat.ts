@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -22,10 +22,23 @@ interface StreamChatOptions {
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
-export function useAIChat() {
+export function useAIChat(conversationId?: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { refreshProfile } = useAuth();
+  const conversationIdRef = useRef(conversationId);
+  conversationIdRef.current = conversationId;
+
+  // Save messages to the ai_conversations table
+  const saveMessages = useCallback(async (msgs: Message[]) => {
+    const convId = conversationIdRef.current;
+    if (!convId) return;
+    const dbMessages = msgs.map(m => ({ role: m.role, content: m.content }));
+    await supabase
+      .from("ai_conversations")
+      .update({ messages: dbMessages, updated_at: new Date().toISOString() })
+      .eq("id", convId);
+  }, []);
 
   const streamChat = useCallback(async (
     userInput: string,
@@ -181,6 +194,12 @@ export function useAIChat() {
       // Refresh profile to update credits
       await refreshProfile();
 
+      // Save to database
+      setMessages(prev => {
+        saveMessages(prev);
+        return prev;
+      });
+
     } catch (error) {
       console.error("AI chat error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to get AI response");
@@ -189,10 +208,28 @@ export function useAIChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, refreshProfile]);
+  }, [messages, isLoading, refreshProfile, saveMessages]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
+  }, []);
+
+  // Load messages from a conversation
+  const loadConversationMessages = useCallback(async (convId: string) => {
+    const { data } = await supabase
+      .from("ai_conversations")
+      .select("messages")
+      .eq("id", convId)
+      .single();
+    if (data?.messages && Array.isArray(data.messages)) {
+      const loaded = (data.messages as Array<{ role: string; content: string }>).map((m, i) => ({
+        id: `loaded-${i}`,
+        role: m.role as "user" | "assistant",
+        content: m.content,
+        timestamp: new Date(),
+      }));
+      setMessages(loaded);
+    }
   }, []);
 
   return {
@@ -201,5 +238,6 @@ export function useAIChat() {
     streamChat,
     clearMessages,
     setMessages,
+    loadConversationMessages,
   };
 }

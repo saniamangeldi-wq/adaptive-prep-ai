@@ -48,12 +48,27 @@ const getHoursUntilReset = () => {
   return Math.ceil(diff / (1000 * 60 * 60));
 };
 
-export function StudentAICoach() {
+export function StudentAICoach({ conversationId, onEnsureConversation }: { conversationId?: string | null; onEnsureConversation?: () => Promise<string | null> }) {
   const [input, setInput] = useState("");
+  const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { profile } = useAuth();
-  const { messages, isLoading, streamChat, clearMessages } = useAIChat();
+  const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
+
+  // Sync activeConvId when conversationId prop changes
+  useEffect(() => {
+    setActiveConvId(conversationId || null);
+  }, [conversationId]);
+
+  // Load messages when conversation changes
+  useEffect(() => {
+    if (activeConvId) {
+      loadConversationMessages(activeConvId);
+    } else {
+      clearMessages();
+    }
+  }, [activeConvId, loadConversationMessages, clearMessages]);
   
   // Attachments hook
   const {
@@ -87,6 +102,12 @@ export function StudentAICoach() {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     if ((profile?.credits_remaining || 0) <= 0) return;
+    
+    // Auto-create conversation if none exists
+    if (!activeConvId && onEnsureConversation) {
+      const newId = await onEnsureConversation();
+      if (newId) setActiveConvId(newId);
+    }
     
     // Combine message with attachment context
     const attachmentContext = getAttachmentContext();

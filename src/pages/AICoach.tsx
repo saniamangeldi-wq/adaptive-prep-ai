@@ -27,6 +27,17 @@ export default function AICoach() {
     }
   };
 
+  // Auto-create a conversation if none is selected (for students)
+  const ensureConversation = async (): Promise<string | null> => {
+    if (currentConversation) return currentConversation.id;
+    const conv = await createConversation();
+    if (conv) {
+      setCurrentConversation(conv);
+      return conv.id;
+    }
+    return null;
+  };
+
   const handleSelectConversation = (conversation: Conversation | null) => {
     setCurrentConversation(conversation);
   };
@@ -41,7 +52,7 @@ export default function AICoach() {
         return <TeacherAICoach />;
       case "student":
       default:
-        return <StudentAICoach />;
+        return <StudentAICoach conversationId={currentConversation?.id || null} onEnsureConversation={ensureConversation} />;
     }
   };
 
