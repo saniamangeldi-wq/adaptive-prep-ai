@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getTierLimits } from "@/lib/tier-limits";
 
 const suggestedPrompts = [
   "Which of my students needs help with algebra?",
@@ -36,11 +37,7 @@ const suggestedPrompts = [
 
 // Get daily credit limit based on tier
 const getTierCredits = (tier: string | undefined) => {
-  switch (tier) {
-    case "tier_3": return 300;
-    case "tier_2": return 150;
-    default: return 50;
-  }
+  return getTierLimits(tier as any).creditsPerDay;
 };
 
 // Get hours until midnight reset

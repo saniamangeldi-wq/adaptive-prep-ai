@@ -24,6 +24,7 @@ import { Link } from "react-router-dom";
 import { useAIChat, type Message } from "@/hooks/useAIChat";
 import ReactMarkdown from "react-markdown";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getTierLimits } from "@/lib/tier-limits";
 
 const suggestedPrompts = [
   "Which teacher's class has the best performance?",
@@ -48,11 +49,7 @@ const teacherAnalysisPrompts = [
 
 // Get daily credit limit based on tier
 const getTierCredits = (tier: string | undefined) => {
-  switch (tier) {
-    case "tier_3": return 300;
-    case "tier_2": return 150;
-    default: return 50;
-  }
+  return getTierLimits(tier as any).creditsPerDay;
 };
 
 // Get hours until midnight reset

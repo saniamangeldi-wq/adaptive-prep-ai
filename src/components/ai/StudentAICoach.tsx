@@ -27,16 +27,12 @@ import { AISuggestions } from "./AISuggestions";
 import { CreditsInfoPopover } from "./CreditsInfoPopover";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
+import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
+
 // Get daily credit limit based on tier and trial status
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
-  if (isTrial) return 100; // Trial users get 100 credits/day
-  switch (tier) {
-    case "tier_3": return 300;
-    case "tier_2": return 150;
-    case "tier_1": return 50;
-    case "tier_0": return 20;
-    default: return 50;
-  }
+  if (isTrial) return TRIAL_LIMITS.creditsPerDay;
+  return getTierLimits(tier as any).creditsPerDay;
 };
 
 // Get hours until midnight reset
