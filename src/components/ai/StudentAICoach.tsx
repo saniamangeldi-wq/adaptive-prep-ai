@@ -306,8 +306,11 @@ function MessageBubble({ message, isTier3 }: { message: Message; isTier3: boolea
           <>
             <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
               <ReactMarkdown>
-                {/* Strip citation brackets like [1][2][3] from AI responses */}
-                {message.content.replace(/\[\d+\]/g, '')}
+                {message.content
+                  .replace(/<think>[\s\S]*?<\/think>/gi, '')
+                  .replace(/<\/?think>/gi, '')
+                  .replace(/\[\d+\]/g, '')
+                  .trim()}
               </ReactMarkdown>
             </div>
             {/* TTS button for Tier 3 users */}
