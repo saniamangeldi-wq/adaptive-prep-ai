@@ -9,6 +9,13 @@ const corsHeaders = {
 const getAdminAnalyticsPrompt = (schoolData: any, teacherPerformance: any[], projections: any) => {
   return `You are a school analytics AI assistant providing strategic insights for school administrators.
 
+CRITICAL OUTPUT RULES:
+- NEVER use <think> tags or expose internal reasoning. Only output the final answer.
+- DO NOT wrap any part of your response in <think>...</think> blocks.
+- Keep responses concise (2-4 paragraphs) unless the user asks for a detailed report or comprehensive analysis.
+- For quick questions, give quick answers. Match response length to question complexity.
+- If the user says "FAST" or mentions a deadline, keep response under 200 words.
+
 SCHOOL DATA:
 ${JSON.stringify(schoolData, null, 2)}
 
@@ -46,6 +53,48 @@ Format responses with clear sections:
 
 Always be data-driven but also practical and actionable.`;
 };
+
+// Transform stream to strip <think>...</think> blocks
+function stripThinkTagsFromStream(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let insideThink = false;
+  let buffer = "";
+  return new ReadableStream({
+    async pull(controller) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) { controller.close(); return; }
+        buffer += decoder.decode(value, { stream: true });
+        let output = "";
+        while (buffer.length > 0) {
+          if (insideThink) {
+            const endIdx = buffer.indexOf("</think>");
+            if (endIdx === -1) { if (buffer.length > 100) buffer = ""; break; }
+            buffer = buffer.slice(endIdx + 8);
+            insideThink = false;
+          } else {
+            const startIdx = buffer.indexOf("<think>");
+            if (startIdx === -1) {
+              let safeEnd = buffer.length;
+              for (let i = 1; i < 7 && i <= buffer.length; i++) {
+                if ("<think>".startsWith(buffer.slice(-i))) { safeEnd = buffer.length - i; break; }
+              }
+              output += buffer.slice(0, safeEnd);
+              buffer = buffer.slice(safeEnd);
+              break;
+            }
+            output += buffer.slice(0, startIdx);
+            buffer = buffer.slice(startIdx + 7);
+            insideThink = true;
+          }
+        }
+        if (output) { controller.enqueue(encoder.encode(output)); return; }
+      }
+    },
+  });
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -315,7 +364,9 @@ serve(async (req) => {
       });
     }
 
-    return new Response(response.body, {
+    const transformedBody = stripThinkTagsFromStream(response.body!);
+
+    return new Response(transformedBody, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
