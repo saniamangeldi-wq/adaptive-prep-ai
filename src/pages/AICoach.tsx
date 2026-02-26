@@ -119,7 +119,7 @@ export default function AICoach() {
             )}
           </div>
 
-          <div className="flex-1 overflow-auto p-6 pt-0">
+          <div className="flex-1 overflow-hidden p-6 pt-0">
             {mode === "voice" && isTier3 ? (
               <VoiceChat fullMode className="h-full" />
             ) : (
