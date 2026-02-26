@@ -127,7 +127,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <GraduationCap className="w-6 h-6 text-primary" />
@@ -161,17 +161,17 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
 
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 rounded-xl bg-card/50 border border-border/50">
+      <div className="flex-1 overflow-y-auto space-y-4 mb-2 p-3 rounded-xl bg-card/50 border border-border/50">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-4">
-              <Bot className="w-8 h-8 text-primary-foreground" />
+          <div className="h-full flex flex-col items-center justify-center text-center p-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-3">
+              <Bot className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">
+            <h2 className="text-lg font-semibold text-foreground mb-1">
               How can I help you today?
             </h2>
-            <p className="text-muted-foreground mb-6 max-w-md">
-              I'm your AI study coach. Ask me about any subject, study strategies, or help with practice problems.
+            <p className="text-sm text-muted-foreground mb-4 max-w-md">
+              Ask me about any subject, study strategies, or practice problems.
             </p>
             <AISuggestions 
               subject={primarySubject}
