@@ -223,7 +223,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
       )}
 
       {/* Input area */}
-      <div className="space-y-2">
+      <div className="space-y-2 pb-2">
         <ChatAttachments
           attachments={attachments}
           isUploading={isUploading}
