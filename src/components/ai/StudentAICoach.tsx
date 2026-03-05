@@ -125,7 +125,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
   const hoursUntilReset = getHoursUntilReset();
 
   return (
-    <div className="h-[calc(100vh-12rem)] flex flex-col max-w-4xl mx-auto">
+    <div className="h-[calc(100dvh-12rem)] flex flex-col max-w-4xl mx-auto min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
