@@ -191,6 +191,66 @@
   }
 }
 
+/* ===== Responsive Typography (fluid, scoped in media queries) ===== */
+/* Mobile: 320px–767px */
+@media (max-width: 767px) {
+  html {
+    font-size: 14px;
+  }
+
+  /* Hide sidebar on mobile — controlled by JS bottom sheet */
+  .dashboard-sidebar-desktop {
+    display: none !important;
+  }
+
+  /* Full-width cards on mobile */
+  .question-card {
+    max-width: 100% !important;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Ensure minimum touch targets */
+  .touch-target {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  /* Reduce animation complexity on mobile */
+  .animate-pulse-slow,
+  .animate-float {
+    animation: none !important;
+  }
+}
+
+/* Tablet Portrait: 768px–1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  html {
+    font-size: 15px;
+  }
+
+  .question-card {
+    max-width: 580px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Tablet Landscape: 1024px–1199px */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  html {
+    font-size: 15px;
+  }
+
+  .question-card {
+    max-width: 580px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Desktop: 1200px+ — no overrides, keeps existing styles */
+
 @keyframes float {
   0%, 100% {
     transform: translateY(0);

@@ -14,7 +14,8 @@ import {
   Volume2,
   VolumeX,
   Loader2,
-  Crown
+  Crown,
+  Plus
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -125,15 +126,15 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
   const hoursUntilReset = getHoursUntilReset();
 
   return (
-    <div className="h-[calc(100dvh-12rem)] flex flex-col max-w-4xl mx-auto min-h-0">
+    <div className="flex flex-col max-w-4xl mx-auto min-h-0 h-[calc(100dvh-10rem)] md:h-[calc(100dvh-12rem)]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2 md:mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <GraduationCap className="w-6 h-6 text-primary" />
+          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 md:w-6 md:h-6 text-primary" />
             Study Coach
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs md:text-sm text-muted-foreground">
             Your personal SAT study assistant
           </p>
         </div>
@@ -143,13 +144,13 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
               variant="ghost" 
               size="sm" 
               onClick={clearMessages}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground min-w-[48px] min-h-[48px] md:min-w-0 md:min-h-0"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
           <CreditsInfoPopover creditsRemaining={creditsRemaining} dailyLimit={dailyLimit}>
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 hover:bg-accent/20 transition-colors cursor-pointer">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 hover:bg-accent/20 transition-colors cursor-pointer min-h-[48px] md:min-h-0">
               <Zap className="w-4 h-4 text-accent" />
               <span className="text-sm font-medium text-foreground">
                 {creditsRemaining}/{dailyLimit}
@@ -159,18 +160,17 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
         </div>
       </div>
 
-
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 rounded-xl">
+      <div className="flex-1 overflow-y-auto space-y-4 mb-2 md:mb-4 p-3 md:p-4 rounded-xl min-h-0">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-4">
-              <Bot className="w-8 h-8 text-primary-foreground" />
+          <div className="h-full flex flex-col items-center justify-center text-center p-4 md:p-8">
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-4">
+              <Bot className="w-7 h-7 md:w-8 md:h-8 text-primary-foreground" />
             </div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">
+            <h2 className="text-lg md:text-xl font-semibold text-foreground mb-2">
               How can I help you today?
             </h2>
-            <p className="text-muted-foreground mb-6 max-w-md">
+            <p className="text-sm md:text-base text-muted-foreground mb-6 max-w-md">
               I'm your AI study coach. Ask me about any subject, study strategies, or help with practice problems.
             </p>
             <AISuggestions 
@@ -195,8 +195,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
       {/* Credits warnings */}
       {creditsLow && (
         <div className="mb-2 p-2 rounded-lg bg-warning/10 border border-warning/20 flex items-center gap-2 text-sm">
-          <AlertCircle className="w-4 h-4 text-warning" />
-          <span className="text-muted-foreground">Low credits remaining. Credits reset daily at midnight.</span>
+          <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
+          <span className="text-muted-foreground text-xs md:text-sm">Low credits remaining. Credits reset daily at midnight.</span>
         </div>
       )}
 
@@ -205,7 +205,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
           <div className="flex items-start gap-3">
             <Clock className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-xs md:text-sm font-medium text-foreground">
                 You've used your {dailyLimit} daily credits
               </p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -222,8 +222,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
         </div>
       )}
 
-      {/* Input area */}
-      <div className="space-y-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      {/* Input area — fixed feeling at bottom */}
+      <div className="space-y-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex-shrink-0">
         <ChatAttachments
           attachments={attachments}
           isUploading={isUploading}
@@ -235,33 +235,33 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
         />
         
         <div className="flex gap-2">
-        {/* Voice chat for Tier 3 users */}
-        {isTier3 && (
-          <VoiceChat 
-            onTranscript={handleVoiceTranscript}
-            isDisabled={noCredits || isLoading}
-          />
-        )}
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder={noCredits ? "No credits remaining..." : isTier3 ? "Type, paste image, or use voice..." : "Type or paste an image (Ctrl+V)..."}
-            disabled={noCredits || isLoading}
-            className="w-full h-12 px-4 rounded-xl bg-muted border-2 border-primary/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 shadow-md"
-          />
-        </div>
-        <Button
-          variant="hero"
-          size="icon"
-          className="w-12 h-12"
-          onClick={handleSend}
-          disabled={(!input.trim() && attachments.length === 0) || noCredits || isLoading}
-        >
-          <Send className="w-5 h-5" />
-        </Button>
+          {/* Voice chat for Tier 3 users */}
+          {isTier3 && (
+            <VoiceChat 
+              onTranscript={handleVoiceTranscript}
+              isDisabled={noCredits || isLoading}
+            />
+          )}
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+              placeholder={noCredits ? "No credits remaining..." : isTier3 ? "Type, paste image, or use voice..." : "Type or paste an image (Ctrl+V)..."}
+              disabled={noCredits || isLoading}
+              className="w-full h-14 md:h-12 px-4 rounded-xl bg-muted border-2 border-primary/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 shadow-md text-base"
+            />
+          </div>
+          <Button
+            variant="hero"
+            size="icon"
+            className="w-14 h-14 md:w-12 md:h-12 min-w-[48px] min-h-[48px]"
+            onClick={handleSend}
+            disabled={(!input.trim() && attachments.length === 0) || noCredits || isLoading}
+          >
+            <Send className="w-5 h-5" />
+          </Button>
         </div>
       </div>
     </div>
@@ -281,23 +281,23 @@ function MessageBubble({ message, isTier3 }: { message: Message; isTier3: boolea
 
   return (
     <div className={cn(
-      "flex gap-3",
+      "flex gap-2 md:gap-3",
       message.role === "user" && "flex-row-reverse"
     )}>
       <div className={cn(
-        "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+        "w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0",
         message.role === "assistant" 
           ? "bg-primary/20" 
           : "bg-accent/20"
       )}>
         {message.role === "assistant" ? (
-          <Bot className="w-4 h-4 text-primary" />
+          <Bot className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
         ) : (
-          <User className="w-4 h-4 text-accent" />
+          <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-accent" />
         )}
       </div>
       <div className={cn(
-        "max-w-[80%] p-4 rounded-2xl",
+        "max-w-[85%] md:max-w-[80%] p-3 md:p-4 rounded-2xl",
         message.role === "assistant"
           ? "bg-card border border-border/50 rounded-tl-sm"
           : "bg-primary text-primary-foreground rounded-tr-sm"
@@ -321,7 +321,7 @@ function MessageBubble({ message, isTier3 }: { message: Message; isTier3: boolea
                   size="sm"
                   onClick={handleTTS}
                   disabled={isLoading}
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 min-w-[48px] min-h-[48px] md:min-w-0 md:min-h-0"
                   title={isPlaying ? "Stop reading" : "Read aloud"}
                 >
                   {isLoading ? (
@@ -347,9 +347,9 @@ function MessageBubble({ message, isTier3 }: { message: Message; isTier3: boolea
 
 function LoadingBubble() {
   return (
-    <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-        <Bot className="w-4 h-4 text-primary" />
+    <div className="flex gap-2 md:gap-3">
+      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-primary/20 flex items-center justify-center">
+        <Bot className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
       </div>
       <div className="bg-card border border-border/50 rounded-2xl rounded-tl-sm p-4">
         <div className="flex gap-1">
