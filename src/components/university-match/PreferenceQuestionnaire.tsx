@@ -273,16 +273,18 @@ export function PreferenceQuestionnaire({ onComplete, onBack, onAskAdvisor }: Pr
                 <Icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{tab.label}</span>
                 {/* Completion badge */}
-                <span
-                  className={cn(
-                    "ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium",
-                    comp.filled === comp.total
-                      ? "bg-primary/15 text-primary"
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {comp.filled === comp.total ? "✅" : `${comp.filled}/${comp.total}`}
-                </span>
+                {comp.total > 0 && (
+                  <span
+                    className={cn(
+                      "ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium",
+                      comp.filled === comp.total
+                        ? "bg-primary/15 text-primary"
+                        : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {comp.filled === comp.total ? "✅" : `${comp.filled}/${comp.total}`}
+                  </span>
+                )}
                 {/* Active underline */}
                 {isActive && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
