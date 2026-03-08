@@ -299,6 +299,7 @@ export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuesti
                 <WorldMapSelector
                   selected={preferences.preferred_countries}
                   onToggle={toggleCountry}
+                  onCountryClick={(c) => setDeepDiveCountry(deepDiveCountry === c ? null : c)}
                 />
               </div>
 
