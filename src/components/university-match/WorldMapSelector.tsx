@@ -211,16 +211,16 @@ export function WorldMapSelector({ selected, onToggle }: WorldMapSelectorProps) 
                   d={country.path}
                   fill={
                     isSelected
-                      ? "hsl(var(--primary) / 0.6)"
+                      ? "#00ff88"
                       : isHovered
-                      ? "hsl(var(--primary) / 0.3)"
+                      ? "hsl(var(--primary) / 0.5)"
                       : "hsl(var(--muted) / 0.6)"
                   }
                   stroke={
                     isSelected
-                      ? "hsl(var(--primary))"
+                      ? "#00ff88"
                       : isHovered
-                      ? "hsl(var(--primary) / 0.7)"
+                      ? "hsl(var(--primary))"
                       : "hsl(var(--border))"
                   }
                   strokeWidth={isSelected || isHovered ? "1.5" : "0.5"}
