@@ -20,12 +20,7 @@ import {
   GraduationCap,
   Sparkles,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+// Dialog removed - preferences now full-page
 
 interface UniversityMatch {
   id: string;
