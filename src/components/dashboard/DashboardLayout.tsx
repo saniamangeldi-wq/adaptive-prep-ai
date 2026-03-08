@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   GraduationCap, 
@@ -22,15 +22,16 @@ import {
   BookOpen,
   Trophy,
   Download,
-  X
+  X,
+  Palette
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { TierBadge } from "./TierBadge";
-import { TrialBanner } from "./TrialBanner";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { useSchoolStudent } from "@/hooks/useSchoolStudent";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 type NavItem = {
   name: string;
@@ -96,7 +97,7 @@ const adminNav: NavItem[] = [
 ];
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const { profile, signOut } = useAuth();
   const location = useLocation();
@@ -140,15 +141,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     navigate("/");
   };
 
-  // Get navigation based on role
   const getNavigation = (): NavItem[] => {
     switch (profile?.role) {
-      case "tutor":
-        return tutorNav;
-      case "teacher":
-        return teacherNav;
-      case "school_admin":
-        return adminNav;
+      case "tutor": return tutorNav;
+      case "teacher": return teacherNav;
+      case "school_admin": return adminNav;
       case "student":
       default:
         return studentNav.filter(item => !item.schoolOnly || isSchoolStudent);
@@ -157,172 +154,192 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const navigation = getNavigation();
 
-  const getRoleLabel = () => {
-    switch (profile?.role) {
-      case "tutor":
-        return "Tutor";
-      case "teacher":
-        return "Teacher";
-      case "school_admin":
-        return "School Admin";
-      case "student":
-      default:
-        return profile?.tier?.replace("_", " ").toUpperCase() || "Tier 1";
+  const getTierShort = () => {
+    if (profile?.is_trial) return "Trial";
+    switch (profile?.tier) {
+      case "tier_3": return "Elite";
+      case "tier_2": return "Pro";
+      case "tier_1": return "Basic";
+      default: return "Free";
     }
   };
 
-  const NavItems = ({ onClick }: { onClick?: () => void }) => (
-    <>
-      {navigation.map((item) => {
-        const isActive = location.pathname === item.href;
-        return (
-          <Link
-            key={item.name}
-            to={item.href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[48px] md:min-h-0",
-              isActive 
-                ? "bg-sidebar-accent text-sidebar-primary" 
-                : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-            )}
-            onClick={onClick}
-          >
-            <item.icon className="w-5 h-5 flex-shrink-0" />
-            {item.name}
-          </Link>
-        );
-      })}
-    </>
-  );
-
   return (
-    <div className="min-h-screen bg-background dark">
-      {/* Mobile sidebar backdrop (for hamburger menu on tablet portrait) */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 xl:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Desktop & Tablet Landscape Sidebar (hidden on mobile & tablet portrait) */}
+    <div className="min-h-screen bg-background">
+      {/* ========== DESKTOP: Icon-only sidebar rail ========== */}
       <aside className={cn(
-        "fixed top-0 left-0 z-50 h-full bg-sidebar border-r border-sidebar-border transform transition-transform duration-300",
-        // Desktop: always visible, 256px
-        "xl:translate-x-0 xl:w-64",
-        // Tablet landscape (1024-1199): narrow sidebar 220px, always visible
-        "lg:translate-x-0 lg:w-[220px]",
-        // Below lg: slide-in overlay
-        sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full w-64",
-        // Hide completely on mobile (< 768px) — use bottom sheet instead
-        "hidden md:block"
+        "fixed top-0 left-0 z-50 h-full bg-sidebar border-r border-sidebar-border transition-all duration-200 hidden md:flex flex-col",
+        sidebarExpanded ? "w-56" : "w-14"
       )}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="h-16 flex items-center gap-2 px-6 border-b border-sidebar-border">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center">
+        {/* Logo */}
+        <div className="h-14 flex items-center justify-center border-b border-sidebar-border flex-shrink-0">
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center flex-shrink-0">
               <GraduationCap className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-bold text-sidebar-foreground lg:text-base xl:text-lg">AdaptivePrep</span>
-          </div>
+            {sidebarExpanded && (
+              <span className="text-sm font-bold text-sidebar-foreground whitespace-nowrap">AdaptivePrep</span>
+            )}
+          </Link>
+        </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {/* Expand toggle */}
+        <button
+          onClick={() => setSidebarExpanded(!sidebarExpanded)}
+          className="h-8 flex items-center justify-center text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors"
+        >
+          <Menu className="w-4 h-4" />
+        </button>
+
+        {/* Role switcher (only when expanded) */}
+        {sidebarExpanded && (
+          <div className="border-b border-sidebar-border/50">
             <RoleSwitcher />
-            <div className="pt-2 border-t border-sidebar-border/50 mt-2" />
-            <NavItems onClick={() => setSidebarOpen(false)} />
-          </nav>
+          </div>
+        )}
 
-          {/* Install App */}
-          {showInstallButton && (
-            <div className="px-3 pb-2">
-              <button
-                onClick={handleInstall}
-                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+        {/* Navigation */}
+        <nav className="flex-1 py-2 px-1.5 space-y-0.5 overflow-y-auto overflow-x-hidden">
+          {navigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            const iconButton = (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
+                  sidebarExpanded ? "px-3 py-2" : "px-0 py-2 justify-center",
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-primary"
+                    : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                )}
               >
-                <Download className="w-5 h-5" />
-                Install App
-              </button>
-            </div>
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                {sidebarExpanded && <span className="truncate">{item.name}</span>}
+              </Link>
+            );
+
+            if (sidebarExpanded) return <div key={item.name}>{iconButton}</div>;
+
+            return (
+              <Tooltip key={item.name} delayDuration={0}>
+                <TooltipTrigger asChild>{iconButton}</TooltipTrigger>
+                <TooltipContent side="right" className="text-xs">
+                  {item.name}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </nav>
+
+        {/* Bottom section */}
+        <div className="border-t border-sidebar-border p-1.5 space-y-0.5">
+          {/* Theme Switcher */}
+          <ThemeSwitcher collapsed={!sidebarExpanded} />
+
+          {showInstallButton && (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleInstall}
+                  className={cn(
+                    "flex items-center gap-3 w-full rounded-lg text-sm font-medium text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors",
+                    sidebarExpanded ? "px-3 py-2" : "px-0 py-2 justify-center"
+                  )}
+                >
+                  <Download className="w-5 h-5 flex-shrink-0" />
+                  {sidebarExpanded && <span>Install App</span>}
+                </button>
+              </TooltipTrigger>
+              {!sidebarExpanded && (
+                <TooltipContent side="right" className="text-xs">Install App</TooltipContent>
+              )}
+            </Tooltip>
           )}
 
-          {/* Tier Badge */}
-          <TierBadge />
-
-          {/* User profile */}
-          <div className="p-3 border-t border-sidebar-border">
-            <div className="flex items-center gap-3 p-2">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-medium text-primary-foreground">
-                {profile?.full_name?.[0] || profile?.email?.[0]?.toUpperCase() || "?"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">
-                  {profile?.full_name || "User"}
-                </p>
-                <p className="text-xs text-sidebar-foreground/50 truncate">
-                  {getRoleLabel()}
-                </p>
-              </div>
+          {/* User avatar + tier */}
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
               <button
                 onClick={handleSignOut}
-                className="p-2 text-sidebar-foreground/50 hover:text-sidebar-foreground rounded-lg hover:bg-sidebar-accent/50 transition-colors"
+                className={cn(
+                  "flex items-center gap-2 w-full rounded-lg transition-colors hover:bg-sidebar-accent/50",
+                  sidebarExpanded ? "px-2 py-2" : "px-0 py-2 justify-center"
+                )}
               >
-                <LogOut className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-medium text-primary-foreground flex-shrink-0">
+                  {profile?.full_name?.[0] || profile?.email?.[0]?.toUpperCase() || "?"}
+                </div>
+                {sidebarExpanded && (
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-xs font-medium text-sidebar-foreground truncate">
+                      {profile?.full_name || "User"}
+                    </p>
+                    <p className="text-[10px] text-sidebar-foreground/40">{getTierShort()}</p>
+                  </div>
+                )}
               </button>
-            </div>
-          </div>
+            </TooltipTrigger>
+            {!sidebarExpanded && (
+              <TooltipContent side="right" className="text-xs">
+                {profile?.full_name || "User"} · {getTierShort()} · Sign out
+              </TooltipContent>
+            )}
+          </Tooltip>
         </div>
       </aside>
 
-      {/* Mobile Bottom Sheet (< 768px only) */}
+      {/* ========== MOBILE: Bottom sheet (< 768px) ========== */}
       <div className="md:hidden">
-        {/* Bottom sheet backdrop */}
         {bottomSheetOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setBottomSheetOpen(false)}
-          />
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setBottomSheetOpen(false)} />
         )}
-
-        {/* Bottom sheet */}
         <div className={cn(
           "fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border rounded-t-2xl transition-transform duration-300 ease-out",
-          bottomSheetOpen 
-            ? "translate-y-0" 
-            : "translate-y-[calc(100%-3.5rem)]"
+          bottomSheetOpen ? "translate-y-0" : "translate-y-[calc(100%-3.5rem)]"
         )} style={{ maxHeight: "80dvh" }}>
-          {/* Handle */}
-          <button 
+          <button
             onClick={() => setBottomSheetOpen(!bottomSheetOpen)}
             className="w-full flex items-center justify-center gap-2 py-3 px-4 min-h-[56px]"
           >
             <Zap className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-sidebar-foreground">Sessions</span>
+            <span className="text-sm font-medium text-sidebar-foreground">Menu</span>
             <div className="w-8 h-1 bg-sidebar-foreground/30 rounded-full ml-2" />
           </button>
 
-          {/* Sheet content — lazy rendered */}
           {bottomSheetOpen && (
             <div className="overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]" style={{ maxHeight: "calc(80dvh - 3.5rem)" }}>
               <nav className="space-y-1 pb-4">
                 <RoleSwitcher />
                 <div className="pt-2 border-t border-sidebar-border/50 mt-2" />
-                <NavItems onClick={() => setBottomSheetOpen(false)} />
+                {navigation.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[48px]",
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-primary"
+                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      )}
+                      onClick={() => setBottomSheetOpen(false)}
+                    >
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      {item.name}
+                    </Link>
+                  );
+                })}
               </nav>
-
-              {/* User info */}
               <div className="border-t border-sidebar-border pt-3 pb-2">
                 <div className="flex items-center gap-3 p-2">
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-medium text-primary-foreground">
                     {profile?.full_name?.[0] || profile?.email?.[0]?.toUpperCase() || "?"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-sidebar-foreground truncate">
-                      {profile?.full_name || "User"}
-                    </p>
-                    <p className="text-xs text-sidebar-foreground/50 truncate">
-                      {getRoleLabel()}
-                    </p>
+                    <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || "User"}</p>
+                    <p className="text-xs text-sidebar-foreground/50 truncate">{getTierShort()}</p>
                   </div>
                   <button
                     onClick={handleSignOut}
@@ -337,28 +354,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="xl:pl-64 lg:pl-[220px] md:pl-0">
+      {/* ========== Main content ========== */}
+      <div className={cn("md:pl-14 transition-all duration-200", sidebarExpanded && "md:pl-56")}>
         {/* Top bar */}
-        <header className="sticky top-0 z-30 h-14 md:h-16 bg-background/80 backdrop-blur-lg border-b border-border flex items-center px-4 lg:px-6">
-          {/* Mobile: Logo only on left */}
+        <header className="sticky top-0 z-30 h-14 bg-background/80 backdrop-blur-lg border-b border-border flex items-center px-4 lg:px-6">
           <div className="md:hidden flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center">
               <GraduationCap className="w-5 h-5 text-primary-foreground" />
             </div>
           </div>
-
-          {/* Tablet portrait: hamburger menu */}
-          <button
-            className="hidden md:block lg:hidden p-2 -ml-2 text-foreground min-w-[48px] min-h-[48px] flex items-center justify-center"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-          
           <div className="flex-1" />
-
-          {/* Upgrade button for non-tier-3 students */}
           {profile?.role === "student" && profile?.tier !== "tier_3" && (
             <Button variant="hero" size="sm" asChild className="text-xs md:text-sm">
               <Link to="/dashboard/billing">
@@ -367,8 +372,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </Link>
             </Button>
           )}
-
-          {/* Mobile: Avatar/profile on right */}
           <button
             className="md:hidden ml-2 w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-medium text-primary-foreground min-w-[48px] min-h-[48px]"
             onClick={() => setBottomSheetOpen(true)}
@@ -377,10 +380,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </button>
         </header>
 
-        {/* Trial Banner */}
-        <TrialBanner />
-
-        {/* Page content — add bottom padding on mobile for bottom sheet handle */}
         <main className="p-4 lg:p-6 pb-16 md:pb-4 lg:pb-6">
           {children}
         </main>

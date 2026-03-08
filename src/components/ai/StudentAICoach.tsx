@@ -7,7 +7,6 @@ import {
   GraduationCap, 
   Zap,
   AlertCircle,
-  Lightbulb,
   Clock,
   ArrowUpRight,
   Trash2,
@@ -15,7 +14,9 @@ import {
   VolumeX,
   Loader2,
   Crown,
-  Plus
+  Paperclip,
+  Search,
+  Mic
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -30,13 +31,11 @@ import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 
-// Get daily credit limit based on tier and trial status
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
   return getTierLimits(tier as any).creditsPerDay;
 };
 
-// Get hours until midnight reset
 const getHoursUntilReset = () => {
   const now = new Date();
   const midnight = new Date();
@@ -48,17 +47,16 @@ const getHoursUntilReset = () => {
 export function StudentAICoach({ conversationId, onEnsureConversation }: { conversationId?: string | null; onEnsureConversation?: () => Promise<string | null> }) {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
+  const [showAttachments, setShowAttachments] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
 
-  // Sync activeConvId when conversationId prop changes
   useEffect(() => {
     setActiveConvId(conversationId || null);
   }, [conversationId]);
 
-  // Load messages when conversation changes
   useEffect(() => {
     if (activeConvId) {
       loadConversationMessages(activeConvId);
@@ -67,7 +65,6 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
     }
   }, [activeConvId, loadConversationMessages, clearMessages]);
   
-  // Attachments hook
   const {
     attachments,
     isUploading,
@@ -79,7 +76,6 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
     getAttachmentContext,
   } = useAttachments();
 
-  // Determine the primary subject for suggestions
   const primarySubject = profile?.primary_goal === "homework" 
     ? "General" 
     : profile?.primary_goal || "SAT";
@@ -100,18 +96,17 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
     if (!input.trim() || isLoading) return;
     if ((profile?.credits_remaining || 0) <= 0) return;
     
-    // Auto-create conversation if none exists
     if (!activeConvId && onEnsureConversation) {
       const newId = await onEnsureConversation();
       if (newId) setActiveConvId(newId);
     }
     
-    // Combine message with attachment context
     const attachmentContext = getAttachmentContext();
     const userInput = input + attachmentContext;
     
     setInput("");
     clearAttachments();
+    setShowAttachments(false);
     await streamChat(userInput, { endpoint: "student-chat" });
   };
 
@@ -126,142 +121,147 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
   const hoursUntilReset = getHoursUntilReset();
 
   return (
-    <div className="flex flex-col max-w-4xl mx-auto min-h-0 h-[calc(100dvh-10rem)] md:h-[calc(100dvh-12rem)]">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2 md:mb-4">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-            Study Coach
-          </h1>
-          <p className="text-xs md:text-sm text-muted-foreground">
-            Your personal SAT study assistant
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {messages.length > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={clearMessages}
-              className="text-muted-foreground hover:text-foreground min-w-[48px] min-h-[48px] md:min-w-0 md:min-h-0"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
-          <CreditsInfoPopover creditsRemaining={creditsRemaining} dailyLimit={dailyLimit}>
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 hover:bg-accent/20 transition-colors cursor-pointer min-h-[48px] md:min-h-0">
-              <Zap className="w-4 h-4 text-accent" />
-              <span className="text-sm font-medium text-foreground">
-                {creditsRemaining}/{dailyLimit}
-              </span>
-            </button>
-          </CreditsInfoPopover>
-        </div>
-      </div>
-
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-2 md:mb-4 p-3 md:p-4 rounded-xl min-h-0">
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-4 md:p-8">
-            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-4">
-              <Bot className="w-7 h-7 md:w-8 md:h-8 text-primary-foreground" />
+    <div className="flex flex-col h-full min-h-0">
+      {/* Messages area — centered */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="max-w-[720px] mx-auto px-4">
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center py-20">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-4">
+                <Bot className="w-7 h-7 md:w-8 md:h-8 text-primary-foreground" />
+              </div>
+              <h2 className="text-lg md:text-xl font-semibold text-foreground mb-2">
+                How can I help you today?
+              </h2>
+              <p className="text-sm text-muted-foreground mb-6 max-w-md">
+                I'm your AI study coach. Ask me about any subject, study strategies, or help with practice problems.
+              </p>
+              <AISuggestions 
+                subject={primarySubject}
+                onSelectSuggestion={handleSuggestedPrompt}
+                className="w-full max-w-lg"
+              />
             </div>
-            <h2 className="text-lg md:text-xl font-semibold text-foreground mb-2">
-              How can I help you today?
-            </h2>
-            <p className="text-sm md:text-base text-muted-foreground mb-6 max-w-md">
-              I'm your AI study coach. Ask me about any subject, study strategies, or help with practice problems.
-            </p>
-            <AISuggestions 
-              subject={primarySubject}
-              onSelectSuggestion={handleSuggestedPrompt}
-              className="w-full max-w-lg"
-            />
-          </div>
-        ) : (
-          <>
-            {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} isTier3={isTier3} />
-            ))}
-            {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-              <LoadingBubble />
-            )}
-            <div ref={messagesEndRef} />
-          </>
-        )}
+          ) : (
+            <div className="space-y-5 py-4">
+              {messages.map((message) => (
+                <MessageBubble key={message.id} message={message} isTier3={isTier3} />
+              ))}
+              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+                <LoadingBubble />
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Credits warnings */}
-      {creditsLow && (
-        <div className="mb-2 p-2 rounded-lg bg-warning/10 border border-warning/20 flex items-center gap-2 text-sm">
-          <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
-          <span className="text-muted-foreground text-xs md:text-sm">Low credits remaining. Credits reset daily at midnight.</span>
-        </div>
-      )}
+      <div className="max-w-[720px] mx-auto w-full px-4">
+        {creditsLow && (
+          <div className="mb-2 p-2 rounded-lg bg-warning/10 border border-warning/20 flex items-center gap-2 text-sm">
+            <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
+            <span className="text-muted-foreground text-xs">Low credits. Resets at midnight.</span>
+          </div>
+        )}
 
-      {noCredits && (
-        <div className="mb-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-          <div className="flex items-start gap-3">
-            <Clock className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-xs md:text-sm font-medium text-foreground">
-                You've used your {dailyLimit} daily credits
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Resets in {hoursUntilReset} hour{hoursUntilReset !== 1 ? 's' : ''}.{" "}
-                {profile?.tier !== "tier_3" && (
-                  <Link to="/dashboard/settings" className="text-primary hover:underline inline-flex items-center gap-1">
-                    Upgrade for {profile?.tier === "tier_2" ? "300" : "150"}+ credits/day
-                    <ArrowUpRight className="w-3 h-3" />
-                  </Link>
-                )}
-              </p>
+        {noCredits && (
+          <div className="mb-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+            <div className="flex items-start gap-3">
+              <Clock className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-medium text-foreground">
+                  You've used your {dailyLimit} daily credits
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Resets in {hoursUntilReset}h.{" "}
+                  {profile?.tier !== "tier_3" && (
+                    <Link to="/dashboard/billing" className="text-primary hover:underline inline-flex items-center gap-1">
+                      Upgrade <ArrowUpRight className="w-3 h-3" />
+                    </Link>
+                  )}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Input area — fixed feeling at bottom */}
-      <div className="space-y-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex-shrink-0">
-        <ChatAttachments
-          attachments={attachments}
-          isUploading={isUploading}
-          onUploadFile={uploadFile}
-          onAttachUrl={attachUrl}
-          onWebSearch={performWebSearch}
-          onRemove={removeAttachment}
-          disabled={noCredits || isLoading}
-        />
-        
-        <div className="flex gap-2">
-          {/* Voice chat for Tier 3 users */}
-          {isTier3 && (
-            <VoiceChat 
-              onTranscript={handleVoiceTranscript}
-              isDisabled={noCredits || isLoading}
-            />
+      {/* Floating input bar */}
+      <div className="pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 flex-shrink-0">
+        <div className="max-w-[720px] mx-auto px-4">
+          {/* Attachment previews above input */}
+          {showAttachments && (
+            <div className="mb-2">
+              <ChatAttachments
+                attachments={attachments}
+                isUploading={isUploading}
+                onUploadFile={uploadFile}
+                onAttachUrl={attachUrl}
+                onWebSearch={performWebSearch}
+                onRemove={removeAttachment}
+                disabled={noCredits || isLoading}
+              />
+            </div>
           )}
-          <div className="flex-1 relative">
+
+          <div className={cn(
+            "relative flex items-center gap-2 rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm px-3 py-2 transition-shadow",
+            "focus-within:shadow-[0_0_20px_-5px_hsl(var(--primary)/0.3)] focus-within:border-primary/40"
+          )}>
+            {/* Attach button */}
+            <button
+              onClick={() => setShowAttachments(!showAttachments)}
+              disabled={noCredits || isLoading}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-40"
+              title="Attach files"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+
+            {/* Text input */}
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-              placeholder={noCredits ? "No credits remaining..." : isTier3 ? "Type, paste image, or use voice..." : "Type or paste an image (Ctrl+V)..."}
+              placeholder={noCredits ? "No credits remaining..." : "Ask anything..."}
               disabled={noCredits || isLoading}
-              className="w-full h-14 md:h-12 px-4 rounded-xl bg-muted border-2 border-primary/40 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 shadow-md text-base"
+              className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/60 focus:outline-none text-sm h-10 md:h-9"
             />
+
+            {/* Credits badge — minimal */}
+            <CreditsInfoPopover creditsRemaining={creditsRemaining} dailyLimit={dailyLimit}>
+              <button className="flex items-center gap-1 px-2 py-1 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <Zap className="w-3 h-3" />
+                <span>{creditsRemaining}</span>
+              </button>
+            </CreditsInfoPopover>
+
+            {/* Voice button (Tier 3) */}
+            {isTier3 && (
+              <VoiceChat 
+                onTranscript={handleVoiceTranscript}
+                isDisabled={noCredits || isLoading}
+              />
+            )}
+
+            {/* Send button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "h-8 w-8 rounded-xl transition-colors",
+                input.trim() 
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                  : "text-muted-foreground"
+              )}
+              onClick={handleSend}
+              disabled={(!input.trim() && attachments.length === 0) || noCredits || isLoading}
+            >
+              <Send className="w-4 h-4" />
+            </Button>
           </div>
-          <Button
-            variant="hero"
-            size="icon"
-            className="w-14 h-14 md:w-12 md:h-12 min-w-[48px] min-h-[48px]"
-            onClick={handleSend}
-            disabled={(!input.trim() && attachments.length === 0) || noCredits || isLoading}
-          >
-            <Send className="w-5 h-5" />
-          </Button>
         </div>
       </div>
     </div>
@@ -279,66 +279,51 @@ function MessageBubble({ message, isTier3 }: { message: Message; isTier3: boolea
     }
   };
 
-  return (
-    <div className={cn(
-      "flex gap-2 md:gap-3",
-      message.role === "user" && "flex-row-reverse"
-    )}>
-      <div className={cn(
-        "w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0",
-        message.role === "assistant" 
-          ? "bg-primary/20" 
-          : "bg-accent/20"
-      )}>
-        {message.role === "assistant" ? (
-          <Bot className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
-        ) : (
-          <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-accent" />
-        )}
-      </div>
-      <div className={cn(
-        "max-w-[85%] md:max-w-[80%] p-3 md:p-4 rounded-2xl",
-        message.role === "assistant"
-          ? "bg-card border border-border/50 rounded-tl-sm"
-          : "bg-primary text-primary-foreground rounded-tr-sm"
-      )}>
-        {message.role === "assistant" ? (
-          <>
-            <div className="ai-prose max-w-none">
-              <ReactMarkdown>
-                {message.content
-                  .replace(/<think>[\s\S]*?<\/think>/gi, '')
-                  .replace(/<\/?think>/gi, '')
-                  .replace(/\[\d+\]/g, '')
-                  .trim()}
-              </ReactMarkdown>
-            </div>
-            {/* TTS button for Tier 3 users */}
-            {isTier3 && message.content && (
-              <div className="mt-2 pt-2 border-t border-border/30 flex justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleTTS}
-                  disabled={isLoading}
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 min-w-[48px] min-h-[48px] md:min-w-0 md:min-h-0"
-                  title={isPlaying ? "Stop reading" : "Read aloud"}
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : isPlaying ? (
-                    <VolumeX className="w-3 h-3" />
-                  ) : (
-                    <Volume2 className="w-3 h-3" />
-                  )}
-                  <span>{isPlaying ? "Stop" : "Listen"}</span>
-                  <Crown className="w-3 h-3 text-warning" />
-                </Button>
-              </div>
-            )}
-          </>
-        ) : (
+  if (message.role === "user") {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[85%] md:max-w-[75%] px-4 py-3 rounded-2xl rounded-tr-md bg-primary text-primary-foreground">
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex gap-3">
+      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+        <Bot className="w-3.5 h-3.5 text-primary" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="ai-prose max-w-none">
+          <ReactMarkdown>
+            {message.content
+              .replace(/<think>[\s\S]*?<\/think>/gi, '')
+              .replace(/<\/?think>/gi, '')
+              .replace(/\[\d+\]/g, '')
+              .trim()}
+          </ReactMarkdown>
+        </div>
+        {isTier3 && message.content && (
+          <div className="mt-2 flex">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleTTS}
+              disabled={isLoading}
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+              title={isPlaying ? "Stop reading" : "Read aloud"}
+            >
+              {isLoading ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : isPlaying ? (
+                <VolumeX className="w-3 h-3" />
+              ) : (
+                <Volume2 className="w-3 h-3" />
+              )}
+              <span>{isPlaying ? "Stop" : "Listen"}</span>
+            </Button>
+          </div>
         )}
       </div>
     </div>
@@ -347,15 +332,15 @@ function MessageBubble({ message, isTier3 }: { message: Message; isTier3: boolea
 
 function LoadingBubble() {
   return (
-    <div className="flex gap-2 md:gap-3">
-      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-primary/20 flex items-center justify-center">
-        <Bot className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary" />
+    <div className="flex gap-3">
+      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+        <Bot className="w-3.5 h-3.5 text-primary" />
       </div>
-      <div className="bg-card border border-border/50 rounded-2xl rounded-tl-sm p-4">
+      <div className="pt-2">
         <div className="flex gap-1">
-          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+          <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+          <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+          <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
         </div>
       </div>
     </div>

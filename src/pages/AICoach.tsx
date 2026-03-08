@@ -8,17 +8,14 @@ import { ConversationSidebar } from "@/components/ai/ConversationSidebar";
 import { VoiceChat } from "@/components/ai/VoiceChat";
 import { useConversations, Conversation } from "@/hooks/useConversations";
 import { Button } from "@/components/ui/button";
-import { PanelLeftClose, PanelLeft, MessageSquare, Mic, Crown } from "lucide-react";
+import { History, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AICoach() {
   const { profile } = useAuth();
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
-  const [mode, setMode] = useState<"text" | "voice">("text");
   const { createConversation } = useConversations();
-
-  const isTier3 = profile?.tier === "tier_3";
 
   const handleNewConversation = async () => {
     const conv = await createConversation();
@@ -27,7 +24,6 @@ export default function AICoach() {
     }
   };
 
-  // Auto-create a conversation if none is selected (for students)
   const ensureConversation = async (): Promise<string | null> => {
     if (currentConversation) return currentConversation.id;
     const conv = await createConversation();
@@ -40,9 +36,9 @@ export default function AICoach() {
 
   const handleSelectConversation = (conversation: Conversation | null) => {
     setCurrentConversation(conversation);
+    setShowHistory(false);
   };
 
-  // Render role-specific AI coach
   const renderAICoach = () => {
     switch (profile?.role) {
       case "school_admin":
@@ -56,75 +52,53 @@ export default function AICoach() {
     }
   };
 
-  // Only show sidebar for students
   const showConversationSidebar = profile?.role === "student";
 
   return (
     <DashboardLayout>
-      <div className="flex h-[calc(100vh-6rem)] -m-6">
-        {/* Conversation Sidebar */}
-        {showConversationSidebar && showSidebar && mode === "text" && (
-          <ConversationSidebar
-            currentConversationId={currentConversation?.id}
-            onSelectConversation={handleSelectConversation}
-            onNewConversation={handleNewConversation}
-          />
+      <div className="flex h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
+        {/* Conversation history overlay panel */}
+        {showConversationSidebar && showHistory && (
+          <>
+            <div className="fixed inset-0 z-30 bg-black/40" onClick={() => setShowHistory(false)} />
+            <div className="absolute top-0 left-0 z-40 h-full w-[280px] animate-in slide-in-from-left duration-200">
+              <div className="h-full bg-card border-r border-border flex flex-col">
+                <div className="flex items-center justify-between p-3 border-b border-border">
+                  <span className="text-sm font-medium text-foreground">History</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowHistory(false)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <ConversationSidebar
+                    currentConversationId={currentConversation?.id}
+                    onSelectConversation={handleSelectConversation}
+                    onNewConversation={handleNewConversation}
+                  />
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
-        {/* Main Content */}
-        <div className={cn(
-          "flex-1 flex flex-col min-w-0",
-          showConversationSidebar ? "relative" : ""
-        )}>
-          {/* Top controls */}
-          <div className="flex items-center gap-2 p-4">
-            {showConversationSidebar && mode === "text" && (
+        {/* Main content */}
+        <div className="flex-1 flex flex-col min-w-0 relative">
+          {/* Top controls — minimal */}
+          {showConversationSidebar && (
+            <div className="flex items-center gap-2 px-4 pt-3">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
-                onClick={() => setShowSidebar(!showSidebar)}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowHistory(!showHistory)}
               >
-                {showSidebar ? (
-                  <PanelLeftClose className="h-4 w-4" />
-                ) : (
-                  <PanelLeft className="h-4 w-4" />
-                )}
+                <History className="h-4 w-4" />
               </Button>
-            )}
+            </div>
+          )}
 
-            {/* Mode toggle for students with Elite tier */}
-            {profile?.role === "student" && isTier3 && (
-              <div className="flex items-center gap-1 ml-auto bg-muted rounded-lg p-1">
-                <Button
-                  variant={mode === "text" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setMode("text")}
-                  className="gap-1.5 h-7"
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  Text
-                </Button>
-                <Button
-                  variant={mode === "voice" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setMode("voice")}
-                  className="gap-1.5 h-7"
-                >
-                  <Mic className="w-3.5 h-3.5" />
-                  Voice
-                  <Crown className="w-3 h-3 text-warning" />
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 overflow-hidden p-6 pt-0">
-            {mode === "voice" && isTier3 ? (
-              <VoiceChat fullMode className="h-full" />
-            ) : (
-              renderAICoach()
-            )}
+          <div className="flex-1 overflow-hidden p-4 pt-1">
+            {renderAICoach()}
           </div>
         </div>
       </div>
