@@ -304,7 +304,7 @@ function MessageBubble({ message, isTier3 }: { message: Message; isTier3: boolea
       )}>
         {message.role === "assistant" ? (
           <>
-            <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+            <div className="ai-prose max-w-none">
               <ReactMarkdown>
                 {message.content
                   .replace(/<think>[\s\S]*?<\/think>/gi, '')

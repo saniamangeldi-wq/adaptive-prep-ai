@@ -185,6 +185,79 @@
   }
 }
 
+  /* AI Chat prose styling */
+  .ai-prose {
+    @apply text-sm leading-relaxed;
+  }
+
+  .ai-prose p {
+    @apply mb-2 last:mb-0;
+  }
+
+  .ai-prose h1, .ai-prose h2, .ai-prose h3, .ai-prose h4 {
+    @apply font-semibold mt-3 mb-1.5 text-foreground;
+  }
+
+  .ai-prose h1 { @apply text-lg; }
+  .ai-prose h2 { @apply text-base; }
+  .ai-prose h3 { @apply text-sm font-semibold; }
+
+  .ai-prose ul, .ai-prose ol {
+    @apply pl-5 mb-2 space-y-1;
+  }
+
+  .ai-prose ul { @apply list-disc; }
+  .ai-prose ol { @apply list-decimal; }
+
+  .ai-prose li {
+    @apply text-sm leading-relaxed;
+  }
+
+  .ai-prose code {
+    @apply text-xs bg-muted/50 text-primary px-1.5 py-0.5 rounded font-mono;
+  }
+
+  .ai-prose pre {
+    @apply bg-muted/50 rounded-lg p-3 mb-2 overflow-x-auto;
+  }
+
+  .ai-prose pre code {
+    @apply bg-transparent p-0 text-foreground;
+  }
+
+  .ai-prose strong {
+    @apply font-semibold text-foreground;
+  }
+
+  .ai-prose em {
+    @apply italic text-muted-foreground;
+  }
+
+  .ai-prose blockquote {
+    @apply border-l-2 border-primary/40 pl-3 my-2 text-muted-foreground italic;
+  }
+
+  .ai-prose a {
+    @apply text-primary underline underline-offset-2 hover:text-primary/80 transition-colors;
+  }
+
+  .ai-prose hr {
+    @apply my-3 border-border/50;
+  }
+
+  .ai-prose table {
+    @apply w-full text-sm border-collapse mb-2;
+  }
+
+  .ai-prose th, .ai-prose td {
+    @apply border border-border/50 px-2 py-1 text-left;
+  }
+
+  .ai-prose th {
+    @apply bg-muted/30 font-semibold;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
