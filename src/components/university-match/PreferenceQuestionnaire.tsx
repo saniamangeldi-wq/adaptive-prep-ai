@@ -51,6 +51,7 @@ const TABS = [
   { id: "location", label: "Location & Lifestyle", icon: MapPin },
   { id: "financial", label: "Financial", icon: DollarSign },
   { id: "academic", label: "Academic", icon: GraduationCap },
+  { id: "chances", label: "🎯 My Chances", icon: Target },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
