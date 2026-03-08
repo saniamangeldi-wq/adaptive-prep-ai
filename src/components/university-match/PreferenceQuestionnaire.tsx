@@ -187,6 +187,7 @@ export function PreferenceQuestionnaire({ onComplete, onBack, onAskAdvisor }: Pr
       location: { filled: loc.filter(Boolean).length, total: loc.length },
       financial: { filled: fin.filter(Boolean).length, total: fin.length },
       academic: { filled: acad.filter(Boolean).length, total: acad.length },
+      chances: { filled: 0, total: 0 },
     };
   }, [preferences]);
 
