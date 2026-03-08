@@ -165,7 +165,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background dark">
+    <div className="min-h-screen bg-background">
       {/* ========== DESKTOP: Icon-only sidebar rail ========== */}
       <aside className={cn(
         "fixed top-0 left-0 z-50 h-full bg-sidebar border-r border-sidebar-border transition-all duration-200 hidden md:flex flex-col",
