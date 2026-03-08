@@ -268,36 +268,37 @@ export function UniversityAIAdvisor({ topUniversities, initialUniversity, onUniv
          </div>
        )}
  
-       <form onSubmit={handleSubmit} className="p-4 border-t border-border bg-card/30">
-         <div className="flex gap-2">
-           <Textarea
-             value={input}
-             onChange={(e) => setInput(e.target.value)}
-             placeholder={targetUniversity 
-               ? "Ask about your admission plan..." 
-               : "Which university would you like to target?"}
-             className="min-h-[44px] max-h-32 resize-none"
-             rows={1}
-             onKeyDown={(e) => {
-               if (e.key === "Enter" && !e.shiftKey) {
-                 e.preventDefault();
-                 handleSubmit(e);
-               }
-             }}
-           />
-           <Button 
-             type="submit" 
-             disabled={!input.trim() || isLoading}
-             className="px-3"
-           >
-             {isLoading ? (
-               <Loader2 className="w-4 h-4 animate-spin" />
-             ) : (
-               <Send className="w-4 h-4" />
-             )}
-           </Button>
-         </div>
-       </form>
-     </div>
+      <form onSubmit={handleSubmit} className="p-3 border-t border-border">
+        <div className="flex gap-2">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={targetUniversity 
+              ? "Ask about your admission plan..." 
+              : "Which university would you like to target?"}
+            className="min-h-[40px] max-h-24 resize-none text-sm"
+            rows={1}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
+          <Button 
+            type="submit" 
+            disabled={!input.trim() || isLoading}
+            size="icon"
+            className="h-10 w-10 flex-shrink-0"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
    );
  }
