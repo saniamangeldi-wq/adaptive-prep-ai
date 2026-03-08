@@ -691,6 +691,10 @@ export function PreferenceQuestionnaire({ onComplete, onBack, onAskAdvisor }: Pr
               </div>
             </>
           )}
+
+          {activeTab === "chances" && (
+            <MyChances onAskAdvisor={onAskAdvisor} />
+          )}
         </div>
       </div>
 
