@@ -195,35 +195,24 @@ export function UniversityAIAdvisor({ topUniversities, initialUniversity, onUniv
      { label: "Essay strategy", icon: GraduationCap, prompt: "Help me with my college essay strategy" },
    ];
  
-   return (
-     <div className="bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 rounded-xl border border-primary/20 overflow-hidden">
-       <div className="p-4 border-b border-border bg-card/50">
-         <div className="flex items-center gap-3">
-           <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-             <Sparkles className="w-5 h-5 text-primary" />
-           </div>
-           <div>
-             <h3 className="font-semibold text-foreground flex items-center gap-2">
-               University AI Advisor
-               <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">Beta</span>
-             </h3>
-             <p className="text-sm text-muted-foreground">
-               {targetUniversity 
-                 ? `Planning for ${targetUniversity}` 
-                 : "Your personal admissions strategist"}
-             </p>
-           </div>
-          {profile && (
-            <div className="ml-auto flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Coins className="w-4 h-4" />
-              <span>{profile.credits_remaining}</span>
-              <span className="text-xs">(2/msg)</span>
-            </div>
-          )}
-         </div>
-       </div>
- 
-       <ScrollArea className="h-[400px] p-4" ref={scrollRef}>
+  return (
+    <div className="flex flex-col h-full">
+      {/* Status bar */}
+      <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {targetUniversity
+            ? `Advising on ${targetUniversity}`
+            : "Select a university to begin"}
+        </p>
+        {profile && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Coins className="w-3.5 h-3.5" />
+            <span>{profile.credits_remaining} credits</span>
+          </div>
+        )}
+      </div>
+
+      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
          <div className="space-y-4">
            {messages.map((message, index) => (
              <div
@@ -279,36 +268,37 @@ export function UniversityAIAdvisor({ topUniversities, initialUniversity, onUniv
          </div>
        )}
  
-       <form onSubmit={handleSubmit} className="p-4 border-t border-border bg-card/30">
-         <div className="flex gap-2">
-           <Textarea
-             value={input}
-             onChange={(e) => setInput(e.target.value)}
-             placeholder={targetUniversity 
-               ? "Ask about your admission plan..." 
-               : "Which university would you like to target?"}
-             className="min-h-[44px] max-h-32 resize-none"
-             rows={1}
-             onKeyDown={(e) => {
-               if (e.key === "Enter" && !e.shiftKey) {
-                 e.preventDefault();
-                 handleSubmit(e);
-               }
-             }}
-           />
-           <Button 
-             type="submit" 
-             disabled={!input.trim() || isLoading}
-             className="px-3"
-           >
-             {isLoading ? (
-               <Loader2 className="w-4 h-4 animate-spin" />
-             ) : (
-               <Send className="w-4 h-4" />
-             )}
-           </Button>
-         </div>
-       </form>
-     </div>
+      <form onSubmit={handleSubmit} className="p-3 border-t border-border">
+        <div className="flex gap-2">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={targetUniversity 
+              ? "Ask about your admission plan..." 
+              : "Which university would you like to target?"}
+            className="min-h-[40px] max-h-24 resize-none text-sm"
+            rows={1}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
+          <Button 
+            type="submit" 
+            disabled={!input.trim() || isLoading}
+            size="icon"
+            className="h-10 w-10 flex-shrink-0"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
    );
  }
