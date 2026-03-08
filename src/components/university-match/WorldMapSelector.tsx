@@ -106,7 +106,12 @@ export function WorldMapSelector({ selected, onToggle, onCountryClick }: WorldMa
                       isHovered={selectable && isHovered}
                       onMouseEnter={() => selectable && setHoveredCountry(geoName)}
                       onMouseLeave={() => setHoveredCountry(null)}
-                      onClick={() => selectable && onToggle(displayName)}
+                      onClick={() => {
+                        if (selectable) {
+                          onToggle(displayName);
+                          onCountryClick?.(displayName);
+                        }
+                      }}
                     />
                   );
                 })
