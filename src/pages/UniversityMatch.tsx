@@ -20,12 +20,7 @@ import {
   GraduationCap,
   Sparkles,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+// Dialog removed - preferences now full-page
 
 interface UniversityMatch {
   id: string;
@@ -276,21 +271,15 @@ export default function UniversityMatch() {
     <DashboardLayout>
       <LockedFeatureModal open={showLockedModal} onOpenChange={setShowLockedModal} />
 
-      {/* Edit Profile Dialog */}
-      <Dialog
-        open={editingProfile}
-        onOpenChange={(open) => {
-          if (!needsSetup) setEditingProfile(open);
-        }}
-      >
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editStep === "portfolio" ? "Build Your Profile" : "Your Preferences"}
-            </DialogTitle>
-          </DialogHeader>
+      {/* Full-page Profile/Preferences Editor */}
+      {editingProfile && (
+        <div className="max-w-[1200px] mx-auto">
           {editStep === "portfolio" ? (
-            <PortfolioUpload onComplete={() => setEditStep("preferences")} />
+            <div className="space-y-4">
+              <h1 className="text-xl font-bold text-foreground">Build Your Profile</h1>
+              <p className="text-sm text-muted-foreground">Upload your academic portfolio to get better matches</p>
+              <PortfolioUpload onComplete={() => setEditStep("preferences")} />
+            </div>
           ) : (
             <PreferenceQuestionnaire
               onComplete={() => {
@@ -301,8 +290,8 @@ export default function UniversityMatch() {
               onBack={() => setEditStep("portfolio")}
             />
           )}
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* AI Advisor Drawer */}
       <AIAdvisorDrawer
@@ -317,7 +306,7 @@ export default function UniversityMatch() {
         onUniversityChange={setSelectedUniversity}
       />
 
-      {hasUniversityMatchAccess && (
+      {hasUniversityMatchAccess && !editingProfile && (
         <div className="flex gap-6 max-w-[1400px] mx-auto">
           {/* Left Column: Profile Card */}
           <div className="hidden lg:block w-[280px] flex-shrink-0 sticky top-4 self-start space-y-4">
