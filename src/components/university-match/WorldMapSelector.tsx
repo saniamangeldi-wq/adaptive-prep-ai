@@ -10,6 +10,7 @@ import {
 interface WorldMapSelectorProps {
   selected: string[];
   onToggle: (country: string) => void;
+  onCountryClick?: (country: string) => void;
 }
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -74,7 +75,7 @@ function isSelectable(geo: any): boolean {
   return name === "United States of America" || name in COUNTRY_FLAGS;
 }
 
-export function WorldMapSelector({ selected, onToggle }: WorldMapSelectorProps) {
+export function WorldMapSelector({ selected, onToggle, onCountryClick }: WorldMapSelectorProps) {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
 
   return (
@@ -105,7 +106,12 @@ export function WorldMapSelector({ selected, onToggle }: WorldMapSelectorProps) 
                       isHovered={selectable && isHovered}
                       onMouseEnter={() => selectable && setHoveredCountry(geoName)}
                       onMouseLeave={() => setHoveredCountry(null)}
-                      onClick={() => selectable && onToggle(displayName)}
+                      onClick={() => {
+                        if (selectable) {
+                          onToggle(displayName);
+                          onCountryClick?.(displayName);
+                        }
+                      }}
                     />
                   );
                 })

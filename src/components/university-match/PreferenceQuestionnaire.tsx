@@ -27,10 +27,12 @@ import { WorldMapSelector } from "./WorldMapSelector";
 import { IconCardSelector } from "./IconCardSelector";
 import { PersonalityTags } from "./PersonalityTags";
 import { LiveMatchPreview } from "./LiveMatchPreview";
+import { CountryDeepDiveDrawer } from "./CountryDeepDiveDrawer";
 
 interface PreferenceQuestionnaireProps {
   onComplete: () => void;
   onBack: () => void;
+  onAskAdvisor?: (prompt: string) => void;
 }
 
 const FIELDS_OF_INTEREST = [
@@ -52,13 +54,14 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuestionnaireProps) {
+export function PreferenceQuestionnaire({ onComplete, onBack, onAskAdvisor }: PreferenceQuestionnaireProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<TabId>("location");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [personalityTags, setPersonalityTags] = useState<string[]>([]);
+  const [deepDiveCountry, setDeepDiveCountry] = useState<string | null>(null);
 
   const [preferences, setPreferences] = useState({
     preferred_countries: [] as string[],
@@ -297,6 +300,7 @@ export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuesti
                 <WorldMapSelector
                   selected={preferences.preferred_countries}
                   onToggle={toggleCountry}
+                  onCountryClick={(c) => setDeepDiveCountry(deepDiveCountry === c ? null : c)}
                 />
               </div>
 
@@ -686,16 +690,29 @@ export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuesti
         </div>
       </div>
 
-      {/* Right: Live Match Preview (sticky) */}
-      <div className="hidden lg:block w-[320px] flex-shrink-0 pl-8">
-        <div className="sticky top-4 p-4">
-          <LiveMatchPreview
-            matchCount={simulatedMatchCount}
-            topMatches={simulatedTopMatches}
-            onSeeAll={saveAndContinue}
-            loading={saving}
+      {/* Right: Live Match Preview OR Country Deep Dive */}
+      <div className="hidden lg:block flex-shrink-0">
+        {deepDiveCountry ? (
+          <CountryDeepDiveDrawer
+            country={deepDiveCountry}
+            onClose={() => setDeepDiveCountry(null)}
+            onAskAdvisor={(prompt) => {
+              setDeepDiveCountry(null);
+              onAskAdvisor?.(prompt);
+            }}
           />
-        </div>
+        ) : (
+          <div className="w-[320px] pl-8">
+            <div className="sticky top-4 p-4">
+              <LiveMatchPreview
+                matchCount={simulatedMatchCount}
+                topMatches={simulatedTopMatches}
+                onSeeAll={saveAndContinue}
+                loading={saving}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mobile CTA */}
