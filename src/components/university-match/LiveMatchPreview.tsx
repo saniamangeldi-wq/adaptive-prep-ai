@@ -90,11 +90,11 @@ export function LiveMatchPreview({
             {topMatches.slice(0, 3).map((match, i) => (
               <div
                 key={match.name}
-                className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/30"
+                className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/30 min-h-[48px]"
               >
-                <span className="text-lg">{match.flag}</span>
+                <span className="text-lg flex-shrink-0">{match.flag}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
+                  <p className="text-[13px] font-medium text-foreground line-clamp-2">
                     {match.name}
                   </p>
                 </div>

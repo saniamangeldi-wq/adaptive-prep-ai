@@ -64,13 +64,13 @@ export function IconCardSelector({
             </div>
             <span
               className={cn(
-                "text-sm font-medium transition-colors",
+                "text-sm font-bold leading-tight transition-colors",
                 isSelected ? "text-primary" : "text-foreground"
               )}
             >
               {option.label}
             </span>
-            <span className="text-[11px] text-muted-foreground leading-tight">
+            <span className="text-xs text-muted-foreground leading-tight">
               {option.description}
             </span>
           </button>
