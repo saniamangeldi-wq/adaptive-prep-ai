@@ -27,6 +27,7 @@ import { WorldMapSelector } from "./WorldMapSelector";
 import { IconCardSelector } from "./IconCardSelector";
 import { PersonalityTags } from "./PersonalityTags";
 import { LiveMatchPreview } from "./LiveMatchPreview";
+import { CountryDeepDiveDrawer } from "./CountryDeepDiveDrawer";
 
 interface PreferenceQuestionnaireProps {
   onComplete: () => void;
