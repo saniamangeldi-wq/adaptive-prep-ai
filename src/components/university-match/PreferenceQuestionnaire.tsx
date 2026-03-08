@@ -22,6 +22,7 @@ import {
   Briefcase,
   Home,
   Check,
+  Target,
 } from "lucide-react";
 import { WorldMapSelector } from "./WorldMapSelector";
 import { IconCardSelector } from "./IconCardSelector";
