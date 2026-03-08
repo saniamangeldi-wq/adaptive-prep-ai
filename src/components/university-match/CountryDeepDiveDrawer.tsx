@@ -335,8 +335,7 @@ export function CountryDeepDiveDrawer({ country, onClose, onAskAdvisor }: Countr
   // Desktop: slide-in from right replacing Live Match Preview
   return (
     <div
-      className="w-[380px] flex-shrink-0 h-full border-l border-border/30 bg-background"
-      style={{ animation: "slide-in-from-right 200ms ease" }}
+      className="w-[380px] flex-shrink-0 h-full border-l border-border/30 bg-background animate-slide-in-right"
     >
       {drawerContent}
     </div>
