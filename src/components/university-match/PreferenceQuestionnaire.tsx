@@ -54,7 +54,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuestionnaireProps) {
+export function PreferenceQuestionnaire({ onComplete, onBack, onAskAdvisor }: PreferenceQuestionnaireProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<TabId>("location");
