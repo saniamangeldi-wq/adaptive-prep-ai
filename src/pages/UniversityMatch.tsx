@@ -311,7 +311,7 @@ export default function UniversityMatch() {
         onUniversityChange={setSelectedUniversity}
       />
 
-      {hasUniversityMatchAccess && (
+      {hasUniversityMatchAccess && !editingProfile && (
         <div className="flex gap-6 max-w-[1400px] mx-auto">
           {/* Left Column: Profile Card */}
           <div className="hidden lg:block w-[280px] flex-shrink-0 sticky top-4 self-start space-y-4">
