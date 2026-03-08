@@ -28,6 +28,7 @@ import { IconCardSelector } from "./IconCardSelector";
 import { PersonalityTags } from "./PersonalityTags";
 import { LiveMatchPreview } from "./LiveMatchPreview";
 import { CountryDeepDiveDrawer } from "./CountryDeepDiveDrawer";
+import { MyChances } from "./MyChances";
 
 interface PreferenceQuestionnaireProps {
   onComplete: () => void;
