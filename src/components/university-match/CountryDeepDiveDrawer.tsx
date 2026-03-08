@@ -303,7 +303,7 @@ export function CountryDeepDiveDrawer({ country, onClose, onAskAdvisor }: Countr
         {/* Section 3: AI Quick Plan */}
         <Button
           onClick={() => onAskAdvisor(`What do I need to do to get into a top university in ${country}?`)}
-          className="w-full gap-2 bg-[hsl(160,100%,40%)] hover:bg-[hsl(160,100%,35%)] text-white"
+          className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
           size="lg"
         >
           <GraduationCap className="w-4 h-4" />
