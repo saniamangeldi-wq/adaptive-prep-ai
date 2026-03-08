@@ -690,16 +690,29 @@ export function PreferenceQuestionnaire({ onComplete, onBack, onAskAdvisor }: Pr
         </div>
       </div>
 
-      {/* Right: Live Match Preview (sticky) */}
-      <div className="hidden lg:block w-[320px] flex-shrink-0 pl-8">
-        <div className="sticky top-4 p-4">
-          <LiveMatchPreview
-            matchCount={simulatedMatchCount}
-            topMatches={simulatedTopMatches}
-            onSeeAll={saveAndContinue}
-            loading={saving}
+      {/* Right: Live Match Preview OR Country Deep Dive */}
+      <div className="hidden lg:block flex-shrink-0">
+        {deepDiveCountry ? (
+          <CountryDeepDiveDrawer
+            country={deepDiveCountry}
+            onClose={() => setDeepDiveCountry(null)}
+            onAskAdvisor={(prompt) => {
+              setDeepDiveCountry(null);
+              onAskAdvisor?.(prompt);
+            }}
           />
-        </div>
+        ) : (
+          <div className="w-[320px] pl-8">
+            <div className="sticky top-4 p-4">
+              <LiveMatchPreview
+                matchCount={simulatedMatchCount}
+                topMatches={simulatedTopMatches}
+                onSeeAll={saveAndContinue}
+                loading={saving}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mobile CTA */}
