@@ -32,6 +32,7 @@ import { CountryDeepDiveDrawer } from "./CountryDeepDiveDrawer";
 interface PreferenceQuestionnaireProps {
   onComplete: () => void;
   onBack: () => void;
+  onAskAdvisor?: (prompt: string) => void;
 }
 
 const FIELDS_OF_INTEREST = [
