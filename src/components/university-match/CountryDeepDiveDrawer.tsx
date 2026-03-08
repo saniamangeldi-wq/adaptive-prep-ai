@@ -319,8 +319,11 @@ export function CountryDeepDiveDrawer({ country, onClose, onAskAdvisor }: Countr
       <div className="fixed inset-0 z-50">
         <div className="absolute inset-0 bg-black/50" onClick={onClose} />
         <div
-          className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl border-t border-border/50 animate-slide-in-bottom"
-          style={{ maxHeight: "85vh" }}
+          className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl border-t border-border/50"
+          style={{
+            maxHeight: "85vh",
+            animation: "slideUpFromBottom 200ms ease forwards",
+          }}
         >
           <div className="mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full bg-muted" />
           {drawerContent}
