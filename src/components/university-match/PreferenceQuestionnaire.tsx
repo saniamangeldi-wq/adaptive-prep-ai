@@ -687,8 +687,8 @@ export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuesti
       </div>
 
       {/* Right: Live Match Preview (sticky) */}
-      <div className="hidden lg:block w-[300px] flex-shrink-0 pl-8">
-        <div className="sticky top-4 pt-8">
+      <div className="hidden lg:block w-[320px] flex-shrink-0 pl-8">
+        <div className="sticky top-4 p-4">
           <LiveMatchPreview
             matchCount={simulatedMatchCount}
             topMatches={simulatedTopMatches}
