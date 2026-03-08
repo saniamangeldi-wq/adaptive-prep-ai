@@ -12,16 +12,8 @@ const TAGS = [
   { emoji: "🤝", label: "Small Classes" },
   { emoji: "🚀", label: "Entrepreneurship" },
   { emoji: "🌿", label: "Campus Nature" },
-  { emoji: "📚", label: "Library Culture" },
-  { emoji: "🎓", label: "Alumni Network" },
-  { emoji: "⚽", label: "Sports Life" },
-  { emoji: "🧪", label: "Lab Access" },
-  { emoji: "🎵", label: "Music Scene" },
   { emoji: "💻", label: "Tech Hub" },
-  { emoji: "🌊", label: "Near the Coast" },
-  { emoji: "🏔️", label: "Mountain Vibes" },
-  { emoji: "🍕", label: "Great Food" },
-  { emoji: "✈️", label: "Travel Friendly" },
+  { emoji: "🎵", label: "Music Scene" },
 ];
 
 interface PersonalityTagsProps {
@@ -57,7 +49,7 @@ export function PersonalityTags({
               onClick={() => !isDisabled && onToggle(tag.label)}
               disabled={isDisabled}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-all duration-200",
+                "flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[13px] font-medium border transition-all duration-200",
                 isSelected
                   ? "bg-primary/15 border-primary/40 text-primary shadow-[0_0_8px_hsl(var(--primary)/0.1)]"
                   : isDisabled

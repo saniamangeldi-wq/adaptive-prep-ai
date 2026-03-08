@@ -38,39 +38,39 @@ export function IconCardSelector({
             key={option.value}
             onClick={() => onChange(option.value)}
             className={cn(
-              "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 text-center group",
+              "relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 text-center group max-h-[120px]",
               isSelected
                 ? "border-primary bg-primary/10 shadow-[0_0_12px_hsl(var(--primary)/0.15)]"
                 : "border-border/50 bg-muted/20 hover:border-primary/40 hover:bg-muted/40"
             )}
           >
             {isSelected && (
-              <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                <Check className="w-3 h-3 text-primary-foreground" />
+              <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                <Check className="w-2.5 h-2.5 text-primary-foreground" />
               </div>
             )}
             <div
               className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0",
                 isSelected ? "bg-primary/20" : "bg-muted/50 group-hover:bg-muted"
               )}
             >
               <Icon
                 className={cn(
-                  "w-5 h-5 transition-colors",
+                  "w-4 h-4 transition-colors",
                   isSelected ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                 )}
               />
             </div>
             <span
               className={cn(
-                "text-sm font-medium transition-colors",
+                "text-sm font-bold leading-tight transition-colors",
                 isSelected ? "text-primary" : "text-foreground"
               )}
             >
               {option.label}
             </span>
-            <span className="text-[11px] text-muted-foreground leading-tight">
+            <span className="text-xs text-muted-foreground leading-tight">
               {option.description}
             </span>
           </button>
