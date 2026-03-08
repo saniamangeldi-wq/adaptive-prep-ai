@@ -235,9 +235,9 @@ export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuesti
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-0 min-h-[70vh] w-full">
+    <div className="flex flex-col lg:flex-row gap-0 w-full h-full overflow-hidden">
       {/* Left: Preference Builder */}
-      <div className="flex-1 min-w-0 lg:pr-8 lg:border-r border-border/30">
+      <div className="flex-1 min-w-0 lg:pr-8 lg:border-r border-border/30 overflow-y-auto overflow-x-hidden pb-24">
         {/* Back button */}
         <button
           onClick={onBack}
@@ -687,8 +687,8 @@ export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuesti
       </div>
 
       {/* Right: Live Match Preview (sticky) */}
-      <div className="hidden lg:block w-[300px] flex-shrink-0 pl-8">
-        <div className="sticky top-4 pt-8">
+      <div className="hidden lg:block w-[320px] flex-shrink-0 pl-8">
+        <div className="sticky top-4 p-4">
           <LiveMatchPreview
             matchCount={simulatedMatchCount}
             topMatches={simulatedTopMatches}

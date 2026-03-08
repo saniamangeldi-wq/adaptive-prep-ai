@@ -273,9 +273,9 @@ export default function UniversityMatch() {
 
       {/* Full-page Profile/Preferences Editor */}
       {editingProfile && (
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-[1200px] mx-auto h-[calc(100vh-80px)] overflow-hidden">
           {editStep === "portfolio" ? (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto h-full pb-8">
               <h1 className="text-xl font-bold text-foreground">Build Your Profile</h1>
               <p className="text-sm text-muted-foreground">Upload your academic portfolio to get better matches</p>
               <PortfolioUpload onComplete={() => setEditStep("preferences")} />

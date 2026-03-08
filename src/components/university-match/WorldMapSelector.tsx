@@ -153,11 +153,12 @@ export function WorldMapSelector({ selected, onToggle }: WorldMapSelectorProps) 
   return (
     <div className="space-y-4">
       {/* Map Container */}
-      <div className="relative w-full rounded-xl bg-muted/30 border border-border/50 overflow-hidden">
+      <div className="relative w-full rounded-xl bg-muted/30 border border-border/50 overflow-hidden" style={{ minHeight: 420 }}>
         <svg
           viewBox="0 0 540 280"
-          className="w-full h-auto"
-          style={{ minHeight: 200 }}
+          className="w-full h-full"
+          preserveAspectRatio="xMidYMid meet"
+          style={{ minHeight: 420 }}
         >
           {/* Ocean background */}
           <rect width="540" height="280" fill="none" />
@@ -210,16 +211,16 @@ export function WorldMapSelector({ selected, onToggle }: WorldMapSelectorProps) 
                   d={country.path}
                   fill={
                     isSelected
-                      ? "hsl(var(--primary) / 0.6)"
+                      ? "#00ff88"
                       : isHovered
-                      ? "hsl(var(--primary) / 0.3)"
+                      ? "hsl(var(--primary) / 0.5)"
                       : "hsl(var(--muted) / 0.6)"
                   }
                   stroke={
                     isSelected
-                      ? "hsl(var(--primary))"
+                      ? "#00ff88"
                       : isHovered
-                      ? "hsl(var(--primary) / 0.7)"
+                      ? "hsl(var(--primary))"
                       : "hsl(var(--border))"
                   }
                   strokeWidth={isSelected || isHovered ? "1.5" : "0.5"}
