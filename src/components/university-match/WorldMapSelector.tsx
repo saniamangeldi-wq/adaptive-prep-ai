@@ -10,6 +10,7 @@ import {
 interface WorldMapSelectorProps {
   selected: string[];
   onToggle: (country: string) => void;
+  onCountryClick?: (country: string) => void;
 }
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
