@@ -288,6 +288,10 @@ export default function UniversityMatch() {
                 loadMatches();
               }}
               onBack={() => setEditStep("portfolio")}
+              onAskAdvisor={(prompt) => {
+                setSelectedUniversity(prompt);
+                setAdvisorOpen(true);
+              }}
             />
           )}
         </div>
