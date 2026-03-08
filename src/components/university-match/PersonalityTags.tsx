@@ -12,16 +12,8 @@ const TAGS = [
   { emoji: "🤝", label: "Small Classes" },
   { emoji: "🚀", label: "Entrepreneurship" },
   { emoji: "🌿", label: "Campus Nature" },
-  { emoji: "📚", label: "Library Culture" },
-  { emoji: "🎓", label: "Alumni Network" },
-  { emoji: "⚽", label: "Sports Life" },
-  { emoji: "🧪", label: "Lab Access" },
-  { emoji: "🎵", label: "Music Scene" },
   { emoji: "💻", label: "Tech Hub" },
-  { emoji: "🌊", label: "Near the Coast" },
-  { emoji: "🏔️", label: "Mountain Vibes" },
-  { emoji: "🍕", label: "Great Food" },
-  { emoji: "✈️", label: "Travel Friendly" },
+  { emoji: "🎵", label: "Music Scene" },
 ];
 
 interface PersonalityTagsProps {
