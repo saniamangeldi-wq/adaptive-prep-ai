@@ -75,7 +75,7 @@ function isSelectable(geo: any): boolean {
   return name === "United States of America" || name in COUNTRY_FLAGS;
 }
 
-export function WorldMapSelector({ selected, onToggle }: WorldMapSelectorProps) {
+export function WorldMapSelector({ selected, onToggle, onCountryClick }: WorldMapSelectorProps) {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
 
   return (
