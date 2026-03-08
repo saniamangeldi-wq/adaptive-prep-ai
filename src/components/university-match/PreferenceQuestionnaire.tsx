@@ -60,6 +60,7 @@ export function PreferenceQuestionnaire({ onComplete, onBack }: PreferenceQuesti
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [personalityTags, setPersonalityTags] = useState<string[]>([]);
+  const [deepDiveCountry, setDeepDiveCountry] = useState<string | null>(null);
 
   const [preferences, setPreferences] = useState({
     preferred_countries: [] as string[],
