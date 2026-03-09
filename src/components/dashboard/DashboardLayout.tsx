@@ -174,7 +174,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside
-        className="dashboard-sidebar-locked fixed top-0 left-0 z-50 h-full border-r border-sidebar-border hidden md:flex flex-col transition-[width] duration-200"
+        className="dashboard-sidebar-locked fixed top-0 left-0 z-50 h-full border-r border-sidebar-border hidden md:flex flex-col transition-[width] duration-200 bg-sidebar"
         style={{
           width: sidebarExpanded ? SIDEBAR.width_expanded : SIDEBAR.width_collapsed,
         }}
