@@ -197,14 +197,15 @@
     --input: 25 15% 20%;
     --ring: 38 92% 50%;
 
-    --sidebar-background: 25 24% 7%;
+    --sidebar-background: 240 18% 5%;
     --sidebar-foreground: 39 70% 95%;
-    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary: 162 72% 46%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 25 17% 13%;
     --sidebar-accent-foreground: 39 70% 95%;
     --sidebar-border: 25 15% 17%;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-ring: 162 72% 46%;
+    --sidebar-icon-muted: 220 9% 46%;
 
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
