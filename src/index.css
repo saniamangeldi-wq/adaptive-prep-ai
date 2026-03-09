@@ -354,13 +354,16 @@
   }
 }
 
+/* LOCKED - DO NOT MODIFY */
+.dashboard-sidebar-locked {
+  background-color: hsl(var(--sidebar-background));
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
 }
-
-/* ===== Responsive Typography (fluid, scoped in media queries) ===== */
 /* Mobile: 320px–767px */
 @media (max-width: 767px) {
   html {
