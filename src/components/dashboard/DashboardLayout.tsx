@@ -9,7 +9,7 @@ import {
   Layers,
   Settings,
   LogOut,
-  Menu,
+  
   Sparkles,
   Zap,
   Users,
@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { useSchoolStudent } from "@/hooks/useSchoolStudent";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ThemeSwitcher } from "./ThemeSwitcher";
-import { useSidebarStore } from "@/stores/useSidebarStore";
+
 import { SIDEBAR } from "@/lib/design-system";
 
 type NavItem = {
@@ -96,7 +96,7 @@ const adminNav: NavItem[] = [
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
-  const { isExpanded: sidebarExpanded, toggleSidebar } = useSidebarStore();
+  const sidebarExpanded = false;
   const { profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -196,16 +196,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {!sidebarExpanded && <TooltipContent side="right" className="text-xs">AdaptivePrep</TooltipContent>}
         </Tooltip>
 
-        <button
-          onClick={toggleSidebar}
-          className={cn(
-            "h-9 flex items-center text-[hsl(var(--sidebar-icon-muted))] hover:text-sidebar-foreground transition-colors",
-            sidebarExpanded ? "justify-end px-3" : "justify-center"
-          )}
-          aria-label={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          <Menu className="w-4 h-4" />
-        </button>
 
         <nav className="flex-1 py-2 px-1.5 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {navigation.map((item) => {
