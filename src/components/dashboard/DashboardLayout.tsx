@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { useSchoolStudent } from "@/hooks/useSchoolStudent";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ThemeSwitcher } from "./ThemeSwitcher";
-import { useSidebarStore } from "@/stores/useSidebarStore";
+
 import { SIDEBAR } from "@/lib/design-system";
 
 type NavItem = {
