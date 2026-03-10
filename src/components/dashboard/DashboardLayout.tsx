@@ -96,7 +96,7 @@ const adminNav: NavItem[] = [
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
-  const { isExpanded: sidebarExpanded, toggleSidebar } = useSidebarStore();
+  const sidebarExpanded = false;
   const { profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
