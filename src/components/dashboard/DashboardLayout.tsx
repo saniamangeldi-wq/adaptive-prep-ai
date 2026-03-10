@@ -196,16 +196,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {!sidebarExpanded && <TooltipContent side="right" className="text-xs">AdaptivePrep</TooltipContent>}
         </Tooltip>
 
-        <button
-          onClick={toggleSidebar}
-          className={cn(
-            "h-9 flex items-center text-[hsl(var(--sidebar-icon-muted))] hover:text-sidebar-foreground transition-colors",
-            sidebarExpanded ? "justify-end px-3" : "justify-center"
-          )}
-          aria-label={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          <Menu className="w-4 h-4" />
-        </button>
 
         <nav className="flex-1 py-2 px-1.5 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {navigation.map((item) => {
