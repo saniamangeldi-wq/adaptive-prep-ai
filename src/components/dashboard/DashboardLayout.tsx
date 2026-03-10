@@ -9,7 +9,7 @@ import {
   Layers,
   Settings,
   LogOut,
-  Menu,
+  
   Sparkles,
   Zap,
   Users,
