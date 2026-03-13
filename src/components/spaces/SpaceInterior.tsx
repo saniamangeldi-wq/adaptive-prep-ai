@@ -64,7 +64,33 @@ export function SpaceInterior({
 
   const spaceConversations = conversations.filter((c) => c.space_id === space.id);
 
-  const handleSaveSettings = async (_spaceId: string, _updates: { name: string; description: string; icon: string }) => {
+  // Parse space references from DB
+  const spaceReferences: Reference[] = useMemo(() => {
+    try {
+      const refs = (space as any).references;
+      if (Array.isArray(refs)) return refs;
+      return [];
+    } catch {
+      return [];
+    }
+  }, [space]);
+
+  const handleSaveSettings = async (spaceId: string, updates: { name: string; description: string; icon: string; ai_instructions?: string; references?: Reference[] }) => {
+    const { error } = await supabase
+      .from("conversation_spaces")
+      .update({
+        name: updates.name,
+        description: updates.description,
+        icon: updates.icon,
+        ai_instructions: updates.ai_instructions || null,
+        references: (updates.references || []) as any,
+      })
+      .eq("id", spaceId);
+
+    if (error) {
+      toast.error("Failed to update space");
+      return;
+    }
     toast.success("Space updated");
   };
 
