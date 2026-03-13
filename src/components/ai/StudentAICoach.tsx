@@ -328,9 +328,24 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             "relative flex items-center gap-2 rounded-2xl border border-border/30 bg-muted/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-200",
             "focus-within:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.35)] focus-within:border-primary/50"
           )}>
+            {/* References button */}
+            <button
+              onClick={() => { setShowReferences(!showReferences); setShowAttachments(false); }}
+              disabled={noCredits || isLoading}
+              className={cn(
+                "p-1.5 rounded-lg transition-colors disabled:opacity-40",
+                showReferences || references.length > 0
+                  ? "text-primary hover:text-primary/80"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="References & Sources"
+            >
+              <BookOpen className="w-4 h-4" />
+            </button>
+
             {/* Attach button */}
             <button
-              onClick={() => setShowAttachments(!showAttachments)}
+              onClick={() => { setShowAttachments(!showAttachments); setShowReferences(false); }}
               disabled={noCredits || isLoading}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
               title="Attach files"
