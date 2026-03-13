@@ -1,10 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ArrowLeft, MessageSquarePlus, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ConversationSpace, Conversation, useConversations } from "@/hooks/useConversations";
 import { SpaceSettingsDrawer } from "./SpaceSettingsDrawer";
+import { ReferencesBadge } from "@/components/ai/ReferencesBadge";
+import type { Reference } from "@/hooks/useReferences";
+import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
