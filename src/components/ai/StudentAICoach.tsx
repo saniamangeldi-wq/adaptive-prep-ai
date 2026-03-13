@@ -18,7 +18,8 @@ import {
   Check,
   GraduationCap,
   Mic,
-  Crown
+  Crown,
+  BookOpen
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,10 @@ import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
+import { useReferences, type Reference } from "@/hooks/useReferences";
+import { ReferencesPanel } from "./ReferencesPanel";
+import { ReferencesBadge } from "./ReferencesBadge";
+import { CitationChip } from "./CitationChip";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { toast } from "sonner";
 import { QuestionWidget } from "./QuestionWidget";
@@ -57,12 +62,14 @@ interface StudentAICoachProps {
   conversationId?: string | null;
   onEnsureConversation?: () => Promise<string | null>;
   chatMode?: "text" | "voice";
+  spaceReferences?: Reference[];
 }
 
-export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text" }: StudentAICoachProps) {
+export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [] }: StudentAICoachProps) {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
+  const [showReferences, setShowReferences] = useState(false);
   const skipNextLoad = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -104,6 +111,24 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     getAttachmentContext,
   } = useAttachments();
 
+  const {
+    references,
+    isProcessing: isRefProcessing,
+    addDocument: addRefDocument,
+    addUrl: addRefUrl,
+    addText: addRefText,
+    removeReference,
+    getReferenceContext,
+    loadSpaceReferences,
+  } = useReferences();
+
+  // Load space-level references
+  useEffect(() => {
+    if (spaceReferences.length > 0) {
+      loadSpaceReferences(spaceReferences);
+    }
+  }, [spaceReferences, loadSpaceReferences]);
+
   const handleVoiceTranscript = (text: string) => {
     setInput(text);
   };
@@ -130,7 +155,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     }
     
     const attachmentContext = getAttachmentContext();
-    const fullInput = text + attachmentContext;
+    const referenceContext = getReferenceContext();
+    const fullInput = text + attachmentContext + referenceContext;
 
     // Build attachment metadata for display (not the extracted text)
     const attachMeta = attachments
@@ -144,6 +170,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     setInput("");
     clearAttachments();
     setShowAttachments(false);
+    setShowReferences(false);
     await streamChat(fullInput, { endpoint: "student-chat" }, text, attachMeta);
   };
 
@@ -260,6 +287,28 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       {/* Floating input bar — Perplexity style */}
       <div className="pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 flex-shrink-0">
         <div className="max-w-[760px] mx-auto px-4">
+          {/* References panel above input */}
+          {showReferences && (
+            <div className="mb-2">
+              <ReferencesPanel
+                references={references}
+                isProcessing={isRefProcessing}
+                onAddDocument={addRefDocument}
+                onAddUrl={addRefUrl}
+                onAddText={addRefText}
+                onRemove={removeReference}
+                onClose={() => setShowReferences(false)}
+              />
+            </div>
+          )}
+
+          {/* Active references badge */}
+          {!showReferences && references.length > 0 && (
+            <div className="mb-2">
+              <ReferencesBadge count={references.length} onClick={() => setShowReferences(true)} />
+            </div>
+          )}
+
           {/* Attachment previews above input */}
           {showAttachments && (
             <div className="mb-2">
@@ -279,9 +328,24 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             "relative flex items-center gap-2 rounded-2xl border border-border/30 bg-muted/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-200",
             "focus-within:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.35)] focus-within:border-primary/50"
           )}>
+            {/* References button */}
+            <button
+              onClick={() => { setShowReferences(!showReferences); setShowAttachments(false); }}
+              disabled={noCredits || isLoading}
+              className={cn(
+                "p-1.5 rounded-lg transition-colors disabled:opacity-40",
+                showReferences || references.length > 0
+                  ? "text-primary hover:text-primary/80"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="References & Sources"
+            >
+              <BookOpen className="w-4 h-4" />
+            </button>
+
             {/* Attach button */}
             <button
-              onClick={() => setShowAttachments(!showAttachments)}
+              onClick={() => { setShowAttachments(!showAttachments); setShowReferences(false); }}
               disabled={noCredits || isLoading}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
               title="Attach files"
@@ -421,6 +485,7 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: {
     // Show clean visible text, strip any ---ATTACHED CONTENT--- markers
     const displayText = (message.visibleText || message.content)
       .replace(/\n*---ATTACHED CONTENT---[\s\S]*$/, '')
+      .replace(/\n*---REFERENCE DOCUMENTS---[\s\S]*$/, '')
       .trim();
 
     return (
@@ -452,6 +517,14 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: {
   // Parse message into text + interactive widget parts
   const parts = parseMessageContent(cleanContent);
 
+  // Detect citation patterns in AI response
+  const citationPatterns = [
+    /(?:based on|according to|from|in)\s+(?:the\s+)?(?:document|file|PDF)\s+(?:you\s+)?(?:shared|provided|uploaded|attached)/gi,
+    /(?:based on|according to|from|in)\s+(?:the\s+)?(?:link|URL|website|page)\s+(?:you\s+)?(?:shared|provided)/gi,
+    /(?:based on|according to|from)\s+(?:the\s+)?(?:text|content)\s+(?:you\s+)?(?:pasted|shared|provided)/gi,
+  ];
+  const hasCitations = citationPatterns.some(p => p.test(cleanContent));
+
   return (
     <div className="mt-4 pb-8 border-b border-border/30 last:border-b-0">
       <div className="ai-prose-perplexity max-w-none">
@@ -462,6 +535,13 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: {
           return part.content ? <ReactMarkdown key={i}>{part.content}</ReactMarkdown> : null;
         })}
       </div>
+
+      {/* Citation indicator */}
+      {hasCitations && (
+        <div className="mt-2 flex flex-wrap">
+          <CitationChip name="Referenced source" type="document" />
+        </div>
+      )}
 
       {/* Reaction row */}
       {cleanContent && (

@@ -345,6 +345,12 @@ NEVER:
 - Start a response with "I", "Great", "Sure", "Of course", or "Certainly"
 - Write walls of text — use short paragraphs, bullet points, and line breaks
 
+REFERENCES:
+When the user attaches reference documents or URLs, treat their content as ground truth for that conversation.
+Prioritize information from references over your general knowledge.
+When answering based on a reference, naturally say "Based on the document you shared..." or "According to the link you provided..."
+Do not fabricate information that isn't in the reference — if unsure, say so.
+
 ${qualityNote}
 ${styleGuidance}`;
 };

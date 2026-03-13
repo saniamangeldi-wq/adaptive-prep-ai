@@ -1,10 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ArrowLeft, MessageSquarePlus, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ConversationSpace, Conversation, useConversations } from "@/hooks/useConversations";
 import { SpaceSettingsDrawer } from "./SpaceSettingsDrawer";
+import { ReferencesBadge } from "@/components/ai/ReferencesBadge";
+import type { Reference } from "@/hooks/useReferences";
+import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
@@ -61,7 +64,33 @@ export function SpaceInterior({
 
   const spaceConversations = conversations.filter((c) => c.space_id === space.id);
 
-  const handleSaveSettings = async (_spaceId: string, _updates: { name: string; description: string; icon: string }) => {
+  // Parse space references from DB
+  const spaceReferences: Reference[] = useMemo(() => {
+    try {
+      const refs = (space as any).references;
+      if (Array.isArray(refs)) return refs;
+      return [];
+    } catch {
+      return [];
+    }
+  }, [space]);
+
+  const handleSaveSettings = async (spaceId: string, updates: { name: string; description: string; icon: string; ai_instructions?: string; references?: Reference[] }) => {
+    const { error } = await supabase
+      .from("conversation_spaces")
+      .update({
+        name: updates.name,
+        description: updates.description,
+        icon: updates.icon,
+        ai_instructions: updates.ai_instructions || null,
+        references: (updates.references || []) as any,
+      })
+      .eq("id", spaceId);
+
+    if (error) {
+      toast.error("Failed to update space");
+      return;
+    }
     toast.success("Space updated");
   };
 
@@ -162,6 +191,9 @@ export function SpaceInterior({
                 <p className="text-[10px] text-muted-foreground/60 truncate">{space.description}</p>
               )}
             </div>
+            {spaceReferences.length > 0 && (
+              <ReferencesBadge count={spaceReferences.length} label="space sources" onClick={() => setShowSettings(true)} />
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowSettings(true)}>
@@ -197,6 +229,7 @@ export function SpaceInterior({
         onClose={() => setShowSettings(false)}
         onSave={handleSaveSettings}
         onDelete={(id) => { deleteSpace(id); onBack(); }}
+        spaceReferences={spaceReferences}
       />
     </div>
   );
