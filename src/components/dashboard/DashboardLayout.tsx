@@ -48,6 +48,7 @@ const studentNav: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Practice Tests", href: "/dashboard/tests", icon: FileText },
   { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
+  { name: "Spaces", href: "/dashboard/spaces", icon: FolderOpen },
   { name: "Assignments", href: "/dashboard/assignments", icon: ClipboardList, schoolOnly: true },
   { name: "Grades", href: "/dashboard/grades", icon: BarChart3, schoolOnly: true },
   { name: "Calendar", href: "/dashboard/calendar", icon: Calendar, schoolOnly: true },
