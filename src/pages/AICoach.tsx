@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { StudentAICoach } from "@/components/ai/StudentAICoach";
 import { TeacherAICoach } from "@/components/ai/TeacherAICoach";
 import { AdminAICoach } from "@/components/ai/AdminAICoach";
 import { ConversationSidebar } from "@/components/ai/ConversationSidebar";
-import { useConversations, Conversation } from "@/hooks/useConversations";
+import { SpaceInterior } from "@/components/spaces/SpaceInterior";
+import { useConversations, Conversation, ConversationSpace } from "@/hooks/useConversations";
 import { Button } from "@/components/ui/button";
 import { History, X, Zap, Mic, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,13 +21,19 @@ const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) 
 
 export default function AICoach() {
   const { profile } = useAuth();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
-  const { createConversation } = useConversations();
+  const { spaces, createConversation } = useConversations();
+
+  // Check if we're inside a space
+  const spaceId = searchParams.get("space");
+  const activeSpace = spaceId ? spaces.find((s) => s.id === spaceId) || null : null;
 
   const handleNewConversation = async () => {
-    const conv = await createConversation();
+    const conv = await createConversation(undefined, spaceId);
     if (conv) {
       setCurrentConversation(conv);
     }
@@ -33,7 +41,7 @@ export default function AICoach() {
 
   const ensureConversation = async (): Promise<string | null> => {
     if (currentConversation) return currentConversation.id;
-    const conv = await createConversation();
+    const conv = await createConversation(undefined, spaceId);
     if (conv) {
       setCurrentConversation(conv);
       return conv.id;
@@ -44,6 +52,11 @@ export default function AICoach() {
   const handleSelectConversation = (conversation: Conversation | null) => {
     setCurrentConversation(conversation);
     setShowHistory(false);
+  };
+
+  const handleBackToSpaces = () => {
+    setCurrentConversation(null);
+    navigate("/dashboard/spaces");
   };
 
   const renderAICoach = () => {
@@ -68,6 +81,25 @@ export default function AICoach() {
   const showConversationSidebar = profile?.role === "student";
   const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
   const creditsRemaining = profile?.credits_remaining || 0;
+
+  // If inside a space, render Space interior layout
+  if (activeSpace && showConversationSidebar) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
+          <SpaceInterior
+            space={activeSpace}
+            currentConversationId={currentConversation?.id}
+            onSelectConversation={handleSelectConversation}
+            onNewConversation={handleNewConversation}
+            onBack={handleBackToSpaces}
+          >
+            {renderAICoach()}
+          </SpaceInterior>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
