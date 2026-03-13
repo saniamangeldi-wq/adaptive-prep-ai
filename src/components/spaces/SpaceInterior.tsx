@@ -229,6 +229,7 @@ export function SpaceInterior({
         onClose={() => setShowSettings(false)}
         onSave={handleSaveSettings}
         onDelete={(id) => { deleteSpace(id); onBack(); }}
+        spaceReferences={spaceReferences}
       />
     </div>
   );
