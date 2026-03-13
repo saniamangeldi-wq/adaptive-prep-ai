@@ -65,10 +65,11 @@ interface StudentAICoachProps {
   spaceReferences?: Reference[];
 }
 
-export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text" }: StudentAICoachProps) {
+export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [] }: StudentAICoachProps) {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
+  const [showReferences, setShowReferences] = useState(false);
   const skipNextLoad = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
