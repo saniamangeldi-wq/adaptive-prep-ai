@@ -130,12 +130,21 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     }
     
     const attachmentContext = getAttachmentContext();
-    const userInput = text + attachmentContext;
+    const fullInput = text + attachmentContext;
+
+    // Build attachment metadata for display (not the extracted text)
+    const attachMeta = attachments
+      .filter(a => !a.isUploading)
+      .map(a => ({
+        type: a.type,
+        name: a.file_name || 'file',
+        preview: a.type === 'image' ? a.file_url || undefined : undefined,
+      }));
     
     setInput("");
     clearAttachments();
     setShowAttachments(false);
-    await streamChat(userInput, { endpoint: "student-chat" });
+    await streamChat(fullInput, { endpoint: "student-chat" }, text, attachMeta);
   };
 
   const handleChipClick = (prompt: string) => {
@@ -407,10 +416,25 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry }: {
   };
 
   if (message.role === "user") {
+    // Show clean visible text, strip any ---ATTACHED CONTENT--- markers
+    const displayText = (message.visibleText || message.content)
+      .replace(/\n*---ATTACHED CONTENT---[\s\S]*$/, '')
+      .trim();
+
     return (
       <div className="pt-8 first:pt-0">
+        {/* Attachment previews */}
+        {message.attachmentMeta?.map((att, i) => (
+          att.type === 'image' && att.preview ? (
+            <img key={i} src={att.preview} alt={att.name} className="max-w-[200px] rounded-lg mb-2 border border-border/20" />
+          ) : (
+            <div key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-2 mr-2 rounded-lg border border-border/30 bg-muted/30 text-xs text-muted-foreground">
+              📄 {att.name}
+            </div>
+          )
+        ))}
         <p className="text-lg font-semibold text-foreground">
-          {message.content}
+          {displayText}
         </p>
       </div>
     );
