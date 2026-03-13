@@ -191,6 +191,9 @@ export function SpaceInterior({
                 <p className="text-[10px] text-muted-foreground/60 truncate">{space.description}</p>
               )}
             </div>
+            {spaceReferences.length > 0 && (
+              <ReferencesBadge count={spaceReferences.length} label="space sources" onClick={() => setShowSettings(true)} />
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowSettings(true)}>
