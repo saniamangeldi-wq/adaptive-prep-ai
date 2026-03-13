@@ -7,6 +7,7 @@ import {
   MessageSquare,
   LineChart,
   Layers,
+  FolderOpen,
   Settings,
   LogOut,
   
