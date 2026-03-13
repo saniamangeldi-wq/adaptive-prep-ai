@@ -214,6 +214,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                     const prevUserMsg = messages.slice(0, index).reverse().find(m => m.role === "user");
                     if (prevUserMsg) handleSend(prevUserMsg.content);
                   }}
+                  onSend={(text) => handleSend(text)}
                 />
               ))}
               {isLoading && (!messages.length || messages[messages.length - 1]?.role !== "assistant" || messages[messages.length - 1]?.content === "") && (
