@@ -485,6 +485,7 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: {
     // Show clean visible text, strip any ---ATTACHED CONTENT--- markers
     const displayText = (message.visibleText || message.content)
       .replace(/\n*---ATTACHED CONTENT---[\s\S]*$/, '')
+      .replace(/\n*---REFERENCE DOCUMENTS---[\s\S]*$/, '')
       .trim();
 
     return (
