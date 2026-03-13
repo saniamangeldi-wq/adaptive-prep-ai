@@ -44,7 +44,9 @@ export function useAIChat(conversationId?: string | null) {
 
   const streamChat = useCallback(async (
     userInput: string,
-    options: StreamChatOptions
+    options: StreamChatOptions,
+    visibleText?: string,
+    attachmentMeta?: Array<{ type: string; name: string; preview?: string }>
   ) => {
     if (!userInput.trim() || isLoading) return;
 
@@ -53,6 +55,8 @@ export function useAIChat(conversationId?: string | null) {
       role: "user",
       content: userInput.trim(),
       timestamp: new Date(),
+      visibleText: visibleText || undefined,
+      attachmentMeta: attachmentMeta?.length ? attachmentMeta : undefined,
     };
 
     setMessages(prev => [...prev, userMessage]);
