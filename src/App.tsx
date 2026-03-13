@@ -15,6 +15,7 @@ import TakeTest from "./pages/TakeTest";
 import TakeSATTest from "./pages/TakeSATTest";
 import TestResults from "./pages/TestResults";
 import AICoach from "./pages/AICoach";
+import Spaces from "./pages/Spaces";
 import Progress from "./pages/Progress";
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
@@ -107,6 +108,7 @@ function AppRoutes() {
       <Route path="/dashboard/sat-test/:testId" element={<ProtectedRoute><TakeSATTest /></ProtectedRoute>} />
       <Route path="/dashboard/tests/:testId/results" element={<ProtectedRoute><TestResults /></ProtectedRoute>} />
       <Route path="/dashboard/coach" element={<ProtectedRoute><AICoach /></ProtectedRoute>} />
+      <Route path="/dashboard/spaces" element={<ProtectedRoute><Spaces /></ProtectedRoute>} />
       <Route path="/dashboard/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
       <Route path="/dashboard/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
       <Route path="/dashboard/university-match" element={<ProtectedRoute><UniversityMatch /></ProtectedRoute>} />
