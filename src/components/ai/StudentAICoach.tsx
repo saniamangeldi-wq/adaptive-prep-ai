@@ -111,6 +111,24 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     getAttachmentContext,
   } = useAttachments();
 
+  const {
+    references,
+    isProcessing: isRefProcessing,
+    addDocument: addRefDocument,
+    addUrl: addRefUrl,
+    addText: addRefText,
+    removeReference,
+    getReferenceContext,
+    loadSpaceReferences,
+  } = useReferences();
+
+  // Load space-level references
+  useEffect(() => {
+    if (spaceReferences.length > 0) {
+      loadSpaceReferences(spaceReferences);
+    }
+  }, [spaceReferences, loadSpaceReferences]);
+
   const handleVoiceTranscript = (text: string) => {
     setInput(text);
   };
