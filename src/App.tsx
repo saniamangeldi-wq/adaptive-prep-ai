@@ -15,6 +15,7 @@ import TakeTest from "./pages/TakeTest";
 import TakeSATTest from "./pages/TakeSATTest";
 import TestResults from "./pages/TestResults";
 import AICoach from "./pages/AICoach";
+import Spaces from "./pages/Spaces";
 import Progress from "./pages/Progress";
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
