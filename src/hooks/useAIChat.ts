@@ -8,6 +8,8 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  visibleText?: string;
+  attachmentMeta?: Array<{ type: string; name: string; preview?: string }>;
 }
 
 interface StreamChatOptions {
