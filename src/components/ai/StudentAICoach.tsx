@@ -517,6 +517,14 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: {
   // Parse message into text + interactive widget parts
   const parts = parseMessageContent(cleanContent);
 
+  // Detect citation patterns in AI response
+  const citationPatterns = [
+    /(?:based on|according to|from|in)\s+(?:the\s+)?(?:document|file|PDF)\s+(?:you\s+)?(?:shared|provided|uploaded|attached)/gi,
+    /(?:based on|according to|from|in)\s+(?:the\s+)?(?:link|URL|website|page)\s+(?:you\s+)?(?:shared|provided)/gi,
+    /(?:based on|according to|from)\s+(?:the\s+)?(?:text|content)\s+(?:you\s+)?(?:pasted|shared|provided)/gi,
+  ];
+  const hasCitations = citationPatterns.some(p => p.test(cleanContent));
+
   return (
     <div className="mt-4 pb-8 border-b border-border/30 last:border-b-0">
       <div className="ai-prose-perplexity max-w-none">
@@ -527,6 +535,13 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: {
           return part.content ? <ReactMarkdown key={i}>{part.content}</ReactMarkdown> : null;
         })}
       </div>
+
+      {/* Citation indicator */}
+      {hasCitations && (
+        <div className="mt-2 flex flex-wrap">
+          <CitationChip name="Referenced source" type="document" />
+        </div>
+      )}
 
       {/* Reaction row */}
       {cleanContent && (
