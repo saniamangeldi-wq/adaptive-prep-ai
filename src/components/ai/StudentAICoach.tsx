@@ -363,10 +363,18 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry }: {
     .replace(/\[\d+\]/g, '')
     .trim();
 
+  // Parse message into text + interactive widget parts
+  const parts = parseMessageContent(cleanContent);
+
   return (
     <div className="mt-4 pb-8 border-b border-border/30 last:border-b-0">
       <div className="ai-prose-perplexity max-w-none">
-        <ReactMarkdown>{cleanContent}</ReactMarkdown>
+        {parts.map((part, i) => {
+          if (part.type === 'widget') {
+            return <QuestionWidget key={i} data={part.data} />;
+          }
+          return part.content ? <ReactMarkdown key={i}>{part.content}</ReactMarkdown> : null;
+        })}
       </div>
 
       {/* Reaction row */}
