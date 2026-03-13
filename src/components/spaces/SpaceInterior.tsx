@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft, MessageSquarePlus, Settings } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { ArrowLeft, MessageSquarePlus, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -8,13 +8,15 @@ import { SpaceSettingsDrawer } from "./SpaceSettingsDrawer";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
+const PANEL_KEY_PREFIX = "space-panel-collapsed-";
+
 interface SpaceInteriorProps {
   space: ConversationSpace;
   currentConversationId?: string | null;
   onSelectConversation: (conv: Conversation | null) => void;
   onNewConversation: () => void;
   onBack: () => void;
-  children: React.ReactNode; // The AI Coach chat area
+  children: React.ReactNode;
 }
 
 export function SpaceInterior({
@@ -27,9 +29,36 @@ export function SpaceInterior({
 }: SpaceInteriorProps) {
   const { conversations, deleteSpace } = useConversations();
   const [showSettings, setShowSettings] = useState(false);
-  const [showPanel, setShowPanel] = useState(true);
 
-  // Filter conversations for this space
+  // Persist collapsed state per space
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(`${PANEL_KEY_PREFIX}${space.id}`) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const togglePanel = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(`${PANEL_KEY_PREFIX}${space.id}`, String(next)); } catch {}
+      return next;
+    });
+  }, [space.id]);
+
+  // Cmd/Ctrl + B shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+        e.preventDefault();
+        togglePanel();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [togglePanel]);
+
   const spaceConversations = conversations.filter((c) => c.space_id === space.id);
 
   const handleSaveSettings = async (_spaceId: string, _updates: { name: string; description: string; icon: string }) => {
@@ -37,21 +66,34 @@ export function SpaceInterior({
   };
 
   return (
-    <div className="flex h-full">
-      {/* Left panel — conversation list for this space */}
-      {showPanel && (
-        <div className="w-[260px] border-r border-border/30 flex flex-col flex-shrink-0 hidden md:flex">
+    <div className="flex h-full relative">
+      {/* Left panel — conversation list */}
+      <div
+        className={cn(
+          "border-r border-border/30 flex-col flex-shrink-0 hidden md:flex transition-all duration-300 ease-in-out overflow-hidden",
+          collapsed ? "w-0 border-r-0" : "w-[260px]"
+        )}
+      >
+        <div className="w-[260px] flex flex-col h-full">
           {/* Space header in panel */}
-          <div className="p-3 border-b border-border/30">
+          <div className="p-3 border-b border-border/30 relative">
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-start gap-2 text-xs mb-2"
+              className="w-full justify-start gap-2 text-xs mb-0"
               onClick={onNewConversation}
             >
               <MessageSquarePlus className="w-3.5 h-3.5" />
               New Chat in {space.name}
             </Button>
+            {/* Collapse button — top right of panel */}
+            <button
+              onClick={togglePanel}
+              className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              title="Collapse panel (⌘B)"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Conversation list */}
@@ -96,6 +138,17 @@ export function SpaceInterior({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Expand button — floating when collapsed */}
+      {collapsed && (
+        <button
+          onClick={togglePanel}
+          className="hidden md:flex absolute left-0 top-14 z-10 p-1.5 rounded-r-lg border border-l-0 border-border/30 bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          title="Expand panel (⌘B)"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       )}
 
       {/* Main chat area */}
@@ -125,7 +178,7 @@ export function SpaceInterior({
           </div>
         </div>
 
-        {/* Space scope banner (shown when no conversation selected) */}
+        {/* Space scope banner */}
         {!currentConversationId && (
           <div className="px-4 pt-3">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/5 border border-primary/10 text-xs text-muted-foreground">
