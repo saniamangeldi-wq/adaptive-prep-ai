@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, FileText, Link2, ClipboardPaste, Loader2 } from "lucide-react";
 import { ConversationSpace } from "@/hooks/useConversations";
+import type { Reference } from "@/hooks/useReferences";
+import { toast } from "sonner";
 
 const ICON_OPTIONS = ["🎓", "📐", "📖", "🧪", "✍️", "🌍", "🚀", "💡", "📚", "📊", "🎨", "🔬", "💼", "🎯"];
 
@@ -12,29 +14,45 @@ interface SpaceSettingsDrawerProps {
   space: ConversationSpace | null;
   open: boolean;
   onClose: () => void;
-  onSave: (spaceId: string, updates: { name: string; description: string; icon: string }) => void;
+  onSave: (spaceId: string, updates: { name: string; description: string; icon: string; ai_instructions?: string; references?: Reference[] }) => void;
   onDelete: (spaceId: string) => void;
+  spaceReferences?: Reference[];
 }
 
-export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete }: SpaceSettingsDrawerProps) {
+export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, spaceReferences = [] }: SpaceSettingsDrawerProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("🎓");
+  const [aiInstructions, setAiInstructions] = useState("");
+  const [refs, setRefs] = useState<Reference[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [addRefMode, setAddRefMode] = useState<"none" | "url" | "paste">("none");
+  const [urlValue, setUrlValue] = useState("");
+  const [textValue, setTextValue] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (space) {
       setName(space.name);
       setDescription(space.description || "");
       setIcon(space.icon);
+      setAiInstructions((space as any).ai_instructions || "");
+      setRefs(spaceReferences);
       setConfirmDelete(false);
+      setAddRefMode("none");
     }
-  }, [space]);
+  }, [space, spaceReferences]);
 
   if (!open || !space) return null;
 
   const handleSave = () => {
-    onSave(space.id, { name: name.trim(), description: description.trim(), icon });
+    onSave(space.id, {
+      name: name.trim(),
+      description: description.trim(),
+      icon,
+      ai_instructions: aiInstructions.trim() || undefined,
+      references: refs,
+    });
     onClose();
   };
 
@@ -46,6 +64,64 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete }: 
     onDelete(space.id);
     onClose();
   };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      try {
+        const content = await file.text();
+        const wordCount = content.trim().split(/\s+/).length;
+        setRefs(prev => [...prev, {
+          id: `space-ref-${Date.now()}-${Math.random()}`,
+          type: "document",
+          name: file.name,
+          content: content.substring(0, 15000),
+          wordCount,
+        }]);
+        toast.success(`${file.name} added`);
+      } catch {
+        toast.error("Failed to read file");
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleAddUrl = () => {
+    if (urlValue.trim()) {
+      try {
+        const domain = new URL(urlValue.trim()).hostname;
+        setRefs(prev => [...prev, {
+          id: `space-ref-${Date.now()}`,
+          type: "url",
+          name: domain,
+          content: `[URL to be fetched: ${urlValue.trim()}]`,
+        }]);
+        setUrlValue("");
+        setAddRefMode("none");
+        toast.success("URL added");
+      } catch {
+        toast.error("Invalid URL");
+      }
+    }
+  };
+
+  const handleAddText = () => {
+    if (textValue.trim()) {
+      const wordCount = textValue.trim().split(/\s+/).length;
+      setRefs(prev => [...prev, {
+        id: `space-ref-${Date.now()}`,
+        type: "text",
+        name: `Pasted text (${wordCount} words)`,
+        content: textValue.trim(),
+        wordCount,
+      }]);
+      setTextValue("");
+      setAddRefMode("none");
+      toast.success("Text added");
+    }
+  };
+
+  const getRefIcon = (type: string) => type === "document" ? "📄" : type === "url" ? "🔗" : "📝";
 
   return (
     <>
@@ -97,14 +173,92 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete }: 
             </div>
           </div>
 
-          {/* AI Instructions placeholder */}
+          {/* AI Instructions */}
           <div>
             <label className="text-sm font-medium text-foreground mb-1.5 block">AI Instructions</label>
             <Textarea
               placeholder="Custom instructions for conversations in this space..."
               rows={4}
+              value={aiInstructions}
+              onChange={(e) => setAiInstructions(e.target.value)}
               className="bg-muted/30 border-border/30 resize-none"
             />
+          </div>
+
+          {/* Space References */}
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">📚 Space References</label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Always active for every conversation in this Space
+            </p>
+
+            {refs.length > 0 && (
+              <div className="space-y-1 mb-2">
+                {refs.map((ref) => (
+                  <div
+                    key={ref.id}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border-l-2 border-l-primary/40 bg-muted/20 group"
+                  >
+                    <span className="text-sm flex-shrink-0">{getRefIcon(ref.type)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{ref.name}</p>
+                      {ref.wordCount && <p className="text-[10px] text-muted-foreground">{ref.wordCount} words</p>}
+                    </div>
+                    <button
+                      onClick={() => setRefs(prev => prev.filter(r => r.id !== ref.id))}
+                      className="p-1 rounded text-muted-foreground/30 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {addRefMode === "url" ? (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://..."
+                    value={urlValue}
+                    onChange={(e) => setUrlValue(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddUrl()}
+                    autoFocus
+                    className="bg-muted/30 border-border/30 text-sm h-8"
+                  />
+                  <Button size="sm" className="h-8" onClick={handleAddUrl}>Add</Button>
+                </div>
+                <button onClick={() => setAddRefMode("none")} className="text-xs text-muted-foreground">← Back</button>
+              </div>
+            ) : addRefMode === "paste" ? (
+              <div className="space-y-2">
+                <Textarea
+                  placeholder="Paste reference text..."
+                  value={textValue}
+                  onChange={(e) => setTextValue(e.target.value)}
+                  rows={3}
+                  autoFocus
+                  className="bg-muted/30 border-border/30 text-sm resize-none"
+                />
+                <div className="flex justify-between">
+                  <button onClick={() => setAddRefMode("none")} className="text-xs text-muted-foreground">← Back</button>
+                  <Button size="sm" className="h-7 text-xs" onClick={handleAddText}>Add</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1 flex-1 border-border/20" onClick={() => fileInputRef.current?.click()}>
+                  <FileText className="w-3 h-3" /> Upload
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1 flex-1 border-border/20" onClick={() => setAddRefMode("url")}>
+                  <Link2 className="w-3 h-3" /> URL
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1 flex-1 border-border/20" onClick={() => setAddRefMode("paste")}>
+                  <ClipboardPaste className="w-3 h-3" /> Paste
+                </Button>
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.txt,.md" className="hidden" onChange={handleFileUpload} />
           </div>
 
           {/* Visibility */}
