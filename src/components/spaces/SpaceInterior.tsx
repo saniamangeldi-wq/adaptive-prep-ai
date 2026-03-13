@@ -70,13 +70,14 @@ export function SpaceInterior({
       {/* Left panel — conversation list */}
       <div
         className={cn(
-          "border-r border-border/30 flex-col flex-shrink-0 hidden md:flex transition-all duration-300 ease-in-out overflow-hidden",
-          collapsed ? "w-0 border-r-0" : "w-[260px]"
+          "relative border-r border-border/30 flex-col flex-shrink-0 hidden md:flex",
+          collapsed ? "w-0 border-r-0 opacity-0" : "w-[260px] opacity-100"
         )}
+        style={{ transition: "width 250ms ease, opacity 200ms ease", overflow: "hidden" }}
       >
         <div className="w-[260px] flex flex-col h-full">
           {/* Space header in panel */}
-          <div className="p-3 border-b border-border/30 relative">
+          <div className="p-3 border-b border-border/30">
             <Button
               variant="outline"
               size="sm"
@@ -86,14 +87,6 @@ export function SpaceInterior({
               <MessageSquarePlus className="w-3.5 h-3.5" />
               New Chat in {space.name}
             </Button>
-            {/* Collapse button — top right of panel */}
-            <button
-              onClick={togglePanel}
-              className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-              title="Collapse panel (⌘B)"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
           </div>
 
           {/* Conversation list */}
@@ -138,13 +131,22 @@ export function SpaceInterior({
             </button>
           </div>
         </div>
+
+        {/* Collapse toggle button — positioned on the right edge, vertically centered */}
+        <button
+          onClick={togglePanel}
+          className="absolute right-[-16px] top-1/2 -translate-y-1/2 z-20 w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 bg-white/[0.06] text-muted-foreground hover:bg-white/[0.12] hover:text-white transition-all duration-200"
+          title="Collapse panel (⌘B)"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Expand button — floating when collapsed */}
+      {/* Expand button — when collapsed, floating near left sidebar */}
       {collapsed && (
         <button
           onClick={togglePanel}
-          className="hidden md:flex absolute left-0 top-14 z-10 p-1.5 rounded-r-lg border border-l-0 border-border/30 bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          className="hidden md:flex fixed left-12 top-1/2 -translate-y-1/2 z-20 w-8 h-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.06] text-muted-foreground hover:bg-white/[0.12] hover:text-white transition-all duration-200"
           title="Expand panel (⌘B)"
         >
           <ChevronRight className="w-4 h-4" />
