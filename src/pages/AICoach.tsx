@@ -60,6 +60,16 @@ export default function AICoach() {
     navigate("/dashboard/spaces");
   };
 
+  // Parse space references
+  const spaceRefs: Reference[] = useMemo(() => {
+    if (!activeSpace) return [];
+    try {
+      const refs = (activeSpace as any).references;
+      if (Array.isArray(refs)) return refs;
+    } catch {}
+    return [];
+  }, [activeSpace]);
+
   const renderAICoach = () => {
     switch (profile?.role) {
       case "school_admin":
@@ -74,6 +84,7 @@ export default function AICoach() {
             conversationId={currentConversation?.id || null}
             onEnsureConversation={ensureConversation}
             chatMode={chatMode}
+            spaceReferences={spaceRefs}
           />
         );
     }
