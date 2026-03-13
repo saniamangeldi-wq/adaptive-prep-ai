@@ -287,6 +287,28 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       {/* Floating input bar — Perplexity style */}
       <div className="pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 flex-shrink-0">
         <div className="max-w-[760px] mx-auto px-4">
+          {/* References panel above input */}
+          {showReferences && (
+            <div className="mb-2">
+              <ReferencesPanel
+                references={references}
+                isProcessing={isRefProcessing}
+                onAddDocument={addRefDocument}
+                onAddUrl={addRefUrl}
+                onAddText={addRefText}
+                onRemove={removeReference}
+                onClose={() => setShowReferences(false)}
+              />
+            </div>
+          )}
+
+          {/* Active references badge */}
+          {!showReferences && references.length > 0 && (
+            <div className="mb-2">
+              <ReferencesBadge count={references.length} onClick={() => setShowReferences(true)} />
+            </div>
+          )}
+
           {/* Attachment previews above input */}
           {showAttachments && (
             <div className="mb-2">
