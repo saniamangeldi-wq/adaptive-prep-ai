@@ -45,11 +45,11 @@ const getHoursUntilReset = () => {
   return Math.ceil(diff / (1000 * 60 * 60));
 };
 
-const PROMPT_CHIPS = [
-  "Make me a 2-week SAT plan",
+const DEFAULT_CHIPS = [
+  "Make me a 2-week SAT study plan",
   "Explain quadratic equations",
-  "Help me with reading comp",
-  "What are SAT essay tips?",
+  "Help me improve reading comp",
+  "What are the hardest SAT grammar rules?",
 ];
 
 interface StudentAICoachProps {
