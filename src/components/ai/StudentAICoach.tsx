@@ -122,7 +122,10 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     
     if (!activeConvId && onEnsureConversation) {
       const newId = await onEnsureConversation();
-      if (newId) setActiveConvId(newId);
+      if (newId) {
+        skipNextLoad.current = true;
+        setActiveConvId(newId);
+      }
     }
     
     const attachmentContext = getAttachmentContext();
