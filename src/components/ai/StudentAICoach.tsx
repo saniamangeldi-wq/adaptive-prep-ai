@@ -321,6 +321,35 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   );
 }
 
+/* ─── Parse JSON quiz widgets from AI text ─── */
+function parseMessageContent(content: string) {
+  const parts: Array<{ type: 'text'; content: string } | { type: 'widget'; data: any }> = [];
+  // Match JSON blocks (with or without markdown code fences) containing widget_type
+  const jsonRegex = /(?:```(?:json)?\s*)?\{[\s\S]*?"widget_type"\s*:\s*"interactive_quiz"[\s\S]*?\}(?:\s*```)?/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = jsonRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', content: content.slice(lastIndex, match.index).trim() });
+    }
+    try {
+      // Strip code fence markers if present
+      const raw = match[0].replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+      parts.push({ type: 'widget', data: JSON.parse(raw) });
+    } catch {
+      parts.push({ type: 'text', content: match[0] });
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < content.length) {
+    parts.push({ type: 'text', content: content.slice(lastIndex).trim() });
+  }
+
+  return parts.length ? parts : [{ type: 'text' as const, content }];
+}
+
 /* ─── Perplexity-style message (no bubbles) ─── */
 function PerplexityMessage({ message, isTier3, isLast, onRetry }: { 
   message: Message; 
