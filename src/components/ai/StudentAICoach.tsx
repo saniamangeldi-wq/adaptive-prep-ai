@@ -276,13 +276,14 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             </button>
 
             {/* Text input */}
-            <input
+              <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
               placeholder={noCredits ? "No credits remaining..." : "Ask anything..."}
-              disabled={noCredits || isLoading}
+              disabled={noCredits}
               className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm h-10"
             />
 
