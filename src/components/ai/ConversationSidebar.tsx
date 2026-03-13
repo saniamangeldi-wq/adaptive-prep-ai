@@ -248,11 +248,11 @@ export function ConversationSidebar({
             {pinnedConversations.length > 0 && (
               <div>
                 <p className="px-2 py-1 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Pinned</p>
-                <div className="space-y-0.5">{pinnedConversations.map(renderConversation)}</div>
+                <div className="space-y-0.5">{pinnedConversations.map((c) => renderConversation(c, true))}</div>
               </div>
             )}
 
-            {/* Recent */}
+            {/* Recent — grouped by space */}
             <div>
               <p className="px-2 py-1 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Recent</p>
               <div className="space-y-0.5">
@@ -261,7 +261,29 @@ export function ConversationSidebar({
                 ) : unpinnedConversations.length === 0 ? (
                   <div className="px-3 py-4 text-xs text-muted-foreground text-center">No conversations</div>
                 ) : (
-                  unpinnedConversations.map(renderConversation)
+                  <>
+                    {/* Grouped: space conversations */}
+                    {Object.entries(groupedBySpace().withSpace).map(([sId, convs]) => {
+                      const sp = spaces.find(s => s.id === sId);
+                      return (
+                        <div key={sId} className="mb-2">
+                          <p className="px-2 py-1 text-[10px] font-medium text-muted-foreground/40 flex items-center gap-1">
+                            <span>{sp?.icon || "📁"}</span> {sp?.name || "Space"}
+                          </p>
+                          {convs.map((c) => renderConversation(c))}
+                        </div>
+                      );
+                    })}
+                    {/* General (no space) */}
+                    {groupedBySpace().general.length > 0 && (
+                      <div>
+                        <p className="px-2 py-1 text-[10px] font-medium text-muted-foreground/40 flex items-center gap-1">
+                          📁 General
+                        </p>
+                        {groupedBySpace().general.map((c) => renderConversation(c))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
