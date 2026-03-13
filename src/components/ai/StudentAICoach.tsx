@@ -62,7 +62,9 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
+  const skipNextLoad = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
@@ -72,12 +74,23 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   }, [conversationId]);
 
   useEffect(() => {
+    if (skipNextLoad.current) {
+      skipNextLoad.current = false;
+      return;
+    }
     if (activeConvId) {
       loadConversationMessages(activeConvId);
     } else {
       clearMessages();
     }
   }, [activeConvId, loadConversationMessages, clearMessages]);
+
+  // Restore focus after AI finishes responding
+  useEffect(() => {
+    if (!isLoading) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading]);
   
   const {
     attachments,
@@ -109,7 +122,10 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     
     if (!activeConvId && onEnsureConversation) {
       const newId = await onEnsureConversation();
-      if (newId) setActiveConvId(newId);
+      if (newId) {
+        skipNextLoad.current = true;
+        setActiveConvId(newId);
+      }
     }
     
     const attachmentContext = getAttachmentContext();
@@ -187,7 +203,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                   }}
                 />
               ))}
-              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+              {isLoading && (!messages.length || messages[messages.length - 1]?.role !== "assistant" || messages[messages.length - 1]?.content === "") && (
                 <LoadingIndicator />
               )}
               <div ref={messagesEndRef} />
@@ -260,13 +276,14 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             </button>
 
             {/* Text input */}
-            <input
+              <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
               placeholder={noCredits ? "No credits remaining..." : "Ask anything..."}
-              disabled={noCredits || isLoading}
+              disabled={noCredits}
               className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm h-10"
             />
 
