@@ -31,6 +31,7 @@ import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { toast } from "sonner";
+import { QuestionWidget } from "./QuestionWidget";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
