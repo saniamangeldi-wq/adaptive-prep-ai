@@ -203,7 +203,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                   }}
                 />
               ))}
-              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+              {isLoading && (!messages.length || messages[messages.length - 1]?.role !== "assistant" || messages[messages.length - 1]?.content === "") && (
                 <LoadingIndicator />
               )}
               <div ref={messagesEndRef} />
