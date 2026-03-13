@@ -214,6 +214,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                     const prevUserMsg = messages.slice(0, index).reverse().find(m => m.role === "user");
                     if (prevUserMsg) handleSend(prevUserMsg.content);
                   }}
+                  onSend={(text) => handleSend(text)}
                 />
               ))}
               {isLoading && (!messages.length || messages[messages.length - 1]?.role !== "assistant" || messages[messages.length - 1]?.content === "") && (
@@ -391,11 +392,12 @@ function parseMessageContent(content: string) {
 }
 
 /* ─── Perplexity-style message (no bubbles) ─── */
-function PerplexityMessage({ message, isTier3, isLast, onRetry }: { 
+function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: { 
   message: Message; 
   isTier3: boolean; 
   isLast: boolean;
   onRetry: () => void;
+  onSend: (text: string) => void;
 }) {
   const { speak, stop, isPlaying, isLoading: ttsLoading } = useTextToSpeech();
   const [copied, setCopied] = useState(false);
@@ -455,7 +457,7 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry }: {
       <div className="ai-prose-perplexity max-w-none">
         {parts.map((part, i) => {
           if (part.type === 'widget') {
-            return <QuestionWidget key={i} data={part.data} />;
+            return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSend(payload)} />;
           }
           return part.content ? <ReactMarkdown key={i}>{part.content}</ReactMarkdown> : null;
         })}
