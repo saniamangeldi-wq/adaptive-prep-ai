@@ -155,7 +155,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     }
     
     const attachmentContext = getAttachmentContext();
-    const fullInput = text + attachmentContext;
+    const referenceContext = getReferenceContext();
+    const fullInput = text + attachmentContext + referenceContext;
 
     // Build attachment metadata for display (not the extracted text)
     const attachMeta = attachments
@@ -169,6 +170,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     setInput("");
     clearAttachments();
     setShowAttachments(false);
+    setShowReferences(false);
     await streamChat(fullInput, { endpoint: "student-chat" }, text, attachMeta);
   };
 
