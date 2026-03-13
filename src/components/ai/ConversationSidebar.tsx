@@ -89,65 +89,89 @@ export function ConversationSidebar({
       : firstUserMsg.content;
   };
 
-  const renderConversation = (conv: Conversation) => (
-    <div
-      key={conv.id}
-      className={cn(
-        "group flex items-start gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors",
-        currentConversationId === conv.id
-          ? "bg-primary/10 text-foreground"
-          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-      )}
-      onClick={() => onSelectConversation(conv)}
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1">
-          {conv.is_pinned && <Pin className="w-3 h-3 text-primary flex-shrink-0" />}
-          <p className="text-sm font-medium truncate">
-            {conv.title || "Untitled"}
+  // Find the space for a conversation
+  const getSpaceForConv = (conv: Conversation) => spaces.find(s => s.id === conv.space_id);
+
+  const renderConversation = (conv: Conversation, showSpaceBadge = false) => {
+    const space = showSpaceBadge ? getSpaceForConv(conv) : null;
+    return (
+      <div
+        key={conv.id}
+        className={cn(
+          "group flex items-start gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors",
+          currentConversationId === conv.id
+            ? "bg-primary/10 text-foreground"
+            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+        onClick={() => onSelectConversation(conv)}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            {conv.is_pinned && <Pin className="w-3 h-3 text-primary flex-shrink-0" />}
+            {space && <span className="text-[10px] flex-shrink-0">{space.icon}</span>}
+            <p className="text-sm font-medium truncate">
+              {conv.title || "Untitled"}
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground/60 truncate mt-0.5">
+            {getPreviewText(conv.messages)}
           </p>
         </div>
-        <p className="text-xs text-muted-foreground/60 truncate mt-0.5">
-          {getPreviewText(conv.messages)}
-        </p>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => togglePin(conv.id)}>
+              <Pin className="h-4 w-4 mr-2" />
+              {conv.is_pinned ? "Unpin" : "Pin"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowMoveDialog(conv.id)}>
+              <Folder className="h-4 w-4 mr-2" />
+              Move to Space
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => archiveConversation(conv.id)}>
+              <Archive className="h-4 w-4 mr-2" />
+              Archive
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={() => deleteConversation(conv.id)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-      
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MoreHorizontal className="h-3.5 w-3.5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => togglePin(conv.id)}>
-            <Pin className="h-4 w-4 mr-2" />
-            {conv.is_pinned ? "Unpin" : "Pin"}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setShowMoveDialog(conv.id)}>
-            <Folder className="h-4 w-4 mr-2" />
-            Move to Space
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => archiveConversation(conv.id)}>
-            <Archive className="h-4 w-4 mr-2" />
-            Archive
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            className="text-destructive"
-            onClick={() => deleteConversation(conv.id)}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  );
+    );
+  };
+
+  // Group conversations by space for "All" view
+  const groupedBySpace = () => {
+    const withSpace: Record<string, Conversation[]> = {};
+    const general: Conversation[] = [];
+    
+    unpinnedConversations.forEach((conv) => {
+      if (conv.space_id) {
+        if (!withSpace[conv.space_id]) withSpace[conv.space_id] = [];
+        withSpace[conv.space_id].push(conv);
+      } else {
+        general.push(conv);
+      }
+    });
+
+    return { withSpace, general };
+  };
 
   return (
     <>
