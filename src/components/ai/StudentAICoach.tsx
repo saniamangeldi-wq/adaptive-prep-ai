@@ -166,21 +166,24 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="max-w-[760px] mx-auto px-4">
           {messages.length === 0 ? (
-            /* Empty state — Perplexity style */
+            /* Empty state */
             <div className="h-full flex flex-col items-center justify-center text-center py-24">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-6">
                 <GraduationCap className="w-8 h-8 text-primary-foreground" />
               </div>
-              <h2 className="text-[28px] font-bold text-foreground mb-8">
+              <h1 className="text-[26px] font-bold text-foreground mb-2">
                 What do you want to study today?
-              </h2>
+              </h1>
+              <p className="text-sm text-muted-foreground mb-8">
+                Your SAT study coach — math, reading, writing, and beyond
+              </p>
               <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
-                {PROMPT_CHIPS.map((chip) => (
+                {DEFAULT_CHIPS.map((chip) => (
                   <button
                     key={chip}
                     onClick={() => handleChipClick(chip)}
                     disabled={noCredits || isLoading}
-                    className="p-4 text-sm text-left rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)] transition-all duration-200 disabled:opacity-40"
+                    className="px-4 py-2.5 text-[13px] text-left rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)] transition-all duration-200 disabled:opacity-40"
                   >
                     {chip}
                   </button>
