@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,7 @@ import { History, X, Zap, Mic, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CreditsInfoPopover } from "@/components/ai/CreditsInfoPopover";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
+import type { Reference } from "@/hooks/useReferences";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
