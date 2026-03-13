@@ -322,29 +322,60 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
 }
 
 /* ─── Parse JSON quiz widgets from AI text ─── */
+function extractBalancedJSON(str: string, startIdx: number): string | null {
+  if (str[startIdx] !== '{') return null;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = startIdx; i < str.length; i++) {
+    const ch = str[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}') { depth--; if (depth === 0) return str.slice(startIdx, i + 1); }
+  }
+  return null;
+}
+
 function parseMessageContent(content: string) {
   const parts: Array<{ type: 'text'; content: string } | { type: 'widget'; data: any }> = [];
-  // Match JSON blocks (with or without markdown code fences) containing widget_type
-  const jsonRegex = /(?:```(?:json)?\s*)?\{[\s\S]*?"widget_type"\s*:\s*"interactive_quiz"[\s\S]*?\}(?:\s*```)?/g;
+  // Strip markdown code fences around JSON
+  const cleaned = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+  const marker = '"widget_type"';
   let lastIndex = 0;
-  let match;
+  let searchFrom = 0;
 
-  while ((match = jsonRegex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ type: 'text', content: content.slice(lastIndex, match.index).trim() });
-    }
+  while (searchFrom < cleaned.length) {
+    const markerIdx = cleaned.indexOf(marker, searchFrom);
+    if (markerIdx === -1) break;
+
+    // Walk back to find the opening {
+    let braceStart = markerIdx;
+    while (braceStart > lastIndex && cleaned[braceStart] !== '{') braceStart--;
+    if (cleaned[braceStart] !== '{') { searchFrom = markerIdx + marker.length; continue; }
+
+    const jsonStr = extractBalancedJSON(cleaned, braceStart);
+    if (!jsonStr) { searchFrom = markerIdx + marker.length; continue; }
+
     try {
-      // Strip code fence markers if present
-      const raw = match[0].replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
-      parts.push({ type: 'widget', data: JSON.parse(raw) });
-    } catch {
-      parts.push({ type: 'text', content: match[0] });
-    }
-    lastIndex = match.index + match[0].length;
+      const parsed = JSON.parse(jsonStr);
+      if (parsed.widget_type === 'interactive_quiz') {
+        const textBefore = cleaned.slice(lastIndex, braceStart).trim();
+        if (textBefore) parts.push({ type: 'text', content: textBefore });
+        parts.push({ type: 'widget', data: parsed });
+        lastIndex = braceStart + jsonStr.length;
+        searchFrom = lastIndex;
+        continue;
+      }
+    } catch { /* not valid JSON, skip */ }
+    searchFrom = markerIdx + marker.length;
   }
 
-  if (lastIndex < content.length) {
-    parts.push({ type: 'text', content: content.slice(lastIndex).trim() });
+  if (lastIndex < cleaned.length) {
+    const remaining = cleaned.slice(lastIndex).trim();
+    if (remaining) parts.push({ type: 'text', content: remaining });
   }
 
   return parts.length ? parts : [{ type: 'text' as const, content }];
