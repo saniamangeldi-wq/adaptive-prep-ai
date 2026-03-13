@@ -18,7 +18,8 @@ import {
   Check,
   GraduationCap,
   Mic,
-  Crown
+  Crown,
+  BookOpen
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,10 @@ import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
+import { useReferences, type Reference } from "@/hooks/useReferences";
+import { ReferencesPanel } from "./ReferencesPanel";
+import { ReferencesBadge } from "./ReferencesBadge";
+import { CitationChip } from "./CitationChip";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { toast } from "sonner";
 import { QuestionWidget } from "./QuestionWidget";
