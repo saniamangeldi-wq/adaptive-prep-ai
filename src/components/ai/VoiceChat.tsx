@@ -79,14 +79,38 @@ export function VoiceChat({ onTranscript, isDisabled, className, fullMode = fals
       }
 
       const data = await response.json();
-      if (!data?.token) throw new Error("No token received");
+      const signedUrl: string | undefined = data?.signedUrl ?? data?.signed_url;
+      const conversationToken: string | undefined = data?.token;
+
+      if (!signedUrl && !conversationToken) {
+        throw new Error("No conversation credentials received");
+      }
 
       setTranscript([]);
 
-      await conversation.startSession({
-        conversationToken: data.token,
-        connectionType: "webrtc",
-      });
+      try {
+        if (signedUrl) {
+          await conversation.startSession({
+            signedUrl,
+            connectionType: "websocket",
+          });
+        } else if (conversationToken) {
+          await conversation.startSession({
+            conversationToken,
+            connectionType: "webrtc",
+          });
+        }
+      } catch (primaryError) {
+        if (conversationToken && signedUrl) {
+          console.warn("WebSocket start failed, retrying with WebRTC token", primaryError);
+          await conversation.startSession({
+            conversationToken,
+            connectionType: "webrtc",
+          });
+        } else {
+          throw primaryError;
+        }
+      }
     } catch (error) {
       console.error("Failed to start voice chat:", error);
       if (error instanceof Error && error.name === "NotAllowedError") {

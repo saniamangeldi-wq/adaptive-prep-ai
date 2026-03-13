@@ -65,29 +65,53 @@ serve(async (req) => {
       });
     }
 
-    // Generate a conversation token for the conversational AI agent
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${ELEVENLABS_AGENT_ID}`,
-      {
-        headers: {
-          "xi-api-key": ELEVENLABS_API_KEY,
-        },
-      }
-    );
+    const [tokenResponse, signedUrlResponse] = await Promise.all([
+      fetch(
+        `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${ELEVENLABS_AGENT_ID}`,
+        {
+          headers: {
+            "xi-api-key": ELEVENLABS_API_KEY,
+          },
+        }
+      ),
+      fetch(
+        `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${ELEVENLABS_AGENT_ID}`,
+        {
+          headers: {
+            "xi-api-key": ELEVENLABS_API_KEY,
+          },
+        }
+      ),
+    ]);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("ElevenLabs token error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "Failed to generate conversation token" }), {
+    let token: string | null = null;
+    if (tokenResponse.ok) {
+      const tokenJson = await tokenResponse.json();
+      token = tokenJson?.token ?? null;
+    } else {
+      const errorText = await tokenResponse.text();
+      console.error("ElevenLabs token error:", tokenResponse.status, errorText);
+    }
+
+    let signedUrl: string | null = null;
+    if (signedUrlResponse.ok) {
+      const signedUrlJson = await signedUrlResponse.json();
+      signedUrl = signedUrlJson?.signed_url ?? null;
+    } else {
+      const errorText = await signedUrlResponse.text();
+      console.error("ElevenLabs signed URL error:", signedUrlResponse.status, errorText);
+    }
+
+    if (!token && !signedUrl) {
+      return new Response(JSON.stringify({ error: "Failed to initialize voice session" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { token } = await response.json();
-
     return new Response(JSON.stringify({ 
       token,
+      signedUrl,
       learningStyle: profile.learning_style 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
