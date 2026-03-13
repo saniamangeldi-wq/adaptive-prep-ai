@@ -5,16 +5,23 @@ import { StudentAICoach } from "@/components/ai/StudentAICoach";
 import { TeacherAICoach } from "@/components/ai/TeacherAICoach";
 import { AdminAICoach } from "@/components/ai/AdminAICoach";
 import { ConversationSidebar } from "@/components/ai/ConversationSidebar";
-import { VoiceChat } from "@/components/ai/VoiceChat";
 import { useConversations, Conversation } from "@/hooks/useConversations";
 import { Button } from "@/components/ui/button";
-import { History, X } from "lucide-react";
+import { History, X, Zap, Mic, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CreditsInfoPopover } from "@/components/ai/CreditsInfoPopover";
+import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
+
+const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
+  if (isTrial) return TRIAL_LIMITS.creditsPerDay;
+  return getTierLimits(tier as any).creditsPerDay;
+};
 
 export default function AICoach() {
   const { profile } = useAuth();
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
+  const [chatMode, setChatMode] = useState<"text" | "voice">("text");
   const { createConversation } = useConversations();
 
   const handleNewConversation = async () => {
@@ -48,15 +55,79 @@ export default function AICoach() {
         return <TeacherAICoach />;
       case "student":
       default:
-        return <StudentAICoach conversationId={currentConversation?.id || null} onEnsureConversation={ensureConversation} />;
+        return (
+          <StudentAICoach
+            conversationId={currentConversation?.id || null}
+            onEnsureConversation={ensureConversation}
+            chatMode={chatMode}
+          />
+        );
     }
   };
 
   const showConversationSidebar = profile?.role === "student";
+  const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
+  const creditsRemaining = profile?.credits_remaining || 0;
 
   return (
     <DashboardLayout>
-      <div className="flex h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
+      <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
+        {/* Top header bar */}
+        {showConversationSidebar && (
+          <div className="h-12 flex items-center justify-between px-4 border-b border-border/50 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                <History className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium text-foreground truncate max-w-[200px]">
+                {currentConversation?.title || "New Conversation"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Text / Voice toggle */}
+              <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
+                <button
+                  onClick={() => setChatMode("text")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
+                    chatMode === "text"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <MessageSquare className="w-3 h-3" />
+                  Text
+                </button>
+                <button
+                  onClick={() => setChatMode("voice")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
+                    chatMode === "voice"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Mic className="w-3 h-3" />
+                  Voice
+                </button>
+              </div>
+
+              {/* Credit counter */}
+              <CreditsInfoPopover creditsRemaining={creditsRemaining} dailyLimit={dailyLimit}>
+                <button className="flex items-center gap-1 px-2 py-1 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <Zap className="w-3 h-3" />
+                  <span>{creditsRemaining}</span>
+                </button>
+              </CreditsInfoPopover>
+            </div>
+          </div>
+        )}
+
         {/* Conversation history overlay panel */}
         {showConversationSidebar && showHistory && (
           <>
@@ -82,24 +153,8 @@ export default function AICoach() {
         )}
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col min-w-0 relative">
-          {/* Top controls — minimal */}
-          {showConversationSidebar && (
-            <div className="flex items-center gap-2 px-4 pt-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                onClick={() => setShowHistory(!showHistory)}
-              >
-                <History className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-
-          <div className="flex-1 overflow-hidden p-4 pt-1">
-            {renderAICoach()}
-          </div>
+        <div className="flex-1 overflow-hidden">
+          {renderAICoach()}
         </div>
       </div>
     </DashboardLayout>

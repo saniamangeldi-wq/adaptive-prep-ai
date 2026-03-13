@@ -352,6 +352,79 @@
   .ai-prose th {
     @apply bg-muted/30 font-semibold;
   }
+
+  /* Perplexity-style AI prose — no bubble, clean text layout */
+  .ai-prose-perplexity {
+    @apply text-[15px] leading-[1.7];
+    color: hsl(220 14% 90%);
+  }
+
+  .ai-prose-perplexity p {
+    @apply mb-3 last:mb-0;
+  }
+
+  .ai-prose-perplexity h1, .ai-prose-perplexity h2, .ai-prose-perplexity h3, .ai-prose-perplexity h4 {
+    @apply font-semibold mt-5 mb-2 text-foreground;
+  }
+
+  .ai-prose-perplexity h1 { @apply text-xl; }
+  .ai-prose-perplexity h2 { @apply text-lg; }
+  .ai-prose-perplexity h3 { @apply text-base font-semibold; }
+
+  .ai-prose-perplexity ul, .ai-prose-perplexity ol {
+    @apply pl-6 mb-3 space-y-2;
+  }
+
+  .ai-prose-perplexity ul { @apply list-disc; }
+  .ai-prose-perplexity ol { @apply list-decimal; }
+
+  .ai-prose-perplexity li {
+    @apply text-[15px] leading-[1.7];
+  }
+
+  .ai-prose-perplexity code {
+    @apply text-xs bg-muted/50 text-primary px-1.5 py-0.5 rounded font-mono;
+  }
+
+  .ai-prose-perplexity pre {
+    @apply bg-muted/50 rounded-lg p-4 mb-3 overflow-x-auto;
+  }
+
+  .ai-prose-perplexity pre code {
+    @apply bg-transparent p-0 text-foreground;
+  }
+
+  .ai-prose-perplexity strong {
+    @apply font-semibold text-foreground;
+  }
+
+  .ai-prose-perplexity em {
+    @apply italic text-muted-foreground;
+  }
+
+  .ai-prose-perplexity blockquote {
+    @apply border-l-2 border-primary/40 pl-4 my-3 text-muted-foreground italic;
+  }
+
+  .ai-prose-perplexity a {
+    @apply text-primary underline underline-offset-2 hover:text-primary/80 transition-colors;
+  }
+
+  .ai-prose-perplexity hr {
+    @apply my-4 border-border/50;
+  }
+
+  .ai-prose-perplexity table {
+    @apply w-full text-sm border-collapse mb-3;
+  }
+
+  .ai-prose-perplexity th, .ai-prose-perplexity td {
+    @apply border border-border/50 px-3 py-2 text-left;
+  }
+
+  .ai-prose-perplexity th {
+    @apply bg-muted/30 font-semibold;
+  }
 }
 
 /* LOCKED - DO NOT MODIFY */

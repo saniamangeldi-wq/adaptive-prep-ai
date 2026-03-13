@@ -3,20 +3,22 @@ import { Button } from "@/components/ui/button";
 import { 
   Send, 
   Bot, 
-  User, 
-  GraduationCap, 
   Zap,
   AlertCircle,
   Clock,
   ArrowUpRight,
-  Trash2,
   Volume2,
   VolumeX,
   Loader2,
-  Crown,
   Paperclip,
-  Search,
-  Mic
+  Copy,
+  ThumbsUp,
+  ThumbsDown,
+  RotateCcw,
+  Check,
+  GraduationCap,
+  Mic,
+  Crown
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -25,11 +27,10 @@ import { useAIChat, type Message } from "@/hooks/useAIChat";
 import ReactMarkdown from "react-markdown";
 import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
-import { AISuggestions } from "./AISuggestions";
-import { CreditsInfoPopover } from "./CreditsInfoPopover";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
+import { toast } from "sonner";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
@@ -44,7 +45,20 @@ const getHoursUntilReset = () => {
   return Math.ceil(diff / (1000 * 60 * 60));
 };
 
-export function StudentAICoach({ conversationId, onEnsureConversation }: { conversationId?: string | null; onEnsureConversation?: () => Promise<string | null> }) {
+const PROMPT_CHIPS = [
+  "Make me a 2-week SAT plan",
+  "Explain quadratic equations",
+  "Help me with reading comp",
+  "What are SAT essay tips?",
+];
+
+interface StudentAICoachProps {
+  conversationId?: string | null;
+  onEnsureConversation?: () => Promise<string | null>;
+  chatMode?: "text" | "voice";
+}
+
+export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text" }: StudentAICoachProps) {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
@@ -76,10 +90,6 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
     getAttachmentContext,
   } = useAttachments();
 
-  const primarySubject = profile?.primary_goal === "homework" 
-    ? "General" 
-    : profile?.primary_goal || "SAT";
-
   const handleVoiceTranscript = (text: string) => {
     setInput(text);
   };
@@ -92,8 +102,9 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (overrideInput?: string) => {
+    const text = overrideInput ?? input;
+    if (!text.trim() || isLoading) return;
     if ((profile?.credits_remaining || 0) <= 0) return;
     
     if (!activeConvId && onEnsureConversation) {
@@ -102,7 +113,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
     }
     
     const attachmentContext = getAttachmentContext();
-    const userInput = input + attachmentContext;
+    const userInput = text + attachmentContext;
     
     setInput("");
     clearAttachments();
@@ -110,8 +121,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
     await streamChat(userInput, { endpoint: "student-chat" });
   };
 
-  const handleSuggestedPrompt = (prompt: string) => {
-    setInput(prompt);
+  const handleChipClick = (prompt: string) => {
+    handleSend(prompt);
   };
 
   const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
@@ -120,35 +131,64 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
   const noCredits = creditsRemaining <= 0;
   const hoursUntilReset = getHoursUntilReset();
 
+  // Voice mode
+  if (chatMode === "voice") {
+    return (
+      <div className="flex flex-col h-full">
+        <VoiceChat
+          onTranscript={handleVoiceTranscript}
+          isDisabled={noCredits || isLoading}
+          fullMode={true}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Messages area — centered */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-[720px] mx-auto px-4">
+        <div className="max-w-[760px] mx-auto px-4">
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center py-20">
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-4">
-                <Bot className="w-7 h-7 md:w-8 md:h-8 text-primary-foreground" />
+            /* Empty state — Perplexity style */
+            <div className="h-full flex flex-col items-center justify-center text-center py-24">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-6">
+                <GraduationCap className="w-8 h-8 text-primary-foreground" />
               </div>
-              <h2 className="text-lg md:text-xl font-semibold text-foreground mb-2">
-                How can I help you today?
+              <h2 className="text-[28px] font-bold text-foreground mb-8">
+                What do you want to study today?
               </h2>
-              <p className="text-sm text-muted-foreground mb-6 max-w-md">
-                I'm your AI study coach. Ask me about any subject, study strategies, or help with practice problems.
-              </p>
-              <AISuggestions 
-                subject={primarySubject}
-                onSelectSuggestion={handleSuggestedPrompt}
-                className="w-full max-w-lg"
-              />
+              <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
+                {PROMPT_CHIPS.map((chip) => (
+                  <button
+                    key={chip}
+                    onClick={() => handleChipClick(chip)}
+                    disabled={noCredits || isLoading}
+                    className="p-4 text-sm text-left rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)] transition-all duration-200 disabled:opacity-40"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="space-y-5 py-4">
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} isTier3={isTier3} />
+            /* Active chat — Perplexity style: no bubbles */
+            <div className="py-6">
+              {messages.map((message, index) => (
+                <PerplexityMessage
+                  key={message.id}
+                  message={message}
+                  isTier3={isTier3}
+                  isLast={index === messages.length - 1}
+                  onRetry={() => {
+                    // Find the previous user message and resend
+                    const prevUserMsg = messages.slice(0, index).reverse().find(m => m.role === "user");
+                    if (prevUserMsg) handleSend(prevUserMsg.content);
+                  }}
+                />
               ))}
               {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-                <LoadingBubble />
+                <LoadingIndicator />
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -157,7 +197,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
       </div>
 
       {/* Credits warnings */}
-      <div className="max-w-[720px] mx-auto w-full px-4">
+      <div className="max-w-[760px] mx-auto w-full px-4">
         {creditsLow && (
           <div className="mb-2 p-2 rounded-lg bg-warning/10 border border-warning/20 flex items-center gap-2 text-sm">
             <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
@@ -187,9 +227,9 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
         )}
       </div>
 
-      {/* Floating input bar */}
-      <div className="pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 flex-shrink-0">
-        <div className="max-w-[720px] mx-auto px-4">
+      {/* Floating input bar — Perplexity style */}
+      <div className="pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 flex-shrink-0">
+        <div className="max-w-[760px] mx-auto px-4">
           {/* Attachment previews above input */}
           {showAttachments && (
             <div className="mb-2">
@@ -206,14 +246,14 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
           )}
 
           <div className={cn(
-            "relative flex items-center gap-2 rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm px-3 py-2 transition-shadow",
-            "focus-within:shadow-[0_0_20px_-5px_hsl(var(--primary)/0.3)] focus-within:border-primary/40"
+            "relative flex items-center gap-2 rounded-2xl border border-border/30 bg-muted/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-200",
+            "focus-within:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.35)] focus-within:border-primary/50"
           )}>
             {/* Attach button */}
             <button
               onClick={() => setShowAttachments(!showAttachments)}
               disabled={noCredits || isLoading}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-40"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
               title="Attach files"
             >
               <Paperclip className="w-4 h-4" />
@@ -227,18 +267,10 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
               placeholder={noCredits ? "No credits remaining..." : "Ask anything..."}
               disabled={noCredits || isLoading}
-              className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/60 focus:outline-none text-sm h-10 md:h-9"
+              className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm h-10"
             />
 
-            {/* Credits badge — minimal */}
-            <CreditsInfoPopover creditsRemaining={creditsRemaining} dailyLimit={dailyLimit}>
-              <button className="flex items-center gap-1 px-2 py-1 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors">
-                <Zap className="w-3 h-3" />
-                <span>{creditsRemaining}</span>
-              </button>
-            </CreditsInfoPopover>
-
-            {/* Voice button (Tier 3) */}
+            {/* Voice button (Tier 3) — compact */}
             {isTier3 && (
               <VoiceChat 
                 onTranscript={handleVoiceTranscript}
@@ -251,12 +283,12 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
               variant="ghost"
               size="icon"
               className={cn(
-                "h-8 w-8 rounded-xl transition-colors",
+                "h-9 w-9 rounded-xl transition-colors",
                 input.trim() 
                   ? "bg-primary text-primary-foreground hover:bg-primary/90" 
                   : "text-muted-foreground"
               )}
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={(!input.trim() && attachments.length === 0) || noCredits || isLoading}
             >
               <Send className="w-4 h-4" />
@@ -268,8 +300,22 @@ export function StudentAICoach({ conversationId, onEnsureConversation }: { conve
   );
 }
 
-function MessageBubble({ message, isTier3 }: { message: Message; isTier3: boolean }) {
-  const { speak, stop, isPlaying, isLoading } = useTextToSpeech();
+/* ─── Perplexity-style message (no bubbles) ─── */
+function PerplexityMessage({ message, isTier3, isLast, onRetry }: { 
+  message: Message; 
+  isTier3: boolean; 
+  isLast: boolean;
+  onRetry: () => void;
+}) {
+  const { speak, stop, isPlaying, isLoading: ttsLoading } = useTextToSpeech();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    toast.success("Copied to clipboard");
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleTTS = () => {
     if (isPlaying) {
@@ -281,67 +327,85 @@ function MessageBubble({ message, isTier3 }: { message: Message; isTier3: boolea
 
   if (message.role === "user") {
     return (
-      <div className="flex justify-end">
-        <div className="max-w-[85%] md:max-w-[75%] px-4 py-3 rounded-2xl rounded-tr-md bg-primary text-primary-foreground">
-          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-        </div>
+      <div className="pt-8 first:pt-0">
+        <p className="text-lg font-semibold text-foreground">
+          {message.content}
+        </p>
       </div>
     );
   }
 
+  // Assistant message
+  const cleanContent = message.content
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<\/?think>/gi, '')
+    .replace(/\[\d+\]/g, '')
+    .trim();
+
   return (
-    <div className="flex gap-3">
-      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
-        <Bot className="w-3.5 h-3.5 text-primary" />
+    <div className="mt-4 pb-8 border-b border-border/30 last:border-b-0">
+      <div className="ai-prose-perplexity max-w-none">
+        <ReactMarkdown>{cleanContent}</ReactMarkdown>
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="ai-prose max-w-none">
-          <ReactMarkdown>
-            {message.content
-              .replace(/<think>[\s\S]*?<\/think>/gi, '')
-              .replace(/<\/?think>/gi, '')
-              .replace(/\[\d+\]/g, '')
-              .trim()}
-          </ReactMarkdown>
-        </div>
-        {isTier3 && message.content && (
-          <div className="mt-2 flex">
-            <Button
-              variant="ghost"
-              size="sm"
+
+      {/* Reaction row */}
+      {cleanContent && (
+        <div className="mt-4 flex items-center gap-1">
+          {isTier3 && (
+            <button
               onClick={handleTTS}
-              disabled={isLoading}
-              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
-              title={isPlaying ? "Stop reading" : "Read aloud"}
+              disabled={ttsLoading}
+              className="group/btn p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
+              title={isPlaying ? "Stop" : "Listen"}
             >
-              {isLoading ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
+              {ttsLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : isPlaying ? (
-                <VolumeX className="w-3 h-3" />
+                <VolumeX className="w-3.5 h-3.5" />
               ) : (
-                <Volume2 className="w-3 h-3" />
+                <Volume2 className="w-3.5 h-3.5" />
               )}
-              <span>{isPlaying ? "Stop" : "Listen"}</span>
-            </Button>
-          </div>
-        )}
-      </div>
+            </button>
+          )}
+          <button
+            onClick={handleCopy}
+            className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
+            title="Copy"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+          <button
+            className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
+            title="Helpful"
+          >
+            <ThumbsUp className="w-3.5 h-3.5" />
+          </button>
+          <button
+            className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
+            title="Not helpful"
+          >
+            <ThumbsDown className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={onRetry}
+            className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
+            title="Retry"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-function LoadingBubble() {
+function LoadingIndicator() {
   return (
-    <div className="flex gap-3">
-      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
-        <Bot className="w-3.5 h-3.5 text-primary" />
-      </div>
-      <div className="pt-2">
-        <div className="flex gap-1">
-          <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-          <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-          <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-        </div>
+    <div className="mt-4 pt-2">
+      <div className="flex gap-1.5">
+        <span className="w-2 h-2 bg-muted-foreground/30 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+        <span className="w-2 h-2 bg-muted-foreground/30 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+        <span className="w-2 h-2 bg-muted-foreground/30 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
       </div>
     </div>
   );
