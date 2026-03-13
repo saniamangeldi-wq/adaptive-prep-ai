@@ -62,7 +62,9 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
+  const skipNextLoad = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
@@ -72,12 +74,23 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   }, [conversationId]);
 
   useEffect(() => {
+    if (skipNextLoad.current) {
+      skipNextLoad.current = false;
+      return;
+    }
     if (activeConvId) {
       loadConversationMessages(activeConvId);
     } else {
       clearMessages();
     }
   }, [activeConvId, loadConversationMessages, clearMessages]);
+
+  // Restore focus after AI finishes responding
+  useEffect(() => {
+    if (!isLoading) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading]);
   
   const {
     attachments,
