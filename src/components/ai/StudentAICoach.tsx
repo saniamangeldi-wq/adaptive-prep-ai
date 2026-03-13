@@ -130,12 +130,21 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     }
     
     const attachmentContext = getAttachmentContext();
-    const userInput = text + attachmentContext;
+    const fullInput = text + attachmentContext;
+
+    // Build attachment metadata for display (not the extracted text)
+    const attachMeta = attachments
+      .filter(a => !a.isUploading)
+      .map(a => ({
+        type: a.type,
+        name: a.file_name || 'file',
+        preview: a.type === 'image' ? a.file_url || undefined : undefined,
+      }));
     
     setInput("");
     clearAttachments();
     setShowAttachments(false);
-    await streamChat(userInput, { endpoint: "student-chat" });
+    await streamChat(fullInput, { endpoint: "student-chat" }, text, attachMeta);
   };
 
   const handleChipClick = (prompt: string) => {
