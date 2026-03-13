@@ -62,6 +62,7 @@ interface StudentAICoachProps {
   conversationId?: string | null;
   onEnsureConversation?: () => Promise<string | null>;
   chatMode?: "text" | "voice";
+  spaceReferences?: Reference[];
 }
 
 export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text" }: StudentAICoachProps) {
