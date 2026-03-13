@@ -347,6 +347,7 @@ export type Database = {
       }
       conversation_spaces: {
         Row: {
+          ai_instructions: string | null
           color: string | null
           conversation_count: number | null
           created_at: string | null
@@ -354,10 +355,12 @@ export type Database = {
           icon: string | null
           id: string
           name: string
+          references: Json | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          ai_instructions?: string | null
           color?: string | null
           conversation_count?: number | null
           created_at?: string | null
@@ -365,10 +368,12 @@ export type Database = {
           icon?: string | null
           id?: string
           name: string
+          references?: Json | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          ai_instructions?: string | null
           color?: string | null
           conversation_count?: number | null
           created_at?: string | null
@@ -376,6 +381,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name?: string
+          references?: Json | null
           updated_at?: string | null
           user_id?: string
         }
