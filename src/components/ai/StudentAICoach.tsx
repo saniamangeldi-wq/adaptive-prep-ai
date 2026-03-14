@@ -58,11 +58,60 @@ const DEFAULT_CHIPS = [
   "What are the hardest SAT grammar rules?",
 ];
 
+const getSpacePrompts = (spaceName: string, spaceDescription: string) => {
+  const prompts: Record<string, string[]> = {
+    'essays': [
+      "Help me write my Why This Field essay",
+      "Review my thesis statement",
+      "Give me strong essay opening strategies",
+      "What makes a compelling research essay?"
+    ],
+    'math': [
+      "Explain quadratic equations",
+      "Help me with SAT Math grid-in questions",
+      "Practice algebra problems with me",
+      "What are the most tested SAT Math topics?"
+    ],
+    'reading': [
+      "Help me improve reading speed",
+      "Explain main idea vs supporting detail",
+      "Practice SAT Reading passage questions",
+      "What are the hardest reading question types?"
+    ],
+    'writing': [
+      "Help me with grammar rules",
+      "Practice SAT Writing questions",
+      "How do I improve sentence structure?",
+      "What are common writing mistakes to avoid?"
+    ],
+    'science': [
+      "Explain the scientific method",
+      "Help me with biology concepts",
+      "Practice data interpretation questions",
+      "What science topics should I focus on?"
+    ],
+  };
+  const key = spaceName.toLowerCase().trim();
+  return prompts[key] || [
+    `Help me get started with ${spaceName}`,
+    `What should I focus on in ${spaceName}?`,
+    "Create a study plan for me",
+    "Quiz me on what I know so far"
+  ];
+};
+
+interface SpaceInfo {
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+}
+
 interface StudentAICoachProps {
   conversationId?: string | null;
   onEnsureConversation?: () => Promise<string | null>;
   chatMode?: "text" | "voice";
   spaceReferences?: Reference[];
+  activeSpace?: SpaceInfo | null;
 }
 
 export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [] }: StudentAICoachProps) {
