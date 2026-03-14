@@ -7,6 +7,7 @@ import { TeacherAICoach } from "@/components/ai/TeacherAICoach";
 import { AdminAICoach } from "@/components/ai/AdminAICoach";
 import { ConversationSidebar } from "@/components/ai/ConversationSidebar";
 import { SpaceInterior } from "@/components/spaces/SpaceInterior";
+import { SpaceDashboard } from "@/components/spaces/SpaceDashboard";
 import { useConversations, Conversation, ConversationSpace } from "@/hooks/useConversations";
 import { Button } from "@/components/ui/button";
 import { History, X, Zap, Mic, MessageSquare } from "lucide-react";
@@ -33,12 +34,19 @@ export default function AICoach() {
   const spaceId = searchParams.get("space");
   const activeSpace = spaceId ? spaces.find((s) => s.id === spaceId) || null : null;
 
-  const handleNewConversation = async () => {
+  const handleNewConversation = async (initialMessage?: string) => {
     const conv = await createConversation(undefined, spaceId);
     if (conv) {
       setCurrentConversation(conv);
+      // If initialMessage provided, it will be sent by the chat component via the empty state
+      if (initialMessage) {
+        // Store the initial message to pass to the coach
+        setInitialMessage(initialMessage);
+      }
     }
   };
+
+  const [initialMessage, setInitialMessage] = useState<string | null>(null);
 
   const ensureConversation = async (): Promise<string | null> => {
     if (currentConversation) return currentConversation.id;
@@ -95,8 +103,25 @@ export default function AICoach() {
   const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
   const creditsRemaining = profile?.credits_remaining || 0;
 
-  // If inside a space, render Space interior layout
+  // If inside a space, show dashboard or chat
   if (activeSpace && showConversationSidebar) {
+    // No conversation selected → show Space dashboard
+    if (!currentConversation) {
+      return (
+        <DashboardLayout>
+          <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
+            <SpaceDashboard
+              space={activeSpace}
+              onSelectConversation={handleSelectConversation}
+              onNewConversation={handleNewConversation}
+              onBack={handleBackToSpaces}
+            />
+          </div>
+        </DashboardLayout>
+      );
+    }
+
+    // Conversation selected → show chat interior
     return (
       <DashboardLayout>
         <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
@@ -105,7 +130,7 @@ export default function AICoach() {
             currentConversationId={currentConversation?.id}
             onSelectConversation={handleSelectConversation}
             onNewConversation={handleNewConversation}
-            onBack={handleBackToSpaces}
+            onBack={() => setCurrentConversation(null)}
           >
             {renderAICoach()}
           </SpaceInterior>
