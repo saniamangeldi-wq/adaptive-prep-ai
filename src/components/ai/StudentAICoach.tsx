@@ -587,11 +587,8 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: {
   }
 
   // Assistant message
-  const cleanContent = message.content
-    .replace(/<think>[\s\S]*?<\/think>/gi, '')
-    .replace(/<\/?think>/gi, '')
-    .replace(/\[\d+\]/g, '')
-    .trim();
+  const cleanContent = sanitizeAIResponse(message.content)
+    .replace(/\[\d+\]/g, '');
 
   // Parse message into text + interactive widget parts
   const parts = parseMessageContent(cleanContent);
