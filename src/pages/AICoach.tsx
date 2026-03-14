@@ -34,12 +34,19 @@ export default function AICoach() {
   const spaceId = searchParams.get("space");
   const activeSpace = spaceId ? spaces.find((s) => s.id === spaceId) || null : null;
 
-  const handleNewConversation = async () => {
+  const handleNewConversation = async (initialMessage?: string) => {
     const conv = await createConversation(undefined, spaceId);
     if (conv) {
       setCurrentConversation(conv);
+      // If initialMessage provided, it will be sent by the chat component via the empty state
+      if (initialMessage) {
+        // Store the initial message to pass to the coach
+        setInitialMessage(initialMessage);
+      }
     }
   };
+
+  const [initialMessage, setInitialMessage] = useState<string | null>(null);
 
   const ensureConversation = async (): Promise<string | null> => {
     if (currentConversation) return currentConversation.id;
