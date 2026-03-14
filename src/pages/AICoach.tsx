@@ -103,8 +103,25 @@ export default function AICoach() {
   const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
   const creditsRemaining = profile?.credits_remaining || 0;
 
-  // If inside a space, render Space interior layout
+  // If inside a space, show dashboard or chat
   if (activeSpace && showConversationSidebar) {
+    // No conversation selected → show Space dashboard
+    if (!currentConversation) {
+      return (
+        <DashboardLayout>
+          <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
+            <SpaceDashboard
+              space={activeSpace}
+              onSelectConversation={handleSelectConversation}
+              onNewConversation={handleNewConversation}
+              onBack={handleBackToSpaces}
+            />
+          </div>
+        </DashboardLayout>
+      );
+    }
+
+    // Conversation selected → show chat interior
     return (
       <DashboardLayout>
         <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
@@ -113,7 +130,7 @@ export default function AICoach() {
             currentConversationId={currentConversation?.id}
             onSelectConversation={handleSelectConversation}
             onNewConversation={handleNewConversation}
-            onBack={handleBackToSpaces}
+            onBack={() => setCurrentConversation(null)}
           >
             {renderAICoach()}
           </SpaceInterior>
