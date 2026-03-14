@@ -114,7 +114,7 @@ interface StudentAICoachProps {
   activeSpace?: SpaceInfo | null;
 }
 
-export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [] }: StudentAICoachProps) {
+export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [], activeSpace = null }: StudentAICoachProps) {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
