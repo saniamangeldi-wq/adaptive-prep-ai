@@ -7,6 +7,7 @@ import { TeacherAICoach } from "@/components/ai/TeacherAICoach";
 import { AdminAICoach } from "@/components/ai/AdminAICoach";
 import { ConversationSidebar } from "@/components/ai/ConversationSidebar";
 import { SpaceInterior } from "@/components/spaces/SpaceInterior";
+import { SpaceDashboard } from "@/components/spaces/SpaceDashboard";
 import { useConversations, Conversation, ConversationSpace } from "@/hooks/useConversations";
 import { Button } from "@/components/ui/button";
 import { History, X, Zap, Mic, MessageSquare } from "lucide-react";
