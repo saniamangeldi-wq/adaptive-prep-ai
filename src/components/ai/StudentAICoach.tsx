@@ -58,14 +58,63 @@ const DEFAULT_CHIPS = [
   "What are the hardest SAT grammar rules?",
 ];
 
+const getSpacePrompts = (spaceName: string, spaceDescription: string) => {
+  const prompts: Record<string, string[]> = {
+    'essays': [
+      "Help me write my Why This Field essay",
+      "Review my thesis statement",
+      "Give me strong essay opening strategies",
+      "What makes a compelling research essay?"
+    ],
+    'math': [
+      "Explain quadratic equations",
+      "Help me with SAT Math grid-in questions",
+      "Practice algebra problems with me",
+      "What are the most tested SAT Math topics?"
+    ],
+    'reading': [
+      "Help me improve reading speed",
+      "Explain main idea vs supporting detail",
+      "Practice SAT Reading passage questions",
+      "What are the hardest reading question types?"
+    ],
+    'writing': [
+      "Help me with grammar rules",
+      "Practice SAT Writing questions",
+      "How do I improve sentence structure?",
+      "What are common writing mistakes to avoid?"
+    ],
+    'science': [
+      "Explain the scientific method",
+      "Help me with biology concepts",
+      "Practice data interpretation questions",
+      "What science topics should I focus on?"
+    ],
+  };
+  const key = spaceName.toLowerCase().trim();
+  return prompts[key] || [
+    `Help me get started with ${spaceName}`,
+    `What should I focus on in ${spaceName}?`,
+    "Create a study plan for me",
+    "Quiz me on what I know so far"
+  ];
+};
+
+interface SpaceInfo {
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+}
+
 interface StudentAICoachProps {
   conversationId?: string | null;
   onEnsureConversation?: () => Promise<string | null>;
   chatMode?: "text" | "voice";
   spaceReferences?: Reference[];
+  activeSpace?: SpaceInfo | null;
 }
 
-export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [] }: StudentAICoachProps) {
+export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [], activeSpace = null }: StudentAICoachProps) {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
@@ -203,30 +252,60 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="max-w-[760px] mx-auto px-4">
           {messages.length === 0 ? (
-            /* Empty state */
-            <div className="h-full flex flex-col items-center justify-center text-center py-24">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-6">
-                <GraduationCap className="w-8 h-8 text-primary-foreground" />
+            /* Empty state — Space-specific or generic */
+            activeSpace ? (
+              <div className="h-full flex flex-col items-center justify-center text-center py-24">
+                <span className="text-[64px] leading-none mb-5">{activeSpace.icon || "📁"}</span>
+                <h1 className="text-[28px] font-bold text-foreground mb-2">
+                  {activeSpace.name}
+                </h1>
+                {activeSpace.description && (
+                  <p className="text-[15px] text-muted-foreground mb-4 max-w-md line-clamp-2">
+                    {activeSpace.description}
+                  </p>
+                )}
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-xs text-muted-foreground mb-8">
+                  <span>{activeSpace.icon || "📁"}</span>
+                  This conversation is scoped to: <span className="font-medium text-foreground">{activeSpace.name}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
+                  {getSpacePrompts(activeSpace.name, activeSpace.description || "").map((chip) => (
+                    <button
+                      key={chip}
+                      onClick={() => handleChipClick(chip)}
+                      disabled={noCredits || isLoading}
+                      className="px-4 py-2.5 text-[13px] text-left rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)] transition-all duration-200 disabled:opacity-40"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <h1 className="text-[26px] font-bold text-foreground mb-2">
-                What do you want to study today?
-              </h1>
-              <p className="text-sm text-muted-foreground mb-8">
-                Your SAT study coach — math, reading, writing, and beyond
-              </p>
-              <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
-                {DEFAULT_CHIPS.map((chip) => (
-                  <button
-                    key={chip}
-                    onClick={() => handleChipClick(chip)}
-                    disabled={noCredits || isLoading}
-                    className="px-4 py-2.5 text-[13px] text-left rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)] transition-all duration-200 disabled:opacity-40"
-                  >
-                    {chip}
-                  </button>
-                ))}
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center py-24">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-6">
+                  <GraduationCap className="w-8 h-8 text-primary-foreground" />
+                </div>
+                <h1 className="text-[26px] font-bold text-foreground mb-2">
+                  What do you want to study today?
+                </h1>
+                <p className="text-sm text-muted-foreground mb-8">
+                  Your SAT study coach — math, reading, writing, and beyond
+                </p>
+                <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
+                  {DEFAULT_CHIPS.map((chip) => (
+                    <button
+                      key={chip}
+                      onClick={() => handleChipClick(chip)}
+                      disabled={noCredits || isLoading}
+                      className="px-4 py-2.5 text-[13px] text-left rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)] transition-all duration-200 disabled:opacity-40"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )
           ) : (
             /* Active chat — Perplexity style: no bubbles */
             <div className="py-6">

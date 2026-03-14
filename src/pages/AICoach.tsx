@@ -85,6 +85,7 @@ export default function AICoach() {
             onEnsureConversation={ensureConversation}
             chatMode={chatMode}
             spaceReferences={spaceRefs}
+            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
           />
         );
     }

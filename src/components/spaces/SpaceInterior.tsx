@@ -206,15 +206,6 @@ export function SpaceInterior({
           </div>
         </div>
 
-        {/* Space scope banner */}
-        {!currentConversationId && (
-          <div className="px-4 pt-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/5 border border-primary/10 text-xs text-muted-foreground">
-              <span>{space.icon}</span>
-              This conversation is scoped to: <span className="font-medium text-foreground">{space.name}</span>
-            </div>
-          </div>
-        )}
 
         {/* Chat content */}
         <div className="flex-1 overflow-hidden">
