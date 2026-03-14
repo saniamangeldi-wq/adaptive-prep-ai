@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { getResponsePreview } from "@/utils/sanitizeAIResponse";
 import { Folder, Plus, MoreHorizontal, Clock, Upload, Link2, ClipboardPaste, FileText, Calendar, ArrowLeft, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -278,7 +279,7 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
                         </p>
                         {aiText && (
                           <p className="text-[13px] text-muted-foreground/60 mt-1 line-clamp-2 leading-relaxed">
-                            {aiText.replace(/[#*_`]/g, "").substring(0, 200)}
+                            {getResponsePreview(aiText)}
                           </p>
                         )}
                         <div className="flex items-center gap-1.5 mt-2">
