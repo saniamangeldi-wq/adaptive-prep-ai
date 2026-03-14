@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { getResponsePreview } from "@/utils/sanitizeAIResponse";
 import { Folder, Plus, MoreHorizontal, Clock, Upload, Link2, ClipboardPaste, FileText, Calendar, ArrowLeft, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
