@@ -36,6 +36,7 @@ import { ReferencesBadge } from "./ReferencesBadge";
 import { CitationChip } from "./CitationChip";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { toast } from "sonner";
+import { sanitizeAIResponse } from "@/utils/sanitizeAIResponse";
 import { QuestionWidget } from "./QuestionWidget";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
