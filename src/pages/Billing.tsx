@@ -49,6 +49,22 @@ const tutorPlans = [
       "Priority support",
     ],
   },
+  {
+    name: "Tutor Elite",
+    tier: "tier_3" as PricingTier,
+    price: 99,
+    description: "Premium tier — voice chat & Elite for all students",
+    features: [
+      "Up to 50 student accounts",
+      "Everything in Tutor Pro",
+      "ElevenLabs voice chat (you & students)",
+      "Students get full Elite features",
+      "200 AI credits/day for students",
+      "Deep Research + Reasoning Pro",
+      "Unlimited flashcards for students",
+      "Dedicated support",
+    ],
+  },
 ];
 
 export default function Billing() {
