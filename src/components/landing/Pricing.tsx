@@ -122,9 +122,9 @@ export function Pricing() {
           )}
           {selectedRole === "tutor" && (
             <p className="text-muted-foreground">
-              🚀 Need more than 30 students?{" "}
+              🚀 Need more than 40 students?{" "}
               <Link to="/signup" className="text-primary hover:underline font-medium">
-                Contact us for custom pricing
+                Contact us for custom enterprise pricing
               </Link>
             </p>
           )}

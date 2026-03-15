@@ -12,47 +12,48 @@ import { cn } from "@/lib/utils";
 
 const plans = [
   {
-    name: "Starter",
+    name: "Solo Tutor",
     tier: "tier_1",
-    price: 50,
-    description: "For tutors getting started",
+    price: 59,
+    description: "For individual tutors with a few students",
     features: [
-      "Up to 15 students",
-      "AI Coach for you & all students",
-      "Tier 1 AI quality (50 credits/day)",
+      "Up to 5 students",
       "Student progress tracking",
+      "AI Coach for all students",
+      "Basic analytics dashboard",
       "Email support",
+      "Custom test assignments",
     ],
   },
   {
     name: "Professional",
     tier: "tier_2",
-    price: 75,
+    price: 169,
     description: "For growing tutoring practices",
     popular: true,
     features: [
-      "Up to 20 students",
-      "AI Coach for you & all students",
-      "Tier 2 AI quality (150 credits/day)",
-      "Advanced analytics",
+      "Up to 15 students",
+      "Advanced progress analytics",
+      "Enhanced AI for students",
+      "Parent progress reports",
       "Priority support",
-      "Custom resources",
+      "Custom branding",
+      "White-label reports",
     ],
   },
   {
-    name: "Premium",
+    name: "Tutor Business",
     tier: "tier_3",
-    price: 150,
+    price: 449,
     description: "For established tutoring businesses",
     features: [
-      "Up to 30 students",
-      "AI Coach for you & all students",
-      "Tier 3 AI quality (300 credits/day)",
-      "Voice chat with AI",
-      "Full analytics suite",
-      "Dedicated support",
-      "White-label options",
+      "Up to 40 students",
+      "Premium AI for all students",
+      "White-label reports",
       "API access",
+      "Multi-tutor management",
+      "Dedicated account manager",
+      "Custom integrations",
     ],
   },
 ];
@@ -80,10 +81,10 @@ export default function TutorBilling() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xl font-bold text-foreground">
-                {profile?.tier === "tier_3" ? "Premium" : profile?.tier === "tier_2" ? "Professional" : "Starter"}
+                {profile?.tier === "tier_3" ? "Tutor Business" : profile?.tier === "tier_2" ? "Professional" : "Solo Tutor"}
               </p>
               <p className="text-muted-foreground">
-                ${profile?.tier === "tier_3" ? "150" : profile?.tier === "tier_2" ? "75" : "50"}/month
+                ${profile?.tier === "tier_3" ? "449" : profile?.tier === "tier_2" ? "169" : "59"}/month
               </p>
             </div>
             <Button variant="outline">

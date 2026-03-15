@@ -83,7 +83,7 @@ export default function Settings() {
     if (profile?.is_trial) return "Pro Trial";
     // Role-aware plan display
     if (profile?.role === "tutor") {
-      return profile?.tier === "tier_3" ? "Tutor Elite" : profile?.tier === "tier_2" ? "Tutor Pro" : "Solo Tutor";
+      return profile?.tier === "tier_3" ? "Tutor Business" : profile?.tier === "tier_2" ? "Professional" : "Solo Tutor";
     }
     const tierLimits = getTierLimits(profile?.tier as PricingTier);
     return tierLimits.displayName;
