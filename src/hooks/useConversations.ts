@@ -67,12 +67,13 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
       .from("conversation_spaces")
       .select("*")
       .eq("user_id", user.id)
+      .eq("coach_type", coachType)
       .order("created_at", { ascending: false });
 
     if (!error && data) {
       setSpaces(data);
     }
-  }, [user]);
+  }, [user, coachType]);
 
   const loadConversations = useCallback(async (spaceId: string | null = null) => {
     if (!user) return;
