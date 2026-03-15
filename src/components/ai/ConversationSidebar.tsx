@@ -36,6 +36,7 @@ interface ConversationSidebarProps {
   currentConversationId?: string;
   onSelectConversation: (conversation: Conversation | null) => void;
   onNewConversation: () => void;
+  coachType?: "student" | "tutor";
 }
 
 const ICON_OPTIONS = ["📁", "📚", "🎓", "💼", "🔬", "🎨", "📊", "🌟", "💡", "🎯"];
