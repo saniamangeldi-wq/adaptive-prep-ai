@@ -60,7 +60,7 @@ export function ConversationSidebar({
     togglePin,
     archiveConversation,
     moveToSpace,
-  } = useConversations();
+  } = useConversations(coachType);
 
   const [showCreateSpace, setShowCreateSpace] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState<string | null>(null);
