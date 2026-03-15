@@ -164,6 +164,7 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
         title: title || "New Conversation",
         messages: [],
         space_id: spaceId || selectedSpaceId,
+        coach_type: coachType,
       })
       .select()
       .single();
