@@ -53,7 +53,7 @@ function transformConversation(data: Record<string, unknown>): Conversation {
   };
 }
 
-export function useConversations() {
+export function useConversations(coachType: "student" | "tutor" = "student") {
   const [spaces, setSpaces] = useState<ConversationSpace[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
