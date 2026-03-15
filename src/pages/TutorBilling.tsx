@@ -81,10 +81,10 @@ export default function TutorBilling() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xl font-bold text-foreground">
-                {profile?.tier === "tier_3" ? "Premium" : profile?.tier === "tier_2" ? "Professional" : "Starter"}
+                {profile?.tier === "tier_3" ? "Tutor Business" : profile?.tier === "tier_2" ? "Professional" : "Solo Tutor"}
               </p>
               <p className="text-muted-foreground">
-                ${profile?.tier === "tier_3" ? "150" : profile?.tier === "tier_2" ? "75" : "50"}/month
+                ${profile?.tier === "tier_3" ? "449" : profile?.tier === "tier_2" ? "169" : "59"}/month
               </p>
             </div>
             <Button variant="outline">
