@@ -5,11 +5,16 @@ import {
   TrendingUp,
   Users,
   Target,
-  Calendar
+  Calendar,
+  UserPlus
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export default function SchoolAnalytics() {
   const { profile } = useAuth();
+
+  const studentsHref = profile?.role === "tutor" ? "/dashboard/students" : "/dashboard/school/students";
 
   return (
     <DashboardLayout>
@@ -18,7 +23,7 @@ export default function SchoolAnalytics() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Analytics</h1>
           <p className="text-muted-foreground mt-1">
-            Track school-wide performance and insights
+            Track {profile?.role === "tutor" ? "student" : "school-wide"} performance and insights
           </p>
         </div>
 
@@ -54,15 +59,20 @@ export default function SchoolAnalytics() {
           />
         </div>
 
-        {/* Charts Placeholder */}
+        {/* Charts */}
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="p-6 rounded-2xl bg-card border border-border/50">
             <h3 className="font-semibold text-foreground mb-4">Score Distribution</h3>
             <div className="h-64 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
-                <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No data available yet</p>
-                <p className="text-sm mt-1">Charts will appear as students take tests</p>
+                <span className="text-4xl mb-3 block">📊</span>
+                <p className="font-medium text-foreground">No analytics yet — add your first student to get started</p>
+                <Button variant="hero" size="sm" className="mt-4" asChild>
+                  <Link to={studentsHref}>
+                    <UserPlus className="w-4 h-4" />
+                    Add Student
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -71,9 +81,14 @@ export default function SchoolAnalytics() {
             <h3 className="font-semibold text-foreground mb-4">Weekly Activity</h3>
             <div className="h-64 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
-                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No activity data</p>
-                <p className="text-sm mt-1">Activity trends will show here</p>
+                <span className="text-4xl mb-3 block">📊</span>
+                <p className="font-medium text-foreground">No analytics yet — add your first student to get started</p>
+                <Button variant="hero" size="sm" className="mt-4" asChild>
+                  <Link to={studentsHref}>
+                    <UserPlus className="w-4 h-4" />
+                    Add Student
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -83,9 +98,14 @@ export default function SchoolAnalytics() {
         <div className="p-6 rounded-2xl bg-card border border-border/50">
           <h3 className="font-semibold text-foreground mb-4">Performance by Topic</h3>
           <div className="text-center py-8 text-muted-foreground">
-            <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No topic data available</p>
-            <p className="text-sm mt-1">See which topics students struggle with most</p>
+            <span className="text-4xl mb-3 block">📊</span>
+            <p className="font-medium text-foreground">No analytics yet — add your first student to get started</p>
+            <Button variant="hero" size="sm" className="mt-4" asChild>
+              <Link to={studentsHref}>
+                <UserPlus className="w-4 h-4" />
+                Add Student
+              </Link>
+            </Button>
           </div>
         </div>
       </div>

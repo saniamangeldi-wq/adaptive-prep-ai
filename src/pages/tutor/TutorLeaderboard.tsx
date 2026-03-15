@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Users, Plus, Flame, Target, Medal } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -267,10 +268,21 @@ export default function TutorLeaderboard() {
           <div className="flex items-center gap-2">
             <Dialog open={createGroupOpen} onOpenChange={setCreateGroupOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Users className="w-4 h-4" />
-                  New Group
-                </Button>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={students.length === 0 ? 0 : undefined}>
+                      <Button variant="outline" size="sm" disabled={students.length === 0} className={students.length === 0 ? "opacity-60 cursor-not-allowed" : ""}>
+                        <Users className="w-4 h-4" />
+                        New Group
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {students.length === 0 && (
+                    <TooltipContent side="bottom" className="text-xs bg-[hsl(228,20%,12%)] border-[hsl(220,15%,25%)] text-white">
+                      Add students first to use this feature
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -290,10 +302,21 @@ export default function TutorLeaderboard() {
             </Dialog>
             <Dialog open={addPointsOpen} onOpenChange={setAddPointsOpen}>
               <DialogTrigger asChild>
-                <Button variant="hero" size="sm">
-                  <Plus className="w-4 h-4" />
-                  Add Points
-                </Button>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={students.length === 0 ? 0 : undefined}>
+                      <Button variant="hero" size="sm" disabled={students.length === 0} className={students.length === 0 ? "opacity-60 cursor-not-allowed" : ""}>
+                        <Plus className="w-4 h-4" />
+                        Add Points
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {students.length === 0 && (
+                    <TooltipContent side="bottom" className="text-xs bg-[hsl(228,20%,12%)] border-[hsl(220,15%,25%)] text-white">
+                      Add students first to use this feature
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>

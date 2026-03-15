@@ -68,7 +68,6 @@ const tutorNav: NavItem[] = [
   { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
   { name: "Student Progress", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "Schedule", href: "/dashboard/schedule", icon: Calendar },
-  { name: "Resources", href: "/dashboard/resources", icon: Layers },
   { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
@@ -160,6 +159,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const getTierShort = () => {
     if (profile?.is_trial) return "Trial";
+    if (profile?.role === "tutor") {
+      return profile?.tier === "tier_2" ? "Tutor Pro" : "Solo Tutor";
+    }
     switch (profile?.tier) {
       case "tier_3":
         return "Elite";

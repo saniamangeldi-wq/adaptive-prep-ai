@@ -80,8 +80,12 @@ export default function Settings() {
   };
 
   const getTierBadge = () => {
-    const tierLimits = getTierLimits(profile?.tier as PricingTier);
     if (profile?.is_trial) return "Pro Trial";
+    // Role-aware plan display
+    if (profile?.role === "tutor") {
+      return profile?.tier === "tier_2" ? "Tutor Pro" : "Solo Tutor";
+    }
+    const tierLimits = getTierLimits(profile?.tier as PricingTier);
     return tierLimits.displayName;
   };
 
