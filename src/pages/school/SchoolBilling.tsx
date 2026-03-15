@@ -19,25 +19,25 @@ import { toast } from "sonner";
 const tierInfo = [
   {
     tier: 1,
-    name: "Basic AI",
-    description: "Standard AI quality for everyday learning",
-    studentRate: 170,
-    teacherRate: 30,
+    name: "School Starter",
+    description: "Teacher dashboard, bulk onboarding, analytics, email support",
+    studentRate: 99,
+    teacherRate: 25,
   },
   {
     tier: 2,
-    name: "Enhanced AI",
-    description: "Better reasoning and explanations",
-    studentRate: 200,
-    teacherRate: 35,
+    name: "School Pro",
+    description: "Adv. analytics, parent portal, dept. mgmt, custom tests, priority support",
+    studentRate: 99,
+    teacherRate: 25,
     popular: true,
   },
   {
     tier: 3,
-    name: "Premium AI",
-    description: "Best quality with advanced capabilities",
-    studentRate: 300,
-    teacherRate: 40,
+    name: "Enterprise",
+    description: "Full white-label, API/LMS integration, dedicated success manager",
+    studentRate: 99,
+    teacherRate: 25,
   },
 ];
 
