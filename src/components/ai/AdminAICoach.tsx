@@ -2,57 +2,60 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Send, 
-  Bot, 
-  User, 
-  TrendingUp, 
   Zap,
   AlertCircle,
   Clock,
   ArrowUpRight,
-  Trash2,
+  Volume2,
+  VolumeX,
+  Loader2,
+  Paperclip,
+  Copy,
+  ThumbsUp,
+  ThumbsDown,
+  RotateCcw,
+  Check,
+  TrendingUp,
+  Mic,
+  BookOpen,
   FileText,
   MessageSquare,
+  Target,
+  Trophy,
   Building2,
   Users,
-  Target,
-  BarChart3,
-  Trophy
+  BarChart3
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { useAIChat, type Message } from "@/hooks/useAIChat";
 import ReactMarkdown from "react-markdown";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getTierLimits } from "@/lib/tier-limits";
+import { VoiceChat } from "./VoiceChat";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { ChatAttachments } from "./ChatAttachments";
+import { useAttachments } from "@/hooks/useAttachments";
+import { useReferences, type Reference } from "@/hooks/useReferences";
+import { ReferencesPanel } from "./ReferencesPanel";
+import { ReferencesBadge } from "./ReferencesBadge";
+import { CitationChip } from "./CitationChip";
+import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
+import { toast } from "sonner";
+import { sanitizeAIResponse } from "@/utils/sanitizeAIResponse";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const suggestedPrompts = [
-  "Which teacher's class has the best performance?",
-  "Give me enrollment projections for the next 3 months",
-  "What's our ROI on the current subscription plan?",
-  "Which areas need the most improvement school-wide?",
-];
-
-const projectionPrompts = [
-  "Project our student enrollment for the next 6 months",
-  "What's the expected SAT score improvement trajectory?",
-  "Analyze capacity needs based on growth trends",
-  "Budget forecast for scaling to 100 students",
-];
-
-const teacherAnalysisPrompts = [
-  "Rank teachers by student improvement rates",
-  "What teaching methods correlate with best outcomes?",
-  "Which classes are underperforming and why?",
-  "Compare teacher effectiveness across subjects",
-];
-
-// Get daily credit limit based on tier
-const getTierCredits = (tier: string | undefined) => {
+const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
+  if (isTrial) return TRIAL_LIMITS.creditsPerDay;
   return getTierLimits(tier as any).creditsPerDay;
 };
 
-// Get hours until midnight reset
 const getHoursUntilReset = () => {
   const now = new Date();
   const midnight = new Date();
@@ -61,12 +64,95 @@ const getHoursUntilReset = () => {
   return Math.ceil(diff / (1000 * 60 * 60));
 };
 
-export function AdminAICoach() {
+const DEFAULT_CHIPS = [
+  "Which teacher's class has the best performance?",
+  "Give me enrollment projections for the next 3 months",
+  "What's our ROI on the current subscription plan?",
+  "Which areas need the most improvement school-wide?",
+];
+
+const projectionTypes = [
+  { value: "enrollment", label: "Enrollment Projections" },
+  { value: "performance", label: "Performance Forecast" },
+  { value: "capacity", label: "Capacity Planning" },
+  { value: "budget", label: "Budget Forecast" },
+];
+
+interface AdminAICoachProps {
+  conversationId?: string | null;
+  onEnsureConversation?: () => Promise<string | null>;
+  chatMode?: "text" | "voice";
+  spaceReferences?: Reference[];
+  activeSpace?: { name: string; description?: string | null; icon?: string | null } | null;
+}
+
+export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [], activeSpace = null }: AdminAICoachProps) {
   const [input, setInput] = useState("");
+  const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
+  const [showAttachments, setShowAttachments] = useState(false);
+  const [showReferences, setShowReferences] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
+  const [projectionType, setProjectionType] = useState("");
+  const skipNextLoad = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { profile } = useAuth();
-  const { messages, isLoading, streamChat, clearMessages } = useAIChat();
+  const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
+  const isTier3 = profile?.tier === "tier_3";
+
+  useEffect(() => {
+    setActiveConvId(conversationId || null);
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (skipNextLoad.current) {
+      skipNextLoad.current = false;
+      return;
+    }
+    if (activeConvId) {
+      loadConversationMessages(activeConvId);
+    } else {
+      clearMessages();
+    }
+  }, [activeConvId, loadConversationMessages, clearMessages]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading]);
+
+  const {
+    attachments,
+    isUploading,
+    uploadFile,
+    attachUrl,
+    performWebSearch,
+    removeAttachment,
+    clearAttachments,
+    getAttachmentContext,
+  } = useAttachments();
+
+  const {
+    references,
+    isProcessing: isRefProcessing,
+    addDocument: addRefDocument,
+    addUrl: addRefUrl,
+    addText: addRefText,
+    removeReference,
+    getReferenceContext,
+    loadSpaceReferences,
+  } = useReferences();
+
+  useEffect(() => {
+    if (spaceReferences.length > 0) {
+      loadSpaceReferences(spaceReferences);
+    }
+  }, [spaceReferences, loadSpaceReferences]);
+
+  const handleVoiceTranscript = (text: string) => {
+    setInput(text);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,358 +162,513 @@ export function AdminAICoach() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async (customMessage?: string) => {
-    const messageToSend = customMessage || input;
-    if (!messageToSend.trim() || isLoading) return;
+  const handleSend = async (overrideInput?: string) => {
+    const text = overrideInput ?? input;
+    if (!text.trim() || isLoading) return;
     if ((profile?.credits_remaining || 0) <= 0) return;
     
-    if (!customMessage) setInput("");
-    await streamChat(messageToSend, { endpoint: "admin-analytics" });
+    if (!activeConvId && onEnsureConversation) {
+      const newId = await onEnsureConversation();
+      if (newId) {
+        skipNextLoad.current = true;
+        setActiveConvId(newId);
+      }
+    }
+    
+    const attachmentContext = getAttachmentContext();
+    const referenceContext = getReferenceContext();
+    const fullInput = text + attachmentContext + referenceContext;
+
+    const attachMeta = attachments
+      .filter(a => !a.isUploading)
+      .map(a => ({
+        type: a.type,
+        name: a.file_name || 'file',
+        preview: a.type === 'image' ? a.file_url || undefined : undefined,
+      }));
+    
+    setInput("");
+    clearAttachments();
+    setShowAttachments(false);
+    setShowReferences(false);
+    await streamChat(fullInput, { endpoint: "admin-analytics" }, text, attachMeta);
   };
 
-  const handleSuggestedPrompt = (prompt: string) => {
-    setInput(prompt);
+  const handleChipClick = (prompt: string) => {
+    handleSend(prompt);
   };
 
-  const handleQuickAnalysis = async (prompt: string) => {
-    await handleSend(prompt);
+  const handleGenerateProjection = async () => {
+    if (!projectionType || isLoading) return;
+    const projectionCost = 10;
+    if ((profile?.credits_remaining || 0) < projectionCost) return;
+
+    const instruction = `Generate a ${projectionTypes.find(r => r.value === projectionType)?.label} analysis for our school. Include specific metrics, data-driven insights, and actionable recommendations.`;
+    
+    await streamChat(instruction, { 
+      endpoint: "admin-analytics",
+      isReport: true,
+      reportContext: {
+        type: projectionType,
+        instructions: instruction,
+      },
+      analysisType: "projection",
+    });
   };
 
-  const dailyLimit = getTierCredits(profile?.tier);
+  const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
   const creditsRemaining = profile?.credits_remaining || 0;
   const creditsLow = creditsRemaining < 10 && creditsRemaining > 0;
   const noCredits = creditsRemaining <= 0;
   const hoursUntilReset = getHoursUntilReset();
 
+  // Voice mode
+  if (chatMode === "voice") {
+    return (
+      <div className="flex flex-col h-full">
+        <VoiceChat
+          onTranscript={handleVoiceTranscript}
+          isDisabled={noCredits || isLoading}
+          fullMode={true}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-primary" />
-            Analytics Engine
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            School projections, teacher performance, and strategic insights
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {messages.length > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={clearMessages}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
-            <Zap className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium text-foreground">
-              {creditsRemaining}/{dailyLimit}
-            </span>
-          </div>
-        </div>
+    <div className="flex flex-col h-full min-h-0">
+      {/* Tabs — compact header */}
+      <div className="max-w-[760px] mx-auto w-full px-4 pt-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Chat
+            </TabsTrigger>
+            <TabsTrigger value="projections" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Projections
+            </TabsTrigger>
+            <TabsTrigger value="teachers" className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              Teachers
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid w-full max-w-md grid-cols-3 mb-4">
-          <TabsTrigger value="chat" className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" />
-            Chat
-          </TabsTrigger>
-          <TabsTrigger value="projections" className="flex items-center gap-2">
-            <Target className="w-4 h-4" />
-            Projections
-          </TabsTrigger>
-          <TabsTrigger value="teachers" className="flex items-center gap-2">
-            <Trophy className="w-4 h-4" />
-            Teachers
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
-          {/* Chat area */}
-          <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 rounded-xl bg-card/50 border border-border/50">
-            {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-400 flex items-center justify-center mb-4">
-                  <Building2 className="w-8 h-8 text-white" />
+      {activeTab === "projections" ? (
+        /* ── Projections Tab ── */
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="max-w-[760px] mx-auto px-4 py-4">
+            <div className="p-6 rounded-2xl bg-card border border-border/30 mb-4">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                School Projections
+                <span className="text-xs text-muted-foreground ml-auto">10 credits/analysis</span>
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-muted-foreground mb-2 block">Analysis Type</label>
+                  <Select value={projectionType} onValueChange={setProjectionType}>
+                    <SelectTrigger><SelectValue placeholder="Select analysis type" /></SelectTrigger>
+                    <SelectContent>
+                      {projectionTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <h2 className="text-xl font-semibold text-foreground mb-2">
-                  School Analytics at Your Fingertips
-                </h2>
-                <p className="text-muted-foreground mb-6 max-w-md">
-                  Ask about school projections, teacher class performance, budget optimization, or strategic insights.
-                </p>
-                <div className="grid sm:grid-cols-2 gap-2 w-full max-w-lg">
-                  {suggestedPrompts.map((prompt) => (
-                    <button
-                      key={prompt}
-                      onClick={() => handleSuggestedPrompt(prompt)}
-                      className="p-3 text-sm text-left rounded-lg bg-secondary/50 border border-border/50 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
+                <Button 
+                  variant="hero" 
+                  className="w-full"
+                  onClick={handleGenerateProjection}
+                  disabled={!projectionType || isLoading || creditsRemaining < 10}
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Generate Analysis
+                </Button>
               </div>
-            ) : (
-              <>
-                {messages.map((message) => (
-                  <MessageBubble key={message.id} message={message} />
+            </div>
+
+            {/* Analysis output */}
+            <div className="py-2">
+              {messages.filter(m => m.role === "assistant").length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center py-16 text-muted-foreground">
+                  <Target className="w-12 h-12 mb-4 opacity-30" />
+                  <p className="text-sm">Projection results will appear here</p>
+                </div>
+              ) : (
+                messages.filter(m => m.role === "assistant").map((message) => (
+                  <div key={message.id} className="mb-6 pb-6 border-b border-border/30 last:border-b-0">
+                    <div className="ai-prose-perplexity max-w-none">
+                      <ReactMarkdown>{sanitizeAIResponse(message.content)}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : activeTab === "teachers" ? (
+        /* ── Teachers Tab ── */
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="max-w-[760px] mx-auto px-4 py-4">
+            <div className="p-6 rounded-2xl bg-card border border-border/30 mb-4">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-accent" />
+                Teacher Performance Analysis
+                <span className="text-xs text-muted-foreground ml-auto">10 credits/analysis</span>
+              </h3>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {[
+                  "Rank teachers by student improvement rates",
+                  "What teaching methods correlate with best outcomes?",
+                  "Which classes are underperforming and why?",
+                  "Compare teacher effectiveness across subjects",
+                ].map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => handleChipClick(prompt)}
+                    disabled={isLoading || creditsRemaining < 10}
+                    className="p-3 text-sm text-left rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)] transition-all duration-200 disabled:opacity-40"
+                  >
+                    <div className="flex items-start gap-2">
+                      <Users className="w-4 h-4 mt-0.5 text-accent flex-shrink-0" />
+                      <span>{prompt}</span>
+                    </div>
+                  </button>
                 ))}
-                {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-                  <LoadingBubble />
-                )}
-                <div ref={messagesEndRef} />
-              </>
-            )}
+              </div>
+            </div>
+
+            {/* Teacher analysis output */}
+            <div className="py-2">
+              {messages.filter(m => m.role === "assistant").length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center py-16 text-muted-foreground">
+                  <Trophy className="w-12 h-12 mb-4 opacity-30" />
+                  <p className="text-sm">Teacher analysis results will appear here</p>
+                </div>
+              ) : (
+                messages.filter(m => m.role === "assistant").map((message) => (
+                  <div key={message.id} className="mb-6 pb-6 border-b border-border/30 last:border-b-0">
+                    <div className="ai-prose-perplexity max-w-none">
+                      <ReactMarkdown>{sanitizeAIResponse(message.content)}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ── Chat Tab — identical to Student/Teacher layout ── */
+        <>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="max-w-[760px] mx-auto px-4">
+              {messages.length === 0 ? (
+                activeSpace ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center py-24">
+                    <span className="text-[64px] leading-none mb-5">{activeSpace.icon || "📁"}</span>
+                    <h1 className="text-[28px] font-bold text-foreground mb-2">{activeSpace.name}</h1>
+                    {activeSpace.description && (
+                      <p className="text-[15px] text-muted-foreground mb-4 max-w-md line-clamp-2">{activeSpace.description}</p>
+                    )}
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-xs text-muted-foreground mb-8">
+                      <span>{activeSpace.icon || "📁"}</span>
+                      This conversation is scoped to: <span className="font-medium text-foreground">{activeSpace.name}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
+                      {DEFAULT_CHIPS.map((chip) => (
+                        <button
+                          key={chip}
+                          onClick={() => handleChipClick(chip)}
+                          disabled={noCredits || isLoading}
+                          className="px-4 py-2.5 text-[13px] text-left rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)] transition-all duration-200 disabled:opacity-40"
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-center py-24">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-6">
+                      <Building2 className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <h1 className="text-[26px] font-bold text-foreground mb-2">
+                      School Analytics at Your Fingertips
+                    </h1>
+                    <p className="text-sm text-muted-foreground mb-8">
+                      Projections, teacher performance, and strategic insights
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
+                      {DEFAULT_CHIPS.map((chip) => (
+                        <button
+                          key={chip}
+                          onClick={() => handleChipClick(chip)}
+                          disabled={noCredits || isLoading}
+                          className="px-4 py-2.5 text-[13px] text-left rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)] transition-all duration-200 disabled:opacity-40"
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              ) : (
+                <div className="py-6">
+                  {messages.map((message, index) => (
+                    <AdminPerplexityMessage
+                      key={message.id}
+                      message={message}
+                      isTier3={isTier3}
+                      isLast={index === messages.length - 1}
+                      onRetry={() => {
+                        const prevUserMsg = messages.slice(0, index).reverse().find(m => m.role === "user");
+                        if (prevUserMsg) handleSend(prevUserMsg.content);
+                      }}
+                    />
+                  ))}
+                  {isLoading && (!messages.length || messages[messages.length - 1]?.role !== "assistant" || messages[messages.length - 1]?.content === "") && (
+                    <div className="mt-4 pt-2">
+                      <div className="flex gap-1.5">
+                        <span className="w-2 h-2 bg-muted-foreground/30 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-2 h-2 bg-muted-foreground/30 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-2 h-2 bg-muted-foreground/30 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Credits warnings */}
-          <CreditsWarnings 
-            creditsLow={creditsLow} 
-            noCredits={noCredits} 
-            dailyLimit={dailyLimit} 
-            hoursUntilReset={hoursUntilReset}
-            tier={profile?.tier}
-          />
-
-          {/* Input area */}
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                placeholder={noCredits ? "No credits remaining..." : "Ask about projections, teacher performance, or strategy..."}
-                disabled={noCredits || isLoading}
-                className="w-full h-12 px-4 rounded-xl bg-card border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-              />
-            </div>
-            <Button
-              variant="hero"
-              size="icon"
-              className="w-12 h-12"
-              onClick={() => handleSend()}
-              disabled={!input.trim() || noCredits || isLoading}
-            >
-              <Send className="w-5 h-5" />
-            </Button>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="projections" className="flex-1 flex flex-col mt-0">
-          {/* Projections Quick Actions */}
-          <div className="p-6 rounded-xl bg-card border border-border/50 mb-4">
-            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-              <Target className="w-5 h-5 text-primary" />
-              School Projections
-              <span className="text-xs text-muted-foreground ml-auto">5 credits/analysis</span>
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Get AI-powered forecasts for enrollment, performance, and resource planning.
-            </p>
-            
-            <div className="grid sm:grid-cols-2 gap-3">
-              {projectionPrompts.map((prompt) => (
-                <Button 
-                  key={prompt}
-                  variant="outline" 
-                  className="h-auto py-3 px-4 text-left justify-start"
-                  onClick={() => handleQuickAnalysis(prompt)}
-                  disabled={isLoading || creditsRemaining < 5}
-                >
-                  <div className="flex items-start gap-3">
-                    <BarChart3 className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                    <span className="text-sm">{prompt}</span>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Output Area */}
-          <div className="flex-1 overflow-y-auto space-y-4 p-4 rounded-xl bg-card/50 border border-border/50">
-            {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground">
-                <Target className="w-12 h-12 mb-4 opacity-50" />
-                <p>Projection results will appear here</p>
-                <p className="text-xs mt-2">Click a quick action above or ask in chat</p>
+          <div className="max-w-[760px] mx-auto w-full px-4">
+            {creditsLow && (
+              <div className="mb-2 p-2 rounded-lg bg-warning/10 border border-warning/20 flex items-center gap-2 text-sm">
+                <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
+                <span className="text-muted-foreground text-xs">Low credits. Resets at midnight.</span>
               </div>
-            ) : (
-              <>
-                {messages.filter(m => m.role === "assistant").map((message) => (
-                  <div key={message.id} className="p-4 rounded-xl bg-card border border-border/50">
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
-                    </div>
+            )}
+            {noCredits && (
+              <div className="mb-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <div className="flex items-start gap-3">
+                  <Clock className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-foreground">You've used your {dailyLimit} daily credits</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Resets in {hoursUntilReset}h.{" "}
+                      {profile?.tier !== "tier_3" && (
+                        <Link to="/dashboard/school/billing" className="text-primary hover:underline inline-flex items-center gap-1">
+                          Upgrade <ArrowUpRight className="w-3 h-3" />
+                        </Link>
+                      )}
+                    </p>
                   </div>
-                ))}
-              </>
+                </div>
+              </div>
             )}
           </div>
-        </TabsContent>
 
-        <TabsContent value="teachers" className="flex-1 flex flex-col mt-0">
-          {/* Teacher Performance Quick Actions */}
-          <div className="p-6 rounded-xl bg-card border border-border/50 mb-4">
-            <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-accent" />
-              Teacher Class Performance
-              <span className="text-xs text-muted-foreground ml-auto">5 credits/analysis</span>
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Analyze which teachers' classes perform best and identify success patterns.
-            </p>
-            
-            <div className="grid sm:grid-cols-2 gap-3">
-              {teacherAnalysisPrompts.map((prompt) => (
-                <Button 
-                  key={prompt}
-                  variant="outline" 
-                  className="h-auto py-3 px-4 text-left justify-start"
-                  onClick={() => handleQuickAnalysis(prompt)}
-                  disabled={isLoading || creditsRemaining < 5}
-                >
-                  <div className="flex items-start gap-3">
-                    <Users className="w-4 h-4 mt-0.5 text-accent flex-shrink-0" />
-                    <span className="text-sm">{prompt}</span>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Output Area */}
-          <div className="flex-1 overflow-y-auto space-y-4 p-4 rounded-xl bg-card/50 border border-border/50">
-            {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8 text-muted-foreground">
-                <Trophy className="w-12 h-12 mb-4 opacity-50" />
-                <p>Teacher analysis results will appear here</p>
-                <p className="text-xs mt-2">Compare class performance and identify best practices</p>
-              </div>
-            ) : (
-              <>
-                {messages.filter(m => m.role === "assistant").map((message) => (
-                  <div key={message.id} className="p-4 rounded-xl bg-card border border-border/50">
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
-
-function MessageBubble({ message }: { message: Message }) {
-  return (
-    <div className={cn(
-      "flex gap-3",
-      message.role === "user" && "flex-row-reverse"
-    )}>
-      <div className={cn(
-        "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-        message.role === "assistant" 
-          ? "bg-primary/20" 
-          : "bg-accent/20"
-      )}>
-        {message.role === "assistant" ? (
-          <Bot className="w-4 h-4 text-primary" />
-        ) : (
-          <User className="w-4 h-4 text-accent" />
-        )}
-      </div>
-      <div className={cn(
-        "max-w-[80%] p-4 rounded-2xl",
-        message.role === "assistant"
-          ? "bg-card border border-border/50 rounded-tl-sm"
-          : "bg-primary text-primary-foreground rounded-tr-sm"
-      )}>
-        {message.role === "assistant" ? (
-          <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown>{message.content}</ReactMarkdown>
-          </div>
-        ) : (
-          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function LoadingBubble() {
-  return (
-    <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-        <Bot className="w-4 h-4 text-primary" />
-      </div>
-      <div className="bg-card border border-border/50 rounded-2xl rounded-tl-sm p-4">
-        <div className="flex gap-1">
-          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CreditsWarnings({ 
-  creditsLow, 
-  noCredits, 
-  dailyLimit, 
-  hoursUntilReset,
-  tier 
-}: { 
-  creditsLow: boolean; 
-  noCredits: boolean; 
-  dailyLimit: number; 
-  hoursUntilReset: number;
-  tier: string | undefined;
-}) {
-  if (noCredits) {
-    return (
-      <div className="mb-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-        <div className="flex items-start gap-3">
-          <Clock className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">
-              You've used your {dailyLimit} daily credits
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Resets in {hoursUntilReset} hour{hoursUntilReset !== 1 ? 's' : ''}.{" "}
-              {tier !== "tier_3" && (
-                <Link to="/dashboard/school/billing" className="text-primary hover:underline inline-flex items-center gap-1">
-                  Upgrade for more credits
-                  <ArrowUpRight className="w-3 h-3" />
-                </Link>
+          {/* Floating input bar */}
+          <div className="pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 flex-shrink-0">
+            <div className="max-w-[760px] mx-auto px-4">
+              {showReferences && (
+                <div className="mb-2">
+                  <ReferencesPanel
+                    references={references}
+                    isProcessing={isRefProcessing}
+                    onAddDocument={addRefDocument}
+                    onAddUrl={addRefUrl}
+                    onAddText={addRefText}
+                    onRemove={removeReference}
+                    onClose={() => setShowReferences(false)}
+                  />
+                </div>
               )}
-            </p>
+
+              {!showReferences && references.length > 0 && (
+                <div className="mb-2">
+                  <ReferencesBadge count={references.length} onClick={() => setShowReferences(true)} />
+                </div>
+              )}
+
+              {showAttachments && (
+                <div className="mb-2">
+                  <ChatAttachments
+                    attachments={attachments}
+                    isUploading={isUploading}
+                    onUploadFile={uploadFile}
+                    onAttachUrl={attachUrl}
+                    onWebSearch={performWebSearch}
+                    onRemove={removeAttachment}
+                    disabled={noCredits || isLoading}
+                  />
+                </div>
+              )}
+
+              <div className={cn(
+                "relative flex items-center gap-2 rounded-2xl border border-border/30 bg-muted/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-200",
+                "focus-within:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.35)] focus-within:border-primary/50"
+              )}>
+                <button
+                  onClick={() => { setShowReferences(!showReferences); setShowAttachments(false); }}
+                  disabled={noCredits || isLoading}
+                  className={cn(
+                    "p-1.5 rounded-lg transition-colors disabled:opacity-40",
+                    showReferences || references.length > 0
+                      ? "text-primary hover:text-primary/80"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  title="References & Sources"
+                >
+                  <BookOpen className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => { setShowAttachments(!showAttachments); setShowReferences(false); }}
+                  disabled={noCredits || isLoading}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                  title="Attach files"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
+
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                  placeholder={noCredits ? "No credits remaining..." : "Ask about projections, performance, or strategy..."}
+                  disabled={noCredits}
+                  className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm h-10"
+                />
+
+                {isTier3 && (
+                  <VoiceChat 
+                    onTranscript={handleVoiceTranscript}
+                    isDisabled={noCredits || isLoading}
+                  />
+                )}
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-9 w-9 rounded-xl transition-colors",
+                    input.trim() 
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                      : "text-muted-foreground"
+                  )}
+                  onClick={() => handleSend()}
+                  disabled={(!input.trim() && attachments.length === 0) || noCredits || isLoading}
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    );
-  }
+        </>
+      )}
+    </div>
+  );
+}
 
-  if (creditsLow) {
+/* ─── Perplexity-style message (no bubbles) — for admin ─── */
+function AdminPerplexityMessage({ message, isTier3, isLast, onRetry }: { 
+  message: Message; 
+  isTier3: boolean; 
+  isLast: boolean;
+  onRetry: () => void;
+}) {
+  const { speak, stop, isPlaying, isLoading: ttsLoading } = useTextToSpeech();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    toast.success("Copied to clipboard");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleTTS = () => {
+    if (isPlaying) stop();
+    else speak(message.content);
+  };
+
+  if (message.role === "user") {
+    const displayText = (message.visibleText || message.content)
+      .replace(/\n*---ATTACHED CONTENT---[\s\S]*$/, '')
+      .replace(/\n*---REFERENCE DOCUMENTS---[\s\S]*$/, '')
+      .trim();
+
     return (
-      <div className="mb-2 p-2 rounded-lg bg-warning/10 border border-warning/20 flex items-center gap-2 text-sm">
-        <AlertCircle className="w-4 h-4 text-warning" />
-        <span className="text-muted-foreground">Low credits remaining. Credits reset daily at midnight.</span>
+      <div className="pt-8 first:pt-0">
+        {message.attachmentMeta?.map((att, i) => (
+          att.type === 'image' && att.preview ? (
+            <img key={i} src={att.preview} alt={att.name} className="max-w-[200px] rounded-lg mb-2 border border-border/20" />
+          ) : (
+            <div key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-2 mr-2 rounded-lg border border-border/30 bg-muted/30 text-xs text-muted-foreground">
+              📄 {att.name}
+            </div>
+          )
+        ))}
+        <p className="text-lg font-semibold text-foreground">{displayText}</p>
       </div>
     );
   }
 
-  return null;
+  const cleanContent = sanitizeAIResponse(message.content).replace(/\[\d+\]/g, '');
+
+  const citationPatterns = [
+    /(?:based on|according to|from|in)\s+(?:the\s+)?(?:document|file|PDF)\s+(?:you\s+)?(?:shared|provided|uploaded|attached)/gi,
+    /(?:based on|according to|from|in)\s+(?:the\s+)?(?:link|URL|website|page)\s+(?:you\s+)?(?:shared|provided)/gi,
+    /(?:based on|according to|from)\s+(?:the\s+)?(?:text|content)\s+(?:you\s+)?(?:pasted|shared|provided)/gi,
+  ];
+  const hasCitations = citationPatterns.some(p => p.test(cleanContent));
+
+  return (
+    <div className="mt-4 pb-8 border-b border-border/30 last:border-b-0">
+      <div className="ai-prose-perplexity max-w-none">
+        <ReactMarkdown>{cleanContent}</ReactMarkdown>
+      </div>
+
+      {hasCitations && (
+        <div className="mt-2 flex flex-wrap">
+          <CitationChip name="Referenced source" type="document" />
+        </div>
+      )}
+
+      {cleanContent && (
+        <div className="mt-4 flex items-center gap-1">
+          {isTier3 && (
+            <button
+              onClick={handleTTS}
+              disabled={ttsLoading}
+              className="group/btn p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
+              title={isPlaying ? "Stop" : "Listen"}
+            >
+              {ttsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : isPlaying ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
+          )}
+          <button onClick={handleCopy} className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors" title="Copy">
+            {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+          <button className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors" title="Helpful">
+            <ThumbsUp className="w-3.5 h-3.5" />
+          </button>
+          <button className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors" title="Not helpful">
+            <ThumbsDown className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={onRetry} className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors" title="Retry">
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
