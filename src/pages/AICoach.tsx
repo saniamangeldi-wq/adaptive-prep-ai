@@ -141,6 +141,7 @@ export default function AICoach() {
             onSelectConversation={handleSelectConversation}
             onNewConversation={handleNewConversation}
             onBack={() => setCurrentConversation(null)}
+            coachType={coachType}
           >
             {renderAICoach()}
           </SpaceInterior>
