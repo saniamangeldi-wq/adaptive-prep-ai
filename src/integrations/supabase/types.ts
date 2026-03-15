@@ -48,6 +48,7 @@ export type Database = {
       }
       ai_conversations: {
         Row: {
+          coach_type: string
           context_type: string | null
           created_at: string
           credits_used: number
@@ -62,6 +63,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          coach_type?: string
           context_type?: string | null
           created_at?: string
           credits_used?: number
@@ -76,6 +78,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          coach_type?: string
           context_type?: string | null
           created_at?: string
           credits_used?: number
@@ -348,6 +351,7 @@ export type Database = {
       conversation_spaces: {
         Row: {
           ai_instructions: string | null
+          coach_type: string
           color: string | null
           conversation_count: number | null
           created_at: string | null
@@ -361,6 +365,7 @@ export type Database = {
         }
         Insert: {
           ai_instructions?: string | null
+          coach_type?: string
           color?: string | null
           conversation_count?: number | null
           created_at?: string | null
@@ -374,6 +379,7 @@ export type Database = {
         }
         Update: {
           ai_instructions?: string | null
+          coach_type?: string
           color?: string | null
           conversation_count?: number | null
           created_at?: string | null
