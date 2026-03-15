@@ -15,10 +15,184 @@ import {
   Search,
   Brain,
    Globe,
-   GraduationCap
+   GraduationCap,
+   Users
 } from "lucide-react";
 
+// Tutor plan definitions
+const tutorPlans = [
+  {
+    name: "Solo Tutor",
+    tier: "tier_1" as PricingTier,
+    price: 29,
+    description: "For individual tutors getting started",
+    features: [
+      "Up to 10 student accounts",
+      "AI session monitoring",
+      "Student progress reports",
+      "ElevenLabs voice for all students",
+      "Email support",
+    ],
+  },
+  {
+    name: "Tutor Pro",
+    tier: "tier_2" as PricingTier,
+    price: 59,
+    popular: true,
+    description: "For growing tutoring practices",
+    features: [
+      "Up to 30 student accounts",
+      "AI session monitoring",
+      "Student progress reports",
+      "ElevenLabs voice for all students",
+      "Advanced analytics",
+      "Priority support",
+    ],
+  },
+];
+
 export default function Billing() {
+  const { profile } = useAuth();
+
+  // Route to role-specific billing
+  if (profile?.role === "tutor") {
+    return <TutorBillingView />;
+  }
+
+  // Default: student billing
+  return <StudentBillingView />;
+}
+
+function TutorBillingView() {
+  const { profile } = useAuth();
+
+  const currentPlanName = profile?.tier === "tier_2" ? "Tutor Pro" : "Solo Tutor";
+  const currentPrice = profile?.tier === "tier_2" ? 59 : 29;
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-8 max-w-5xl">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Billing & Plans</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your tutoring subscription
+          </p>
+        </div>
+
+        {/* Current Plan */}
+        <Card className="border-primary/50 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <CreditCard className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">{currentPlanName}</CardTitle>
+                  <CardDescription>${currentPrice}/month</CardDescription>
+                </div>
+              </div>
+              <Button variant="outline">Manage Payment</Button>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Plans */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {tutorPlans.map((plan) => {
+            const isCurrentPlan = profile?.tier === plan.tier;
+            return (
+              <Card
+                key={plan.tier}
+                className={`relative flex flex-col ${
+                  isCurrentPlan
+                    ? "border-primary ring-2 ring-primary/20"
+                    : plan.popular
+                      ? "border-accent/50"
+                      : ""
+                }`}
+              >
+                {isCurrentPlan && (
+                  <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs">
+                    Current Plan
+                  </Badge>
+                )}
+                {plan.popular && !isCurrentPlan && (
+                  <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs">
+                    Most Popular
+                  </Badge>
+                )}
+
+                <CardHeader className="pb-3 pt-5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="p-1.5 rounded-md bg-primary/20 text-primary">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <CardTitle className="text-base">{plan.name}</CardTitle>
+                  </div>
+                  <CardDescription>
+                    <span className="text-2xl font-bold text-foreground">${plan.price}</span>
+                    <span className="text-muted-foreground text-sm">/mo</span>
+                  </CardDescription>
+                  <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+                </CardHeader>
+
+                <CardContent className="flex-1 flex flex-col pt-0">
+                  <ul className="space-y-2 flex-1 text-xs">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2 text-muted-foreground">
+                        <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-primary" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-4">
+                    {isCurrentPlan ? (
+                      <Button variant="outline" className="w-full" size="sm" disabled>
+                        Current Plan
+                      </Button>
+                    ) : (
+                      <Button variant="hero" className="w-full" size="sm">
+                        {(profile?.tier === "tier_2" && plan.tier === "tier_1") ? "Downgrade" : "Upgrade"}
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* What's included */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">What's included in each tier</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="font-medium text-foreground mb-2">AI Quality</p>
+                <p className="text-muted-foreground">Higher tiers get access to better AI models with improved reasoning and explanations.</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground mb-2">Student Capacity</p>
+                <p className="text-muted-foreground">Upgrade to work with more students and scale your tutoring practice.</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground mb-2">Analytics</p>
+                <p className="text-muted-foreground">Get deeper insights into student performance and learning patterns.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+}
+
+function StudentBillingView() {
   const { profile } = useAuth();
 
   const isTrialUser = profile?.is_trial && profile?.trial_ends_at;
@@ -134,7 +308,7 @@ export default function Billing() {
           </CardContent>
         </Card>
 
-        {/* Pricing Plans Grid - 4 cards in a row */}
+        {/* Pricing Plans Grid */}
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-4">Choose Your Plan</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -365,26 +539,13 @@ export default function Billing() {
                </div>
                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
                  <div className="p-1.5 rounded-md bg-accent/20">
-                   <Sparkles className="w-4 h-4 text-accent" />
+                   <Search className="w-4 h-4 text-accent" />
                  </div>
                  <div>
-                   <p className="text-sm font-medium text-foreground">Financial Estimates</p>
-                   <p className="text-xs text-muted-foreground mt-0.5">Scholarship & tuition insights</p>
+                   <p className="text-sm font-medium text-foreground">Scholarship Finder</p>
+                   <p className="text-xs text-muted-foreground mt-0.5">Discover funding opportunities</p>
                  </div>
                </div>
-             </div>
-
-             <div className="flex items-center justify-between pt-2">
-               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                 <Badge variant="outline" className="text-xs border-yellow-500/50 text-yellow-400">Elite Only</Badge>
-                 <span>Included with $21/month subscription</span>
-               </div>
-               {profile?.tier !== "tier_3" && (
-                 <Button variant="hero" size="sm">
-                   <Crown className="w-3.5 h-3.5 mr-1.5" />
-                   Go Elite
-                 </Button>
-               )}
              </div>
            </CardContent>
          </Card>

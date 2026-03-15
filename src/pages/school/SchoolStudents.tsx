@@ -8,7 +8,9 @@ import {
   UserPlus, 
   Mail,
   Trash2,
-  TrendingUp
+  TrendingUp,
+  Copy,
+  Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -25,53 +27,103 @@ interface Student {
 }
 
 export default function SchoolStudents() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [schoolId, setSchoolId] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const isTutor = profile?.role === "tutor";
 
   const fetchStudents = async () => {
     if (!profile?.user_id) return;
 
     try {
-      // Get school
-      const { data: memberData } = await supabase
-        .from("school_members")
-        .select("school_id")
-        .eq("user_id", profile.user_id)
-        .eq("role", "school_admin")
-        .maybeSingle();
+      if (isTutor) {
+        // Tutor: fetch from tutor_students
+        const { data: tutorStudents } = await supabase
+          .from("tutor_students")
+          .select("student_id, created_at, id")
+          .eq("tutor_id", profile.user_id);
 
-      if (memberData?.school_id) {
-        setSchoolId(memberData.school_id);
-        
-        // Get students
-        const { data: studentMembers } = await supabase
+        if (tutorStudents && tutorStudents.length > 0) {
+          const studentIds = tutorStudents.map(s => s.student_id);
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("user_id, full_name, email")
+            .in("user_id", studentIds);
+
+          const studentsWithProfiles = tutorStudents.map(s => ({
+            id: s.id,
+            user_id: s.student_id,
+            status: "active",
+            created_at: s.created_at,
+            profile: profiles?.find(p => p.user_id === s.student_id),
+          }));
+          setStudents(studentsWithProfiles);
+        } else {
+          setStudents([]);
+        }
+
+        // Fetch tutor invite code
+        const { data: codeData } = await supabase
+          .from("tutor_invite_codes")
+          .select("invite_code")
+          .eq("tutor_user_id", profile.user_id)
+          .maybeSingle();
+
+        if (codeData) {
+          setInviteCode(codeData.invite_code);
+        } else {
+          // Create one
+          const { data: newCode } = await supabase
+            .from("tutor_invite_codes")
+            .insert({ tutor_user_id: profile.user_id })
+            .select("invite_code")
+            .single();
+          if (newCode) setInviteCode(newCode.invite_code);
+        }
+      } else {
+        // School admin flow
+        const { data: memberData } = await supabase
           .from("school_members")
-          .select("*")
-          .eq("school_id", memberData.school_id)
-          .eq("role", "student");
+          .select("school_id")
+          .eq("user_id", profile.user_id)
+          .eq("role", "school_admin")
+          .maybeSingle();
 
-        if (studentMembers && studentMembers.length > 0) {
-          // Get profiles
-          const studentIds = studentMembers.map(s => s.user_id);
-          if (studentIds.length > 0) {
+        if (memberData?.school_id) {
+          setSchoolId(memberData.school_id);
+          
+          // Get school invite code
+          const { data: school } = await supabase
+            .from("schools")
+            .select("invite_code")
+            .eq("id", memberData.school_id)
+            .single();
+          if (school) setInviteCode(school.invite_code);
+
+          const { data: studentMembers } = await supabase
+            .from("school_members")
+            .select("*")
+            .eq("school_id", memberData.school_id)
+            .eq("role", "student");
+
+          if (studentMembers && studentMembers.length > 0) {
+            const studentIds = studentMembers.map(s => s.user_id);
             const { data: profiles } = await supabase
               .from("profiles")
               .select("user_id, full_name, email")
               .in("user_id", studentIds);
 
-            const studentsWithProfiles = studentMembers.map(s => ({
+            setStudents(studentMembers.map(s => ({
               ...s,
               profile: profiles?.find(p => p.user_id === s.user_id),
-            }));
-
-            setStudents(studentsWithProfiles);
+            })));
           } else {
-            setStudents(studentMembers.map(s => ({ ...s, profile: undefined })));
+            setStudents([]);
           }
-        } else {
-          setStudents([]);
         }
       }
     } catch (error) {
@@ -85,17 +137,35 @@ export default function SchoolStudents() {
     fetchStudents();
   }, [profile?.user_id]);
 
+  const handleCopyCode = async () => {
+    if (!inviteCode) return;
+    try {
+      await navigator.clipboard.writeText(inviteCode);
+      setCopied(true);
+      toast.success("Copied!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy code");
+    }
+  };
+
   const handleRemoveStudent = async (memberId: string) => {
     try {
-      const { error } = await supabase
-        .from("school_members")
-        .delete()
-        .eq("id", memberId);
-
-      if (error) throw error;
-
+      if (isTutor) {
+        const { error } = await supabase
+          .from("tutor_students")
+          .delete()
+          .eq("id", memberId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("school_members")
+          .delete()
+          .eq("id", memberId);
+        if (error) throw error;
+      }
       setStudents(prev => prev.filter(s => s.id !== memberId));
-      toast.success("Student removed from school");
+      toast.success("Student removed");
     } catch (error: any) {
       toast.error("Failed to remove student");
     }
@@ -111,6 +181,8 @@ export default function SchoolStudents() {
     );
   }
 
+  const inviteHref = isTutor ? "/dashboard/students/add" : "/dashboard/school/invite";
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -123,7 +195,7 @@ export default function SchoolStudents() {
             </p>
           </div>
           <Button variant="hero" asChild>
-            <a href="/dashboard/school/invite">
+            <a href={inviteHref}>
               <UserPlus className="w-4 h-4" />
               Invite Student
             </a>
@@ -131,7 +203,14 @@ export default function SchoolStudents() {
         </div>
 
         {/* Pending Requests */}
-        {schoolId && (
+        {isTutor && user?.id && (
+          <PendingRequests 
+            targetType="tutor" 
+            targetId={user.id} 
+            onApprove={fetchStudents}
+          />
+        )}
+        {!isTutor && schoolId && (
           <PendingRequests 
             targetType="school" 
             targetId={schoolId} 
@@ -142,10 +221,35 @@ export default function SchoolStudents() {
         {/* Students List */}
         <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
           {students.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <GraduationCap className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No students yet</p>
-              <p className="text-sm mt-1">Students can join using your school invite code</p>
+            <div className="text-center py-12">
+              <GraduationCap className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
+              <p className="text-lg font-semibold text-foreground mb-2">No students yet</p>
+
+              {/* Prominent invite code */}
+              {inviteCode && (
+                <div className="max-w-sm mx-auto mb-4">
+                  <button
+                    onClick={handleCopyCode}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-full bg-muted border border-border hover:border-primary/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">📋</span>
+                      <span className="text-sm text-muted-foreground">Your Invite Code:</span>
+                      <code className="font-mono font-bold text-foreground tracking-wider">{inviteCode}</code>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
+                      {copied ? (
+                        <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Copied!</span>
+                      ) : (
+                        <span className="flex items-center gap-1"><Copy className="w-3 h-3" /> Copy</span>
+                      )}
+                    </span>
+                  </button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Share this code with students so they can join your class
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="divide-y divide-border">

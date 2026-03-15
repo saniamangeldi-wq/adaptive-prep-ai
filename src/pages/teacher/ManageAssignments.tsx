@@ -337,8 +337,11 @@ export default function ManageAssignments() {
           <div className="text-center py-12 rounded-2xl bg-card border border-border/50">
             <FileText className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
             <h3 className="text-lg font-semibold text-foreground mb-1">No assignments yet</h3>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-muted-foreground mb-2">
               Create your first assignment for students
+            </p>
+            <p className="text-sm text-muted-foreground/70 mb-4">
+              Assignments let you send quizzes, practice tests, and study tasks directly to your students.
             </p>
             <Button variant="hero" onClick={() => setCreateOpen(true)}>
               <Plus className="w-4 h-4" />

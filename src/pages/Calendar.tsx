@@ -158,7 +158,7 @@ export default function Calendar() {
 
         {view === "month" ? (
           /* Month View */
-          <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
+          <div className="rounded-2xl bg-card border border-border/50 overflow-hidden relative">
             {/* Weekday headers */}
             <div className="grid grid-cols-7 border-b border-border bg-muted/30">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
@@ -216,6 +216,20 @@ export default function Calendar() {
                 );
               })}
             </div>
+            {/* Empty state overlay when no events */}
+            {events.length === 0 && (
+              <div className="absolute inset-0 top-12 flex items-center justify-center bg-card/80 backdrop-blur-sm">
+                <div className="text-center">
+                  <span className="text-4xl block mb-3">📅</span>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">No sessions scheduled yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Click any date to schedule your first tutoring session</p>
+                  <Button variant="hero" size="sm">
+                    <CalendarIcon className="w-4 h-4" />
+                    Schedule Session
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* List View */

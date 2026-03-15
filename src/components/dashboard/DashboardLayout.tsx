@@ -159,6 +159,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const getTierShort = () => {
     if (profile?.is_trial) return "Trial";
+    if (profile?.role === "tutor") {
+      return profile?.tier === "tier_2" ? "Tutor Pro" : "Solo Tutor";
+    }
     switch (profile?.tier) {
       case "tier_3":
         return "Elite";

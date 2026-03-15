@@ -126,13 +126,15 @@ function StatCard({
   label, 
   value, 
   subtext,
-  color 
+  color,
+  tooltip
 }: { 
   icon: React.ElementType; 
   label: string; 
   value: string; 
   subtext: string;
   color: string;
+  tooltip?: string;
 }) {
   return (
     <div className="p-5 rounded-xl bg-card border border-border/50">
@@ -145,7 +147,19 @@ function StatCard({
       </div>
       <div className="text-2xl font-bold text-foreground">{value}</div>
       <div className="flex items-center justify-between mt-1">
-        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="text-sm text-muted-foreground flex items-center gap-1">
+          {label}
+          {tooltip && (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-muted-foreground/60 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[240px] text-xs bg-[hsl(228,20%,12%)] border-[hsl(220,15%,25%)] text-white rounded-lg p-2">
+                {tooltip}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </span>
         <span className="text-xs text-muted-foreground/70">{subtext}</span>
       </div>
     </div>
