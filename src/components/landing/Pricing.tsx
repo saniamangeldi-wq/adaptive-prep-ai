@@ -187,6 +187,7 @@ function GenericPlanCard({
           <span className="text-4xl font-bold text-foreground">Free</span>
         ) : (
           <>
+            {/* KZT price */}
             <div className="flex items-baseline gap-2">
               {billingCycle !== "monthly" && (
                 <span className="text-sm text-muted-foreground line-through">
@@ -196,13 +197,15 @@ function GenericPlanCard({
               <span className="text-3xl font-bold text-foreground">{fmtKZT(discountedKZT)}</span>
               <span className="text-muted-foreground text-sm">/mo</span>
             </div>
-            <div className="flex items-baseline gap-2 mt-0.5">
+            {/* USD price — same visual weight */}
+            <div className="flex items-baseline gap-2 mt-1">
               {billingCycle !== "monthly" && (
-                <span className="text-xs text-muted-foreground line-through">
+                <span className="text-sm text-muted-foreground/60 line-through">
                   {fmtUSD(plan.monthlyPriceUSD)}
                 </span>
               )}
-              <span className="text-sm text-muted-foreground">{fmtUSD(discountedUSD)}/mo</span>
+              <span className="text-2xl font-bold text-foreground/70">{fmtUSD(discountedUSD)}</span>
+              <span className="text-muted-foreground text-sm">/mo</span>
             </div>
           </>
         )}
