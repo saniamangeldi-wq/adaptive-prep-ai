@@ -84,7 +84,15 @@ export default function AICoach() {
         return <AdminAICoach />;
       case "teacher":
       case "tutor":
-        return <TeacherAICoach />;
+        return (
+          <TeacherAICoach
+            conversationId={currentConversation?.id || null}
+            onEnsureConversation={ensureConversation}
+            chatMode={chatMode}
+            spaceReferences={spaceRefs}
+            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
+          />
+        );
       case "student":
       default:
         return (
@@ -99,7 +107,7 @@ export default function AICoach() {
     }
   };
 
-  const showConversationSidebar = profile?.role === "student";
+  const showConversationSidebar = profile?.role === "student" || profile?.role === "tutor" || profile?.role === "teacher";
   const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
   const creditsRemaining = profile?.credits_remaining || 0;
 
