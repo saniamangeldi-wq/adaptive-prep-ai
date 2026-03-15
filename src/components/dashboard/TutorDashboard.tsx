@@ -66,6 +66,7 @@ export function TutorDashboard() {
           value="--"
           subtext="rating"
           color="from-accent to-orange-400"
+          tooltip="Calculated from student session ratings. Students rate each AI session 1–5 stars after completing it."
         />
       </div>
 
