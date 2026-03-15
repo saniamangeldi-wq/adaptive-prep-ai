@@ -28,7 +28,7 @@ export default function AICoach() {
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
-  const coachType = (profile?.role === "tutor" || profile?.role === "teacher") ? "tutor" : "student";
+  const coachType = (profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") ? "tutor" : "student";
   const { spaces, createConversation } = useConversations(coachType);
 
   // Check if we're inside a space
@@ -82,7 +82,15 @@ export default function AICoach() {
   const renderAICoach = () => {
     switch (profile?.role) {
       case "school_admin":
-        return <AdminAICoach />;
+        return (
+          <AdminAICoach
+            conversationId={currentConversation?.id || null}
+            onEnsureConversation={ensureConversation}
+            chatMode={chatMode}
+            spaceReferences={spaceRefs}
+            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
+          />
+        );
       case "teacher":
       case "tutor":
         return (
@@ -108,7 +116,7 @@ export default function AICoach() {
     }
   };
 
-  const showConversationSidebar = profile?.role === "student" || profile?.role === "tutor" || profile?.role === "teacher";
+  const showConversationSidebar = true;
   const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
   const creditsRemaining = profile?.credits_remaining || 0;
 
