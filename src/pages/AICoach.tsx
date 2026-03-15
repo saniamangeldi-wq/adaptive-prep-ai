@@ -107,7 +107,7 @@ export default function AICoach() {
     }
   };
 
-  const showConversationSidebar = profile?.role === "student";
+  const showConversationSidebar = profile?.role === "student" || profile?.role === "tutor" || profile?.role === "teacher";
   const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
   const creditsRemaining = profile?.credits_remaining || 0;
 
