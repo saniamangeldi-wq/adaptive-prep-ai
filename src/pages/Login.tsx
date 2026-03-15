@@ -61,7 +61,7 @@ export default function Login() {
         // Navigate immediately based on role - don't wait for DB
         switch (selectedRole) {
           case "school_admin":
-            navigate("/school/billing");
+            navigate("/dashboard/school/billing");
             break;
           default:
             navigate("/dashboard");
