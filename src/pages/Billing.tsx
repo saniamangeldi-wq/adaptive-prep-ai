@@ -170,8 +170,8 @@ function TutorBillingView() {
                         Current Plan
                       </Button>
                     ) : (
-                      <Button variant="hero" className="w-full" size="sm">
-                        {(profile?.tier === "tier_2" && plan.tier === "tier_1") ? "Downgrade" : "Upgrade"}
+                      <Button variant={plan.tier === "tier_3" ? "hero" : "outline"} className="w-full" size="sm">
+                        {pricingTiers.indexOf(profile?.tier as PricingTier) > pricingTiers.indexOf(plan.tier) ? "Downgrade" : plan.tier === "tier_3" ? "Go Elite" : "Upgrade"}
                       </Button>
                     )}
                   </div>
