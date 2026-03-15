@@ -46,6 +46,7 @@ export function ConversationSidebar({
   currentConversationId,
   onSelectConversation,
   onNewConversation,
+  coachType = "student",
 }: ConversationSidebarProps) {
   const {
     spaces,
