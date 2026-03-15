@@ -28,7 +28,8 @@ export default function AICoach() {
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
-  const { spaces, createConversation } = useConversations();
+  const coachType = (profile?.role === "tutor" || profile?.role === "teacher") ? "tutor" : "student";
+  const { spaces, createConversation } = useConversations(coachType);
 
   // Check if we're inside a space
   const spaceId = searchParams.get("space");
@@ -123,6 +124,7 @@ export default function AICoach() {
               onSelectConversation={handleSelectConversation}
               onNewConversation={handleNewConversation}
               onBack={handleBackToSpaces}
+              coachType={coachType}
             />
           </div>
         </DashboardLayout>
@@ -139,6 +141,7 @@ export default function AICoach() {
             onSelectConversation={handleSelectConversation}
             onNewConversation={handleNewConversation}
             onBack={() => setCurrentConversation(null)}
+            coachType={coachType}
           >
             {renderAICoach()}
           </SpaceInterior>
@@ -219,10 +222,11 @@ export default function AICoach() {
                   </Button>
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  <ConversationSidebar
+                 <ConversationSidebar
                     currentConversationId={currentConversation?.id}
                     onSelectConversation={handleSelectConversation}
                     onNewConversation={handleNewConversation}
+                    coachType={coachType}
                   />
                 </div>
               </div>

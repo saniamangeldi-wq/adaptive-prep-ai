@@ -18,10 +18,11 @@ interface SpaceDashboardProps {
   onSelectConversation: (conv: Conversation) => void;
   onNewConversation: (initialMessage?: string) => void;
   onBack: () => void;
+  coachType?: "student" | "tutor";
 }
 
-export function SpaceDashboard({ space, onSelectConversation, onNewConversation, onBack }: SpaceDashboardProps) {
-  const { conversations, deleteConversation, deleteSpace } = useConversations();
+export function SpaceDashboard({ space, onSelectConversation, onNewConversation, onBack, coachType = "student" }: SpaceDashboardProps) {
+  const { conversations, deleteConversation, deleteSpace } = useConversations(coachType);
   const [showSettings, setShowSettings] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [addRefMode, setAddRefMode] = useState<"none" | "url" | "paste">("none");

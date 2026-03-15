@@ -36,6 +36,7 @@ interface ConversationSidebarProps {
   currentConversationId?: string;
   onSelectConversation: (conversation: Conversation | null) => void;
   onNewConversation: () => void;
+  coachType?: "student" | "tutor";
 }
 
 const ICON_OPTIONS = ["📁", "📚", "🎓", "💼", "🔬", "🎨", "📊", "🌟", "💡", "🎯"];
@@ -45,6 +46,7 @@ export function ConversationSidebar({
   currentConversationId,
   onSelectConversation,
   onNewConversation,
+  coachType = "student",
 }: ConversationSidebarProps) {
   const {
     spaces,
@@ -58,7 +60,7 @@ export function ConversationSidebar({
     togglePin,
     archiveConversation,
     moveToSpace,
-  } = useConversations();
+  } = useConversations(coachType);
 
   const [showCreateSpace, setShowCreateSpace] = useState(false);
   const [showMoveDialog, setShowMoveDialog] = useState<string | null>(null);

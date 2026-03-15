@@ -20,6 +20,7 @@ interface SpaceInteriorProps {
   onNewConversation: () => void;
   onBack: () => void;
   children: React.ReactNode;
+  coachType?: "student" | "tutor";
 }
 
 export function SpaceInterior({
@@ -29,8 +30,9 @@ export function SpaceInterior({
   onNewConversation,
   onBack,
   children,
+  coachType = "student",
 }: SpaceInteriorProps) {
-  const { conversations, deleteSpace } = useConversations();
+  const { conversations, deleteSpace } = useConversations(coachType);
   const [showSettings, setShowSettings] = useState(false);
 
   // Persist collapsed state per space

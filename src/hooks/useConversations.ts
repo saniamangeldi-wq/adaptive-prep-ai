@@ -53,7 +53,7 @@ function transformConversation(data: Record<string, unknown>): Conversation {
   };
 }
 
-export function useConversations() {
+export function useConversations(coachType: "student" | "tutor" = "student") {
   const [spaces, setSpaces] = useState<ConversationSpace[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
@@ -67,12 +67,13 @@ export function useConversations() {
       .from("conversation_spaces")
       .select("*")
       .eq("user_id", user.id)
+      .eq("coach_type", coachType)
       .order("created_at", { ascending: false });
 
     if (!error && data) {
       setSpaces(data);
     }
-  }, [user]);
+  }, [user, coachType]);
 
   const loadConversations = useCallback(async (spaceId: string | null = null) => {
     if (!user) return;
@@ -82,6 +83,7 @@ export function useConversations() {
       .select("*")
       .eq("user_id", user.id)
       .eq("is_archived", false)
+      .eq("coach_type", coachType)
       .order("updated_at", { ascending: false });
 
     if (spaceId) {
@@ -94,7 +96,7 @@ export function useConversations() {
       setConversations(data.map(d => transformConversation(d as unknown as Record<string, unknown>)));
     }
     setLoading(false);
-  }, [user]);
+  }, [user, coachType]);
 
   useEffect(() => {
     if (user) {
@@ -119,6 +121,7 @@ export function useConversations() {
         description,
         icon,
         color,
+        coach_type: coachType,
       })
       .select()
       .single();
@@ -161,6 +164,7 @@ export function useConversations() {
         title: title || "New Conversation",
         messages: [],
         space_id: spaceId || selectedSpaceId,
+        coach_type: coachType,
       })
       .select()
       .single();

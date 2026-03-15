@@ -9,10 +9,11 @@ import { toast } from "sonner";
 
 interface SpacesHomeProps {
   onOpenSpace: (space: ConversationSpace) => void;
+  coachType?: "student" | "tutor";
 }
 
-export function SpacesHome({ onOpenSpace }: SpacesHomeProps) {
-  const { spaces, createSpace, deleteSpace } = useConversations();
+export function SpacesHome({ onOpenSpace, coachType = "student" }: SpacesHomeProps) {
+  const { spaces, createSpace, deleteSpace } = useConversations(coachType);
   const [showCreate, setShowCreate] = useState(false);
   const [settingsSpace, setSettingsSpace] = useState<ConversationSpace | null>(null);
 
