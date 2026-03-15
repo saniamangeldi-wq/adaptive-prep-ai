@@ -121,6 +121,7 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
         description,
         icon,
         color,
+        coach_type: coachType,
       })
       .select()
       .single();
