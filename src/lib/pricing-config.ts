@@ -169,6 +169,26 @@ export const PRICING_CONFIG = {
         "Priority support",
       ],
     },
+    {
+      id: "tutor-elite",
+      tier: "Tier 3",
+      name: "Tutor Elite",
+      badge: null,
+      description: "Premium tier with voice chat and Elite features for all your students.",
+      monthlyPriceKZT: 49500,
+      monthlyPriceUSD: 99,
+      mostPopular: false,
+      features: [
+        "Up to 50 student accounts",
+        "Everything in Tutor Pro",
+        "ElevenLabs voice chat (tutor & students)",
+        "Students get full Elite features",
+        "200 AI credits/day for students",
+        "Deep Research + Reasoning Pro",
+        "Unlimited flashcards for students",
+        "Dedicated support",
+      ],
+    },
   ] as TutorPlan[],
   schools: [
     {

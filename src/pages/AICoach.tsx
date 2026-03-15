@@ -170,33 +170,35 @@ export default function AICoach() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {/* Text / Voice toggle */}
-              <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
-                <button
-                  onClick={() => setChatMode("text")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-                    chatMode === "text"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <MessageSquare className="w-3 h-3" />
-                  Text
-                </button>
-                <button
-                  onClick={() => setChatMode("voice")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-                    chatMode === "voice"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Mic className="w-3 h-3" />
-                  Voice
-                </button>
-              </div>
+              {/* Text / Voice toggle — only show voice if user has tier_3 */}
+              {profile?.tier === "tier_3" ? (
+                <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
+                  <button
+                    onClick={() => setChatMode("text")}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
+                      chatMode === "text"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <MessageSquare className="w-3 h-3" />
+                    Text
+                  </button>
+                  <button
+                    onClick={() => setChatMode("voice")}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
+                      chatMode === "voice"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Mic className="w-3 h-3" />
+                    Voice
+                  </button>
+                </div>
+              ) : null}
 
               {/* Credit counter */}
               <CreditsInfoPopover creditsRemaining={creditsRemaining} dailyLimit={dailyLimit}>

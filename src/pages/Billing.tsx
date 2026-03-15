@@ -49,6 +49,22 @@ const tutorPlans = [
       "Priority support",
     ],
   },
+  {
+    name: "Tutor Elite",
+    tier: "tier_3" as PricingTier,
+    price: 99,
+    description: "Premium tier — voice chat & Elite for all students",
+    features: [
+      "Up to 50 student accounts",
+      "Everything in Tutor Pro",
+      "ElevenLabs voice chat (you & students)",
+      "Students get full Elite features",
+      "200 AI credits/day for students",
+      "Deep Research + Reasoning Pro",
+      "Unlimited flashcards for students",
+      "Dedicated support",
+    ],
+  },
 ];
 
 export default function Billing() {
@@ -66,8 +82,8 @@ export default function Billing() {
 function TutorBillingView() {
   const { profile } = useAuth();
 
-  const currentPlanName = profile?.tier === "tier_2" ? "Tutor Pro" : "Solo Tutor";
-  const currentPrice = profile?.tier === "tier_2" ? 59 : 29;
+  const currentPlanName = profile?.tier === "tier_3" ? "Tutor Elite" : profile?.tier === "tier_2" ? "Tutor Pro" : "Solo Tutor";
+  const currentPrice = profile?.tier === "tier_3" ? 99 : profile?.tier === "tier_2" ? 59 : 29;
 
   return (
     <DashboardLayout>
@@ -99,7 +115,7 @@ function TutorBillingView() {
         </Card>
 
         {/* Plans */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           {tutorPlans.map((plan) => {
             const isCurrentPlan = profile?.tier === plan.tier;
             return (
@@ -154,8 +170,8 @@ function TutorBillingView() {
                         Current Plan
                       </Button>
                     ) : (
-                      <Button variant="hero" className="w-full" size="sm">
-                        {(profile?.tier === "tier_2" && plan.tier === "tier_1") ? "Downgrade" : "Upgrade"}
+                      <Button variant={plan.tier === "tier_3" ? "hero" : "outline"} className="w-full" size="sm">
+                        {(["tier_0","tier_1","tier_2","tier_3"].indexOf(profile?.tier || "tier_1") > ["tier_0","tier_1","tier_2","tier_3"].indexOf(plan.tier)) ? "Downgrade" : plan.tier === "tier_3" ? "Go Elite" : "Upgrade"}
                       </Button>
                     )}
                   </div>
