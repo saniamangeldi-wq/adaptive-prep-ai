@@ -84,7 +84,15 @@ export default function AICoach() {
         return <AdminAICoach />;
       case "teacher":
       case "tutor":
-        return <TeacherAICoach />;
+        return (
+          <TeacherAICoach
+            conversationId={currentConversation?.id || null}
+            onEnsureConversation={ensureConversation}
+            chatMode={chatMode}
+            spaceReferences={spaceRefs}
+            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
+          />
+        );
       case "student":
       default:
         return (
