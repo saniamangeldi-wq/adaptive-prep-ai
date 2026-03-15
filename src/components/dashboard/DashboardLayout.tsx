@@ -68,7 +68,6 @@ const tutorNav: NavItem[] = [
   { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
   { name: "Student Progress", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "Schedule", href: "/dashboard/schedule", icon: Calendar },
-  { name: "Resources", href: "/dashboard/resources", icon: Layers },
   { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
