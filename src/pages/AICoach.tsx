@@ -82,7 +82,15 @@ export default function AICoach() {
   const renderAICoach = () => {
     switch (profile?.role) {
       case "school_admin":
-        return <AdminAICoach />;
+        return (
+          <AdminAICoach
+            conversationId={currentConversation?.id || null}
+            onEnsureConversation={ensureConversation}
+            chatMode={chatMode}
+            spaceReferences={spaceRefs}
+            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
+          />
+        );
       case "teacher":
       case "tutor":
         return (
