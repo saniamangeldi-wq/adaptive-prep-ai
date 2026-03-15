@@ -301,10 +301,21 @@ export default function TutorLeaderboard() {
             </Dialog>
             <Dialog open={addPointsOpen} onOpenChange={setAddPointsOpen}>
               <DialogTrigger asChild>
-                <Button variant="hero" size="sm">
-                  <Plus className="w-4 h-4" />
-                  Add Points
-                </Button>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={students.length === 0 ? 0 : undefined}>
+                      <Button variant="hero" size="sm" disabled={students.length === 0} className={students.length === 0 ? "opacity-60 cursor-not-allowed" : ""}>
+                        <Plus className="w-4 h-4" />
+                        Add Points
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {students.length === 0 && (
+                    <TooltipContent side="bottom" className="text-xs bg-[hsl(228,20%,12%)] border-[hsl(220,15%,25%)] text-white">
+                      Add students first to use this feature
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
