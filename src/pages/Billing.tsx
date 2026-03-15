@@ -82,8 +82,8 @@ export default function Billing() {
 function TutorBillingView() {
   const { profile } = useAuth();
 
-  const currentPlanName = profile?.tier === "tier_2" ? "Tutor Pro" : "Solo Tutor";
-  const currentPrice = profile?.tier === "tier_2" ? 59 : 29;
+  const currentPlanName = profile?.tier === "tier_3" ? "Tutor Elite" : profile?.tier === "tier_2" ? "Tutor Pro" : "Solo Tutor";
+  const currentPrice = profile?.tier === "tier_3" ? 99 : profile?.tier === "tier_2" ? 59 : 29;
 
   return (
     <DashboardLayout>
