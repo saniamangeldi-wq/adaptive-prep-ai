@@ -124,6 +124,7 @@ export default function AICoach() {
               onSelectConversation={handleSelectConversation}
               onNewConversation={handleNewConversation}
               onBack={handleBackToSpaces}
+              coachType={coachType}
             />
           </div>
         </DashboardLayout>
