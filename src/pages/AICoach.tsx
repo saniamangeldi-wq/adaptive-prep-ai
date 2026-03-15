@@ -28,7 +28,7 @@ export default function AICoach() {
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
-  const coachType = (profile?.role === "tutor" || profile?.role === "teacher") ? "tutor" : "student";
+  const coachType = (profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") ? "tutor" : "student";
   const { spaces, createConversation } = useConversations(coachType);
 
   // Check if we're inside a space
