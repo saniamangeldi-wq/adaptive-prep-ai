@@ -220,10 +220,11 @@ export default function AICoach() {
                   </Button>
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  <ConversationSidebar
+                 <ConversationSidebar
                     currentConversationId={currentConversation?.id}
                     onSelectConversation={handleSelectConversation}
                     onNewConversation={handleNewConversation}
+                    coachType={coachType}
                   />
                 </div>
               </div>
