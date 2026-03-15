@@ -83,6 +83,7 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
       .select("*")
       .eq("user_id", user.id)
       .eq("is_archived", false)
+      .eq("coach_type", coachType)
       .order("updated_at", { ascending: false });
 
     if (spaceId) {
@@ -95,7 +96,7 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
       setConversations(data.map(d => transformConversation(d as unknown as Record<string, unknown>)));
     }
     setLoading(false);
-  }, [user]);
+  }, [user, coachType]);
 
   useEffect(() => {
     if (user) {
