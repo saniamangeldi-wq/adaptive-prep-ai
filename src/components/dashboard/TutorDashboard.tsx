@@ -7,8 +7,10 @@ import {
   UserPlus,
   BarChart3,
   Clock,
-  Star
+  Star,
+  Info
 } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
