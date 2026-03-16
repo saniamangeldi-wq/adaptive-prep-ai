@@ -50,7 +50,7 @@ export default function Settings() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName })
+        .update({ full_name: fullName, preferred_language: preferredLanguage })
         .eq("user_id", profile.user_id);
 
       if (error) throw error;
