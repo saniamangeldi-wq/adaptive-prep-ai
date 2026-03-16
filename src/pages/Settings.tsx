@@ -145,7 +145,7 @@ export default function Settings() {
             <Button
               variant="hero"
               onClick={handleSaveProfile}
-              disabled={saving || fullName === profile?.full_name}
+              disabled={saving || (fullName === profile?.full_name && preferredLanguage === (profile?.preferred_language || "en"))}
             >
               {saving ? (
                 "Saving..."
