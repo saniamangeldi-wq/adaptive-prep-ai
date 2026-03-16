@@ -11,12 +11,14 @@ import {
   Save,
   Bell,
   Moon,
-  Globe
+  Globe,
+  Languages
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getTierLimits, PricingTier } from "@/lib/tier-limits";
@@ -29,10 +31,17 @@ export default function Settings() {
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [preferredLanguage, setPreferredLanguage] = useState(profile?.preferred_language || "en");
 
   // Preferences
   const [emailNotifications, setEmailNotifications] = useState(true);
   const isDarkMode = theme === "dark";
+
+  const LANGUAGES = [
+    { value: "en", label: "English", flag: "🇺🇸" },
+    { value: "kk", label: "Қазақша", flag: "🇰🇿" },
+    { value: "ru", label: "Русский", flag: "🇷🇺" },
+  ];
 
   const handleSaveProfile = async () => {
     if (!profile?.user_id) return;
@@ -41,7 +50,7 @@ export default function Settings() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName })
+        .update({ full_name: fullName, preferred_language: preferredLanguage })
         .eq("user_id", profile.user_id);
 
       if (error) throw error;
@@ -136,7 +145,7 @@ export default function Settings() {
             <Button
               variant="hero"
               onClick={handleSaveProfile}
-              disabled={saving || fullName === profile?.full_name}
+              disabled={saving || (fullName === profile?.full_name && preferredLanguage === (profile?.preferred_language || "en"))}
             >
               {saving ? (
                 "Saving..."
@@ -221,6 +230,28 @@ export default function Settings() {
                 checked={isDarkMode}
                 onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
               />
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+              <div className="flex items-center gap-3">
+                <Languages className="w-4 h-4 text-muted-foreground" />
+                <span className="text-foreground">Language</span>
+              </div>
+              <Select value={preferredLanguage} onValueChange={setPreferredLanguage}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      <span className="flex items-center gap-2">
+                        <span>{lang.flag}</span>
+                        <span>{lang.label}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
