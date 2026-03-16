@@ -11,7 +11,8 @@ import {
   Save,
   Bell,
   Moon,
-  Globe
+  Globe,
+  Languages
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
