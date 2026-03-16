@@ -31,10 +31,17 @@ export default function Settings() {
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [preferredLanguage, setPreferredLanguage] = useState(profile?.preferred_language || "en");
 
   // Preferences
   const [emailNotifications, setEmailNotifications] = useState(true);
   const isDarkMode = theme === "dark";
+
+  const LANGUAGES = [
+    { value: "en", label: "English", flag: "🇺🇸" },
+    { value: "kk", label: "Қазақша", flag: "🇰🇿" },
+    { value: "ru", label: "Русский", flag: "🇷🇺" },
+  ];
 
   const handleSaveProfile = async () => {
     if (!profile?.user_id) return;
