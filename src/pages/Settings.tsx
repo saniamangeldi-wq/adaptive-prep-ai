@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "next-themes";
+import { useTranslation } from "react-i18next";
 import { 
   User, 
   Mail, 
@@ -27,6 +28,7 @@ import { SchoolSettingsSection } from "@/components/settings/SchoolSettingsSecti
 export default function Settings() {
   const { user, profile, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [saving, setSaving] = useState(false);
@@ -43,6 +45,11 @@ export default function Settings() {
     { value: "ru", label: "Русский", flag: "🇷🇺" },
   ];
 
+  const handleLanguageChange = (lang: string) => {
+    setPreferredLanguage(lang);
+    i18n.changeLanguage(lang);
+  };
+
   const handleSaveProfile = async () => {
     if (!profile?.user_id) return;
 
@@ -54,10 +61,10 @@ export default function Settings() {
         .eq("user_id", profile.user_id);
 
       if (error) throw error;
-      toast.success("Profile updated successfully!");
+      toast.success(t("settings.profileUpdated"));
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
+      toast.error(t("settings.profileError"));
     } finally {
       setSaving(false);
     }
@@ -70,7 +77,7 @@ export default function Settings() {
       navigate("/login");
     } catch (error) {
       console.error("Error logging out:", error);
-      toast.error("Failed to log out");
+      toast.error(t("settings.logoutError"));
       setLoggingOut(false);
     }
   };
@@ -78,19 +85,18 @@ export default function Settings() {
   const getRoleBadge = () => {
     switch (profile?.role) {
       case "school_admin":
-        return "School Admin";
+        return t("roles.schoolAdmin");
       case "teacher":
-        return "Teacher";
+        return t("roles.teacher");
       case "tutor":
-        return "Tutor";
+        return t("roles.tutor");
       default:
-        return "Student";
+        return t("roles.student");
     }
   };
 
   const getTierBadge = () => {
     if (profile?.is_trial) return "Pro Trial";
-    // Role-aware plan display
     if (profile?.role === "tutor") {
       return profile?.tier === "tier_3" ? "Tutor Business" : profile?.tier === "tier_2" ? "Professional" : "Solo Tutor";
     }
@@ -103,9 +109,9 @@ export default function Settings() {
       <div className="max-w-4xl space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Settings</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t("settings.title")}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your account and preferences
+            {t("settings.subtitle")}
           </p>
         </div>
 
@@ -116,29 +122,29 @@ export default function Settings() {
         <div className="p-6 rounded-2xl bg-card border border-border/50">
           <div className="flex items-center gap-3 mb-6">
             <User className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Profile Information</h3>
+            <h3 className="font-semibold text-foreground">{t("settings.profileInfo")}</h3>
           </div>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="fullName" className="text-foreground">Full Name</Label>
+              <Label htmlFor="fullName" className="text-foreground">{t("settings.fullName")}</Label>
               <Input
                 id="fullName"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter your full name"
+                placeholder={t("settings.fullNamePlaceholder")}
                 className="mt-1.5"
               />
             </div>
 
             <div>
-              <Label className="text-foreground">Email</Label>
+              <Label className="text-foreground">{t("settings.email")}</Label>
               <div className="flex items-center gap-2 mt-1.5 p-3 rounded-lg bg-muted/50 border border-border">
                 <Mail className="w-4 h-4 text-muted-foreground" />
                 <span className="text-foreground">{user?.email}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Email cannot be changed
+                {t("settings.emailNoChange")}
               </p>
             </div>
 
@@ -148,11 +154,11 @@ export default function Settings() {
               disabled={saving || (fullName === profile?.full_name && preferredLanguage === (profile?.preferred_language || "en"))}
             >
               {saving ? (
-                "Saving..."
+                t("settings.saving")
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  Save Changes
+                  {t("settings.saveChanges")}
                 </>
               )}
             </Button>
@@ -163,19 +169,19 @@ export default function Settings() {
         <div className="p-6 rounded-2xl bg-card border border-border/50">
           <div className="flex items-center gap-3 mb-6">
             <Shield className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Account</h3>
+            <h3 className="font-semibold text-foreground">{t("settings.account")}</h3>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-              <span className="text-muted-foreground">Role</span>
+              <span className="text-muted-foreground">{t("settings.role")}</span>
               <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium">
                 {getRoleBadge()}
               </span>
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-              <span className="text-muted-foreground">Plan</span>
+              <span className="text-muted-foreground">{t("settings.plan")}</span>
               <span className="px-3 py-1 rounded-full bg-accent/20 text-accent text-sm font-medium">
                 {getTierBadge()}
               </span>
@@ -184,16 +190,16 @@ export default function Settings() {
             {profile?.role === "student" && (
               <>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                  <span className="text-muted-foreground">AI Credits</span>
+                  <span className="text-muted-foreground">{t("settings.aiCredits")}</span>
                   <span className="font-medium text-foreground">
-                    {profile.credits_remaining} remaining
+                    {profile.credits_remaining} {t("settings.remaining")}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                  <span className="text-muted-foreground">Tests Remaining</span>
+                  <span className="text-muted-foreground">{t("settings.testsRemaining")}</span>
                   <span className="font-medium text-foreground">
-                    {profile.tests_remaining} this month
+                    {profile.tests_remaining} {t("settings.thisMonth")}
                   </span>
                 </div>
               </>
@@ -201,19 +207,18 @@ export default function Settings() {
           </div>
         </div>
 
-
         {/* Preferences */}
         <div className="p-6 rounded-2xl bg-card border border-border/50">
           <div className="flex items-center gap-3 mb-6">
             <Globe className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Preferences</h3>
+            <h3 className="font-semibold text-foreground">{t("settings.preferences")}</h3>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
               <div className="flex items-center gap-3">
                 <Bell className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground">Email Notifications</span>
+                <span className="text-foreground">{t("settings.emailNotifications")}</span>
               </div>
               <Switch
                 checked={emailNotifications}
@@ -224,7 +229,7 @@ export default function Settings() {
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
               <div className="flex items-center gap-3">
                 <Moon className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground">Dark Mode</span>
+                <span className="text-foreground">{t("settings.darkMode")}</span>
               </div>
               <Switch
                 checked={isDarkMode}
@@ -235,9 +240,9 @@ export default function Settings() {
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
               <div className="flex items-center gap-3">
                 <Languages className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground">Language</span>
+                <span className="text-foreground">{t("settings.language")}</span>
               </div>
-              <Select value={preferredLanguage} onValueChange={setPreferredLanguage}>
+              <Select value={preferredLanguage} onValueChange={handleLanguageChange}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -260,17 +265,17 @@ export default function Settings() {
         <div className="p-6 rounded-2xl bg-card border border-destructive/30">
           <div className="flex items-center gap-3 mb-4">
             <LogOut className="w-5 h-5 text-destructive" />
-            <h3 className="font-semibold text-foreground">Sign Out</h3>
+            <h3 className="font-semibold text-foreground">{t("settings.signOut")}</h3>
           </div>
           <p className="text-muted-foreground mb-4">
-            Sign out of your account on this device
+            {t("settings.signOutDesc")}
           </p>
           <Button
             variant="destructive"
             onClick={handleLogout}
             disabled={loggingOut}
           >
-            {loggingOut ? "Signing out..." : "Sign Out"}
+            {loggingOut ? t("settings.signingOut") : t("settings.signOut")}
           </Button>
         </div>
       </div>
