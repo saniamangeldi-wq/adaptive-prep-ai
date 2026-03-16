@@ -103,6 +103,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isSchoolStudent } = useSchoolStudent();
+  const { t, i18n } = useTranslation();
+
+  // Sync language from profile on mount
+  useEffect(() => {
+    if (profile?.preferred_language && i18n.language !== profile.preferred_language) {
+      i18n.changeLanguage(profile.preferred_language);
+    }
+  }, [profile?.preferred_language, i18n]);
 
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
