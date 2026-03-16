@@ -534,7 +534,7 @@ function StudentBillingView() {
                 <p className="text-xs text-muted-foreground mt-1">Fast & efficient</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                <p className="text-xs text-muted-foreground mb-1">Starter</p>
+                <p className="text-xs text-muted-foreground mb-1">Basic</p>
                 <p className="font-medium text-sm text-foreground">GPT-4o</p>
                 <p className="text-xs text-muted-foreground mt-1">Balanced quality</p>
               </div>
