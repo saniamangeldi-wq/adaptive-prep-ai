@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   GraduationCap,
   LayoutDashboard,
@@ -33,7 +34,7 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 import { SIDEBAR } from "@/lib/design-system";
 
 type NavItem = {
-  name: string;
+  nameKey: string;
   href: string;
   icon: React.ElementType;
   schoolOnly?: boolean;
@@ -45,54 +46,54 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const studentNav: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Practice Tests", href: "/dashboard/tests", icon: FileText },
-  { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
-  { name: "Spaces", href: "/dashboard/spaces", icon: FolderOpen },
-  { name: "Assignments", href: "/dashboard/assignments", icon: ClipboardList, schoolOnly: true },
-  { name: "Grades", href: "/dashboard/grades", icon: BarChart3, schoolOnly: true },
-  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar, schoolOnly: true },
-  { name: "Curriculum", href: "/dashboard/curriculum", icon: BookOpen, schoolOnly: true },
-  { name: "University Match", href: "/dashboard/university-match", icon: GraduationCap },
-  { name: "Progress", href: "/dashboard/progress", icon: LineChart },
-  { name: "Flashcards", href: "/dashboard/flashcards", icon: Layers },
-  { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { nameKey: "nav.practiceTests", href: "/dashboard/tests", icon: FileText },
+  { nameKey: "nav.aiCoach", href: "/dashboard/coach", icon: MessageSquare },
+  { nameKey: "nav.spaces", href: "/dashboard/spaces", icon: FolderOpen },
+  { nameKey: "nav.assignments", href: "/dashboard/assignments", icon: ClipboardList, schoolOnly: true },
+  { nameKey: "nav.grades", href: "/dashboard/grades", icon: BarChart3, schoolOnly: true },
+  { nameKey: "nav.calendar", href: "/dashboard/calendar", icon: Calendar, schoolOnly: true },
+  { nameKey: "nav.curriculum", href: "/dashboard/curriculum", icon: BookOpen, schoolOnly: true },
+  { nameKey: "nav.universityMatch", href: "/dashboard/university-match", icon: GraduationCap },
+  { nameKey: "nav.progress", href: "/dashboard/progress", icon: LineChart },
+  { nameKey: "nav.flashcards", href: "/dashboard/flashcards", icon: Layers },
+  { nameKey: "nav.billing", href: "/dashboard/billing", icon: CreditCard },
+  { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 const tutorNav: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "My Students", href: "/dashboard/students", icon: Users },
-  { name: "Assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
-  { name: "Leaderboard", href: "/dashboard/leaderboard", icon: Trophy },
-  { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
-  { name: "Student Progress", href: "/dashboard/analytics", icon: BarChart3 },
-  { name: "Schedule", href: "/dashboard/schedule", icon: Calendar },
-  { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { nameKey: "nav.myStudents", href: "/dashboard/students", icon: Users },
+  { nameKey: "nav.assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
+  { nameKey: "nav.leaderboard", href: "/dashboard/leaderboard", icon: Trophy },
+  { nameKey: "nav.aiCoach", href: "/dashboard/coach", icon: MessageSquare },
+  { nameKey: "nav.studentProgress", href: "/dashboard/analytics", icon: BarChart3 },
+  { nameKey: "nav.schedule", href: "/dashboard/schedule", icon: Calendar },
+  { nameKey: "nav.billing", href: "/dashboard/billing", icon: CreditCard },
+  { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 const teacherNav: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "My Classroom", href: "/dashboard/classroom", icon: Users },
-  { name: "Assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
-  { name: "AI Coach", href: "/dashboard/coach", icon: MessageSquare },
-  { name: "Class Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar },
-  { name: "Resources", href: "/dashboard/resources", icon: Layers },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { nameKey: "nav.myClassroom", href: "/dashboard/classroom", icon: Users },
+  { nameKey: "nav.assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
+  { nameKey: "nav.aiCoach", href: "/dashboard/coach", icon: MessageSquare },
+  { nameKey: "nav.classAnalytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { nameKey: "nav.calendar", href: "/dashboard/calendar", icon: Calendar },
+  { nameKey: "nav.resources", href: "/dashboard/resources", icon: Layers },
+  { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 const adminNav: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "School Overview", href: "/dashboard/school", icon: Building2 },
-  { name: "AI Insights", href: "/dashboard/coach", icon: MessageSquare },
-  { name: "Assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
-  { name: "Teachers", href: "/dashboard/school/teachers", icon: Users },
-  { name: "Students", href: "/dashboard/school/students", icon: GraduationCap },
-  { name: "Analytics", href: "/dashboard/school/analytics", icon: BarChart3 },
-  { name: "Billing", href: "/dashboard/school/billing", icon: CreditCard },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { nameKey: "nav.schoolOverview", href: "/dashboard/school", icon: Building2 },
+  { nameKey: "nav.aiInsights", href: "/dashboard/coach", icon: MessageSquare },
+  { nameKey: "nav.assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
+  { nameKey: "nav.teachers", href: "/dashboard/school/teachers", icon: Users },
+  { nameKey: "nav.students", href: "/dashboard/school/students", icon: GraduationCap },
+  { nameKey: "nav.analytics", href: "/dashboard/school/analytics", icon: BarChart3 },
+  { nameKey: "nav.billing", href: "/dashboard/school/billing", icon: CreditCard },
+  { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -102,6 +103,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isSchoolStudent } = useSchoolStudent();
+  const { t, i18n } = useTranslation();
+
+  // Sync language from profile on mount
+  useEffect(() => {
+    if (profile?.preferred_language && i18n.language !== profile.preferred_language) {
+      i18n.changeLanguage(profile.preferred_language);
+    }
+  }, [profile?.preferred_language, i18n]);
 
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
@@ -204,9 +213,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 py-2 px-1.5 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
+            const label = t(item.nameKey);
             const navButton = (
               <Link
-                key={item.name}
+                key={item.nameKey}
                 to={item.href}
                 className={cn(
                   "group flex items-center rounded-lg transition-colors",
@@ -217,17 +227,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 )}
               >
                 <item.icon style={iconStyle} className="flex-shrink-0" />
-                {sidebarExpanded && <span className="truncate text-sm font-medium">{item.name}</span>}
+                {sidebarExpanded && <span className="truncate text-sm font-medium">{label}</span>}
               </Link>
             );
 
-            if (sidebarExpanded) return <div key={item.name}>{navButton}</div>;
+            if (sidebarExpanded) return <div key={item.nameKey}>{navButton}</div>;
 
             return (
-              <Tooltip key={item.name} delayDuration={0}>
+              <Tooltip key={item.nameKey} delayDuration={0}>
                 <TooltipTrigger asChild>{navButton}</TooltipTrigger>
                 <TooltipContent side="right" className="text-xs">
-                  {item.name}
+                  {label}
                 </TooltipContent>
               </Tooltip>
             );
@@ -308,7 +318,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   const isActive = location.pathname === item.href;
                   return (
                     <Link
-                      key={item.name}
+                      key={item.nameKey}
                       to={item.href}
                       className={cn(
                         "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[48px]",
@@ -319,7 +329,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       onClick={() => setBottomSheetOpen(false)}
                     >
                       <item.icon className="w-5 h-5 flex-shrink-0" />
-                      {item.name}
+                      {t(item.nameKey)}
                     </Link>
                   );
                 })}
