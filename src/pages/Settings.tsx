@@ -231,6 +231,28 @@ export default function Settings() {
                 onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
               />
             </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+              <div className="flex items-center gap-3">
+                <Languages className="w-4 h-4 text-muted-foreground" />
+                <span className="text-foreground">Language</span>
+              </div>
+              <Select value={preferredLanguage} onValueChange={setPreferredLanguage}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      <span className="flex items-center gap-2">
+                        <span>{lang.flag}</span>
+                        <span>{lang.label}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
