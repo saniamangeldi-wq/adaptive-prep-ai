@@ -318,7 +318,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   const isActive = location.pathname === item.href;
                   return (
                     <Link
-                      key={item.name}
+                      key={item.nameKey}
                       to={item.href}
                       className={cn(
                         "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[48px]",
@@ -329,7 +329,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       onClick={() => setBottomSheetOpen(false)}
                     >
                       <item.icon className="w-5 h-5 flex-shrink-0" />
-                      {item.name}
+                      {t(item.nameKey)}
                     </Link>
                   );
                 })}
