@@ -213,9 +213,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 py-2 px-1.5 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
+            const label = t(item.nameKey);
             const navButton = (
               <Link
-                key={item.name}
+                key={item.nameKey}
                 to={item.href}
                 className={cn(
                   "group flex items-center rounded-lg transition-colors",
@@ -226,17 +227,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 )}
               >
                 <item.icon style={iconStyle} className="flex-shrink-0" />
-                {sidebarExpanded && <span className="truncate text-sm font-medium">{item.name}</span>}
+                {sidebarExpanded && <span className="truncate text-sm font-medium">{label}</span>}
               </Link>
             );
 
-            if (sidebarExpanded) return <div key={item.name}>{navButton}</div>;
+            if (sidebarExpanded) return <div key={item.nameKey}>{navButton}</div>;
 
             return (
-              <Tooltip key={item.name} delayDuration={0}>
+              <Tooltip key={item.nameKey} delayDuration={0}>
                 <TooltipTrigger asChild>{navButton}</TooltipTrigger>
                 <TooltipContent side="right" className="text-xs">
-                  {item.name}
+                  {label}
                 </TooltipContent>
               </Tooltip>
             );
