@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTierLimits, getDaysRemaining, TIER_LIMITS, TRIAL_LIMITS, PricingTier } from "@/lib/tier-limits";
+import { BILLING_MULTIPLIERS, BillingCycle } from "@/lib/pricing-config";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Check, 
   Clock, 
