@@ -34,7 +34,7 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 import { SIDEBAR } from "@/lib/design-system";
 
 type NavItem = {
-  name: string;
+  nameKey: string;
   href: string;
   icon: React.ElementType;
   schoolOnly?: boolean;
