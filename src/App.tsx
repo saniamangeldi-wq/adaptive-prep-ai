@@ -8,6 +8,8 @@ import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import PracticeTests from "./pages/PracticeTests";
@@ -99,6 +101,8 @@ function AppRoutes() {
       <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       
       {/* Protected routes */}
       <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
