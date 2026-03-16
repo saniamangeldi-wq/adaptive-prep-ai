@@ -63,7 +63,7 @@ export default function PracticeTests() {
     if (isTier0) {
       toast({
         title: "Upgrade Required",
-        description: "Practice tests are only available on paid plans. Upgrade to Starter for $7/month to unlock full tests!",
+        description: "Practice tests are only available on paid plans. Upgrade to Basic for $5/month to unlock full tests!",
         variant: "destructive",
       });
       return;

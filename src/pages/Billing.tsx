@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { getTierLimits, getDaysRemaining, TIER_LIMITS, TRIAL_LIMITS, PricingTier } from "@/lib/tier-limits";
+import { BILLING_MULTIPLIERS, BillingCycle } from "@/lib/pricing-config";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Check, 
   Clock, 
@@ -211,10 +214,79 @@ function TutorBillingView() {
 
 function StudentBillingView() {
   const { profile } = useAuth();
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
 
   const isTrialUser = profile?.is_trial && profile?.trial_ends_at;
   const daysRemaining = isTrialUser ? getDaysRemaining(profile.trial_ends_at) : 0;
   const currentTierLimits = getTierLimits(profile?.tier as PricingTier);
+
+  const multiplier = BILLING_MULTIPLIERS[billingCycle];
+
+  const studentPlans: { tierKey: PricingTier; name: string; priceUSD: number; priceKZT: number; popular: boolean; features: string[] }[] = [
+    {
+      tierKey: "tier_0",
+      name: "Free",
+      priceUSD: 0,
+      priceKZT: 0,
+      popular: false,
+      features: [
+        "15 AI credits/day",
+        "10 SAT questions/day",
+        "No practice tests",
+        "Basic AI Coach (Gemini Flash)",
+        "Progress dashboard",
+        "3 flashcards/day",
+      ],
+    },
+    {
+      tierKey: "tier_1",
+      name: "Basic",
+      priceUSD: 5,
+      priceKZT: 2500,
+      popular: false,
+      features: [
+        "30 AI questions/day",
+        "20 quizzes/month",
+        "Progress tracking",
+        "AI Study Coach",
+        "No voice",
+      ],
+    },
+    {
+      tierKey: "tier_2",
+      name: "Pro",
+      priceUSD: 10,
+      priceKZT: 4990,
+      popular: true,
+      features: [
+        "100 AI questions/day",
+        "300 practice questions/month",
+        "Everything in Basic",
+        "Perplexity Pro AI models",
+        "University Match",
+        "Enhanced feedback quality",
+        "Priority support",
+        "30 flashcards/day",
+      ],
+    },
+    {
+      tierKey: "tier_3",
+      name: "Elite",
+      priceUSD: 21,
+      priceKZT: 9900,
+      popular: false,
+      features: [
+        "200 AI credits/day",
+        "1,000 practice questions/month",
+        "Everything in Pro",
+        "All Perplexity Pro models",
+        "Deep Research + Reasoning Pro",
+        "Premium AI with voice chat",
+        "Unlimited flashcards",
+        "1-on-1 coaching session",
+      ],
+    },
+  ];
 
   const pricingTiers: PricingTier[] = ["tier_0", "tier_1", "tier_2", "tier_3"];
 
@@ -226,6 +298,15 @@ function StudentBillingView() {
       case "tier_3": return <Crown className="w-5 h-5" />;
     }
   };
+
+  const fmtDual = (usd: number, kzt: number) => {
+    const adjUSD = Math.round(usd * multiplier);
+    const adjKZT = Math.round(kzt * multiplier);
+    if (adjUSD === 0) return "Free";
+    return `$${adjUSD} / ₸${adjKZT.toLocaleString("ru-RU")}`;
+  };
+
+  const cycleLabel = billingCycle === "monthly" ? "/mo" : billingCycle === "term" ? "/mo (term)" : "/mo (yearly)";
 
   return (
     <DashboardLayout>
@@ -255,7 +336,7 @@ function StudentBillingView() {
                       ? `${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining in trial`
                       : currentTierLimits.price === 0 
                         ? "Free forever" 
-                        : `$${currentTierLimits.price}/month`
+                        : `$${currentTierLimits.price}/month · ₸${(currentTierLimits.price * 500).toLocaleString("ru-RU")}/month`
                     }
                   </CardDescription>
                 </div>
@@ -325,106 +406,118 @@ function StudentBillingView() {
           </CardContent>
         </Card>
 
-        {/* Pricing Plans Grid */}
-        <div>
-          <h2 className="text-xl font-semibold text-foreground mb-4">Choose Your Plan</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {pricingTiers.map((tierKey) => {
-              const tier = TIER_LIMITS[tierKey];
-              const isCurrentTier = profile?.tier === tierKey && !profile?.is_trial;
-              const isTrialTier = profile?.is_trial && tierKey === "tier_2";
-              const isPopular = tierKey === "tier_2";
+        {/* Billing Cycle Toggle */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-foreground">Choose Your Plan</h2>
+          <Tabs value={billingCycle} onValueChange={(v) => setBillingCycle(v as BillingCycle)}>
+            <TabsList>
+              <TabsTrigger value="monthly">Monthly</TabsTrigger>
+              <TabsTrigger value="term">Term (10% off)</TabsTrigger>
+              <TabsTrigger value="yearly">Yearly (20% off)</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-              return (
-                <Card 
-                  key={tierKey} 
-                  className={`relative flex flex-col ${
-                    isCurrentTier || isTrialTier 
-                      ? "border-primary ring-2 ring-primary/20" 
-                      : isPopular 
-                        ? "border-accent/50" 
-                        : ""
-                  }`}
-                >
-                  {isPopular && !isCurrentTier && !isTrialTier && (
-                    <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs">
-                      Most Popular
-                    </Badge>
-                  )}
-                  {(isCurrentTier || isTrialTier) && (
-                    <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs">
-                      {isTrialTier ? "Current Trial" : "Current"}
-                    </Badge>
-                  )}
-                  
-                  <CardHeader className="pb-3 pt-5">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className={`p-1.5 rounded-md ${
-                        tierKey === "tier_3" ? "bg-yellow-500/20 text-yellow-400" :
-                        tierKey === "tier_2" ? "bg-primary/20 text-primary" :
-                        tierKey === "tier_1" ? "bg-accent/20 text-accent" :
-                        "bg-muted text-muted-foreground"
-                      }`}>
-                        {getTierIcon(tierKey)}
+        {/* Pricing Plans Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {studentPlans.map((plan) => {
+            const isCurrentTier = profile?.tier === plan.tierKey && !profile?.is_trial;
+            const isTrialTier = profile?.is_trial && plan.tierKey === "tier_2";
+
+            return (
+              <Card 
+                key={plan.tierKey} 
+                className={`relative flex flex-col ${
+                  isCurrentTier || isTrialTier 
+                    ? "border-primary ring-2 ring-primary/20" 
+                    : plan.popular 
+                      ? "border-accent/50" 
+                      : ""
+                }`}
+              >
+                {plan.popular && !isCurrentTier && !isTrialTier && (
+                  <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs">
+                    Most Popular
+                  </Badge>
+                )}
+                {(isCurrentTier || isTrialTier) && (
+                  <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs">
+                    {isTrialTier ? "Current Trial" : "Current Plan"}
+                  </Badge>
+                )}
+                
+                <CardHeader className="pb-3 pt-5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`p-1.5 rounded-md ${
+                      plan.tierKey === "tier_3" ? "bg-yellow-500/20 text-yellow-400" :
+                      plan.tierKey === "tier_2" ? "bg-primary/20 text-primary" :
+                      plan.tierKey === "tier_1" ? "bg-accent/20 text-accent" :
+                      "bg-muted text-muted-foreground"
+                    }`}>
+                      {getTierIcon(plan.tierKey)}
+                    </div>
+                    <CardTitle className="text-base">{plan.name}</CardTitle>
+                  </div>
+                  <CardDescription>
+                    {plan.priceUSD === 0 ? (
+                      <span className="text-2xl font-bold text-foreground">Free</span>
+                    ) : (
+                      <div>
+                        <span className="text-2xl font-bold text-foreground">
+                          ${Math.round(plan.priceUSD * multiplier)}
+                        </span>
+                        <span className="text-muted-foreground text-sm">{cycleLabel}</span>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          ₸{Math.round(plan.priceKZT * multiplier).toLocaleString("ru-RU")}{cycleLabel}
+                        </p>
                       </div>
-                      <CardTitle className="text-base">{tier.displayName}</CardTitle>
-                    </div>
-                    <CardDescription>
-                      {tier.price === 0 ? (
-                        <span className="text-2xl font-bold text-foreground">Free</span>
-                      ) : (
-                        <>
-                          <span className="text-2xl font-bold text-foreground">${tier.price}</span>
-                          <span className="text-muted-foreground text-sm">/mo</span>
-                        </>
-                      )}
-                    </CardDescription>
-                  </CardHeader>
+                    )}
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent className="flex-1 flex flex-col pt-0">
+                  <ul className="space-y-2 flex-1 text-xs">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2 text-muted-foreground">
+                        <Check className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${
+                          plan.tierKey === "tier_3" ? "text-yellow-400" :
+                          plan.tierKey === "tier_2" ? "text-primary" :
+                          plan.tierKey === "tier_1" ? "text-accent" :
+                          "text-muted-foreground"
+                        }`} />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
                   
-                  <CardContent className="flex-1 flex flex-col pt-0">
-                    <ul className="space-y-2 flex-1 text-xs">
-                      {tier.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2 text-muted-foreground">
-                          <Check className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${
-                            tierKey === "tier_3" ? "text-yellow-400" :
-                            tierKey === "tier_2" ? "text-primary" :
-                            tierKey === "tier_1" ? "text-accent" :
-                            "text-muted-foreground"
-                          }`} />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    
-                    <div className="mt-4">
-                      {isCurrentTier ? (
-                        <Button variant="outline" className="w-full" size="sm" disabled>
-                          Current Plan
-                        </Button>
-                      ) : isTrialTier ? (
-                        <Button variant="hero" className="w-full" size="sm">
-                          <CreditCard className="w-3.5 h-3.5 mr-1.5" />
-                          Subscribe
-                        </Button>
-                      ) : tierKey === "tier_0" ? (
-                        <Button variant="outline" className="w-full" size="sm" disabled>
-                          Free Forever
-                        </Button>
-                      ) : (
-                        <Button 
-                          variant={tierKey === "tier_3" ? "hero" : "outline"} 
-                          className="w-full"
-                          size="sm"
-                        >
-                          {tierKey === "tier_3" ? "Go Elite" : "Upgrade"}
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                  <div className="mt-4">
+                    {isCurrentTier ? (
+                      <Button variant="outline" className="w-full" size="sm" disabled>
+                        Current Plan
+                      </Button>
+                    ) : isTrialTier ? (
+                      <Button variant="hero" className="w-full" size="sm">
+                        <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                        Subscribe
+                      </Button>
+                    ) : plan.tierKey === "tier_0" ? (
+                      <Button variant="outline" className="w-full" size="sm" disabled>
+                        Free Forever
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant={plan.tierKey === "tier_3" ? "hero" : "outline"} 
+                        className="w-full"
+                        size="sm"
+                      >
+                        {plan.tierKey === "tier_3" ? "Go Elite" : "Upgrade"}
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* AI Provider Info */}
@@ -441,7 +534,7 @@ function StudentBillingView() {
                 <p className="text-xs text-muted-foreground mt-1">Fast & efficient</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                <p className="text-xs text-muted-foreground mb-1">Starter</p>
+                <p className="text-xs text-muted-foreground mb-1">Basic</p>
                 <p className="font-medium text-sm text-foreground">GPT-4o</p>
                 <p className="text-xs text-muted-foreground mt-1">Balanced quality</p>
               </div>

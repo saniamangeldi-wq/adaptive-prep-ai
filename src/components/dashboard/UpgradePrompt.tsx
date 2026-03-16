@@ -45,7 +45,7 @@ export function UpgradePrompt({ type, featureName, className }: UpgradePromptPro
 
   const getUpgradeText = () => {
     if (profile.tier === "tier_0") {
-      return "Upgrade to Starter - $7/month";
+      return "Upgrade to Basic - $5/month";
     }
     if (profile.tier === "tier_1") {
       return "Upgrade to Pro - $10/month";
