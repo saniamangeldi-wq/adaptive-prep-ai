@@ -40,8 +40,8 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
   },
   tier_1: {
     name: "tier_1",
-    displayName: "Starter",
-    price: 7,
+    displayName: "Basic",
+    price: 5,
     creditsPerDay: 40,
     questionsPerDay: -1, // Unlimited
     questionsPerMonth: 150,
