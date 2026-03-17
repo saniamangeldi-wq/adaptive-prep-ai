@@ -1,14 +1,20 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useSchoolStudent } from "@/hooks/useSchoolStudent";
 import { LockedFeatureModal } from "@/components/university-match/LockedFeatureModal";
 import { MatchProfileCard } from "@/components/university-match/MatchProfileCard";
 import { UniversityCard } from "@/components/university-match/UniversityCard";
-import { MatchFilterBar, type MatchFilters, type SortOption } from "@/components/university-match/MatchFilterBar";
 import { AIAdvisorDrawer } from "@/components/university-match/AIAdvisorDrawer";
 import { ShortlistPanel } from "@/components/university-match/ShortlistPanel";
 import { PortfolioUpload } from "@/components/university-match/PortfolioUpload";
 import { PreferenceQuestionnaire } from "@/components/university-match/PreferenceQuestionnaire";
+import {
+  UniversityFilterToolbar,
+  EmptyFilterState,
+  getRegionForCountry,
+  type UniversityFilters,
+  type UniversitySortOption,
+} from "@/components/university-match/UniversityFilterToolbar";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +26,14 @@ import {
   GraduationCap,
   Sparkles,
 } from "lucide-react";
-// Dialog removed - preferences now full-page
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface UniversityMatch {
   id: string;
@@ -38,6 +51,13 @@ interface UniversityMatch {
     location_type: string | null;
     website: string | null;
     ranking_global: number | null;
+    city?: string | null;
+    qs_rank?: number | null;
+    offers_full_scholarship?: boolean | null;
+    scholarship_name?: string | null;
+    scholarship_coverage?: string | null;
+    international_student_pct?: number | null;
+    campus_setting?: string | null;
   };
   match_score: number;
   match_reason: string | null;
@@ -55,24 +75,28 @@ export default function UniversityMatch() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  // Filters & sort
-  const [filters, setFilters] = useState<MatchFilters>({
-    country: null,
-    tuitionMax: null,
-    acceptanceMin: null,
-    programType: null,
+  // Enhanced filters & sort
+  const [filters, setFilters] = useState<UniversityFilters>({
+    search: "",
+    scholarshipOnly: false,
+    region: null,
+    acceptanceRange: null,
+    tuitionRange: null,
   });
-  const [sortBy, setSortBy] = useState<SortOption>("match");
+  const [sortBy, setSortBy] = useState<UniversitySortOption>("qs-rank");
+
+  // Refresh scholarship
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
+  const [confirmRefreshOpen, setConfirmRefreshOpen] = useState(false);
 
   // AI Advisor drawer
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [selectedUniversity, setSelectedUniversity] = useState<string | null>(null);
 
-  // Edit profile dialog
+  // Edit profile
   const [editingProfile, setEditingProfile] = useState(false);
   const [editStep, setEditStep] = useState<"portfolio" | "preferences">("portfolio");
-
-  // Silent first-use profile check
   const [needsSetup, setNeedsSetup] = useState(false);
 
   useEffect(() => {
@@ -90,7 +114,6 @@ export default function UniversityMatch() {
 
   async function checkAndLoad() {
     try {
-      // Check if user has preferences
       const { data: prefs } = await supabase
         .from("university_preferences")
         .select("id")
@@ -104,7 +127,6 @@ export default function UniversityMatch() {
         setLoading(false);
         return;
       }
-
       await loadMatches();
     } catch (err) {
       console.error(err);
@@ -115,7 +137,6 @@ export default function UniversityMatch() {
   async function loadMatches() {
     if (!user) return;
     setLoading(true);
-
     try {
       const { data, error } = await supabase
         .from("student_university_matches")
@@ -124,7 +145,9 @@ export default function UniversityMatch() {
           university:university_database (
             id, name, country, logo_url, acceptance_rate, avg_sat_score,
             tuition_usd, living_cost_monthly, student_population, programs,
-            location_type, website, ranking_global
+            location_type, website, ranking_global, city, qs_rank,
+            offers_full_scholarship, scholarship_name, scholarship_coverage,
+            international_student_pct, campus_setting, last_refreshed_at
           )
         `)
         .eq("student_id", user.id)
@@ -133,13 +156,20 @@ export default function UniversityMatch() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        setMatches(
-          data.map((m) => ({
-            ...m,
-            university: m.university as any,
-            financial_estimate: m.financial_estimate as any,
-          }))
-        );
+        const mapped = data.map((m: any) => ({
+          ...m,
+          university: m.university as any,
+          financial_estimate: m.financial_estimate as any,
+        }));
+        setMatches(mapped);
+
+        // Get last refreshed date
+        const refreshDates = mapped
+          .map((m: any) => m.university?.last_refreshed_at)
+          .filter(Boolean);
+        if (refreshDates.length > 0) {
+          setLastRefreshed(refreshDates.sort().reverse()[0]);
+        }
       } else {
         await generateMatches();
       }
@@ -181,6 +211,25 @@ export default function UniversityMatch() {
     }
   }
 
+  async function handleRefreshScholarships() {
+    setConfirmRefreshOpen(false);
+    setRefreshing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("refresh-scholarships");
+      if (error) throw error;
+      toast({
+        title: "Scholarship data updated",
+        description: data?.message || "Scholarship data has been refreshed.",
+      });
+      await loadMatches();
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to refresh scholarship data", variant: "destructive" });
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   function handleGetPlan(universityName: string) {
     setSelectedUniversity(universityName);
     setAdvisorOpen(true);
@@ -190,54 +239,88 @@ export default function UniversityMatch() {
   const filteredAndSorted = useMemo(() => {
     let result = [...matches];
 
-    if (filters.country) {
-      result = result.filter((m) => m.university.country === filters.country);
-    }
-    if (filters.tuitionMax) {
+    // Search
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
       result = result.filter(
         (m) =>
-          !m.university.tuition_usd || m.university.tuition_usd <= filters.tuitionMax!
-      );
-    }
-    if (filters.acceptanceMin) {
-      result = result.filter(
-        (m) =>
-          !m.university.acceptance_rate ||
-          m.university.acceptance_rate >= filters.acceptanceMin!
+          m.university.name.toLowerCase().includes(q) ||
+          m.university.country.toLowerCase().includes(q) ||
+          (m.university.city && m.university.city.toLowerCase().includes(q))
       );
     }
 
+    // Scholarship only
+    if (filters.scholarshipOnly) {
+      result = result.filter((m) => m.university.offers_full_scholarship);
+    }
+
+    // Region
+    if (filters.region) {
+      result = result.filter(
+        (m) => getRegionForCountry(m.university.country) === filters.region
+      );
+    }
+
+    // Acceptance range
+    if (filters.acceptanceRange) {
+      result = result.filter((m) => {
+        const rate = m.university.acceptance_rate;
+        if (rate == null) return false;
+        switch (filters.acceptanceRange) {
+          case "under10": return rate < 10;
+          case "10to30": return rate >= 10 && rate < 30;
+          case "30to60": return rate >= 30 && rate < 60;
+          case "over60": return rate >= 60;
+          default: return true;
+        }
+      });
+    }
+
+    // Tuition range
+    if (filters.tuitionRange) {
+      result = result.filter((m) => {
+        const t = m.university.tuition_usd;
+        if (t == null) return false;
+        switch (filters.tuitionRange) {
+          case "under10k": return t < 10000;
+          case "10to25k": return t >= 10000 && t < 25000;
+          case "25to50k": return t >= 25000 && t < 50000;
+          case "over50k": return t >= 50000;
+          default: return true;
+        }
+      });
+    }
+
+    // Sort
     switch (sortBy) {
-      case "match":
-        result.sort((a, b) => b.match_score - a.match_score);
+      case "qs-rank":
+        result.sort((a, b) => (a.university.qs_rank || 9999) - (b.university.qs_rank || 9999));
         break;
-      case "acceptance":
-        result.sort(
-          (a, b) =>
-            (b.university.acceptance_rate || 0) - (a.university.acceptance_rate || 0)
-        );
+      case "acceptance-high":
+        result.sort((a, b) => (b.university.acceptance_rate || 0) - (a.university.acceptance_rate || 0));
+        break;
+      case "acceptance-low":
+        result.sort((a, b) => (a.university.acceptance_rate || 999) - (b.university.acceptance_rate || 999));
         break;
       case "tuition-asc":
-        result.sort(
-          (a, b) =>
-            (a.university.tuition_usd || 999999) - (b.university.tuition_usd || 999999)
-        );
+        result.sort((a, b) => (a.university.tuition_usd || 999999) - (b.university.tuition_usd || 999999));
         break;
-      case "ranking":
-        result.sort(
-          (a, b) =>
-            (a.university.ranking_global || 9999) - (b.university.ranking_global || 9999)
-        );
+      case "tuition-desc":
+        result.sort((a, b) => (b.university.tuition_usd || 0) - (a.university.tuition_usd || 0));
+        break;
+      case "scholarship":
+        result.sort((a, b) => {
+          const aSchol = a.university.offers_full_scholarship ? 1 : 0;
+          const bSchol = b.university.offers_full_scholarship ? 1 : 0;
+          if (bSchol !== aSchol) return bSchol - aSchol;
+          return (a.university.qs_rank || 9999) - (b.university.qs_rank || 9999);
+        });
         break;
     }
 
     return result;
   }, [matches, filters, sortBy]);
-
-  const availableCountries = useMemo(
-    () => [...new Set(matches.map((m) => m.university.country))].sort(),
-    [matches]
-  );
 
   const savedMatches = useMemo(
     () =>
@@ -257,6 +340,16 @@ export default function UniversityMatch() {
     [matches]
   );
 
+  const clearAllFilters = useCallback(() => {
+    setFilters({
+      search: "",
+      scholarshipOnly: false,
+      region: null,
+      acceptanceRange: null,
+      tuitionRange: null,
+    });
+  }, []);
+
   if (schoolLoading) {
     return (
       <DashboardLayout>
@@ -270,6 +363,25 @@ export default function UniversityMatch() {
   return (
     <DashboardLayout>
       <LockedFeatureModal open={showLockedModal} onOpenChange={setShowLockedModal} />
+
+      {/* Refresh Confirmation Dialog */}
+      <Dialog open={confirmRefreshOpen} onOpenChange={setConfirmRefreshOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Refresh Scholarship Data</DialogTitle>
+            <DialogDescription>
+              This will re-fetch the latest scholarship and acceptance data from the web for all universities. This may take 1–2 minutes. Continue?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmRefreshOpen(false)}>Cancel</Button>
+            <Button onClick={handleRefreshScholarships} className="gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Refresh Now
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Full-page Profile/Preferences Editor */}
       {editingProfile && (
@@ -350,15 +462,17 @@ export default function UniversityMatch() {
               </div>
             </div>
 
-            {/* Filter Bar */}
+            {/* Enhanced Filter Toolbar */}
             {matches.length > 0 && (
-              <MatchFilterBar
+              <UniversityFilterToolbar
                 filters={filters}
                 sortBy={sortBy}
                 onFiltersChange={setFilters}
                 onSortChange={setSortBy}
-                availableCountries={availableCountries}
                 totalResults={filteredAndSorted.length}
+                onRefreshScholarships={() => setConfirmRefreshOpen(true)}
+                refreshing={refreshing}
+                lastRefreshed={lastRefreshed}
               />
             )}
 
@@ -374,13 +488,11 @@ export default function UniversityMatch() {
               </div>
             )}
 
-            {/* Empty State */}
+            {/* Empty State - No matches at all */}
             {!loading && !generating && matches.length === 0 && (
               <div className="text-center py-20 space-y-4">
                 <GraduationCap className="w-14 h-14 mx-auto text-muted-foreground" />
-                <h3 className="text-lg font-semibold text-foreground">
-                  No matches yet
-                </h3>
+                <h3 className="text-lg font-semibold text-foreground">No matches yet</h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
                   Complete your profile and preferences to get personalized university recommendations.
                 </p>
@@ -389,6 +501,11 @@ export default function UniversityMatch() {
                   Set Up Profile
                 </Button>
               </div>
+            )}
+
+            {/* Empty State - Filters returned nothing */}
+            {!loading && !generating && matches.length > 0 && filteredAndSorted.length === 0 && (
+              <EmptyFilterState onClear={clearAllFilters} />
             )}
 
             {/* University Cards Grid */}

@@ -36,6 +36,13 @@ interface UniversityData {
   ranking_global: number | null;
   description?: string | null;
   application_deadline?: string | null;
+  city?: string | null;
+  qs_rank?: number | null;
+  offers_full_scholarship?: boolean | null;
+  scholarship_name?: string | null;
+  scholarship_coverage?: string | null;
+  international_student_pct?: number | null;
+  campus_setting?: string | null;
 }
 
 interface UniversityCardProps {
@@ -113,7 +120,7 @@ export function UniversityCard({
     >
       <div className="p-5">
         {/* Header: Logo + Name + Match Badge */}
-        <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 text-lg">
               {university.logo_url ? (
@@ -131,8 +138,8 @@ export function UniversityCard({
                 {university.name}
               </h3>
               <p className="text-xs text-muted-foreground">
-                {flag} {university.country}
-                {university.location_type && ` · ${university.location_type}`}
+                {flag} {university.city ? `${university.city}, ` : ""}{university.country}
+                {university.campus_setting && ` · ${university.campus_setting}`}
               </p>
             </div>
           </div>
@@ -145,6 +152,32 @@ export function UniversityCard({
           >
             {score}%
           </div>
+        </div>
+
+        {/* QS Rank + Scholarship Badges */}
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          {university.qs_rank && (
+            <span className="text-xs bg-background border border-border text-muted-foreground px-2 py-0.5 rounded-full">
+              #{university.qs_rank} QS
+            </span>
+          )}
+          {university.offers_full_scholarship && (
+            <span className="text-xs bg-emerald-500/20 border border-emerald-500/40 text-emerald-500 font-semibold px-3 py-1 rounded-full flex items-center gap-1">
+              🎓 Full Scholarship Available
+            </span>
+          )}
+          {university.acceptance_rate != null && (
+            <span className={cn(
+              "text-xs px-2 py-0.5 rounded-full font-medium",
+              university.acceptance_rate < 10
+                ? "bg-destructive/20 text-destructive"
+                : university.acceptance_rate < 30
+                ? "bg-amber-500/20 text-amber-500"
+                : "bg-emerald-500/20 text-emerald-500"
+            )}>
+              {university.acceptance_rate}% acceptance
+            </span>
+          )}
         </div>
 
         {/* 3 Key Stats */}
@@ -183,6 +216,13 @@ export function UniversityCard({
             <p className="text-[10px] text-muted-foreground">World Rank</p>
           </div>
         </div>
+
+        {/* Scholarship Details */}
+        {university.scholarship_name && (
+          <p className="text-xs text-emerald-500 mb-3">
+            ✦ {university.scholarship_name}{university.scholarship_coverage ? ` — ${university.scholarship_coverage}` : ""}
+          </p>
+        )}
 
         {/* Match Reason Tags */}
         {reasons.length > 0 && (
