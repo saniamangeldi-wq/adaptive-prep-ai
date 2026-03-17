@@ -36,6 +36,13 @@ interface UniversityData {
   ranking_global: number | null;
   description?: string | null;
   application_deadline?: string | null;
+  city?: string | null;
+  qs_rank?: number | null;
+  offers_full_scholarship?: boolean | null;
+  scholarship_name?: string | null;
+  scholarship_coverage?: string | null;
+  international_student_pct?: number | null;
+  campus_setting?: string | null;
 }
 
 interface UniversityCardProps {
