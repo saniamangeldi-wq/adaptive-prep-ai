@@ -89,6 +89,7 @@ export function UniversityCard({
   onGetPlan,
 }: UniversityCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [financialOpen, setFinancialOpen] = useState(false);
   const score = Math.round(matchScore);
   const flag = COUNTRY_FLAGS[university.country] || "🌍";
 
