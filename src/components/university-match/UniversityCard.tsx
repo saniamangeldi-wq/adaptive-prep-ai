@@ -15,8 +15,10 @@ import {
   Sparkles,
   Bookmark,
   GraduationCap,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FinancialReadinessPlanner } from "./financial/FinancialReadinessPlanner";
 
 interface UniversityData {
   id: string;
