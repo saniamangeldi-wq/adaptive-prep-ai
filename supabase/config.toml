@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.university-advisor]
 verify_jwt = false
+
+[functions.seed-universities]
+verify_jwt = false
+
+[functions.refresh-scholarships]
+verify_jwt = false
