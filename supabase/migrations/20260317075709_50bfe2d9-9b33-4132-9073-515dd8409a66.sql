@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS idx_university_database_name_country ON public.university_database(name, country);
