@@ -217,6 +217,13 @@ export function UniversityCard({
           </div>
         </div>
 
+        {/* Scholarship Details */}
+        {university.scholarship_name && (
+          <p className="text-xs text-emerald-500 mb-3">
+            ✦ {university.scholarship_name}{university.scholarship_coverage ? ` — ${university.scholarship_coverage}` : ""}
+          </p>
+        )}
+
         {/* Match Reason Tags */}
         {reasons.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
