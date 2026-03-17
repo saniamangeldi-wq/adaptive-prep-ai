@@ -1462,75 +1462,132 @@ export type Database = {
       university_database: {
         Row: {
           acceptance_rate: number | null
+          acceptance_rate_label: string | null
           admission_requirements: Json | null
           application_deadline: string | null
           avg_sat_score: number | null
+          campus_setting: string | null
           career_outcomes: Json | null
+          city: string | null
           climate: string | null
           country: string
           created_at: string
+          data_source: string | null
           description: string | null
           id: string
+          ielts_min: number | null
+          international_student_pct: number | null
           language_of_instruction: string[] | null
+          last_refreshed_at: string | null
           living_cost_monthly: number | null
+          living_cost_usd: number | null
           location_type: string | null
           logo_url: string | null
           min_grade_requirement: number | null
           name: string
+          offers_full_scholarship: boolean | null
+          popular_majors: string[] | null
           programs: string[] | null
+          qs_rank: number | null
           ranking_global: number | null
+          sat_range: string | null
+          scholarship_coverage: string | null
+          scholarship_deadline: string | null
+          scholarship_name: string | null
+          scholarship_open_to: string | null
           scholarship_types: Json | null
+          scholarship_url: string | null
           student_population: number | null
+          times_rank: number | null
+          toefl_min: number | null
           tuition_usd: number | null
           updated_at: string
           website: string | null
         }
         Insert: {
           acceptance_rate?: number | null
+          acceptance_rate_label?: string | null
           admission_requirements?: Json | null
           application_deadline?: string | null
           avg_sat_score?: number | null
+          campus_setting?: string | null
           career_outcomes?: Json | null
+          city?: string | null
           climate?: string | null
           country: string
           created_at?: string
+          data_source?: string | null
           description?: string | null
           id?: string
+          ielts_min?: number | null
+          international_student_pct?: number | null
           language_of_instruction?: string[] | null
+          last_refreshed_at?: string | null
           living_cost_monthly?: number | null
+          living_cost_usd?: number | null
           location_type?: string | null
           logo_url?: string | null
           min_grade_requirement?: number | null
           name: string
+          offers_full_scholarship?: boolean | null
+          popular_majors?: string[] | null
           programs?: string[] | null
+          qs_rank?: number | null
           ranking_global?: number | null
+          sat_range?: string | null
+          scholarship_coverage?: string | null
+          scholarship_deadline?: string | null
+          scholarship_name?: string | null
+          scholarship_open_to?: string | null
           scholarship_types?: Json | null
+          scholarship_url?: string | null
           student_population?: number | null
+          times_rank?: number | null
+          toefl_min?: number | null
           tuition_usd?: number | null
           updated_at?: string
           website?: string | null
         }
         Update: {
           acceptance_rate?: number | null
+          acceptance_rate_label?: string | null
           admission_requirements?: Json | null
           application_deadline?: string | null
           avg_sat_score?: number | null
+          campus_setting?: string | null
           career_outcomes?: Json | null
+          city?: string | null
           climate?: string | null
           country?: string
           created_at?: string
+          data_source?: string | null
           description?: string | null
           id?: string
+          ielts_min?: number | null
+          international_student_pct?: number | null
           language_of_instruction?: string[] | null
+          last_refreshed_at?: string | null
           living_cost_monthly?: number | null
+          living_cost_usd?: number | null
           location_type?: string | null
           logo_url?: string | null
           min_grade_requirement?: number | null
           name?: string
+          offers_full_scholarship?: boolean | null
+          popular_majors?: string[] | null
           programs?: string[] | null
+          qs_rank?: number | null
           ranking_global?: number | null
+          sat_range?: string | null
+          scholarship_coverage?: string | null
+          scholarship_deadline?: string | null
+          scholarship_name?: string | null
+          scholarship_open_to?: string | null
           scholarship_types?: Json | null
+          scholarship_url?: string | null
           student_population?: number | null
+          times_rank?: number | null
+          toefl_min?: number | null
           tuition_usd?: number | null
           updated_at?: string
           website?: string | null
