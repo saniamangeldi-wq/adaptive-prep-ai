@@ -443,6 +443,54 @@ export type Database = {
           },
         ]
       }
+      financial_reports: {
+        Row: {
+          city: string | null
+          confidence_score: number | null
+          country: string | null
+          created_at: string | null
+          enrollment_date: string | null
+          gap_usd: number | null
+          id: string
+          projected_savings_usd: number | null
+          report_data: Json | null
+          total_needed_usd: number | null
+          university_name: string | null
+          user_id: string
+          verdict: string | null
+        }
+        Insert: {
+          city?: string | null
+          confidence_score?: number | null
+          country?: string | null
+          created_at?: string | null
+          enrollment_date?: string | null
+          gap_usd?: number | null
+          id?: string
+          projected_savings_usd?: number | null
+          report_data?: Json | null
+          total_needed_usd?: number | null
+          university_name?: string | null
+          user_id: string
+          verdict?: string | null
+        }
+        Update: {
+          city?: string | null
+          confidence_score?: number | null
+          country?: string | null
+          created_at?: string | null
+          enrollment_date?: string | null
+          gap_usd?: number | null
+          id?: string
+          projected_savings_usd?: number | null
+          report_data?: Json | null
+          total_needed_usd?: number | null
+          university_name?: string | null
+          user_id?: string
+          verdict?: string | null
+        }
+        Relationships: []
+      }
       flashcard_decks: {
         Row: {
           card_count: number | null

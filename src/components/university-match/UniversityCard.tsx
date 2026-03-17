@@ -15,8 +15,10 @@ import {
   Sparkles,
   Bookmark,
   GraduationCap,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FinancialReadinessPlanner } from "./financial/FinancialReadinessPlanner";
 
 interface UniversityData {
   id: string;
@@ -87,6 +89,7 @@ export function UniversityCard({
   onGetPlan,
 }: UniversityCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [financialOpen, setFinancialOpen] = useState(false);
   const score = Math.round(matchScore);
   const flag = COUNTRY_FLAGS[university.country] || "🌍";
 
@@ -218,6 +221,15 @@ export function UniversityCard({
           </Button>
           <div className="flex-1" />
           <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5 border-[#10B981] text-[#10B981] hover:bg-[#10B981] hover:text-white"
+            onClick={() => setFinancialOpen(true)}
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            Plan Finances
+          </Button>
+          <Button
             variant="ghost"
             size="icon"
             className={cn(
@@ -250,6 +262,15 @@ export function UniversityCard({
           )}
         </div>
       </div>
+
+      {/* Financial Readiness Planner Modal */}
+      <FinancialReadinessPlanner
+        open={financialOpen}
+        onOpenChange={setFinancialOpen}
+        universityName={university.name}
+        city={university.location_type || ""}
+        country={university.country}
+      />
 
       {/* Expanded Details */}
       {expanded && (
