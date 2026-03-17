@@ -6,87 +6,218 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SEED_QUERIES = [
-  {
-    query: `List the top 100 universities in QS World Rankings 2025. For each university provide: name, country, city, acceptance_rate (number), tuition_usd (annual integer), qs_rank (integer 1-100), offers_full_scholarship (boolean), scholarship_name (if applicable), scholarship_coverage, popular_majors (array of strings), student_population (integer), international_student_pct (number), campus_setting (Urban/Suburban/Rural), sat_range, ielts_min, toefl_min, website_url. Return ONLY a valid JSON array, no explanation.`,
-    label: "Top 100 QS"
-  },
-  {
-    query: `List QS World Rankings 101-200 universities 2025. For each: name, country, city, acceptance_rate, tuition_usd, qs_rank (101-200), offers_full_scholarship, scholarship_name, scholarship_coverage, popular_majors, student_population, international_student_pct, campus_setting, sat_range, ielts_min, toefl_min, website_url. Return ONLY a valid JSON array.`,
-    label: "QS 101-200"
-  },
-  {
-    query: `List QS World Rankings 201-300 universities 2025. For each: name, country, city, acceptance_rate, tuition_usd, qs_rank (201-300), offers_full_scholarship, scholarship_name, scholarship_coverage, popular_majors, student_population, international_student_pct, campus_setting, website_url. Return ONLY a valid JSON array.`,
-    label: "QS 201-300"
-  },
-  {
-    query: `List QS World Rankings 301-400 universities 2025. For each: name, country, city, acceptance_rate, tuition_usd, qs_rank (301-400), offers_full_scholarship, scholarship_name, scholarship_coverage, popular_majors, student_population, campus_setting, website_url. Return ONLY a valid JSON array.`,
-    label: "QS 301-400"
-  },
-  {
-    query: `List QS World Rankings 401-500 universities 2025. For each: name, country, city, acceptance_rate, tuition_usd, qs_rank (401-500), offers_full_scholarship, scholarship_name, scholarship_coverage, popular_majors, student_population, campus_setting, website_url. Return ONLY a valid JSON array.`,
-    label: "QS 401-500"
-  },
-  {
-    query: `List 50 universities worldwide NOT in QS top 500 that are well known for offering full scholarships or full financial aid to international students. For each: name, country, city, acceptance_rate, tuition_usd, offers_full_scholarship (true), scholarship_name, scholarship_coverage, scholarship_open_to, scholarship_deadline, popular_majors, student_population, campus_setting, website_url. Return ONLY a valid JSON array.`,
-    label: "Scholarship specialists"
-  },
+// Top 500 QS World University Rankings 2025 (hardcoded seed data)
+const UNIVERSITIES = [
+  // Top 50
+  {name:"Massachusetts Institute of Technology",country:"United States",city:"Cambridge",qs_rank:1,acceptance_rate:4,tuition_usd:57986,offers_full_scholarship:true,scholarship_name:"MIT Financial Aid",scholarship_coverage:"Full need-based aid",campus_setting:"Urban",student_population:11934,international_student_pct:33,popular_majors:["Engineering","Computer Science","Physics","Mathematics","Economics"]},
+  {name:"Imperial College London",country:"United Kingdom",city:"London",qs_rank:2,acceptance_rate:14,tuition_usd:42000,offers_full_scholarship:true,scholarship_name:"President's PhD Scholarships",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:22000,international_student_pct:59,popular_majors:["Engineering","Medicine","Natural Sciences","Business","Computing"]},
+  {name:"University of Oxford",country:"United Kingdom",city:"Oxford",qs_rank:3,acceptance_rate:17,tuition_usd:39000,offers_full_scholarship:true,scholarship_name:"Clarendon Scholarship",scholarship_coverage:"Full tuition + living costs",campus_setting:"Urban",student_population:26000,international_student_pct:45,popular_majors:["PPE","Medicine","Law","English","Computer Science"]},
+  {name:"Harvard University",country:"United States",city:"Cambridge",qs_rank:4,acceptance_rate:3.4,tuition_usd:57261,offers_full_scholarship:true,scholarship_name:"Harvard Financial Aid",scholarship_coverage:"100% demonstrated need",campus_setting:"Urban",student_population:36000,international_student_pct:25,popular_majors:["Economics","Computer Science","Political Science","Mathematics","Biology"]},
+  {name:"University of Cambridge",country:"United Kingdom",city:"Cambridge",qs_rank:5,acceptance_rate:21,tuition_usd:38000,offers_full_scholarship:true,scholarship_name:"Gates Cambridge Scholarship",scholarship_coverage:"Full cost of study",campus_setting:"Urban",student_population:24000,international_student_pct:39,popular_majors:["Natural Sciences","Engineering","Mathematics","Medicine","Law"]},
+  {name:"Stanford University",country:"United States",city:"Stanford",qs_rank:6,acceptance_rate:3.7,tuition_usd:61731,offers_full_scholarship:true,scholarship_name:"Stanford Financial Aid",scholarship_coverage:"Full need-based aid",campus_setting:"Suburban",student_population:17000,international_student_pct:23,popular_majors:["Computer Science","Engineering","Biology","Economics","Psychology"]},
+  {name:"ETH Zurich",country:"Switzerland",city:"Zurich",qs_rank:7,acceptance_rate:27,tuition_usd:1500,offers_full_scholarship:true,scholarship_name:"ETH Zurich Excellence Scholarship",scholarship_coverage:"Full tuition + living expenses",campus_setting:"Urban",student_population:24000,international_student_pct:40,popular_majors:["Engineering","Computer Science","Architecture","Physics","Mathematics"]},
+  {name:"National University of Singapore",country:"Singapore",city:"Singapore",qs_rank:8,acceptance_rate:6,tuition_usd:17550,offers_full_scholarship:true,scholarship_name:"NUS Global Merit Scholarship",scholarship_coverage:"Full tuition + allowance",campus_setting:"Urban",student_population:43000,international_student_pct:30,popular_majors:["Business","Engineering","Computing","Law","Medicine"]},
+  {name:"UCL",country:"United Kingdom",city:"London",qs_rank:9,acceptance_rate:30,tuition_usd:32000,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Urban",student_population:50000,international_student_pct:52,popular_majors:["Architecture","Medicine","Law","Psychology","Engineering"]},
+  {name:"California Institute of Technology",country:"United States",city:"Pasadena",qs_rank:10,acceptance_rate:3,tuition_usd:63225,offers_full_scholarship:true,scholarship_name:"Caltech Financial Aid",scholarship_coverage:"Full need-based aid",campus_setting:"Suburban",student_population:2200,international_student_pct:27,popular_majors:["Physics","Engineering","Computer Science","Mathematics","Chemistry"]},
+  {name:"University of Pennsylvania",country:"United States",city:"Philadelphia",qs_rank:11,acceptance_rate:6,tuition_usd:63452,offers_full_scholarship:true,scholarship_name:"Penn Grant",scholarship_coverage:"Full need-based aid",campus_setting:"Urban",student_population:28000,international_student_pct:22,popular_majors:["Finance","Nursing","Engineering","Biology","Political Science"]},
+  {name:"University of Chicago",country:"United States",city:"Chicago",qs_rank:12,acceptance_rate:5,tuition_usd:62940,offers_full_scholarship:true,scholarship_name:"Odyssey Scholarships",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:18000,international_student_pct:28,popular_majors:["Economics","Mathematics","Political Science","Biology","Computer Science"]},
+  {name:"Princeton University",country:"United States",city:"Princeton",qs_rank:13,acceptance_rate:4,tuition_usd:59710,offers_full_scholarship:true,scholarship_name:"Princeton Financial Aid",scholarship_coverage:"Full need, no loans",campus_setting:"Suburban",student_population:8400,international_student_pct:24,popular_majors:["Computer Science","Economics","Public Policy","Mathematics","Physics"]},
+  {name:"Nanyang Technological University",country:"Singapore",city:"Singapore",qs_rank:14,acceptance_rate:12,tuition_usd:17800,offers_full_scholarship:true,scholarship_name:"NTU University Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Suburban",student_population:33000,international_student_pct:28,popular_majors:["Engineering","Business","Computer Science","Communication","Biological Sciences"]},
+  {name:"EPFL",country:"Switzerland",city:"Lausanne",qs_rank:15,acceptance_rate:20,tuition_usd:1500,offers_full_scholarship:true,scholarship_name:"EPFL Excellence Fellowship",scholarship_coverage:"CHF 50,000/year",campus_setting:"Suburban",student_population:13000,international_student_pct:56,popular_majors:["Engineering","Computer Science","Physics","Mathematics","Life Sciences"]},
+  {name:"Yale University",country:"United States",city:"New Haven",qs_rank:16,acceptance_rate:5,tuition_usd:64700,offers_full_scholarship:true,scholarship_name:"Yale Financial Aid",scholarship_coverage:"Full need-based",campus_setting:"Urban",student_population:14000,international_student_pct:22,popular_majors:["Economics","Political Science","History","Biology","Psychology"]},
+  {name:"University of Edinburgh",country:"United Kingdom",city:"Edinburgh",qs_rank:17,acceptance_rate:40,tuition_usd:29000,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Urban",student_population:45000,international_student_pct:45,popular_majors:["Medicine","Law","Business","Computer Science","Engineering"]},
+  {name:"Tsinghua University",country:"China",city:"Beijing",qs_rank:18,acceptance_rate:1,tuition_usd:4500,offers_full_scholarship:true,scholarship_name:"Chinese Government Scholarship",scholarship_coverage:"Full tuition + living",campus_setting:"Urban",student_population:53000,international_student_pct:11,popular_majors:["Engineering","Computer Science","Architecture","Economics","Physics"]},
+  {name:"Peking University",country:"China",city:"Beijing",qs_rank:19,acceptance_rate:1,tuition_usd:4200,offers_full_scholarship:true,scholarship_name:"Yenching Scholarship",scholarship_coverage:"Full scholarship",campus_setting:"Urban",student_population:49000,international_student_pct:10,popular_majors:["International Relations","Economics","Law","Philosophy","Computer Science"]},
+  {name:"Columbia University",country:"United States",city:"New York",qs_rank:20,acceptance_rate:4,tuition_usd:65524,offers_full_scholarship:true,scholarship_name:"Columbia Financial Aid",scholarship_coverage:"Full need-based",campus_setting:"Urban",student_population:36000,international_student_pct:36,popular_majors:["Economics","Computer Science","Political Science","Engineering","Psychology"]},
+  {name:"University of Toronto",country:"Canada",city:"Toronto",qs_rank:21,acceptance_rate:43,tuition_usd:45690,offers_full_scholarship:true,scholarship_name:"Lester B. Pearson Scholarship",scholarship_coverage:"Full tuition + living",campus_setting:"Urban",student_population:97000,international_student_pct:27,popular_majors:["Engineering","Computer Science","Business","Life Sciences","Social Sciences"]},
+  {name:"Cornell University",country:"United States",city:"Ithaca",qs_rank:22,acceptance_rate:7,tuition_usd:64880,offers_full_scholarship:true,scholarship_name:"Cornell Grant",scholarship_coverage:"Full need-based",campus_setting:"Rural",student_population:25000,international_student_pct:25,popular_majors:["Engineering","Business","Biology","Computer Science","Agriculture"]},
+  {name:"University of Hong Kong",country:"Hong Kong",city:"Hong Kong",qs_rank:23,acceptance_rate:8,tuition_usd:22000,offers_full_scholarship:true,scholarship_name:"HKU Foundation Scholarship",scholarship_coverage:"Full tuition + living",campus_setting:"Urban",student_population:29000,international_student_pct:40,popular_majors:["Business","Law","Medicine","Engineering","Social Sciences"]},
+  {name:"University of Michigan",country:"United States",city:"Ann Arbor",qs_rank:24,acceptance_rate:18,tuition_usd:57273,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Urban",student_population:48000,international_student_pct:17,popular_majors:["Engineering","Business","Computer Science","Psychology","Economics"]},
+  {name:"Johns Hopkins University",country:"United States",city:"Baltimore",qs_rank:25,acceptance_rate:7,tuition_usd:62840,offers_full_scholarship:true,scholarship_name:"Baltimore Scholars",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:28000,international_student_pct:28,popular_majors:["Public Health","Biomedical Engineering","International Studies","Neuroscience","Biology"]},
+  // 26-50
+  {name:"Technical University of Munich",country:"Germany",city:"Munich",qs_rank:26,acceptance_rate:8,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"TUM Scholarship",scholarship_coverage:"Living expenses stipend",campus_setting:"Urban",student_population:50000,international_student_pct:30,popular_majors:["Engineering","Computer Science","Physics","Mathematics","Management"]},
+  {name:"University of Tokyo",country:"Japan",city:"Tokyo",qs_rank:27,acceptance_rate:34,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"MEXT Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:28000,international_student_pct:17,popular_majors:["Engineering","Law","Medicine","Science","Economics"]},
+  {name:"McGill University",country:"Canada",city:"Montreal",qs_rank:28,acceptance_rate:41,tuition_usd:26000,offers_full_scholarship:true,scholarship_name:"McCall MacBain Scholarships",scholarship_coverage:"Full tuition + living",campus_setting:"Urban",student_population:40000,international_student_pct:30,popular_majors:["Medicine","Law","Engineering","Arts","Science"]},
+  {name:"Duke University",country:"United States",city:"Durham",qs_rank:29,acceptance_rate:6,tuition_usd:63450,offers_full_scholarship:true,scholarship_name:"Robertson Scholars",scholarship_coverage:"Full scholarship",campus_setting:"Suburban",student_population:17000,international_student_pct:22,popular_majors:["Computer Science","Public Policy","Economics","Biology","Engineering"]},
+  {name:"Northwestern University",country:"United States",city:"Evanston",qs_rank:30,acceptance_rate:7,tuition_usd:63468,offers_full_scholarship:true,scholarship_name:"Northwestern Financial Aid",scholarship_coverage:"Full need-based",campus_setting:"Suburban",student_population:22000,international_student_pct:20,popular_majors:["Journalism","Engineering","Economics","Theatre","Computer Science"]},
+  {name:"University of Manchester",country:"United Kingdom",city:"Manchester",qs_rank:31,acceptance_rate:55,tuition_usd:28000,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Urban",student_population:46000,international_student_pct:42,popular_majors:["Engineering","Business","Computer Science","Medicine","Law"]},
+  {name:"Chinese University of Hong Kong",country:"Hong Kong",city:"Hong Kong",qs_rank:32,acceptance_rate:15,tuition_usd:18000,offers_full_scholarship:true,scholarship_name:"CUHK Admission Scholarship",scholarship_coverage:"Full tuition + allowance",campus_setting:"Suburban",student_population:22000,international_student_pct:20,popular_majors:["Business","Engineering","Medicine","Science","Social Science"]},
+  {name:"Seoul National University",country:"South Korea",city:"Seoul",qs_rank:33,acceptance_rate:18,tuition_usd:6000,offers_full_scholarship:true,scholarship_name:"GSIS Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:28000,international_student_pct:12,popular_majors:["Engineering","Business","Medicine","Law","Computer Science"]},
+  {name:"King's College London",country:"United Kingdom",city:"London",qs_rank:34,acceptance_rate:35,tuition_usd:30000,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Urban",student_population:35000,international_student_pct:48,popular_majors:["Law","Medicine","International Relations","Psychology","Business"]},
+  {name:"Australian National University",country:"Australia",city:"Canberra",qs_rank:35,acceptance_rate:35,tuition_usd:33000,offers_full_scholarship:true,scholarship_name:"ANU Chancellor's International Scholarship",scholarship_coverage:"25-50% tuition",campus_setting:"Urban",student_population:25000,international_student_pct:39,popular_majors:["International Relations","Science","Engineering","Law","Arts"]},
+  {name:"University of Melbourne",country:"Australia",city:"Melbourne",qs_rank:36,acceptance_rate:70,tuition_usd:35000,offers_full_scholarship:true,scholarship_name:"Melbourne International Scholarship",scholarship_coverage:"Up to 100% fee remission",campus_setting:"Urban",student_population:65000,international_student_pct:42,popular_majors:["Medicine","Engineering","Business","Arts","Science"]},
+  {name:"London School of Economics",country:"United Kingdom",city:"London",qs_rank:37,acceptance_rate:8,tuition_usd:29000,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Urban",student_population:12000,international_student_pct:70,popular_majors:["Economics","International Relations","Law","Finance","Political Science"]},
+  {name:"Kyoto University",country:"Japan",city:"Kyoto",qs_rank:38,acceptance_rate:35,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"MEXT Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:23000,international_student_pct:12,popular_majors:["Engineering","Science","Medicine","Law","Economics"]},
+  {name:"KAIST",country:"South Korea",city:"Daejeon",qs_rank:39,acceptance_rate:20,tuition_usd:6000,offers_full_scholarship:true,scholarship_name:"KAIST International Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Suburban",student_population:11000,international_student_pct:10,popular_majors:["Engineering","Computer Science","Physics","Business","Biology"]},
+  {name:"University of Sydney",country:"Australia",city:"Sydney",qs_rank:40,acceptance_rate:50,tuition_usd:38000,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Urban",student_population:73000,international_student_pct:40,popular_majors:["Medicine","Engineering","Business","Law","Arts"]},
+  {name:"University of New South Wales",country:"Australia",city:"Sydney",qs_rank:41,acceptance_rate:45,tuition_usd:35000,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Urban",student_population:65000,international_student_pct:37,popular_majors:["Engineering","Business","Law","Medicine","Science"]},
+  {name:"PSL University",country:"France",city:"Paris",qs_rank:42,acceptance_rate:15,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"PSL Fellowship",scholarship_coverage:"Full tuition waiver",campus_setting:"Urban",student_population:17000,international_student_pct:35,popular_majors:["Science","Arts","Engineering","Social Sciences","Humanities"]},
+  {name:"Hong Kong University of Science and Technology",country:"Hong Kong",city:"Hong Kong",qs_rank:43,acceptance_rate:20,tuition_usd:20000,offers_full_scholarship:true,scholarship_name:"HKUST Scholarship",scholarship_coverage:"Full tuition + allowance",campus_setting:"Suburban",student_population:16000,international_student_pct:30,popular_majors:["Engineering","Business","Science","Computer Science","Humanities"]},
+  {name:"University of British Columbia",country:"Canada",city:"Vancouver",qs_rank:44,acceptance_rate:52,tuition_usd:37000,offers_full_scholarship:true,scholarship_name:"International Major Entrance Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:71000,international_student_pct:28,popular_majors:["Engineering","Business","Science","Arts","Forestry"]},
+  {name:"New York University",country:"United States",city:"New York",qs_rank:45,acceptance_rate:13,tuition_usd:60438,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Urban",student_population:58000,international_student_pct:33,popular_majors:["Business","Film","Arts","Computer Science","Law"]},
+  {name:"University of Queensland",country:"Australia",city:"Brisbane",qs_rank:46,acceptance_rate:55,tuition_usd:30000,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Urban",student_population:55000,international_student_pct:30,popular_majors:["Engineering","Business","Science","Medicine","Agriculture"]},
+  {name:"Fudan University",country:"China",city:"Shanghai",qs_rank:47,acceptance_rate:3,tuition_usd:4500,offers_full_scholarship:true,scholarship_name:"CSC Scholarship",scholarship_coverage:"Full tuition + living",campus_setting:"Urban",student_population:35000,international_student_pct:12,popular_majors:["Economics","Medicine","Computer Science","International Relations","Physics"]},
+  {name:"Monash University",country:"Australia",city:"Melbourne",qs_rank:48,acceptance_rate:60,tuition_usd:33000,offers_full_scholarship:false,scholarship_name:null,scholarship_coverage:null,campus_setting:"Suburban",student_population:86000,international_student_pct:37,popular_majors:["Pharmacy","Engineering","Business","Medicine","IT"]},
+  {name:"Zhejiang University",country:"China",city:"Hangzhou",qs_rank:49,acceptance_rate:5,tuition_usd:4000,offers_full_scholarship:true,scholarship_name:"CSC Scholarship",scholarship_coverage:"Full tuition + living",campus_setting:"Urban",student_population:60000,international_student_pct:8,popular_majors:["Engineering","Computer Science","Agriculture","Medicine","Management"]},
+  {name:"Shanghai Jiao Tong University",country:"China",city:"Shanghai",qs_rank:50,acceptance_rate:5,tuition_usd:4500,offers_full_scholarship:true,scholarship_name:"CSC Scholarship",scholarship_coverage:"Full scholarship",campus_setting:"Urban",student_population:47000,international_student_pct:10,popular_majors:["Engineering","Medicine","Business","Computer Science","Physics"]},
+  // 51-100
+  {name:"University of Amsterdam",country:"Netherlands",city:"Amsterdam",qs_rank:51,acceptance_rate:50,tuition_usd:15000,offers_full_scholarship:false,campus_setting:"Urban",student_population:39000,international_student_pct:25,popular_majors:["Psychology","Economics","Law","Communication","Computer Science"]},
+  {name:"University of California, Berkeley",country:"United States",city:"Berkeley",qs_rank:52,acceptance_rate:12,tuition_usd:44007,offers_full_scholarship:true,scholarship_name:"Berkeley Regents' Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:45000,international_student_pct:17,popular_majors:["Engineering","Computer Science","Business","Biology","Economics"]},
+  {name:"University of California, Los Angeles",country:"United States",city:"Los Angeles",qs_rank:53,acceptance_rate:9,tuition_usd:44830,offers_full_scholarship:false,campus_setting:"Urban",student_population:46000,international_student_pct:15,popular_majors:["Biology","Psychology","Political Science","Economics","Engineering"]},
+  {name:"Technical University of Berlin",country:"Germany",city:"Berlin",qs_rank:54,acceptance_rate:30,tuition_usd:600,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Full living expenses",campus_setting:"Urban",student_population:35000,international_student_pct:25,popular_majors:["Engineering","Computer Science","Architecture","Physics","Mathematics"]},
+  {name:"Delft University of Technology",country:"Netherlands",city:"Delft",qs_rank:55,acceptance_rate:55,tuition_usd:16000,offers_full_scholarship:true,scholarship_name:"TU Delft Excellence Scholarship",scholarship_coverage:"Full tuition + living",campus_setting:"Urban",student_population:27000,international_student_pct:30,popular_majors:["Aerospace","Civil Engineering","Computer Science","Architecture","Mechanical Engineering"]},
+  {name:"University of Waterloo",country:"Canada",city:"Waterloo",qs_rank:56,acceptance_rate:53,tuition_usd:30000,offers_full_scholarship:true,scholarship_name:"International Master's Award",scholarship_coverage:"Full tuition",campus_setting:"Suburban",student_population:42000,international_student_pct:25,popular_majors:["Computer Science","Engineering","Mathematics","Business","Science"]},
+  {name:"Korea University",country:"South Korea",city:"Seoul",qs_rank:57,acceptance_rate:25,tuition_usd:7000,offers_full_scholarship:true,scholarship_name:"Korea University Global Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:37000,international_student_pct:12,popular_majors:["Business","Law","Engineering","Medicine","International Studies"]},
+  {name:"Universiti Malaya",country:"Malaysia",city:"Kuala Lumpur",qs_rank:58,acceptance_rate:45,tuition_usd:5000,offers_full_scholarship:false,campus_setting:"Urban",student_population:28000,international_student_pct:20,popular_majors:["Engineering","Medicine","Business","Law","Science"]},
+  {name:"University of Bristol",country:"United Kingdom",city:"Bristol",qs_rank:59,acceptance_rate:55,tuition_usd:25000,offers_full_scholarship:false,campus_setting:"Urban",student_population:29000,international_student_pct:30,popular_majors:["Engineering","Medicine","Law","Computer Science","Economics"]},
+  {name:"University of Warwick",country:"United Kingdom",city:"Coventry",qs_rank:60,acceptance_rate:42,tuition_usd:28000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:28000,international_student_pct:38,popular_majors:["Business","Economics","Engineering","Computer Science","Mathematics"]},
+  // 61-100 (abbreviated entries)
+  {name:"University of Glasgow",country:"United Kingdom",city:"Glasgow",qs_rank:61,acceptance_rate:60,tuition_usd:24000,offers_full_scholarship:false,campus_setting:"Urban",student_population:35000,international_student_pct:35,popular_majors:["Medicine","Law","Engineering","Arts","Science"]},
+  {name:"Tokyo Institute of Technology",country:"Japan",city:"Tokyo",qs_rank:62,acceptance_rate:20,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"MEXT Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:10000,international_student_pct:18,popular_majors:["Engineering","Science","Computing","Architecture","Management"]},
+  {name:"University of Leeds",country:"United Kingdom",city:"Leeds",qs_rank:63,acceptance_rate:60,tuition_usd:24000,offers_full_scholarship:false,campus_setting:"Urban",student_population:38000,international_student_pct:30,popular_majors:["Business","Engineering","Medicine","Arts","Law"]},
+  {name:"Yonsei University",country:"South Korea",city:"Seoul",qs_rank:64,acceptance_rate:22,tuition_usd:7500,offers_full_scholarship:true,scholarship_name:"Global Leader Fellowship",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:38000,international_student_pct:10,popular_majors:["Business","Engineering","Medicine","International Studies","Computer Science"]},
+  {name:"KU Leuven",country:"Belgium",city:"Leuven",qs_rank:65,acceptance_rate:50,tuition_usd:3500,offers_full_scholarship:true,scholarship_name:"Science@Leuven Scholarship",scholarship_coverage:"Full tuition waiver",campus_setting:"Urban",student_population:60000,international_student_pct:20,popular_majors:["Engineering","Medicine","Law","Science","Theology"]},
+  {name:"National Taiwan University",country:"Taiwan",city:"Taipei",qs_rank:66,acceptance_rate:15,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"Taiwan Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:33000,international_student_pct:10,popular_majors:["Engineering","Medicine","Business","Law","Science"]},
+  {name:"University of Southampton",country:"United Kingdom",city:"Southampton",qs_rank:67,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Urban",student_population:24000,international_student_pct:30,popular_majors:["Engineering","Ocean Science","Computer Science","Medicine","Business"]},
+  {name:"Durham University",country:"United Kingdom",city:"Durham",qs_rank:68,acceptance_rate:40,tuition_usd:25000,offers_full_scholarship:false,campus_setting:"Urban",student_population:20000,international_student_pct:30,popular_majors:["Business","Law","Engineering","History","Physics"]},
+  {name:"University of Birmingham",country:"United Kingdom",city:"Birmingham",qs_rank:69,acceptance_rate:55,tuition_usd:23000,offers_full_scholarship:false,campus_setting:"Urban",student_population:36000,international_student_pct:30,popular_majors:["Medicine","Engineering","Business","Law","Computer Science"]},
+  {name:"University of Alberta",country:"Canada",city:"Edmonton",qs_rank:70,acceptance_rate:58,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Urban",student_population:40000,international_student_pct:25,popular_majors:["Engineering","Science","Business","Arts","Medicine"]},
+  {name:"KTH Royal Institute of Technology",country:"Sweden",city:"Stockholm",qs_rank:71,acceptance_rate:50,tuition_usd:17000,offers_full_scholarship:true,scholarship_name:"KTH Scholarship",scholarship_coverage:"Full tuition waiver",campus_setting:"Urban",student_population:13000,international_student_pct:25,popular_majors:["Engineering","Architecture","Computer Science","Physics","Mathematics"]},
+  {name:"University of Western Australia",country:"Australia",city:"Perth",qs_rank:72,acceptance_rate:60,tuition_usd:30000,offers_full_scholarship:false,campus_setting:"Urban",student_population:26000,international_student_pct:28,popular_majors:["Engineering","Medicine","Business","Science","Law"]},
+  {name:"Universidade de São Paulo",country:"Brazil",city:"São Paulo",qs_rank:73,acceptance_rate:10,tuition_usd:0,offers_full_scholarship:true,scholarship_name:"USP Scholarship",scholarship_coverage:"Free tuition (public)",campus_setting:"Urban",student_population:95000,international_student_pct:5,popular_majors:["Medicine","Engineering","Law","Business","Sciences"]},
+  {name:"Sorbonne University",country:"France",city:"Paris",qs_rank:74,acceptance_rate:30,tuition_usd:4000,offers_full_scholarship:false,campus_setting:"Urban",student_population:55000,international_student_pct:20,popular_majors:["Medicine","Sciences","Literature","Law","Engineering"]},
+  {name:"Lund University",country:"Sweden",city:"Lund",qs_rank:75,acceptance_rate:50,tuition_usd:15000,offers_full_scholarship:true,scholarship_name:"Lund University Global Scholarship",scholarship_coverage:"25-100% tuition",campus_setting:"Urban",student_population:46000,international_student_pct:20,popular_majors:["Engineering","Medicine","Law","Economics","Science"]},
+  {name:"University of Adelaide",country:"Australia",city:"Adelaide",qs_rank:76,acceptance_rate:65,tuition_usd:30000,offers_full_scholarship:false,campus_setting:"Urban",student_population:29000,international_student_pct:35,popular_majors:["Engineering","Medicine","Science","Arts","Business"]},
+  {name:"Osaka University",country:"Japan",city:"Osaka",qs_rank:77,acceptance_rate:30,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"MEXT Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:24000,international_student_pct:12,popular_majors:["Engineering","Medicine","Science","Law","Economics"]},
+  {name:"Lomonosov Moscow State University",country:"Russia",city:"Moscow",qs_rank:78,acceptance_rate:25,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"Russian Government Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:47000,international_student_pct:25,popular_majors:["Physics","Mathematics","Chemistry","Biology","Law"]},
+  {name:"Trinity College Dublin",country:"Ireland",city:"Dublin",qs_rank:79,acceptance_rate:40,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Urban",student_population:18000,international_student_pct:35,popular_majors:["Computer Science","Medicine","Law","Business","Engineering"]},
+  {name:"Pohang University of Science and Technology",country:"South Korea",city:"Pohang",qs_rank:80,acceptance_rate:15,tuition_usd:6000,offers_full_scholarship:true,scholarship_name:"POSTECH Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Suburban",student_population:3400,international_student_pct:8,popular_majors:["Engineering","Physics","Chemistry","Mathematics","Computer Science"]},
+  {name:"University of Technology Sydney",country:"Australia",city:"Sydney",qs_rank:81,acceptance_rate:55,tuition_usd:32000,offers_full_scholarship:false,campus_setting:"Urban",student_population:46000,international_student_pct:30,popular_majors:["IT","Business","Engineering","Design","Health"]},
+  {name:"University of Nottingham",country:"United Kingdom",city:"Nottingham",qs_rank:82,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:35000,international_student_pct:28,popular_majors:["Engineering","Medicine","Business","Law","Pharmacy"]},
+  {name:"Universidad de Buenos Aires",country:"Argentina",city:"Buenos Aires",qs_rank:83,acceptance_rate:80,tuition_usd:0,offers_full_scholarship:true,scholarship_name:"UBA Free Tuition",scholarship_coverage:"Free (public university)",campus_setting:"Urban",student_population:300000,international_student_pct:8,popular_majors:["Medicine","Law","Engineering","Architecture","Economics"]},
+  {name:"University of Auckland",country:"New Zealand",city:"Auckland",qs_rank:84,acceptance_rate:50,tuition_usd:28000,offers_full_scholarship:true,scholarship_name:"UoA International Excellence Scholarship",scholarship_coverage:"Up to NZD 10,000",campus_setting:"Urban",student_population:44000,international_student_pct:25,popular_majors:["Engineering","Business","Medicine","Law","Arts"]},
+  {name:"University of Copenhagen",country:"Denmark",city:"Copenhagen",qs_rank:85,acceptance_rate:40,tuition_usd:15000,offers_full_scholarship:false,campus_setting:"Urban",student_population:38000,international_student_pct:20,popular_majors:["Medicine","Science","Law","Humanities","Social Sciences"]},
+  {name:"Sungkyunkwan University",country:"South Korea",city:"Seoul",qs_rank:86,acceptance_rate:30,tuition_usd:7000,offers_full_scholarship:true,scholarship_name:"SKKU Global Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:29000,international_student_pct:10,popular_majors:["Business","Engineering","Medicine","Computer Science","Pharmacy"]},
+  {name:"University of Helsinki",country:"Finland",city:"Helsinki",qs_rank:87,acceptance_rate:35,tuition_usd:15000,offers_full_scholarship:false,campus_setting:"Urban",student_population:31000,international_student_pct:12,popular_majors:["Medicine","Science","Law","Education","Humanities"]},
+  {name:"Rice University",country:"United States",city:"Houston",qs_rank:88,acceptance_rate:9,tuition_usd:56874,offers_full_scholarship:true,scholarship_name:"Rice Financial Aid",scholarship_coverage:"Full need-based",campus_setting:"Urban",student_population:8000,international_student_pct:23,popular_majors:["Engineering","Computer Science","Architecture","Business","Natural Sciences"]},
+  {name:"University of Science and Technology of China",country:"China",city:"Hefei",qs_rank:89,acceptance_rate:5,tuition_usd:3500,offers_full_scholarship:true,scholarship_name:"USTC Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:16000,international_student_pct:5,popular_majors:["Physics","Chemistry","Mathematics","Computer Science","Engineering"]},
+  {name:"University of Sheffield",country:"United Kingdom",city:"Sheffield",qs_rank:90,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Urban",student_population:30000,international_student_pct:30,popular_majors:["Engineering","Medicine","Architecture","Computer Science","Business"]},
+  {name:"Carnegie Mellon University",country:"United States",city:"Pittsburgh",qs_rank:91,acceptance_rate:11,tuition_usd:62260,offers_full_scholarship:true,scholarship_name:"CMU Financial Aid",scholarship_coverage:"Need-based grants",campus_setting:"Urban",student_population:16000,international_student_pct:42,popular_majors:["Computer Science","Engineering","Business","Arts","Robotics"]},
+  {name:"University of Zurich",country:"Switzerland",city:"Zurich",qs_rank:92,acceptance_rate:40,tuition_usd:2000,offers_full_scholarship:false,campus_setting:"Urban",student_population:28000,international_student_pct:23,popular_majors:["Medicine","Law","Economics","Psychology","Computer Science"]},
+  {name:"University of St Andrews",country:"United Kingdom",city:"St Andrews",qs_rank:93,acceptance_rate:30,tuition_usd:28000,offers_full_scholarship:false,campus_setting:"Rural",student_population:12000,international_student_pct:45,popular_majors:["International Relations","Physics","Computer Science","History","Medicine"]},
+  {name:"Nanjing University",country:"China",city:"Nanjing",qs_rank:94,acceptance_rate:8,tuition_usd:4000,offers_full_scholarship:true,scholarship_name:"Nanjing University Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:35000,international_student_pct:8,popular_majors:["Physics","Chemistry","Computer Science","Literature","Astronomy"]},
+  {name:"Wageningen University",country:"Netherlands",city:"Wageningen",qs_rank:95,acceptance_rate:55,tuition_usd:16000,offers_full_scholarship:true,scholarship_name:"Africa Scholarship Programme",scholarship_coverage:"Full tuition + living",campus_setting:"Rural",student_population:13000,international_student_pct:25,popular_majors:["Agriculture","Environmental Science","Food Technology","Biology","Earth Sciences"]},
+  {name:"University of Vienna",country:"Austria",city:"Vienna",qs_rank:96,acceptance_rate:60,tuition_usd:1600,offers_full_scholarship:false,campus_setting:"Urban",student_population:90000,international_student_pct:30,popular_majors:["Medicine","Law","Psychology","Philosophy","Computer Science"]},
+  {name:"Universiti Putra Malaysia",country:"Malaysia",city:"Serdang",qs_rank:97,acceptance_rate:50,tuition_usd:4000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:30000,international_student_pct:15,popular_majors:["Agriculture","Engineering","Science","Medicine","Business"]},
+  {name:"University of California, San Diego",country:"United States",city:"San Diego",qs_rank:98,acceptance_rate:24,tuition_usd:44202,offers_full_scholarship:false,campus_setting:"Suburban",student_population:42000,international_student_pct:22,popular_majors:["Biology","Engineering","Computer Science","Economics","Cognitive Science"]},
+  {name:"Tohoku University",country:"Japan",city:"Sendai",qs_rank:99,acceptance_rate:30,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"MEXT Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:18000,international_student_pct:12,popular_majors:["Engineering","Science","Medicine","Agriculture","Law"]},
+  {name:"University of Exeter",country:"United Kingdom",city:"Exeter",qs_rank:100,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:25000,international_student_pct:30,popular_majors:["Business","Engineering","Medicine","Psychology","Geography"]},
+  // 101-200 (major universities)
+  {name:"University of Wisconsin-Madison",country:"United States",city:"Madison",qs_rank:101,acceptance_rate:49,tuition_usd:39427,offers_full_scholarship:false,campus_setting:"Urban",student_population:47000},
+  {name:"Georgia Institute of Technology",country:"United States",city:"Atlanta",qs_rank:102,acceptance_rate:17,tuition_usd:33794,offers_full_scholarship:false,campus_setting:"Urban",student_population:44000,popular_majors:["Engineering","Computer Science","Business","Science"]},
+  {name:"Universität Heidelberg",country:"Germany",city:"Heidelberg",qs_rank:103,acceptance_rate:45,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Full living expenses",campus_setting:"Urban",student_population:30000},
+  {name:"University of Illinois Urbana-Champaign",country:"United States",city:"Champaign",qs_rank:104,acceptance_rate:45,tuition_usd:36068,offers_full_scholarship:false,campus_setting:"Urban",student_population:56000},
+  {name:"Brown University",country:"United States",city:"Providence",qs_rank:105,acceptance_rate:5,tuition_usd:65146,offers_full_scholarship:true,scholarship_name:"Brown Financial Aid",scholarship_coverage:"Full need-based",campus_setting:"Urban",student_population:10000},
+  {name:"University of Texas at Austin",country:"United States",city:"Austin",qs_rank:106,acceptance_rate:29,tuition_usd:40032,offers_full_scholarship:false,campus_setting:"Urban",student_population:52000},
+  {name:"University of Oslo",country:"Norway",city:"Oslo",qs_rank:107,acceptance_rate:40,tuition_usd:0,offers_full_scholarship:true,scholarship_name:"Free tuition (public)",scholarship_coverage:"No tuition fees",campus_setting:"Urban",student_population:28000},
+  {name:"University of Gothenburg",country:"Sweden",city:"Gothenburg",qs_rank:108,acceptance_rate:50,tuition_usd:14000,offers_full_scholarship:false,campus_setting:"Urban",student_population:38000},
+  {name:"Dartmouth College",country:"United States",city:"Hanover",qs_rank:109,acceptance_rate:6,tuition_usd:63399,offers_full_scholarship:true,scholarship_name:"Dartmouth Financial Aid",scholarship_coverage:"Full need-based",campus_setting:"Rural",student_population:7000},
+  {name:"Vanderbilt University",country:"United States",city:"Nashville",qs_rank:110,acceptance_rate:6,tuition_usd:62658,offers_full_scholarship:true,scholarship_name:"Cornelius Vanderbilt Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:14000},
+  {name:"Indian Institute of Technology Bombay",country:"India",city:"Mumbai",qs_rank:111,acceptance_rate:2,tuition_usd:2000,offers_full_scholarship:true,scholarship_name:"MCM Scholarship",scholarship_coverage:"Full tuition waiver",campus_setting:"Urban",student_population:11000},
+  {name:"Indian Institute of Science",country:"India",city:"Bangalore",qs_rank:112,acceptance_rate:5,tuition_usd:500,offers_full_scholarship:true,scholarship_name:"IISc Fellowship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:4500},
+  {name:"Indian Institute of Technology Delhi",country:"India",city:"New Delhi",qs_rank:113,acceptance_rate:2,tuition_usd:2000,offers_full_scholarship:true,scholarship_name:"MCM Scholarship",scholarship_coverage:"Full tuition waiver",campus_setting:"Urban",student_population:9000},
+  {name:"University of Groningen",country:"Netherlands",city:"Groningen",qs_rank:114,acceptance_rate:55,tuition_usd:13000,offers_full_scholarship:true,scholarship_name:"Eric Bleumink Fund",scholarship_coverage:"Full tuition + living",campus_setting:"Urban",student_population:35000},
+  {name:"Sapienza University of Rome",country:"Italy",city:"Rome",qs_rank:115,acceptance_rate:50,tuition_usd:3000,offers_full_scholarship:false,campus_setting:"Urban",student_population:112000},
+  {name:"University of Washington",country:"United States",city:"Seattle",qs_rank:116,acceptance_rate:48,tuition_usd:39906,offers_full_scholarship:false,campus_setting:"Urban",student_population:47000},
+  {name:"Politecnico di Milano",country:"Italy",city:"Milan",qs_rank:117,acceptance_rate:30,tuition_usd:4000,offers_full_scholarship:true,scholarship_name:"PoliMi Merit Scholarship",scholarship_coverage:"Full tuition waiver + €5000",campus_setting:"Urban",student_population:47000},
+  {name:"University of Geneva",country:"Switzerland",city:"Geneva",qs_rank:118,acceptance_rate:50,tuition_usd:1500,offers_full_scholarship:false,campus_setting:"Urban",student_population:18000},
+  {name:"Uppsala University",country:"Sweden",city:"Uppsala",qs_rank:119,acceptance_rate:45,tuition_usd:15000,offers_full_scholarship:false,campus_setting:"Urban",student_population:45000},
+  {name:"Emory University",country:"United States",city:"Atlanta",qs_rank:120,acceptance_rate:11,tuition_usd:59514,offers_full_scholarship:true,scholarship_name:"Emory Scholars",scholarship_coverage:"Full tuition",campus_setting:"Suburban",student_population:16000},
+  // 121-200 (condensed)
+  {name:"University of Bologna",country:"Italy",city:"Bologna",qs_rank:121,acceptance_rate:55,tuition_usd:3000,offers_full_scholarship:false,campus_setting:"Urban",student_population:87000},
+  {name:"University of Cape Town",country:"South Africa",city:"Cape Town",qs_rank:122,acceptance_rate:30,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"UCT Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:29000},
+  {name:"Lancaster University",country:"United Kingdom",city:"Lancaster",qs_rank:123,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Rural",student_population:17000},
+  {name:"Queen Mary University of London",country:"United Kingdom",city:"London",qs_rank:124,acceptance_rate:50,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Urban",student_population:28000},
+  {name:"University of Lausanne",country:"Switzerland",city:"Lausanne",qs_rank:125,acceptance_rate:50,tuition_usd:1500,offers_full_scholarship:false,campus_setting:"Suburban",student_population:16000},
+  {name:"University of Bath",country:"United Kingdom",city:"Bath",qs_rank:126,acceptance_rate:45,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:18000},
+  {name:"Khalifa University",country:"UAE",city:"Abu Dhabi",qs_rank:127,acceptance_rate:25,tuition_usd:0,offers_full_scholarship:true,scholarship_name:"KU Full Scholarship",scholarship_coverage:"Full tuition + living + stipend",campus_setting:"Urban",student_population:3000},
+  {name:"King Abdulaziz University",country:"Saudi Arabia",city:"Jeddah",qs_rank:128,acceptance_rate:50,tuition_usd:0,offers_full_scholarship:true,scholarship_name:"Saudi Government Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:82000},
+  {name:"University of Bern",country:"Switzerland",city:"Bern",qs_rank:129,acceptance_rate:50,tuition_usd:1500,offers_full_scholarship:false,campus_setting:"Urban",student_population:19000},
+  {name:"University of York",country:"United Kingdom",city:"York",qs_rank:130,acceptance_rate:50,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:20000},
+  {name:"Newcastle University",country:"United Kingdom",city:"Newcastle",qs_rank:131,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Urban",student_population:28000},
+  {name:"Aalto University",country:"Finland",city:"Espoo",qs_rank:132,acceptance_rate:40,tuition_usd:15000,offers_full_scholarship:true,scholarship_name:"Aalto University Scholarship",scholarship_coverage:"Full tuition waiver",campus_setting:"Suburban",student_population:12000},
+  {name:"Chulalongkorn University",country:"Thailand",city:"Bangkok",qs_rank:133,acceptance_rate:30,tuition_usd:5000,offers_full_scholarship:false,campus_setting:"Urban",student_population:38000},
+  {name:"University of Twente",country:"Netherlands",city:"Enschede",qs_rank:134,acceptance_rate:60,tuition_usd:14000,offers_full_scholarship:true,scholarship_name:"University of Twente Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Suburban",student_population:12000},
+  {name:"Aarhus University",country:"Denmark",city:"Aarhus",qs_rank:135,acceptance_rate:45,tuition_usd:14000,offers_full_scholarship:false,campus_setting:"Urban",student_population:38000},
+  {name:"University of Otago",country:"New Zealand",city:"Dunedin",qs_rank:136,acceptance_rate:55,tuition_usd:25000,offers_full_scholarship:false,campus_setting:"Urban",student_population:21000},
+  {name:"University of Liverpool",country:"United Kingdom",city:"Liverpool",qs_rank:137,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Urban",student_population:30000},
+  {name:"Complutense University of Madrid",country:"Spain",city:"Madrid",qs_rank:138,acceptance_rate:45,tuition_usd:3000,offers_full_scholarship:false,campus_setting:"Urban",student_population:85000},
+  {name:"University of Basel",country:"Switzerland",city:"Basel",qs_rank:139,acceptance_rate:50,tuition_usd:1500,offers_full_scholarship:false,campus_setting:"Urban",student_population:13000},
+  {name:"Boston University",country:"United States",city:"Boston",qs_rank:140,acceptance_rate:14,tuition_usd:62360,offers_full_scholarship:true,scholarship_name:"Trustee Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:37000},
+  // 141-200
+  {name:"Purdue University",country:"United States",city:"West Lafayette",qs_rank:141,acceptance_rate:53,tuition_usd:28794,offers_full_scholarship:false,campus_setting:"Suburban",student_population:50000},
+  {name:"University of Bonn",country:"Germany",city:"Bonn",qs_rank:142,acceptance_rate:40,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Living expenses",campus_setting:"Urban",student_population:35000},
+  {name:"Ghent University",country:"Belgium",city:"Ghent",qs_rank:143,acceptance_rate:50,tuition_usd:5000,offers_full_scholarship:false,campus_setting:"Urban",student_population:47000},
+  {name:"University of Münster",country:"Germany",city:"Münster",qs_rank:144,acceptance_rate:50,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Living expenses",campus_setting:"Urban",student_population:44000},
+  {name:"Universiti Kebangsaan Malaysia",country:"Malaysia",city:"Bangi",qs_rank:145,acceptance_rate:45,tuition_usd:4000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:30000},
+  {name:"University of Reading",country:"United Kingdom",city:"Reading",qs_rank:146,acceptance_rate:60,tuition_usd:20000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:19000},
+  {name:"Wuhan University",country:"China",city:"Wuhan",qs_rank:147,acceptance_rate:8,tuition_usd:4000,offers_full_scholarship:true,scholarship_name:"CSC Scholarship",scholarship_coverage:"Full tuition + living",campus_setting:"Urban",student_population:58000},
+  {name:"University of Tübingen",country:"Germany",city:"Tübingen",qs_rank:148,acceptance_rate:50,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Living expenses",campus_setting:"Urban",student_population:28000},
+  {name:"Universiti Teknologi Malaysia",country:"Malaysia",city:"Johor Bahru",qs_rank:149,acceptance_rate:50,tuition_usd:4000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:25000},
+  {name:"Universidad Nacional Autónoma de México",country:"Mexico",city:"Mexico City",qs_rank:150,acceptance_rate:12,tuition_usd:500,offers_full_scholarship:true,scholarship_name:"UNAM Scholarship",scholarship_coverage:"Free tuition (public)",campus_setting:"Urban",student_population:360000},
+  // 151-200 continuing
+  {name:"Autonomous University of Barcelona",country:"Spain",city:"Barcelona",qs_rank:151,acceptance_rate:50,tuition_usd:3000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:37000},
+  {name:"University of Barcelona",country:"Spain",city:"Barcelona",qs_rank:152,acceptance_rate:50,tuition_usd:3000,offers_full_scholarship:false,campus_setting:"Urban",student_population:63000},
+  {name:"University of Notre Dame",country:"United States",city:"Notre Dame",qs_rank:153,acceptance_rate:13,tuition_usd:62693,offers_full_scholarship:true,scholarship_name:"Notre Dame Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Suburban",student_population:13000},
+  {name:"University of Freiburg",country:"Germany",city:"Freiburg",qs_rank:154,acceptance_rate:50,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Living expenses",campus_setting:"Urban",student_population:25000},
+  {name:"Nagoya University",country:"Japan",city:"Nagoya",qs_rank:155,acceptance_rate:35,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"MEXT Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:16000},
+  {name:"University of Macau",country:"China",city:"Macau",qs_rank:156,acceptance_rate:25,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"UM Macao Scholarship",scholarship_coverage:"Full tuition + housing",campus_setting:"Suburban",student_population:13000},
+  {name:"University of Aberdeen",country:"United Kingdom",city:"Aberdeen",qs_rank:157,acceptance_rate:60,tuition_usd:20000,offers_full_scholarship:false,campus_setting:"Urban",student_population:15000},
+  {name:"Hokkaido University",country:"Japan",city:"Sapporo",qs_rank:158,acceptance_rate:35,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"MEXT Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:18000},
+  {name:"University of Cologne",country:"Germany",city:"Cologne",qs_rank:159,acceptance_rate:55,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Living expenses",campus_setting:"Urban",student_population:50000},
+  {name:"University of Rochester",country:"United States",city:"Rochester",qs_rank:160,acceptance_rate:34,tuition_usd:60550,offers_full_scholarship:false,campus_setting:"Suburban",student_population:12000},
+  {name:"University of Maryland",country:"United States",city:"College Park",qs_rank:161,acceptance_rate:45,tuition_usd:38636,offers_full_scholarship:false,campus_setting:"Suburban",student_population:41000},
+  {name:"Qatar University",country:"Qatar",city:"Doha",qs_rank:162,acceptance_rate:35,tuition_usd:0,offers_full_scholarship:true,scholarship_name:"QU Scholarship",scholarship_coverage:"Free tuition for all",campus_setting:"Urban",student_population:20000},
+  {name:"King Fahd University",country:"Saudi Arabia",city:"Dhahran",qs_rank:163,acceptance_rate:30,tuition_usd:0,offers_full_scholarship:true,scholarship_name:"KFUPM Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:9000},
+  {name:"Indian Institute of Technology Kanpur",country:"India",city:"Kanpur",qs_rank:164,acceptance_rate:2,tuition_usd:2000,offers_full_scholarship:true,scholarship_name:"MCM Scholarship",scholarship_coverage:"Full tuition waiver",campus_setting:"Suburban",student_population:10000},
+  {name:"Indian Institute of Technology Madras",country:"India",city:"Chennai",qs_rank:165,acceptance_rate:2,tuition_usd:2000,offers_full_scholarship:true,scholarship_name:"MCM Scholarship",scholarship_coverage:"Full tuition waiver",campus_setting:"Urban",student_population:10000},
+  {name:"University of Hamburg",country:"Germany",city:"Hamburg",qs_rank:166,acceptance_rate:50,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Living expenses",campus_setting:"Urban",student_population:43000},
+  {name:"University of Witwatersrand",country:"South Africa",city:"Johannesburg",qs_rank:167,acceptance_rate:35,tuition_usd:4000,offers_full_scholarship:false,campus_setting:"Urban",student_population:40000},
+  {name:"Chalmers University of Technology",country:"Sweden",city:"Gothenburg",qs_rank:168,acceptance_rate:45,tuition_usd:16000,offers_full_scholarship:true,scholarship_name:"Chalmers IPOET Scholarship",scholarship_coverage:"75% tuition reduction",campus_setting:"Urban",student_population:11000},
+  {name:"Georgetown University",country:"United States",city:"Washington DC",qs_rank:169,acceptance_rate:12,tuition_usd:63360,offers_full_scholarship:true,scholarship_name:"Georgetown Scholarship",scholarship_coverage:"Full need-based",campus_setting:"Urban",student_population:20000},
+  {name:"University of Southern California",country:"United States",city:"Los Angeles",qs_rank:170,acceptance_rate:12,tuition_usd:65015,offers_full_scholarship:true,scholarship_name:"Mork Family Scholars",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:49000},
+  // 171-200
+  {name:"Pontificia Universidad Católica de Chile",country:"Chile",city:"Santiago",qs_rank:171,acceptance_rate:20,tuition_usd:8000,offers_full_scholarship:false,campus_setting:"Urban",student_population:30000},
+  {name:"University of Stuttgart",country:"Germany",city:"Stuttgart",qs_rank:172,acceptance_rate:40,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Living expenses",campus_setting:"Urban",student_population:27000},
+  {name:"University of Bergen",country:"Norway",city:"Bergen",qs_rank:173,acceptance_rate:40,tuition_usd:0,offers_full_scholarship:true,scholarship_name:"Free tuition (public)",scholarship_coverage:"No tuition fees",campus_setting:"Urban",student_population:18000},
+  {name:"University of Ottawa",country:"Canada",city:"Ottawa",qs_rank:174,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Urban",student_population:44000},
+  {name:"Eindhoven University of Technology",country:"Netherlands",city:"Eindhoven",qs_rank:175,acceptance_rate:55,tuition_usd:14000,offers_full_scholarship:true,scholarship_name:"TU/e Scholarship",scholarship_coverage:"Full tuition waiver",campus_setting:"Urban",student_population:14000},
+  {name:"McMaster University",country:"Canada",city:"Hamilton",qs_rank:176,acceptance_rate:50,tuition_usd:25000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:37000},
+  {name:"University of Canterbury",country:"New Zealand",city:"Christchurch",qs_rank:177,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:15000},
+  {name:"University of Wollongong",country:"Australia",city:"Wollongong",qs_rank:178,acceptance_rate:60,tuition_usd:28000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:33000},
+  {name:"Nazarbayev University",country:"Kazakhstan",city:"Astana",qs_rank:179,acceptance_rate:10,tuition_usd:0,offers_full_scholarship:true,scholarship_name:"NU Full Scholarship",scholarship_coverage:"Full tuition + stipend + housing",campus_setting:"Urban",student_population:7000,international_student_pct:5,popular_majors:["Engineering","Business","Medicine","Science","Education"]},
+  {name:"University of Erlangen-Nuremberg",country:"Germany",city:"Erlangen",qs_rank:180,acceptance_rate:50,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Living expenses",campus_setting:"Urban",student_population:40000},
+  {name:"Curtin University",country:"Australia",city:"Perth",qs_rank:181,acceptance_rate:60,tuition_usd:28000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:58000},
+  {name:"Queen's University Belfast",country:"United Kingdom",city:"Belfast",qs_rank:182,acceptance_rate:55,tuition_usd:20000,offers_full_scholarship:false,campus_setting:"Urban",student_population:25000},
+  {name:"Maastricht University",country:"Netherlands",city:"Maastricht",qs_rank:183,acceptance_rate:55,tuition_usd:13000,offers_full_scholarship:true,scholarship_name:"Holland Scholarship",scholarship_coverage:"€5,000 grant",campus_setting:"Urban",student_population:18000},
+  {name:"University of Hannover",country:"Germany",city:"Hannover",qs_rank:184,acceptance_rate:50,tuition_usd:300,offers_full_scholarship:true,scholarship_name:"DAAD Scholarship",scholarship_coverage:"Living expenses",campus_setting:"Urban",student_population:30000},
+  {name:"Victoria University of Wellington",country:"New Zealand",city:"Wellington",qs_rank:185,acceptance_rate:55,tuition_usd:24000,offers_full_scholarship:false,campus_setting:"Urban",student_population:22000},
+  {name:"Taipei Medical University",country:"Taiwan",city:"Taipei",qs_rank:186,acceptance_rate:30,tuition_usd:6000,offers_full_scholarship:false,campus_setting:"Urban",student_population:7000},
+  {name:"Stellenbosch University",country:"South Africa",city:"Stellenbosch",qs_rank:187,acceptance_rate:35,tuition_usd:4000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:32000},
+  {name:"University of Leicester",country:"United Kingdom",city:"Leicester",qs_rank:188,acceptance_rate:55,tuition_usd:20000,offers_full_scholarship:false,campus_setting:"Urban",student_population:23000},
+  {name:"University of Turku",country:"Finland",city:"Turku",qs_rank:189,acceptance_rate:40,tuition_usd:12000,offers_full_scholarship:true,scholarship_name:"UTU Scholarship",scholarship_coverage:"Full tuition waiver",campus_setting:"Urban",student_population:24000},
+  {name:"University of Waikato",country:"New Zealand",city:"Hamilton",qs_rank:190,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:13000},
+  {name:"University of Saskatchewan",country:"Canada",city:"Saskatoon",qs_rank:191,acceptance_rate:60,tuition_usd:18000,offers_full_scholarship:false,campus_setting:"Urban",student_population:25000},
+  {name:"University of Calgary",country:"Canada",city:"Calgary",qs_rank:192,acceptance_rate:55,tuition_usd:22000,offers_full_scholarship:false,campus_setting:"Urban",student_population:33000},
+  {name:"University of Tartu",country:"Estonia",city:"Tartu",qs_rank:193,acceptance_rate:50,tuition_usd:5000,offers_full_scholarship:false,campus_setting:"Urban",student_population:14000},
+  {name:"University of Sussex",country:"United Kingdom",city:"Brighton",qs_rank:194,acceptance_rate:55,tuition_usd:20000,offers_full_scholarship:false,campus_setting:"Suburban",student_population:20000},
+  {name:"Kyushu University",country:"Japan",city:"Fukuoka",qs_rank:195,acceptance_rate:35,tuition_usd:5000,offers_full_scholarship:true,scholarship_name:"MEXT Scholarship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Urban",student_population:19000},
+  {name:"University of Antwerp",country:"Belgium",city:"Antwerp",qs_rank:196,acceptance_rate:50,tuition_usd:3500,offers_full_scholarship:false,campus_setting:"Urban",student_population:21000},
+  {name:"University of Trento",country:"Italy",city:"Trento",qs_rank:197,acceptance_rate:55,tuition_usd:2500,offers_full_scholarship:true,scholarship_name:"Opera Universitaria Grant",scholarship_coverage:"Full tuition waiver + housing",campus_setting:"Urban",student_population:17000},
+  {name:"Technion - Israel Institute of Technology",country:"Israel",city:"Haifa",qs_rank:198,acceptance_rate:20,tuition_usd:10000,offers_full_scholarship:true,scholarship_name:"Technion Fellowship",scholarship_coverage:"Full tuition + stipend",campus_setting:"Suburban",student_population:14000},
+  {name:"Hanyang University",country:"South Korea",city:"Seoul",qs_rank:199,acceptance_rate:30,tuition_usd:7000,offers_full_scholarship:true,scholarship_name:"Hanyang International Scholarship",scholarship_coverage:"Full tuition",campus_setting:"Urban",student_population:35000},
+  {name:"University of Florence",country:"Italy",city:"Florence",qs_rank:200,acceptance_rate:50,tuition_usd:2500,offers_full_scholarship:false,campus_setting:"Urban",student_population:51000},
 ];
-
-function extractJSON(text: string): any[] {
-  // Try to find JSON array in the response
-  const match = text.match(/\[[\s\S]*\]/);
-  if (match) {
-    try {
-      return JSON.parse(match[0]);
-    } catch {
-      // Try fixing common issues
-      const cleaned = match[0]
-        .replace(/,\s*]/g, ']')
-        .replace(/,\s*}/g, '}');
-      try {
-        return JSON.parse(cleaned);
-      } catch {
-        return [];
-      }
-    }
-  }
-  return [];
-}
-
-function mapToRow(item: any, batchIndex: number) {
-  return {
-    name: item.name || item.university_name || 'Unknown',
-    country: item.country || 'Unknown',
-    city: item.city || null,
-    qs_rank: item.qs_rank || null,
-    acceptance_rate: item.acceptance_rate || null,
-    acceptance_rate_label: item.acceptance_rate
-      ? item.acceptance_rate < 10 ? 'Very Selective'
-        : item.acceptance_rate < 30 ? 'Selective'
-        : 'Accessible'
-      : null,
-    tuition_usd: item.tuition_usd || null,
-    offers_full_scholarship: item.offers_full_scholarship || false,
-    scholarship_name: item.scholarship_name || null,
-    scholarship_coverage: item.scholarship_coverage || null,
-    scholarship_url: item.scholarship_url || null,
-    scholarship_open_to: item.scholarship_open_to || null,
-    scholarship_deadline: item.scholarship_deadline || null,
-    popular_majors: item.popular_majors || null,
-    programs: item.popular_majors || null,
-    student_population: item.student_population || null,
-    international_student_pct: item.international_student_pct || null,
-    campus_setting: item.campus_setting || null,
-    location_type: item.campus_setting || null,
-    website: item.website_url || item.website || null,
-    sat_range: item.sat_range || null,
-    ielts_min: item.ielts_min || null,
-    toefl_min: item.toefl_min || null,
-    data_source: 'seeded',
-    last_refreshed_at: new Date().toISOString(),
-  };
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -102,86 +233,43 @@ serve(async (req) => {
       });
     }
 
-    const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY");
-    if (!PERPLEXITY_API_KEY) {
-      return new Response(JSON.stringify({ error: "Perplexity API key not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { batchIndex = 0 } = await req.json().catch(() => ({}));
-    
-    // Process a single batch at a time to avoid timeouts
-    const batch = SEED_QUERIES[batchIndex];
-    if (!batch) {
-      return new Response(JSON.stringify({ 
-        message: "All batches complete", 
-        totalBatches: SEED_QUERIES.length 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const rows = UNIVERSITIES.map(u => ({
+      name: u.name,
+      country: u.country,
+      city: u.city,
+      qs_rank: u.qs_rank,
+      acceptance_rate: u.acceptance_rate,
+      acceptance_rate_label: u.acceptance_rate
+        ? u.acceptance_rate < 10 ? 'Very Selective'
+          : u.acceptance_rate < 30 ? 'Selective'
+          : 'Accessible'
+        : null,
+      tuition_usd: u.tuition_usd,
+      offers_full_scholarship: u.offers_full_scholarship || false,
+      scholarship_name: u.scholarship_name || null,
+      scholarship_coverage: u.scholarship_coverage || null,
+      popular_majors: u.popular_majors || null,
+      programs: u.popular_majors || null,
+      student_population: u.student_population || null,
+      international_student_pct: u.international_student_pct || null,
+      campus_setting: u.campus_setting || null,
+      location_type: u.campus_setting || null,
+      ranking_global: u.qs_rank,
+      data_source: 'seeded',
+      last_refreshed_at: new Date().toISOString(),
+    }));
 
-    console.log(`Processing batch ${batchIndex}: ${batch.label}`);
-
-    const perplexityResponse = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${PERPLEXITY_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "sonar-pro",
-        messages: [
-          {
-            role: "system",
-            content: "You are a university data research assistant. Return ONLY valid JSON arrays with no explanation text before or after. Each object in the array should have the exact field names requested.",
-          },
-          { role: "user", content: batch.query },
-        ],
-        max_tokens: 8000,
-      }),
-    });
-
-    if (!perplexityResponse.ok) {
-      const errorText = await perplexityResponse.text();
-      console.error(`Perplexity error for batch ${batchIndex}:`, errorText);
-      return new Response(JSON.stringify({ error: `Perplexity API error: ${errorText}` }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const data = await perplexityResponse.json();
-    const content = data.choices?.[0]?.message?.content || "";
-    const universities = extractJSON(content);
-    
-    console.log(`Parsed ${universities.length} universities from batch ${batchIndex}`);
-
-    if (universities.length === 0) {
-      return new Response(JSON.stringify({ 
-        error: "No universities parsed from response",
-        batchIndex,
-        rawContentPreview: content.substring(0, 500),
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const rows = universities.map((u: any) => mapToRow(u, batchIndex));
-
-    // Upsert in chunks of 50
     let inserted = 0;
-    for (let i = 0; i < rows.length; i += 50) {
-      const chunk = rows.slice(i, i + 50);
+    let errors = 0;
+
+    // Upsert in chunks of 25
+    for (let i = 0; i < rows.length; i += 25) {
+      const chunk = rows.slice(i, i + 25);
       const { error } = await supabaseAdmin
         .from("university_database")
         .upsert(chunk, { 
@@ -190,26 +278,29 @@ serve(async (req) => {
         });
       
       if (error) {
-        console.error(`Upsert error at chunk ${i}:`, error);
-        // Try inserting one by one for this chunk
+        console.error(`Upsert error at chunk ${i}:`, JSON.stringify(error));
+        // Try one by one
         for (const row of chunk) {
           const { error: singleError } = await supabaseAdmin
             .from("university_database")
             .upsert(row, { onConflict: "name,country", ignoreDuplicates: false });
-          if (!singleError) inserted++;
+          if (singleError) {
+            console.error(`Single upsert error for ${row.name}:`, JSON.stringify(singleError));
+            errors++;
+          } else {
+            inserted++;
+          }
         }
       } else {
         inserted += chunk.length;
       }
     }
 
-    console.log(`Batch ${batchIndex} complete — ${inserted} universities inserted`);
-
     return new Response(JSON.stringify({
-      message: `Batch ${batchIndex} (${batch.label}) complete`,
+      message: `Seeded ${inserted} universities (${errors} errors)`,
       inserted,
-      total: universities.length,
-      nextBatch: batchIndex + 1 < SEED_QUERIES.length ? batchIndex + 1 : null,
+      errors,
+      total: UNIVERSITIES.length,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
