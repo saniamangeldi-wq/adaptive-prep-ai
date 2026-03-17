@@ -268,7 +268,7 @@ export function UniversityCard({
         open={financialOpen}
         onOpenChange={setFinancialOpen}
         universityName={university.name}
-        city={university.location_type || city || ""}
+        city={university.location_type || ""}
         country={university.country}
       />
 
