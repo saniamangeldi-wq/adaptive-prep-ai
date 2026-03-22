@@ -561,7 +561,7 @@ serve(async (req) => {
       });
     }
 
-    const { messages, taskType, subject: explicitSubject } = await req.json();
+    const { messages, taskType, subject: explicitSubject, modelOverride } = await req.json();
 
     // Deduct 1 credit
     const { error: updateError } = await supabase
@@ -627,7 +627,28 @@ serve(async (req) => {
     console.log(`Detected subject: ${detectedSubject} for user with subjects: ${userSubjects.join(', ')}`);
 
     // Get AI model config based on tier, task type, and message complexity
-    const modelConfig = getAIModelForTier(profile.tier, taskType, lastUserMessage);
+    // Elite users can override the model
+    let modelConfig = getAIModelForTier(profile.tier, taskType, lastUserMessage);
+    
+    if (profile.tier === "tier_3" && modelOverride) {
+      if (modelOverride === "gemini-pro") {
+        modelConfig = {
+          provider: "gemini",
+          model: "google/gemini-2.5-pro",
+          displayName: "Gemini 2.5 Pro",
+          qualityNote: "You have access to premium AI capabilities with deep reasoning. Provide detailed, in-depth explanations.",
+        };
+      } else if (modelOverride === "perplexity-pro") {
+        modelConfig = {
+          provider: "perplexity",
+          model: "sonar-pro",
+          displayName: "Perplexity Sonar Pro",
+          qualityNote: "Provide detailed, well-sourced responses with citations. You have access to premium search and reasoning.",
+        };
+      }
+      // gpt-4o is "coming soon" — ignored if sent
+    }
+    
     const systemPrompt = getStudentSystemPrompt(profile.learning_style, modelConfig.qualityNote, detectedSubject);
 
     let response: Response;
