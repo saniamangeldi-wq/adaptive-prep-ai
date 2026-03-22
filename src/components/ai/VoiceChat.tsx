@@ -18,6 +18,8 @@ export function VoiceChat({ onTranscript, isDisabled, className, fullMode = fals
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [transcript, setTranscript] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
+  const { isExhausted, hasVoiceAccess, addUsage, resetDateStr } = useVoiceMinutes();
+  const sessionStartRef = useRef<number | null>(null);
 
   const conversation = useConversation({
     onConnect: () => {
