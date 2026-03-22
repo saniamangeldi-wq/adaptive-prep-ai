@@ -120,11 +120,8 @@ export default function UniversityMatch() {
     const sessionId = searchParams.get("session_id");
 
     if (payment === "success" && sessionId) {
-      verifyPayment(sessionId).then((granted) => {
-        if (granted) {
-          toast({ title: "Access granted!", description: "You have 10 minutes of University Match access." });
-        }
-        // Clean up URL params
+      verifyPayment(sessionId).then(() => {
+        // Clean up URL params — toast is handled inside verifyPayment
         setSearchParams({});
       });
     } else if (payment === "cancelled") {
@@ -405,26 +402,34 @@ export default function UniversityMatch() {
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
               <div className="flex items-center justify-center gap-2 text-primary font-semibold">
                 <DollarSign className="w-5 h-5" />
-                <span>$1 for 10 minutes</span>
+                <span>$1 / ₸500 for 10 minutes</span>
               </div>
               <p className="text-xs text-muted-foreground">
                 Explore matches, compare universities, get AI advice, and save your shortlist.
               </p>
             </div>
 
-            <Button
-              onClick={purchaseAccess}
-              disabled={purchasing}
-              className="w-full gap-2"
-              size="lg"
-            >
-              {purchasing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4" />
-              )}
-              {purchasing ? "Redirecting to checkout..." : "Unlock Access - $1"}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => purchaseAccess("usd")}
+                disabled={purchasing}
+                className="flex-1 gap-2"
+                size="lg"
+              >
+                {purchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                Unlock - $1
+              </Button>
+              <Button
+                onClick={() => purchaseAccess("kzt")}
+                disabled={purchasing}
+                variant="outline"
+                className="flex-1 gap-2"
+                size="lg"
+              >
+                {purchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                Unlock - ₸500
+              </Button>
+            </div>
 
             <p className="text-xs text-muted-foreground">
               Or upgrade to Pro/Elite plan for unlimited access
@@ -447,10 +452,15 @@ export default function UniversityMatch() {
             </span>
           </div>
           {remainingSeconds < 120 && (
-            <Button variant="outline" size="sm" onClick={purchaseAccess} disabled={purchasing} className="gap-1 text-xs">
-              <DollarSign className="w-3 h-3" />
-              Buy more time - $1
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => purchaseAccess("usd")} disabled={purchasing} className="gap-1 text-xs">
+                <DollarSign className="w-3 h-3" />
+                $1
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => purchaseAccess("kzt")} disabled={purchasing} className="gap-1 text-xs">
+                ₸500
+              </Button>
+            </div>
           )}
         </div>
       )}

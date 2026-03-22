@@ -24,6 +24,8 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
+    const { currency } = await req.json().catch(() => ({ currency: "usd" }));
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
     });
@@ -34,23 +36,24 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
+    // Choose price based on currency
+    const priceId = currency === "kzt"
+      ? "price_1TDqjMCMf0zaGhPS51TFBYot"  // ₸500
+      : "price_1TDqg9CMf0zaGhPSH1z7qsV5"; // $1
+
     const origin = req.headers.get("origin") || "https://adaptive-prep-ai.lovable.app";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      line_items: [
-        {
-          price: "price_1TDqg9CMf0zaGhPSH1z7qsV5",
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "payment",
       success_url: `${origin}/dashboard/university-match?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/dashboard/university-match?payment=cancelled`,
       metadata: {
         user_id: user.id,
         type: "university_access",
+        currency,
       },
     });
 

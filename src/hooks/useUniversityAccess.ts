@@ -1,14 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export function useUniversityAccess() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
   const [hasActiveAccess, setHasActiveAccess] = useState(false);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+
+  const isElite = profile?.tier === "tier_3";
 
   const checkAccess = useCallback(async () => {
     if (!user) {
@@ -69,11 +73,13 @@ export function useUniversityAccess() {
     return () => clearInterval(interval);
   }, [hasActiveAccess, remainingSeconds]);
 
-  const purchaseAccess = useCallback(async () => {
+  const purchaseAccess = useCallback(async (currency: "usd" | "kzt" = "usd") => {
     if (!user) return;
     setPurchasing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-university-payment");
+      const { data, error } = await supabase.functions.invoke("create-university-payment", {
+        body: { currency },
+      });
       if (error) throw error;
       if (data?.url) {
         window.open(data.url, "_blank");
@@ -92,7 +98,18 @@ export function useUniversityAccess() {
       });
       if (error) throw error;
       if (data?.granted) {
-        await checkAccess();
+        if (data.type === "credits") {
+          toast({
+            title: "Bonus credits added!",
+            description: `+${data.credits_added} credits added to your account. New total: ${data.new_total}`,
+          });
+        } else {
+          await checkAccess();
+          toast({
+            title: "Access granted!",
+            description: "You have 10 minutes of University Match access.",
+          });
+        }
         return true;
       }
       return false;
@@ -100,7 +117,7 @@ export function useUniversityAccess() {
       console.error("Error verifying payment:", err);
       return false;
     }
-  }, [checkAccess]);
+  }, [checkAccess, toast]);
 
   const formatTime = useCallback((seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -118,5 +135,6 @@ export function useUniversityAccess() {
     purchaseAccess,
     verifyPayment,
     checkAccess,
+    isElite,
   };
 }

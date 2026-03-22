@@ -1,26 +1,49 @@
 import { useState } from "react";
-import { Heart, X } from "lucide-react";
+import { Heart, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const DONATION_LINKS = [
-  {
-    label: "$1 Donation",
-    url: "https://buy.stripe.com/aFadR86jW2jm7fH7gB4wM02",
-    accent: "bg-primary hover:bg-primary/90",
-  },
-  {
-    label: "₸500 Donation",
-    url: "https://buy.stripe.com/5kQ4gy37Ke249nP58t4wM03",
-    accent: "bg-accent hover:bg-accent/90",
-  },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export function DonationBanner() {
   const [dismissed, setDismissed] = useState(() => sessionStorage.getItem("donation-dismissed") === "true");
+  const [purchasing, setPurchasing] = useState(false);
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
+
+  const isElite = profile?.tier === "tier_3";
 
   const handleDismiss = () => {
     setDismissed(true);
     sessionStorage.setItem("donation-dismissed", "true");
+  };
+
+  const handleDonate = async (currency: "usd" | "kzt") => {
+    if (!user) {
+      // Not logged in — use payment links
+      const url = currency === "kzt"
+        ? "https://buy.stripe.com/5kQ4gy37Ke249nP58t4wM03"
+        : "https://buy.stripe.com/aFadR86jW2jm7fH7gB4wM02";
+      window.open(url, "_blank");
+      return;
+    }
+
+    // Logged in — use checkout with rewards
+    setPurchasing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-university-payment", {
+        body: { currency },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Could not create checkout session", variant: "destructive" });
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   if (dismissed) return null;
@@ -43,22 +66,38 @@ export function DonationBanner() {
           </h4>
         </div>
 
-        <p className="text-xs text-muted-foreground mb-4">
+        <p className="text-xs text-muted-foreground mb-1">
           Help us keep building free AI-powered education tools for students everywhere.
         </p>
 
+        {user && (
+          <p className="text-xs text-primary mb-3 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            {isElite
+              ? "You'll receive +3 bonus AI credits!"
+              : "You'll get 10 min of University Match access!"}
+          </p>
+        )}
+
         <div className="flex gap-3">
-          {DONATION_LINKS.map((link) => (
-            <Button
-              key={link.label}
-              variant="hero"
-              size="sm"
-              className="flex-1 text-xs"
-              onClick={() => window.open(link.url, "_blank")}
-            >
-              {link.label}
-            </Button>
-          ))}
+          <Button
+            variant="hero"
+            size="sm"
+            className="flex-1 text-xs"
+            disabled={purchasing}
+            onClick={() => handleDonate("usd")}
+          >
+            $1 Donation
+          </Button>
+          <Button
+            variant="hero"
+            size="sm"
+            className="flex-1 text-xs"
+            disabled={purchasing}
+            onClick={() => handleDonate("kzt")}
+          >
+            ₸500 Donation
+          </Button>
         </div>
       </div>
     </div>
