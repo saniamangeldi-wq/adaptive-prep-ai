@@ -94,6 +94,7 @@ export function VoiceChat({ onTranscript, isDisabled, className, fullMode = fals
       }
 
       setTranscript([]);
+      sessionStartRef.current = Date.now();
 
       try {
         if (signedUrl) {
