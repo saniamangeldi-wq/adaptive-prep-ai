@@ -313,7 +313,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             <div className="py-6">
               {messages.map((message, index) => (
                 <PerplexityMessage
-                  key={message.id}
+                  key={`${message.id}-${message.role}`}
                   message={message}
                   isTier3={isTier3}
                   isLast={index === messages.length - 1}
