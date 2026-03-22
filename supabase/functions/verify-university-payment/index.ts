@@ -12,9 +12,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
+  const supabaseAdmin = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
+
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
 
   try {
@@ -41,7 +46,7 @@ serve(async (req) => {
     }
 
     // Check if this session was already used
-    const { data: existing } = await supabaseClient
+    const { data: existing } = await supabaseAdmin
       .from("university_access_grants")
       .select("id")
       .eq("stripe_session_id", session_id)
@@ -54,8 +59,45 @@ serve(async (req) => {
       });
     }
 
-    // Grant 10 minutes of access
-    const { error } = await supabaseClient
+    // Check if user is Elite (tier_3) — they get bonus credits instead
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("tier, credits_remaining")
+      .eq("user_id", user.id)
+      .single();
+
+    const isElite = profile?.tier === "tier_3";
+
+    if (isElite) {
+      // Grant +3 bonus credits
+      const newCredits = (profile.credits_remaining || 0) + 3;
+      await supabaseAdmin
+        .from("profiles")
+        .update({ credits_remaining: newCredits })
+        .eq("user_id", user.id);
+
+      // Record the grant (with a short expiry just for tracking)
+      await supabaseAdmin
+        .from("university_access_grants")
+        .insert({
+          user_id: user.id,
+          stripe_session_id: session_id,
+          expires_at: new Date().toISOString(), // already "expired" since elite doesn't need timed access
+        });
+
+      return new Response(JSON.stringify({ 
+        granted: true, 
+        type: "credits",
+        credits_added: 3,
+        new_total: newCredits,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Non-elite: Grant 10 minutes of university access
+    await supabaseAdmin
       .from("university_access_grants")
       .insert({
         user_id: user.id,
@@ -63,9 +105,7 @@ serve(async (req) => {
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       });
 
-    if (error) throw error;
-
-    return new Response(JSON.stringify({ granted: true }), {
+    return new Response(JSON.stringify({ granted: true, type: "access" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
