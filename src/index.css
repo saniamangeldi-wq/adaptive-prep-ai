@@ -236,6 +236,20 @@
   ::selection {
     @apply bg-primary/20 text-foreground;
   }
+
+
+  /* Ensure all inputs inherit themed text color */
+  input,
+  textarea,
+  select {
+    color: hsl(var(--foreground));
+    background-color: transparent;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
 }
 
 @layer components {
