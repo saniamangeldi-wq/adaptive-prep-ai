@@ -181,8 +181,13 @@ export default function AICoach() {
               </span>
             </div>
             <div className="flex items-center gap-2">
+              {/* Elite model selector */}
+              {isElite && (
+                <ModelSelector value={eliteModel} onChange={setEliteModel} />
+              )}
+
               {/* Text / Voice toggle — only show voice if user has tier_3 */}
-              {profile?.tier === "tier_3" ? (
+              {isElite ? (
                 <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
                   <button
                     onClick={() => setChatMode("text")}
