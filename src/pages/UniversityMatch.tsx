@@ -455,10 +455,15 @@ export default function UniversityMatch() {
             </span>
           </div>
           {remainingSeconds < 120 && (
-            <Button variant="outline" size="sm" onClick={purchaseAccess} disabled={purchasing} className="gap-1 text-xs">
-              <DollarSign className="w-3 h-3" />
-              Buy more time - $1
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => purchaseAccess("usd")} disabled={purchasing} className="gap-1 text-xs">
+                <DollarSign className="w-3 h-3" />
+                $1
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => purchaseAccess("kzt")} disabled={purchasing} className="gap-1 text-xs">
+                ₸500
+              </Button>
+            </div>
           )}
         </div>
       )}
