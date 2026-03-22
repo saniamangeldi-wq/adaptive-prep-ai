@@ -10,6 +10,8 @@ export function useSchoolStudent() {
   
   // Elite users (Tier 3) have access regardless of school status
   const isElite = profile?.tier === "tier_3";
+  // Pro users (Tier 2) also get base access
+  const isPro = profile?.tier === "tier_2";
 
   useEffect(() => {
     async function checkSchoolMembership() {
@@ -49,7 +51,8 @@ export function useSchoolStudent() {
   }, [user]);
 
   // User has access if they're a school student OR Elite tier
+  // Paid access via donation is handled separately in UniversityMatch page
   const hasUniversityMatchAccess = isSchoolStudent || isElite;
   
-  return { isSchoolStudent, loading, schoolId, isElite, hasUniversityMatchAccess };
+  return { isSchoolStudent, loading, schoolId, isElite, isPro, hasUniversityMatchAccess };
 }
