@@ -60,24 +60,21 @@ export function DonationBanner() {
         </button>
 
         <div className="flex items-center gap-2 mb-2">
-          <Heart className="w-5 h-5 text-primary fill-primary" />
+          {isElite ? (
+            <Sparkles className="w-5 h-5 text-primary" />
+          ) : (
+            <Heart className="w-5 h-5 text-primary fill-primary" />
+          )}
           <h4 className="font-semibold text-foreground text-sm">
-            Support AdaptivePrep
+            {isElite ? "Get +3 Bonus AI Credits" : "Unlock University Match"}
           </h4>
         </div>
 
-        <p className="text-xs text-muted-foreground mb-1">
-          Help us keep building free AI-powered education tools for students everywhere.
+        <p className="text-xs text-muted-foreground mb-3">
+          {isElite
+            ? "Top up your AI credits instantly — 3 extra credits added to your balance."
+            : "Get 10 minutes of full access to University Match — explore matches, scholarships & more."}
         </p>
-
-        {user && (
-          <p className="text-xs text-primary mb-3 flex items-center gap-1">
-            <Sparkles className="w-3 h-3" />
-            {isElite
-              ? "You'll receive +3 bonus AI credits!"
-              : "You'll get 10 min of University Match access!"}
-          </p>
-        )}
 
         <div className="flex gap-3">
           <Button
@@ -87,7 +84,7 @@ export function DonationBanner() {
             disabled={purchasing}
             onClick={() => handleDonate("usd")}
           >
-            $1 Donation
+            {isElite ? "Buy for $1" : "Unlock for $1"}
           </Button>
           <Button
             variant="hero"
@@ -96,7 +93,7 @@ export function DonationBanner() {
             disabled={purchasing}
             onClick={() => handleDonate("kzt")}
           >
-            ₸500 Donation
+            {isElite ? "Buy for ₸500" : "Unlock for ₸500"}
           </Button>
         </div>
       </div>
