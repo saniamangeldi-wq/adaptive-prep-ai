@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useSchoolStudent } from "@/hooks/useSchoolStudent";
+import { useUniversityAccess } from "@/hooks/useUniversityAccess";
 import { LockedFeatureModal } from "@/components/university-match/LockedFeatureModal";
 import { MatchProfileCard } from "@/components/university-match/MatchProfileCard";
 import { UniversityCard } from "@/components/university-match/UniversityCard";
@@ -25,6 +27,8 @@ import {
   Download,
   GraduationCap,
   Sparkles,
+  Clock,
+  DollarSign,
 } from "lucide-react";
 import {
   Dialog,
@@ -69,13 +73,27 @@ export default function UniversityMatch() {
   const { isSchoolStudent, loading: schoolLoading, hasUniversityMatchAccess } = useSchoolStudent();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const {
+    hasActiveAccess: hasPaidAccess,
+    remainingSeconds,
+    formattedTime,
+    loading: accessLoading,
+    purchasing,
+    purchaseAccess,
+    verifyPayment,
+    checkAccess,
+  } = useUniversityAccess();
+
+  // Combined access: subscription-based OR paid 10-min access
+  const canAccess = hasUniversityMatchAccess || hasPaidAccess;
 
   const [showLockedModal, setShowLockedModal] = useState(false);
   const [matches, setMatches] = useState<UniversityMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  // Enhanced filters & sort
   const [filters, setFilters] = useState<UniversityFilters>({
     search: "",
     scholarshipOnly: false,
@@ -85,32 +103,48 @@ export default function UniversityMatch() {
   });
   const [sortBy, setSortBy] = useState<UniversitySortOption>("qs-rank");
 
-  // Refresh scholarship
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
   const [confirmRefreshOpen, setConfirmRefreshOpen] = useState(false);
 
-  // AI Advisor drawer
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [selectedUniversity, setSelectedUniversity] = useState<string | null>(null);
 
-  // Edit profile
   const [editingProfile, setEditingProfile] = useState(false);
   const [editStep, setEditStep] = useState<"portfolio" | "preferences">("portfolio");
   const [needsSetup, setNeedsSetup] = useState(false);
 
+  // Handle payment success redirect
   useEffect(() => {
-    if (!schoolLoading && !hasUniversityMatchAccess) {
-      setShowLockedModal(true);
-      setLoading(false);
+    const payment = searchParams.get("payment");
+    const sessionId = searchParams.get("session_id");
+
+    if (payment === "success" && sessionId) {
+      verifyPayment(sessionId).then((granted) => {
+        if (granted) {
+          toast({ title: "Access granted!", description: "You have 10 minutes of University Match access." });
+        }
+        // Clean up URL params
+        setSearchParams({});
+      });
+    } else if (payment === "cancelled") {
+      toast({ title: "Payment cancelled", description: "You can try again anytime.", variant: "destructive" });
+      setSearchParams({});
     }
-  }, [hasUniversityMatchAccess, schoolLoading]);
+  }, [searchParams]);
 
   useEffect(() => {
-    if (hasUniversityMatchAccess && user) {
+    if (!schoolLoading && !accessLoading && !canAccess) {
+      setShowLockedModal(false); // We'll show the paywall instead
+      setLoading(false);
+    }
+  }, [canAccess, schoolLoading, accessLoading]);
+
+  useEffect(() => {
+    if (canAccess && user) {
       checkAndLoad();
     }
-  }, [hasUniversityMatchAccess, user]);
+  }, [canAccess, user]);
 
   async function checkAndLoad() {
     try {
@@ -163,7 +197,6 @@ export default function UniversityMatch() {
         }));
         setMatches(mapped);
 
-        // Get last refreshed date
         const refreshDates = mapped
           .map((m: any) => m.university?.last_refreshed_at)
           .filter(Boolean);
@@ -235,11 +268,9 @@ export default function UniversityMatch() {
     setAdvisorOpen(true);
   }
 
-  // Filtering & sorting
   const filteredAndSorted = useMemo(() => {
     let result = [...matches];
 
-    // Search
     if (filters.search) {
       const q = filters.search.toLowerCase();
       result = result.filter(
@@ -250,19 +281,16 @@ export default function UniversityMatch() {
       );
     }
 
-    // Scholarship only
     if (filters.scholarshipOnly) {
       result = result.filter((m) => m.university.offers_full_scholarship);
     }
 
-    // Region
     if (filters.region) {
       result = result.filter(
         (m) => getRegionForCountry(m.university.country) === filters.region
       );
     }
 
-    // Acceptance range
     if (filters.acceptanceRange) {
       result = result.filter((m) => {
         const rate = m.university.acceptance_rate;
@@ -277,7 +305,6 @@ export default function UniversityMatch() {
       });
     }
 
-    // Tuition range
     if (filters.tuitionRange) {
       result = result.filter((m) => {
         const t = m.university.tuition_usd;
@@ -292,7 +319,6 @@ export default function UniversityMatch() {
       });
     }
 
-    // Sort
     switch (sortBy) {
       case "qs-rank":
         result.sort((a, b) => (a.university.qs_rank || 9999) - (b.university.qs_rank || 9999));
@@ -350,7 +376,7 @@ export default function UniversityMatch() {
     });
   }, []);
 
-  if (schoolLoading) {
+  if (schoolLoading || accessLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -360,9 +386,74 @@ export default function UniversityMatch() {
     );
   }
 
+  // Paywall for users without subscription access
+  if (!canAccess) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="max-w-md w-full rounded-2xl border border-border/50 bg-card p-8 text-center space-y-6">
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <GraduationCap className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">University Match</h2>
+              <p className="text-sm text-muted-foreground">
+                Get personalized university recommendations powered by AI. Pay just $1 for 10 minutes of full access.
+              </p>
+            </div>
+            
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+              <div className="flex items-center justify-center gap-2 text-primary font-semibold">
+                <DollarSign className="w-5 h-5" />
+                <span>$1 for 10 minutes</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Explore matches, compare universities, get AI advice, and save your shortlist.
+              </p>
+            </div>
+
+            <Button
+              onClick={purchaseAccess}
+              disabled={purchasing}
+              className="w-full gap-2"
+              size="lg"
+            >
+              {purchasing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              {purchasing ? "Redirecting to checkout..." : "Unlock Access - $1"}
+            </Button>
+
+            <p className="text-xs text-muted-foreground">
+              Or upgrade to Pro/Elite plan for unlimited access
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
-      <LockedFeatureModal open={showLockedModal} onOpenChange={setShowLockedModal} />
+      {/* Timer banner for paid access */}
+      {hasPaidAccess && !hasUniversityMatchAccess && (
+        <div className="mb-4 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-foreground">
+            <Clock className="w-4 h-4 text-primary" />
+            <span>
+              Access expires in <span className="font-mono font-bold text-primary">{formattedTime}</span>
+            </span>
+          </div>
+          {remainingSeconds < 120 && (
+            <Button variant="outline" size="sm" onClick={purchaseAccess} disabled={purchasing} className="gap-1 text-xs">
+              <DollarSign className="w-3 h-3" />
+              Buy more time - $1
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Refresh Confirmation Dialog */}
       <Dialog open={confirmRefreshOpen} onOpenChange={setConfirmRefreshOpen}>
@@ -370,7 +461,7 @@ export default function UniversityMatch() {
           <DialogHeader>
             <DialogTitle>Refresh Scholarship Data</DialogTitle>
             <DialogDescription>
-              This will re-fetch the latest scholarship and acceptance data from the web for all universities. This may take 1–2 minutes. Continue?
+              This will re-fetch the latest scholarship and acceptance data from the web for all universities. This may take 1-2 minutes. Continue?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -422,7 +513,7 @@ export default function UniversityMatch() {
         onUniversityChange={setSelectedUniversity}
       />
 
-      {hasUniversityMatchAccess && !editingProfile && (
+      {canAccess && !editingProfile && (
         <div className="flex gap-6 max-w-[1400px] mx-auto">
           {/* Left Column: Profile Card */}
           <div className="hidden lg:block w-[280px] flex-shrink-0 sticky top-4 self-start space-y-4">
@@ -539,7 +630,7 @@ export default function UniversityMatch() {
       )}
 
       {/* Floating AI Advisor Button */}
-      {hasUniversityMatchAccess && matches.length > 0 && !advisorOpen && (
+      {canAccess && matches.length > 0 && !advisorOpen && (
         <button
           onClick={() => setAdvisorOpen(true)}
           className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
