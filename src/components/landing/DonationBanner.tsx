@@ -16,7 +16,12 @@ const DONATION_LINKS = [
 ];
 
 export function DonationBanner() {
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem("donation-dismissed") === "true");
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    sessionStorage.setItem("donation-dismissed", "true");
+  };
 
   if (dismissed) return null;
 
@@ -24,7 +29,7 @@ export function DonationBanner() {
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90vw] max-w-lg">
       <div className="relative rounded-2xl border border-border/50 bg-card/95 backdrop-blur-lg p-5 shadow-2xl">
         <button
-          onClick={() => setDismissed(true)}
+          onClick={handleDismiss}
           className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Dismiss"
         >
