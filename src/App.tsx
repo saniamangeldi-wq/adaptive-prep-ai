@@ -164,7 +164,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <StaleVersionBanner />
+          
           <InstallPrompt />
           <AppRoutes />
         </TooltipProvider>
