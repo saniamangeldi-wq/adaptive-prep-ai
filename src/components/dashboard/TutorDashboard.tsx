@@ -13,6 +13,7 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { VoiceMinutesBar } from "./VoiceMinutesBar";
 
 export function TutorDashboard() {
   const { profile } = useAuth();
