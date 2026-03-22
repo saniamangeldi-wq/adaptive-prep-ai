@@ -222,7 +222,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     clearAttachments();
     setShowAttachments(false);
     setShowReferences(false);
-    await streamChat(fullInput, { endpoint: "student-chat" }, text, attachMeta);
+    await streamChat(fullInput, { endpoint: "student-chat", modelOverride }, text, attachMeta);
   };
 
   const handleChipClick = (prompt: string) => {

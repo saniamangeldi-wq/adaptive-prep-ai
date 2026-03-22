@@ -89,6 +89,7 @@ export function useAIChat(conversationId?: string | null) {
           isReport: options.isReport || false,
           reportContext: options.reportContext,
           analysisType: options.analysisType,
+          modelOverride: options.modelOverride,
         }),
       });
 
