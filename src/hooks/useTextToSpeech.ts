@@ -7,6 +7,7 @@ export function useTextToSpeech() {
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentUrlRef = useRef<string | null>(null);
+  const playStartRef = useRef<number | null>(null);
 
   const stop = useCallback(() => {
     if (audioRef.current) {
