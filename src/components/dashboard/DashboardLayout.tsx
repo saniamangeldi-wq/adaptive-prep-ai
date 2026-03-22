@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { DonationBanner } from "@/components/landing/DonationBanner";
 import { useTranslation } from "react-i18next";
 import {
   GraduationCap,
