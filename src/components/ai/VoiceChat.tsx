@@ -1,10 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useConversation } from "@elevenlabs/react";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Volume2, VolumeX, Loader2, Crown, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useVoiceMinutes } from "@/hooks/useVoiceMinutes";
 
 interface VoiceChatProps {
   onTranscript?: (text: string) => void;
