@@ -16,7 +16,12 @@ const DONATION_LINKS = [
 ];
 
 export function DonationBanner() {
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem("donation-dismissed") === "true");
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    sessionStorage.setItem("donation-dismissed", "true");
+  };
 
   if (dismissed) return null;
 
