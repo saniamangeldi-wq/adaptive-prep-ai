@@ -1,6 +1,6 @@
 import { Sparkles, BookOpen, Brain, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoImg from "@/assets/logo.png";
+
 import { Link } from "react-router-dom";
 import { AIChatPreview } from "./AIChatPreview";
 
@@ -27,10 +27,7 @@ export function Hero() {
             {/* Heading */}
             <div className="space-y-4">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-                <div className="flex items-center gap-4 mb-2">
-                  <img src={logoImg} alt="AdaptivePrep logo" className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl" />
-                  <span>Meet</span>
-                </div>
+                Meet{" "}
                 <span className="gradient-text">AdaptivePrep</span>
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground max-w-lg">
