@@ -120,11 +120,8 @@ export default function UniversityMatch() {
     const sessionId = searchParams.get("session_id");
 
     if (payment === "success" && sessionId) {
-      verifyPayment(sessionId).then((granted) => {
-        if (granted) {
-          toast({ title: "Access granted!", description: "You have 10 minutes of University Match access." });
-        }
-        // Clean up URL params
+      verifyPayment(sessionId).then(() => {
+        // Clean up URL params — toast is handled inside verifyPayment
         setSearchParams({});
       });
     } else if (payment === "cancelled") {
