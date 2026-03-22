@@ -26,8 +26,11 @@ export function Hero() {
 
             {/* Heading */}
             <div className="space-y-4">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-                Meet{" "}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
+                <div className="flex items-center gap-4 mb-2">
+                  <img src={logoImg} alt="AdaptivePrep logo" className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl" />
+                  <span>Meet</span>
+                </div>
                 <span className="gradient-text">AdaptivePrep</span>
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground max-w-lg">
