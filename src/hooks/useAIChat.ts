@@ -20,6 +20,7 @@ interface StreamChatOptions {
     instructions?: string;
   };
   analysisType?: "general" | "projection" | "comprehensive";
+  modelOverride?: string;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
