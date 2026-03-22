@@ -14,6 +14,7 @@ import { History, X, Zap, Mic, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CreditsInfoPopover } from "@/components/ai/CreditsInfoPopover";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
+import { ModelSelector, type EliteModel } from "@/components/ai/ModelSelector";
 import type { Reference } from "@/hooks/useReferences";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
