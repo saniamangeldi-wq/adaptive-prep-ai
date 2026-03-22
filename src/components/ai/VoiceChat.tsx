@@ -50,6 +50,10 @@ export function VoiceChat({ onTranscript, isDisabled, className, fullMode = fals
   });
 
   const startConversation = useCallback(async () => {
+    if (isExhausted) {
+      toast.error(`Voice minutes used up for this month. Resets on ${resetDateStr}.`);
+      return;
+    }
     setIsConnecting(true);
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
