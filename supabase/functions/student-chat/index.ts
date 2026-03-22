@@ -561,7 +561,7 @@ serve(async (req) => {
       });
     }
 
-    const { messages, taskType, subject: explicitSubject } = await req.json();
+    const { messages, taskType, subject: explicitSubject, modelOverride } = await req.json();
 
     // Deduct 1 credit
     const { error: updateError } = await supabase
