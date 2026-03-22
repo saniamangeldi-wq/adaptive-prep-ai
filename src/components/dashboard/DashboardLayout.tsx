@@ -387,6 +387,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="p-4 lg:p-6 pb-16 md:pb-4 lg:pb-6">{children}</main>
+        <DonationBanner />
       </div>
     </div>
   );
