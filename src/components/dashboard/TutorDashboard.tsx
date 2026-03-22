@@ -13,6 +13,7 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { VoiceMinutesBar } from "./VoiceMinutesBar";
 
 export function TutorDashboard() {
   const { profile } = useAuth();
@@ -69,6 +70,9 @@ export function TutorDashboard() {
           tooltip="Calculated from student session ratings. Students rate each AI session 1–5 stars after completing it."
         />
       </div>
+
+      {/* Voice Minutes Usage */}
+      <VoiceMinutesBar />
 
       {/* Quick actions */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">

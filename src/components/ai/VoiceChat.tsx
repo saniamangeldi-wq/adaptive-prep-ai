@@ -1,10 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useConversation } from "@elevenlabs/react";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Volume2, VolumeX, Loader2, Crown, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useVoiceMinutes } from "@/hooks/useVoiceMinutes";
 
 interface VoiceChatProps {
   onTranscript?: (text: string) => void;
@@ -17,6 +18,8 @@ export function VoiceChat({ onTranscript, isDisabled, className, fullMode = fals
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [transcript, setTranscript] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
+  const { isExhausted, hasVoiceAccess, addUsage, resetDateStr } = useVoiceMinutes();
+  const sessionStartRef = useRef<number | null>(null);
 
   const conversation = useConversation({
     onConnect: () => {
@@ -47,6 +50,10 @@ export function VoiceChat({ onTranscript, isDisabled, className, fullMode = fals
   });
 
   const startConversation = useCallback(async () => {
+    if (isExhausted) {
+      toast.error(`Voice minutes used up for this month. Resets on ${resetDateStr}.`);
+      return;
+    }
     setIsConnecting(true);
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -87,6 +94,7 @@ export function VoiceChat({ onTranscript, isDisabled, className, fullMode = fals
       }
 
       setTranscript([]);
+      sessionStartRef.current = Date.now();
 
       try {
         if (signedUrl) {
@@ -124,8 +132,14 @@ export function VoiceChat({ onTranscript, isDisabled, className, fullMode = fals
   }, [conversation]);
 
   const stopConversation = useCallback(async () => {
+    // Track voice minutes used
+    if (sessionStartRef.current) {
+      const seconds = Math.ceil((Date.now() - sessionStartRef.current) / 1000);
+      sessionStartRef.current = null;
+      await addUsage(seconds);
+    }
     await conversation.endSession();
-  }, [conversation]);
+  }, [conversation, addUsage]);
 
   const toggleMute = useCallback(() => {
     const newVolume = isMuted ? 1 : 0;

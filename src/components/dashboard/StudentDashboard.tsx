@@ -26,6 +26,7 @@ import { DashboardTutorial } from "./DashboardTutorial";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
 import { StudentAffiliationBanner } from "./StudentAffiliationBanner";
+import { VoiceMinutesBar } from "./VoiceMinutesBar";
 
 // Subject icons map
 const subjectIcons: Record<string, string> = {
@@ -195,6 +196,9 @@ export function StudentDashboard() {
           tooltip="Your daily study streak and total points earned"
         />
       </div>
+
+      {/* Voice Minutes Usage */}
+      <VoiceMinutesBar />
 
       {/* Achievement Badges */}
       <div className="space-y-3">

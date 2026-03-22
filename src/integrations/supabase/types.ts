@@ -1684,6 +1684,30 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_usage: {
+        Row: {
+          id: string
+          month_year: string
+          seconds_used: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          month_year?: string
+          seconds_used?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          month_year?: string
+          seconds_used?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
