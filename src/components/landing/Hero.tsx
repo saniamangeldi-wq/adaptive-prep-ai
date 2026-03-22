@@ -1,6 +1,6 @@
 import { Sparkles, BookOpen, Brain, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoImg from "@/assets/logo.png";
+
 import { Link } from "react-router-dom";
 import { AIChatPreview } from "./AIChatPreview";
 
