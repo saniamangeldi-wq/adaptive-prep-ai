@@ -197,6 +197,9 @@ export function StudentDashboard() {
         />
       </div>
 
+      {/* Voice Minutes Usage */}
+      <VoiceMinutesBar />
+
       {/* Achievement Badges */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">

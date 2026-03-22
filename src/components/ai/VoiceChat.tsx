@@ -132,8 +132,14 @@ export function VoiceChat({ onTranscript, isDisabled, className, fullMode = fals
   }, [conversation]);
 
   const stopConversation = useCallback(async () => {
+    // Track voice minutes used
+    if (sessionStartRef.current) {
+      const seconds = Math.ceil((Date.now() - sessionStartRef.current) / 1000);
+      sessionStartRef.current = null;
+      await addUsage(seconds);
+    }
     await conversation.endSession();
-  }, [conversation]);
+  }, [conversation, addUsage]);
 
   const toggleMute = useCallback(() => {
     const newVolume = isMuted ? 1 : 0;
