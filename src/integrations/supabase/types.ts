@@ -1459,6 +1459,33 @@ export type Database = {
         }
         Relationships: []
       }
+      university_access_grants: {
+        Row: {
+          created_at: string
+          expires_at: string
+          granted_at: string
+          id: string
+          stripe_session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          granted_at?: string
+          id?: string
+          stripe_session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          granted_at?: string
+          id?: string
+          stripe_session_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       university_database: {
         Row: {
           acceptance_rate: number | null
