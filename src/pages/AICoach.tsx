@@ -114,6 +114,7 @@ export default function AICoach() {
             chatMode={chatMode}
             spaceReferences={spaceRefs}
             activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
+            modelOverride={isElite ? eliteModel : undefined}
           />
         );
     }
