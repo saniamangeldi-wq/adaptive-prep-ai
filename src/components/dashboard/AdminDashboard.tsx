@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { DuplicateAccountsPanel } from "./DuplicateAccountsPanel";
 
 export function AdminDashboard() {
   const { profile } = useAuth();
@@ -246,6 +247,9 @@ export function AdminDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Duplicate Account Detection */}
+      <DuplicateAccountsPanel />
 
       {/* Performance overview */}
       <div className="p-6 rounded-2xl bg-card border border-border/50">
