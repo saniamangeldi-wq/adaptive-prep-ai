@@ -27,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
 import { StudentAffiliationBanner } from "./StudentAffiliationBanner";
 import { VoiceMinutesBar } from "./VoiceMinutesBar";
+import { DonationBanner } from "@/components/landing/DonationBanner";
 
 // Subject icons map
 const subjectIcons: Record<string, string> = {
@@ -199,6 +200,9 @@ export function StudentDashboard() {
 
       {/* Voice Minutes Usage */}
       <VoiceMinutesBar />
+
+      {/* Unlock / Credits Purchase */}
+      <DonationBanner />
 
       {/* Achievement Badges */}
       <div className="space-y-3">
