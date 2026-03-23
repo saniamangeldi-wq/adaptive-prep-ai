@@ -27,6 +27,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
 import { StudentAffiliationBanner } from "./StudentAffiliationBanner";
 import { VoiceMinutesBar } from "./VoiceMinutesBar";
+import { DonationBanner } from "@/components/landing/DonationBanner";
 
 // Subject icons map
 const subjectIcons: Record<string, string> = {
