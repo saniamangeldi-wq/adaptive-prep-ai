@@ -248,6 +248,9 @@ export function AdminDashboard() {
         </div>
       </div>
 
+      {/* Duplicate Account Detection */}
+      <DuplicateAccountsPanel />
+
       {/* Performance overview */}
       <div className="p-6 rounded-2xl bg-card border border-border/50">
         <h3 className="font-semibold text-foreground mb-4">Department Performance</h3>
