@@ -443,6 +443,51 @@ export type Database = {
           },
         ]
       }
+      duplicate_account_flags: {
+        Row: {
+          created_at: string
+          existing_email: string
+          existing_name: string | null
+          existing_user_id: string
+          id: string
+          new_email: string
+          new_name: string | null
+          new_user_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          similarity_reason: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          existing_email: string
+          existing_name?: string | null
+          existing_user_id: string
+          id?: string
+          new_email: string
+          new_name?: string | null
+          new_user_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          similarity_reason: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          existing_email?: string
+          existing_name?: string | null
+          existing_user_id?: string
+          id?: string
+          new_email?: string
+          new_name?: string | null
+          new_user_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          similarity_reason?: string
+          status?: string
+        }
+        Relationships: []
+      }
       financial_reports: {
         Row: {
           city: string | null
