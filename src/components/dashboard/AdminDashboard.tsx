@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { DuplicateAccountsPanel } from "./DuplicateAccountsPanel";
 
 export function AdminDashboard() {
   const { profile } = useAuth();
