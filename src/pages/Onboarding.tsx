@@ -47,14 +47,13 @@ export default function Onboarding() {
   }, [user, profile]);
 
   // Progress calculation
-  const totalSteps = 4; // grade, goal, subjects, vak
+  const totalSteps = 3; // grade, subjects, vak
   const getCurrentStep = () => {
     switch (phase) {
       case "grade": return 1;
-      case "goal": return 2;
-      case "subjects": return 3;
-      case "vak": return 3.5;
-      case "results": return 4;
+      case "subjects": return 2;
+      case "vak": return 2.5;
+      case "results": return 3;
       default: return 1;
     }
   };
@@ -63,7 +62,6 @@ export default function Onboarding() {
   const canProceed = () => {
     switch (phase) {
       case "grade": return gradeLevel !== "";
-      case "goal": return primaryGoal !== "";
       case "subjects": return selectedSubjects.length > 0;
       default: return false;
     }
@@ -71,16 +69,14 @@ export default function Onboarding() {
 
   const handleNext = () => {
     switch (phase) {
-      case "grade": setPhase("goal"); break;
-      case "goal": setPhase("subjects"); break;
+      case "grade": setPhase("subjects"); break;
       case "subjects": setPhase("vak"); break;
     }
   };
 
   const handleBack = () => {
     switch (phase) {
-      case "goal": setPhase("grade"); break;
-      case "subjects": setPhase("goal"); break;
+      case "subjects": setPhase("grade"); break;
       case "vak": setPhase("subjects"); break;
     }
   };
