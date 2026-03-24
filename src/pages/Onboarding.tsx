@@ -7,19 +7,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 import { GradeLevelStep } from "@/components/onboarding/GradeLevelStep";
-import { PrimaryGoalStep } from "@/components/onboarding/PrimaryGoalStep";
 import { SubjectSelectionStep } from "@/components/onboarding/SubjectSelectionStep";
 import { VAKAssessment } from "@/components/onboarding/VAKAssessment";
 import { VAKResults } from "@/components/onboarding/VAKResults";
 import { calculateVAKResult, type VAKResult } from "@/lib/vak-scoring";
-import { getQuestionCountForTier, type VAKStyle } from "@/lib/vak-questions";
+import { type VAKStyle } from "@/lib/vak-questions";
 
-type OnboardingPhase = "grade" | "goal" | "subjects" | "vak" | "results";
+type OnboardingPhase = "grade" | "subjects" | "vak" | "results";
 
 export default function Onboarding() {
   const [phase, setPhase] = useState<OnboardingPhase>("grade");
   const [gradeLevel, setGradeLevel] = useState("");
-  const [primaryGoal, setPrimaryGoal] = useState("");
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>(["SAT"]);
   const [vakResult, setVakResult] = useState<VAKResult | null>(null);
   const [savedVAKProgress, setSavedVAKProgress] = useState<{
@@ -47,7 +45,7 @@ export default function Onboarding() {
   }, [user, profile]);
 
   // Progress calculation
-  const totalSteps = 3; // grade, subjects, vak
+  const totalSteps = 3;
   const getCurrentStep = () => {
     switch (phase) {
       case "grade": return 1;
@@ -86,7 +84,6 @@ export default function Onboarding() {
     currentIndex: number
   ) => {
     if (!user) return;
-    // Save to DB (fire-and-forget)
     supabase
       .from("profiles")
       .update({ vak_progress: { answers, currentIndex } } as any)
@@ -112,7 +109,7 @@ export default function Onboarding() {
         .update({
           learning_style: vakResult.primaryStyle as any,
           grade_level: gradeLevel,
-          primary_goal: primaryGoal,
+          primary_goal: "SAT",
           study_subjects: selectedSubjects,
           onboarding_completed: true,
           vak_visual_pct: vakResult.scores.visual,
@@ -123,13 +120,12 @@ export default function Onboarding() {
           vak_sub_type: vakResult.subType,
           vak_tier_taken: userTier,
           vak_last_taken_at: new Date().toISOString(),
-          vak_progress: null, // Clear saved progress
+          vak_progress: null,
         } as any)
         .eq("user_id", user.id);
 
       if (profileError) throw profileError;
 
-      // Save detailed responses
       const answersObj = savedVAKProgress?.answers ?? {};
       const { error: quizError } = await supabase
         .from("learning_style_responses")
@@ -158,7 +154,6 @@ export default function Onboarding() {
     }
   };
 
-  // Results screen (full-screen)
   if (phase === "results" && vakResult) {
     return (
       <VAKResults
@@ -173,7 +168,6 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col dark">
-      {/* Progress bar */}
       <div className="h-1 bg-secondary">
         <div
           className="h-full bg-primary transition-all duration-300"
@@ -183,7 +177,6 @@ export default function Onboarding() {
 
       <div className="flex-1 flex items-center justify-center p-4 md:p-8">
         <div className="max-w-xl w-full space-y-8">
-          {/* Step indicator for pre-VAK phases */}
           {phase !== "vak" && (
             <div className="text-center text-sm text-muted-foreground">
               Step {getCurrentStep()} of {totalSteps}
@@ -192,10 +185,6 @@ export default function Onboarding() {
 
           {phase === "grade" && (
             <GradeLevelStep value={gradeLevel} onChange={setGradeLevel} />
-          )}
-
-          {phase === "goal" && (
-            <PrimaryGoalStep value={primaryGoal} onChange={setPrimaryGoal} />
           )}
 
           {phase === "subjects" && (
@@ -214,7 +203,6 @@ export default function Onboarding() {
             />
           )}
 
-          {/* Navigation (only for pre-VAK phases) */}
           {phase !== "vak" && (
             <div className="flex items-center justify-between pt-4">
               <Button
