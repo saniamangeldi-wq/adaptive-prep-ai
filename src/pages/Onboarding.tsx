@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,19 +7,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 import { GradeLevelStep } from "@/components/onboarding/GradeLevelStep";
-import { PrimaryGoalStep } from "@/components/onboarding/PrimaryGoalStep";
 import { SubjectSelectionStep } from "@/components/onboarding/SubjectSelectionStep";
 import { VAKAssessment } from "@/components/onboarding/VAKAssessment";
 import { VAKResults } from "@/components/onboarding/VAKResults";
 import { calculateVAKResult, type VAKResult } from "@/lib/vak-scoring";
-import { getQuestionCountForTier, type VAKStyle } from "@/lib/vak-questions";
+import { type VAKStyle } from "@/lib/vak-questions";
 
-type OnboardingPhase = "grade" | "goal" | "subjects" | "vak" | "results";
+type OnboardingPhase = "grade" | "subjects" | "vak" | "results";
 
 export default function Onboarding() {
-  const [phase, setPhase] = useState<OnboardingPhase>("grade");
+  const [searchParams] = useSearchParams();
+  const isRetake = searchParams.get("retake") === "vak";
+
+  const [phase, setPhase] = useState<OnboardingPhase>(isRetake ? "vak" : "grade");
   const [gradeLevel, setGradeLevel] = useState("");
-  const [primaryGoal, setPrimaryGoal] = useState("");
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>(["SAT"]);
   const [vakResult, setVakResult] = useState<VAKResult | null>(null);
   const [savedVAKProgress, setSavedVAKProgress] = useState<{
@@ -46,15 +47,22 @@ export default function Onboarding() {
     }
   }, [user, profile]);
 
+  // Pre-fill from profile for retake
+  useEffect(() => {
+    if (isRetake && profile) {
+      setGradeLevel(profile.grade_level || "");
+      setSelectedSubjects((profile.study_subjects as string[]) || ["SAT"]);
+    }
+  }, [isRetake, profile]);
+
   // Progress calculation
-  const totalSteps = 4; // grade, goal, subjects, vak
+  const totalSteps = 3;
   const getCurrentStep = () => {
     switch (phase) {
       case "grade": return 1;
-      case "goal": return 2;
-      case "subjects": return 3;
-      case "vak": return 3.5;
-      case "results": return 4;
+      case "subjects": return 2;
+      case "vak": return 2.5;
+      case "results": return 3;
       default: return 1;
     }
   };
@@ -63,7 +71,6 @@ export default function Onboarding() {
   const canProceed = () => {
     switch (phase) {
       case "grade": return gradeLevel !== "";
-      case "goal": return primaryGoal !== "";
       case "subjects": return selectedSubjects.length > 0;
       default: return false;
     }
@@ -71,16 +78,14 @@ export default function Onboarding() {
 
   const handleNext = () => {
     switch (phase) {
-      case "grade": setPhase("goal"); break;
-      case "goal": setPhase("subjects"); break;
+      case "grade": setPhase("subjects"); break;
       case "subjects": setPhase("vak"); break;
     }
   };
 
   const handleBack = () => {
     switch (phase) {
-      case "goal": setPhase("grade"); break;
-      case "subjects": setPhase("goal"); break;
+      case "subjects": setPhase("grade"); break;
       case "vak": setPhase("subjects"); break;
     }
   };
@@ -90,7 +95,6 @@ export default function Onboarding() {
     currentIndex: number
   ) => {
     if (!user) return;
-    // Save to DB (fire-and-forget)
     supabase
       .from("profiles")
       .update({ vak_progress: { answers, currentIndex } } as any)
@@ -111,29 +115,34 @@ export default function Onboarding() {
 
     setLoading(true);
     try {
+      const updateData: Record<string, any> = {
+        learning_style: vakResult.primaryStyle,
+        vak_visual_pct: vakResult.scores.visual,
+        vak_auditory_pct: vakResult.scores.auditory,
+        vak_kinesthetic_pct: vakResult.scores.kinesthetic,
+        vak_primary_style: vakResult.primaryStyle,
+        vak_secondary_style: vakResult.secondaryStyle,
+        vak_sub_type: vakResult.subType,
+        vak_tier_taken: userTier,
+        vak_last_taken_at: new Date().toISOString(),
+        vak_progress: null,
+      };
+
+      // Only set these on first onboarding, not retake
+      if (!isRetake) {
+        updateData.grade_level = gradeLevel;
+        updateData.primary_goal = "SAT";
+        updateData.study_subjects = selectedSubjects;
+        updateData.onboarding_completed = true;
+      }
+
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({
-          learning_style: vakResult.primaryStyle as any,
-          grade_level: gradeLevel,
-          primary_goal: primaryGoal,
-          study_subjects: selectedSubjects,
-          onboarding_completed: true,
-          vak_visual_pct: vakResult.scores.visual,
-          vak_auditory_pct: vakResult.scores.auditory,
-          vak_kinesthetic_pct: vakResult.scores.kinesthetic,
-          vak_primary_style: vakResult.primaryStyle,
-          vak_secondary_style: vakResult.secondaryStyle,
-          vak_sub_type: vakResult.subType,
-          vak_tier_taken: userTier,
-          vak_last_taken_at: new Date().toISOString(),
-          vak_progress: null, // Clear saved progress
-        } as any)
+        .update(updateData as any)
         .eq("user_id", user.id);
 
       if (profileError) throw profileError;
 
-      // Save detailed responses
       const answersObj = savedVAKProgress?.answers ?? {};
       const { error: quizError } = await supabase
         .from("learning_style_responses")
@@ -151,10 +160,14 @@ export default function Onboarding() {
       if (quizError) throw quizError;
 
       await refreshProfile();
-      toast.success(
-        `✅ Your platform is now personalized for ${vakResult.label}s!`
-      );
-      navigate("/dashboard");
+
+      if (isRetake) {
+        toast.success(`✅ Learning style updated to ${vakResult.label}!`);
+        navigate("/settings");
+      } else {
+        toast.success(`✅ Your platform is now personalized for ${vakResult.label}s!`);
+        navigate("/dashboard");
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to save preferences");
     } finally {
@@ -162,7 +175,6 @@ export default function Onboarding() {
     }
   };
 
-  // Results screen (full-screen)
   if (phase === "results" && vakResult) {
     return (
       <VAKResults
@@ -177,7 +189,6 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col dark">
-      {/* Progress bar */}
       <div className="h-1 bg-secondary">
         <div
           className="h-full bg-primary transition-all duration-300"
@@ -187,22 +198,17 @@ export default function Onboarding() {
 
       <div className="flex-1 flex items-center justify-center p-4 md:p-8">
         <div className="max-w-xl w-full space-y-8">
-          {/* Step indicator for pre-VAK phases */}
-          {phase !== "vak" && (
+          {phase !== "vak" && !isRetake && (
             <div className="text-center text-sm text-muted-foreground">
               Step {getCurrentStep()} of {totalSteps}
             </div>
           )}
 
-          {phase === "grade" && (
+          {phase === "grade" && !isRetake && (
             <GradeLevelStep value={gradeLevel} onChange={setGradeLevel} />
           )}
 
-          {phase === "goal" && (
-            <PrimaryGoalStep value={primaryGoal} onChange={setPrimaryGoal} />
-          )}
-
-          {phase === "subjects" && (
+          {phase === "subjects" && !isRetake && (
             <SubjectSelectionStep
               value={selectedSubjects}
               onChange={setSelectedSubjects}
@@ -218,8 +224,7 @@ export default function Onboarding() {
             />
           )}
 
-          {/* Navigation (only for pre-VAK phases) */}
-          {phase !== "vak" && (
+          {phase !== "vak" && !isRetake && (
             <div className="flex items-center justify-between pt-4">
               <Button
                 variant="ghost"

@@ -13,7 +13,8 @@ import {
   Bell,
   Moon,
   Globe,
-  Languages
+  Languages,
+  Brain
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -260,6 +261,54 @@ export default function Settings() {
             </div>
           </div>
         </div>
+
+        {/* Learning Style Assessment */}
+        {profile?.role === "student" && (
+          <div className="p-6 rounded-2xl bg-card border border-border/50">
+            <div className="flex items-center gap-3 mb-6">
+              <Brain className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Learning Style Assessment</h3>
+            </div>
+            <div className="space-y-4">
+              {profile?.vak_primary_style && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                  <span className="text-muted-foreground">Current Style</span>
+                  <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium capitalize">
+                    {profile.vak_primary_style}
+                  </span>
+                </div>
+              )}
+              {profile?.vak_last_taken_at && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                  <span className="text-muted-foreground">Last taken</span>
+                  <span className="text-foreground text-sm">
+                    {new Date(profile.vak_last_taken_at).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+              {(() => {
+                const lastTaken = profile?.vak_last_taken_at;
+                const canRetake = !lastTaken || (Date.now() - new Date(lastTaken).getTime()) > 7 * 24 * 60 * 60 * 1000;
+                const nextDate = lastTaken ? new Date(new Date(lastTaken).getTime() + 7 * 24 * 60 * 60 * 1000) : null;
+                return (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      Retake the assessment weekly so the AI adapts to your evolving learning style.
+                    </p>
+                    <Button
+                      variant="hero"
+                      onClick={() => navigate("/onboarding?retake=vak")}
+                      disabled={!canRetake}
+                    >
+                      <Brain className="w-4 h-4" />
+                      {canRetake ? "Retake Assessment" : `Available ${nextDate?.toLocaleDateString()}`}
+                    </Button>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* Logout */}
         <div className="p-6 rounded-2xl bg-card border border-destructive/30">
