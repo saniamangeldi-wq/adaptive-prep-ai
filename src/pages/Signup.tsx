@@ -31,10 +31,15 @@ export default function Signup() {
   const handleGoogleSignup = async () => {
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/onboarding",
+        redirect_uri: window.location.origin + "/dashboard",
       });
 
       if (result?.error) throw result.error;
+      
+      // After OAuth completes and session is set, check if profile exists
+      // The AuthContext will handle routing: 
+      // - existing user with onboarding_completed → /dashboard
+      // - new user or onboarding not completed → /onboarding
     } catch (error: any) {
       toast.error(error.message || "Failed to sign up with Google");
     }

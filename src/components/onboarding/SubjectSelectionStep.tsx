@@ -1,16 +1,12 @@
 import { cn } from "@/lib/utils";
 
 const subjects = [
-  { name: "SAT", category: "test_prep", icon: "📝", description: "Digital SAT preparation" },
-  { name: "ACT", category: "test_prep", icon: "📊", description: "ACT test preparation" },
-  { name: "AP Calculus", category: "test_prep", icon: "📐", description: "Advanced Placement Calculus" },
-  { name: "AP English", category: "test_prep", icon: "📖", description: "Advanced Placement English" },
-  { name: "Math", category: "high_school", icon: "🔢", description: "Algebra, Geometry, Pre-Calculus" },
-  { name: "Science", category: "high_school", icon: "🧪", description: "Biology, Chemistry, Physics" },
-  { name: "English", category: "high_school", icon: "📚", description: "Grammar, Writing, Literature" },
-  { name: "History", category: "high_school", icon: "🏛️", description: "US History, World History" },
-  { name: "Essay Writing", category: "general", icon: "✍️", description: "College essays, creative writing" },
-  { name: "Homework Help", category: "general", icon: "📝", description: "Any subject homework assistance" },
+  { name: "SAT", category: "primary", icon: "📝", description: "Full practice tests & targeted prep" },
+  { name: "Math", category: "ai_help", icon: "🔢", description: "AI tutoring for Algebra, Geometry & more" },
+  { name: "Science", category: "ai_help", icon: "🧪", description: "AI tutoring for Bio, Chem, Physics" },
+  { name: "English", category: "ai_help", icon: "📚", description: "AI tutoring for Grammar & Literature" },
+  { name: "History", category: "ai_help", icon: "🏛️", description: "AI tutoring for US & World History" },
+  { name: "Essay Writing", category: "ai_help", icon: "✍️", description: "AI help with college & creative essays" },
 ];
 
 interface SubjectSelectionStepProps {
@@ -20,6 +16,8 @@ interface SubjectSelectionStepProps {
 
 export function SubjectSelectionStep({ value, onChange }: SubjectSelectionStepProps) {
   const toggleSubject = (subjectName: string) => {
+    // SAT is always selected and can't be removed
+    if (subjectName === "SAT") return;
     if (value.includes(subjectName)) {
       onChange(value.filter((s) => s !== subjectName));
     } else {
@@ -27,61 +25,73 @@ export function SubjectSelectionStep({ value, onChange }: SubjectSelectionStepPr
     }
   };
 
-  const categoryLabels: Record<string, string> = {
-    test_prep: "Test Preparation",
-    high_school: "High School Subjects",
-    general: "General Learning",
-  };
-
-  const groupedSubjects = subjects.reduce((acc, subject) => {
-    if (!acc[subject.category]) {
-      acc[subject.category] = [];
-    }
-    acc[subject.category].push(subject);
-    return acc;
-  }, {} as Record<string, typeof subjects>);
+  const primarySubjects = subjects.filter((s) => s.category === "primary");
+  const aiSubjects = subjects.filter((s) => s.category === "ai_help");
 
   return (
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-foreground">
-          What subjects do you need help with?
+          What would you like help with?
         </h2>
         <p className="text-muted-foreground mt-2">
-          Select all that apply - you can change these later
+          SAT is your core focus — select any other subjects for AI tutoring
         </p>
       </div>
 
       <div className="space-y-6">
-        {Object.entries(groupedSubjects).map(([category, categorySubjects]) => (
-          <div key={category}>
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              {categoryLabels[category]}
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {categorySubjects.map((subject) => (
-                <button
-                  key={subject.name}
-                  onClick={() => toggleSubject(subject.name)}
-                  className={cn(
-                    "p-3 rounded-xl border-2 text-center transition-all duration-200",
-                    value.includes(subject.name)
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <span className="text-2xl block mb-1">{subject.icon}</span>
-                  <span className="text-foreground text-sm font-medium">{subject.name}</span>
-                </button>
-              ))}
-            </div>
+        {/* Primary - SAT */}
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">
+            Your Core Focus
+          </h3>
+          <div className="grid grid-cols-1 gap-2">
+            {primarySubjects.map((subject) => (
+              <div
+                key={subject.name}
+                className="p-4 rounded-xl border-2 border-primary bg-primary/10 flex items-center gap-4"
+              >
+                <span className="text-3xl">{subject.icon}</span>
+                <div className="flex-1">
+                  <span className="text-foreground font-semibold block">{subject.name}</span>
+                  <span className="text-sm text-muted-foreground">{subject.description}</span>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary font-medium">
+                  Always included
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
+        {/* AI Tutoring Subjects */}
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">
+            AI Tutoring (Optional)
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {aiSubjects.map((subject) => (
+              <button
+                key={subject.name}
+                onClick={() => toggleSubject(subject.name)}
+                className={cn(
+                  "p-3 rounded-xl border-2 text-center transition-all duration-200",
+                  value.includes(subject.name)
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/50"
+                )}
+              >
+                <span className="text-2xl block mb-1">{subject.icon}</span>
+                <span className="text-foreground text-sm font-medium">{subject.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {value.length > 0 && (
+      {value.length > 1 && (
         <p className="text-center text-sm text-muted-foreground">
-          {value.length} subject{value.length !== 1 ? "s" : ""} selected
+          {value.length} subjects selected
         </p>
       )}
     </div>
