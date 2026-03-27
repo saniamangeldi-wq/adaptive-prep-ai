@@ -285,7 +285,7 @@ function SchoolPlanCard({
       <div className="mt-6">
         {isEnterprise ? (
           <Button variant="hero" className="w-full" asChild>
-            <a href="mailto:schools@met.ai">Contact Us</a>
+            <a href="mailto:schools@adaptiveprep.ai">Contact Us</a>
           </Button>
         ) : (
           <>
