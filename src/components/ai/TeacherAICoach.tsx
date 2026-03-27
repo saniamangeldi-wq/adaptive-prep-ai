@@ -373,7 +373,7 @@ export function TeacherAICoach({ conversationId, onEnsureConversation, chatMode 
                     <TutorPerplexityMessage
                       key={message.id}
                       message={message}
-                      isTier3={isTier3}
+                      isTier3={hasTTS}
                       isLast={index === messages.length - 1}
                       onRetry={() => {
                         const prevUserMsg = messages.slice(0, index).reverse().find(m => m.role === "user");

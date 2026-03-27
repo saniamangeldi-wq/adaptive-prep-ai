@@ -316,7 +316,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                 <PerplexityMessage
                   key={`${message.id}-${message.role}`}
                   message={message}
-                  isTier3={isTier3}
+                  isTier3={hasTTS}
                   isLast={index === messages.length - 1}
                   onRetry={() => {
                     // Find the previous user message and resend

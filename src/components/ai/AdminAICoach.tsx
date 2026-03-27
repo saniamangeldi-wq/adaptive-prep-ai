@@ -421,9 +421,9 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
                 <div className="py-6">
                   {messages.map((message, index) => (
                     <AdminPerplexityMessage
-                      key={message.id}
+                       key={message.id}
                       message={message}
-                      isTier3={isTier3}
+                      isTier3={hasTTS}
                       isLast={index === messages.length - 1}
                       onRetry={() => {
                         const prevUserMsg = messages.slice(0, index).reverse().find(m => m.role === "user");
