@@ -101,7 +101,7 @@ export const PRICING_CONFIG = {
       tier: "Tier 3",
       name: "Pro",
       badge: "Most Popular",
-      description: "Core target user — the full MET.AI experience.",
+      description: "Core target user — the full AdaptivePrep experience.",
       monthlyPriceKZT: 4990,
       monthlyPriceUSD: 10,
       mostPopular: true,
