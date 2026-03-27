@@ -114,7 +114,7 @@ export function RoleSwitcher({ collapsed = false }: RoleSwitcherProps) {
                   </>
                 )}
                 {collapsed && switching && (
-                  <Loader2 className="w-4 h-4 text-sidebar-foreground/50 animate-spin absolute" />
+                  <Loader2 className="w-4 h-4 text-sidebar-foreground/50 animate-spin" />
                 )}
              </button>
            </DropdownMenuTrigger>
