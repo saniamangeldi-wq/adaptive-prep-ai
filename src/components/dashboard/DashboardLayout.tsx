@@ -247,6 +247,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="border-t border-sidebar-border p-1.5 space-y-0.5">
+          {sidebarExpanded && <RoleSwitcher />}
           <ThemeSwitcher collapsed={!sidebarExpanded} />
 
           {showInstallButton && (
