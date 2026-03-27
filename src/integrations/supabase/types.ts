@@ -856,6 +856,7 @@ export type Database = {
           is_trial: boolean
           learning_style: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed: boolean
+          preferred_ai_model: string | null
           preferred_language: string
           primary_goal: string | null
           questions_reset_at: string | null
@@ -894,6 +895,7 @@ export type Database = {
           is_trial?: boolean
           learning_style?: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed?: boolean
+          preferred_ai_model?: string | null
           preferred_language?: string
           primary_goal?: string | null
           questions_reset_at?: string | null
@@ -932,6 +934,7 @@ export type Database = {
           is_trial?: boolean
           learning_style?: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed?: boolean
+          preferred_ai_model?: string | null
           preferred_language?: string
           primary_goal?: string | null
           questions_reset_at?: string | null

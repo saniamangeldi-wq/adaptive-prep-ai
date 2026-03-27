@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,7 @@ import { useConversations, Conversation, ConversationSpace } from "@/hooks/useCo
 import { Button } from "@/components/ui/button";
 import { History, X, Zap, Mic, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import { CreditsInfoPopover } from "@/components/ai/CreditsInfoPopover";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { ModelSelector, type EliteModel } from "@/components/ai/ModelSelector";
@@ -29,10 +30,23 @@ export default function AICoach() {
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
-  const [eliteModel, setEliteModel] = useState<EliteModel>("gemini-pro");
+  const [eliteModel, setEliteModel] = useState<EliteModel>(
+    (profile?.preferred_ai_model as EliteModel) || "gemini-pro"
+  );
   const isElite = profile?.tier === "tier_3";
   const coachType = (profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") ? "tutor" : "student";
   const { spaces, createConversation } = useConversations(coachType);
+
+  // Persist model preference when changed
+  const handleModelChange = useCallback(async (model: EliteModel) => {
+    setEliteModel(model);
+    if (profile?.user_id) {
+      await supabase
+        .from("profiles")
+        .update({ preferred_ai_model: model })
+        .eq("user_id", profile.user_id);
+    }
+  }, [profile?.user_id]);
 
   // Check if we're inside a space
   const spaceId = searchParams.get("space");
@@ -184,7 +198,7 @@ export default function AICoach() {
             <div className="flex items-center gap-2">
               {/* Elite model selector */}
               {isElite && (
-                <ModelSelector value={eliteModel} onChange={setEliteModel} />
+                <ModelSelector value={eliteModel} onChange={handleModelChange} />
               )}
 
               {/* Text / Voice toggle — only show voice if user has tier_3 */}
