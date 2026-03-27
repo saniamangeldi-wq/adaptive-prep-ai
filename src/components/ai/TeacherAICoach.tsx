@@ -95,6 +95,7 @@ export function TeacherAICoach({ conversationId, onEnsureConversation, chatMode 
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
+  const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
   const roleLabel = profile?.role === "tutor" ? "Tutor" : "Teacher";
 
   useEffect(() => {
@@ -372,7 +373,7 @@ export function TeacherAICoach({ conversationId, onEnsureConversation, chatMode 
                     <TutorPerplexityMessage
                       key={message.id}
                       message={message}
-                      isTier3={isTier3}
+                      isTier3={hasTTS}
                       isLast={index === messages.length - 1}
                       onRetry={() => {
                         const prevUserMsg = messages.slice(0, index).reverse().find(m => m.role === "user");

@@ -127,6 +127,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
+  const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
 
   useEffect(() => {
     setActiveConvId(conversationId || null);
@@ -315,7 +316,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                 <PerplexityMessage
                   key={`${message.id}-${message.role}`}
                   message={message}
-                  isTier3={isTier3}
+                  isTier3={hasTTS}
                   isLast={index === messages.length - 1}
                   onRetry={() => {
                     // Find the previous user message and resend

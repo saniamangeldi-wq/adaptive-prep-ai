@@ -109,7 +109,7 @@ export const PRICING_CONFIG = {
         "100 AI questions/day",
         "Unlimited quizzes",
         "University match",
-        "No voice",
+        "Listen to AI responses",
       ],
     },
     {

@@ -76,7 +76,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
       "Everything in Basic",
       "Perplexity Pro AI models",
       "University Match",
-      "Enhanced feedback quality",
+      "Listen to AI responses",
       "Priority support",
       "30 flashcards/day",
     ],

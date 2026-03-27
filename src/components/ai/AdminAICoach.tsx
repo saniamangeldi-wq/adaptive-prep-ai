@@ -99,6 +99,7 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
+  const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
 
   useEffect(() => {
     setActiveConvId(conversationId || null);
@@ -420,9 +421,9 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
                 <div className="py-6">
                   {messages.map((message, index) => (
                     <AdminPerplexityMessage
-                      key={message.id}
+                       key={message.id}
                       message={message}
-                      isTier3={isTier3}
+                      isTier3={hasTTS}
                       isLast={index === messages.length - 1}
                       onRetry={() => {
                         const prevUserMsg = messages.slice(0, index).reverse().find(m => m.role === "user");
