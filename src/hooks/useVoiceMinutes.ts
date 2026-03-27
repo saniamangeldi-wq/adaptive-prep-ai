@@ -15,7 +15,7 @@ export function getVoiceMinutesLimit(tier: string | undefined, role?: string): V
     case "tier_1":
       return { minutesPerMonth: 0, planLabel: "Basic" };
     case "tier_2":
-      return { minutesPerMonth: 30, planLabel: "Pro" };
+      return { minutesPerMonth: 0, planLabel: "Pro" };
     case "tier_3":
       return { minutesPerMonth: 200, planLabel: "Elite" };
     default:
