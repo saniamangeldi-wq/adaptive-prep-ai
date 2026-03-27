@@ -1817,6 +1817,10 @@ export type Database = {
         Args: { _student_id: string; _tutor_id: string }
         Returns: boolean
       }
+      upgrade_student_to_tutor_tier: {
+        Args: { _student_id: string; _tutor_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       learning_style: "visual" | "auditory" | "reading_writing" | "kinesthetic"
