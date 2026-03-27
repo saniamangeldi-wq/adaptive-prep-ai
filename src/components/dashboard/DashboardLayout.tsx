@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { DonationBanner } from "@/components/landing/DonationBanner";
+import { RoleSwitcher } from "./RoleSwitcher";
 import { useTranslation } from "react-i18next";
 import {
   GraduationCap,
@@ -246,6 +247,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="border-t border-sidebar-border p-1.5 space-y-0.5">
+          {sidebarExpanded && <RoleSwitcher />}
           <ThemeSwitcher collapsed={!sidebarExpanded} />
 
           {showInstallButton && (
