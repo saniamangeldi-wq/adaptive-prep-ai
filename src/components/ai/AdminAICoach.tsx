@@ -99,6 +99,7 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
+  const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
 
   useEffect(() => {
     setActiveConvId(conversationId || null);
