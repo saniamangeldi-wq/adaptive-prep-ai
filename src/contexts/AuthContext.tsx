@@ -36,6 +36,7 @@ interface Profile {
   vak_last_taken_at: string | null;
   vak_progress: Record<string, any> | null;
   preferred_language: string;
+  preferred_ai_model: string | null;
 }
 
 interface AuthContextType {
