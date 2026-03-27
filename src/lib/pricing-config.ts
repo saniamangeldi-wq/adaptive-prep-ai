@@ -108,8 +108,8 @@ export const PRICING_CONFIG = {
       features: [
         "100 AI questions/day",
         "Unlimited quizzes",
-        "Voice coach",
         "University match",
+        "No voice",
       ],
     },
     {
