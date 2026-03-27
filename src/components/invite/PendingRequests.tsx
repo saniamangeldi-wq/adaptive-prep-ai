@@ -82,6 +82,12 @@ export function PendingRequests({ targetType, targetId, onApprove }: PendingRequ
           .from("tutor_students")
           .insert({ tutor_id: targetId, student_id: request.student_user_id });
         if (relationError && !relationError.message.includes("duplicate")) throw relationError;
+
+        // Upgrade student tier based on tutor's tier
+        await supabase.rpc("upgrade_student_to_tutor_tier", {
+          _student_id: request.student_user_id,
+          _tutor_id: targetId,
+        });
       } else if (request.target_type === "school") {
         const { error: memberError } = await supabase
           .from("school_members")
