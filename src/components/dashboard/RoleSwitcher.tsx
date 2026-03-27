@@ -1,4 +1,4 @@
- import { useState } from "react";
+import { useState } from "react";
  import { 
    Users, 
    BookOpen, 
@@ -29,16 +29,20 @@
  
  type UserRole = "student" | "tutor" | "teacher" | "school_admin";
  
- const roleConfig: Record<UserRole, { label: string; icon: typeof BookOpen; color: string }> = {
-   student: { label: "Student", icon: BookOpen, color: "text-primary" },
-   tutor: { label: "Tutor", icon: User, color: "text-purple-400" },
-   teacher: { label: "Teacher", icon: Users, color: "text-blue-400" },
-   school_admin: { label: "School Admin", icon: School, color: "text-amber-400" },
+const roleConfig: Record<UserRole, { label: string; icon: typeof BookOpen; color: string }> = {
+  student: { label: "Student", icon: BookOpen, color: "text-primary" },
+  tutor: { label: "Tutor", icon: User, color: "text-accent" },
+  teacher: { label: "Teacher", icon: Users, color: "text-foreground" },
+  school_admin: { label: "School Admin", icon: School, color: "text-muted-foreground" },
  };
  
  const allRoles: UserRole[] = ["student", "tutor", "teacher", "school_admin"];
  
- export function RoleSwitcher() {
+interface RoleSwitcherProps {
+  collapsed?: boolean;
+}
+
+export function RoleSwitcher({ collapsed = false }: RoleSwitcherProps) {
    const { roles, currentRole, switchRole, addRole, loading } = useUserRoles();
    const [switching, setSwitching] = useState(false);
    const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -69,34 +73,49 @@
  
    if (loading) {
      return (
-       <div className="px-3 py-2">
-         <div className="h-10 bg-sidebar-accent/30 rounded-lg animate-pulse" />
+      <div className={cn("py-2", collapsed ? "px-1.5" : "px-3")}>
+        <div className={cn("bg-sidebar-accent/30 rounded-lg animate-pulse", collapsed ? "h-10 w-10 mx-auto" : "h-10")} />
        </div>
      );
    }
  
    return (
      <>
-       <div className="px-3 py-2">
+        <div className={cn("py-2", collapsed ? "px-1.5" : "px-3")}>
          <DropdownMenu>
            <DropdownMenuTrigger asChild>
-             <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-sidebar-accent/50 hover:bg-sidebar-accent transition-colors">
-               <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center bg-sidebar-accent", currentConfig.color)}>
+              <button
+                aria-label={`Current role: ${currentConfig.label}`}
+                className={cn(
+                  "rounded-lg bg-sidebar-accent/50 hover:bg-sidebar-accent transition-colors",
+                  collapsed
+                    ? "h-10 w-10 mx-auto flex items-center justify-center"
+                    : "w-full flex items-center gap-3 px-3 py-2.5"
+                )}
+              >
+                <div className={cn("rounded-lg flex items-center justify-center bg-sidebar-accent", currentConfig.color, collapsed ? "w-7 h-7" : "w-8 h-8")}>
                  <CurrentRoleIcon className="w-4 h-4" />
                </div>
-               <div className="flex-1 text-left">
-                 <p className="text-sm font-medium text-sidebar-foreground">
-                   {currentConfig.label}
-                 </p>
-                 <p className="text-xs text-sidebar-foreground/50">
-                   {roles.length > 1 ? `${roles.length} roles` : "Current role"}
-                 </p>
-               </div>
-               {switching ? (
-                 <Loader2 className="w-4 h-4 text-sidebar-foreground/50 animate-spin" />
-               ) : (
-                 <ChevronDown className="w-4 h-4 text-sidebar-foreground/50" />
-               )}
+                {!collapsed && (
+                  <>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-medium text-sidebar-foreground">
+                        {currentConfig.label}
+                      </p>
+                      <p className="text-xs text-sidebar-foreground/50">
+                        {roles.length > 1 ? `${roles.length} roles` : "Current role"}
+                      </p>
+                    </div>
+                    {switching ? (
+                      <Loader2 className="w-4 h-4 text-sidebar-foreground/50 animate-spin" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-sidebar-foreground/50" />
+                    )}
+                  </>
+                )}
+                {collapsed && switching && (
+                  <Loader2 className="w-4 h-4 text-sidebar-foreground/50 animate-spin absolute" />
+                )}
              </button>
            </DropdownMenuTrigger>
            <DropdownMenuContent align="start" className="w-56">
