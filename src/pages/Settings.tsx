@@ -279,12 +279,12 @@ export default function Settings() {
           <div className="p-6 rounded-2xl bg-card border border-border/50">
             <div className="flex items-center gap-3 mb-6">
               <Brain className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold text-foreground">Learning Style Assessment</h3>
+              <h3 className="font-semibold text-foreground">{t("settings.learningStyle")}</h3>
             </div>
             <div className="space-y-4">
               {profile?.vak_primary_style && (
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                  <span className="text-muted-foreground">Current Style</span>
+                  <span className="text-muted-foreground">{t("settings.currentStyle")}</span>
                   <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium capitalize">
                     {profile.vak_primary_style}
                   </span>
@@ -292,7 +292,7 @@ export default function Settings() {
               )}
               {profile?.vak_last_taken_at && (
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                  <span className="text-muted-foreground">Last taken</span>
+                  <span className="text-muted-foreground">{t("settings.lastTaken")}</span>
                   <span className="text-foreground text-sm">
                     {new Date(profile.vak_last_taken_at).toLocaleDateString()}
                   </span>
@@ -305,7 +305,7 @@ export default function Settings() {
                 return (
                   <>
                     <p className="text-sm text-muted-foreground">
-                      Retake the assessment weekly so the AI adapts to your evolving learning style.
+                      {t("settings.retakeDesc")}
                     </p>
                     <Button
                       variant="hero"
@@ -313,7 +313,7 @@ export default function Settings() {
                       disabled={!canRetake}
                     >
                       <Brain className="w-4 h-4" />
-                      {canRetake ? "Retake Assessment" : `Available ${nextDate?.toLocaleDateString()}`}
+                      {canRetake ? t("settings.retakeAssessment") : `${t("settings.availableOn")} ${nextDate?.toLocaleDateString()}`}
                     </Button>
                   </>
                 );
