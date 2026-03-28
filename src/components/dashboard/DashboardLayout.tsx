@@ -247,7 +247,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="border-t border-sidebar-border p-1.5 space-y-0.5">
-          <RoleSwitcher collapsed={!sidebarExpanded} />
+          
           <ThemeSwitcher collapsed={!sidebarExpanded} />
 
           {showInstallButton && (
@@ -338,7 +338,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 })}
               </nav>
               <div className="border-t border-sidebar-border pt-3 pb-2 space-y-2">
-                <RoleSwitcher />
+                
                 <div className="flex items-center gap-3 p-2">
                   <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-sm font-medium text-primary">
                     {profile?.full_name?.[0] || profile?.email?.[0]?.toUpperCase() || "?"}
