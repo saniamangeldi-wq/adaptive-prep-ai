@@ -123,7 +123,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const [showReferences, setShowReferences] = useState(false);
   const skipNextLoad = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const { profile } = useAuth();
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
@@ -408,7 +408,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
           )}
 
           <div className={cn(
-            "relative flex items-center gap-2 rounded-2xl border border-border/30 bg-muted/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-200",
+            "relative flex items-end gap-2 rounded-2xl border border-border/30 bg-muted/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-200",
             "focus-within:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.35)] focus-within:border-primary/50"
           )}>
             {/* References button */}
@@ -437,15 +437,25 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             </button>
 
             {/* Text input */}
-              <input
+              <textarea
               ref={inputRef}
-              type="text"
+              rows={1}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Auto-grow
+                e.target.style.height = "auto";
+                e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
               placeholder={noCredits ? "No credits remaining..." : "Ask anything..."}
               disabled={noCredits}
-              className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm h-10"
+              className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm min-h-[40px] max-h-[160px] resize-none py-2"
             />
 
             {/* Voice button (Tier 3 / Elite only) */}
