@@ -153,12 +153,7 @@ function SchoolPlanCard({
   billingCycle: BillingCycle;
 }) {
   const [email, setEmail] = useState("");
-  const isEnterprise = plan.monthlyPriceKZT === null;
-
-  const discountedKZT = isEnterprise ? null : calcPrice(plan.monthlyPriceKZT!, billingCycle);
-  const discountedUSD = isEnterprise ? null : calcPrice(plan.monthlyPriceUSD!, billingCycle);
-  const totalPeriodKZT = discountedKZT !== null ? discountedKZT * BILLING_PERIOD_MONTHS[billingCycle] : null;
-  const totalPeriodUSD = discountedUSD !== null ? discountedUSD * BILLING_PERIOD_MONTHS[billingCycle] : null;
+  const isCustom = plan.monthlyPriceKZT === null;
 
   const teacherLabel = plan.bundledTeachers === Infinity ? "Unlimited" : `${plan.bundledTeachers}`;
   const showTooltip = plan.id === "school-pro" || plan.id === "school-enterprise";
