@@ -119,7 +119,7 @@ export function SchoolsTab({ billingCycle }: { billingCycle: BillingCycle }) {
   return (
     <div className="grid gap-8 max-w-6xl mx-auto md:grid-cols-3">
       {PRICING_CONFIG.schools.map((plan) => (
-        <SchoolPlanCard key={plan.id} plan={plan} billingCycle={billingCycle} />
+        <SchoolPlanCard key={plan.id} plan={plan} />
       ))}
     </div>
   );
