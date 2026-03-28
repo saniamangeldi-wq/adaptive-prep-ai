@@ -221,6 +221,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       }));
     
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
     clearAttachments();
     setShowAttachments(false);
     setShowReferences(false);
