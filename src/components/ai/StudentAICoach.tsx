@@ -17,8 +17,6 @@ import {
   RotateCcw,
   Check,
   GraduationCap,
-  Mic,
-  MicOff,
   Crown,
   BookOpen
 } from "lucide-react";
@@ -29,7 +27,7 @@ import { useAIChat, type Message } from "@/hooks/useAIChat";
 import ReactMarkdown from "react-markdown";
 import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
-import { useSpeechToText } from "@/hooks/useSpeechToText";
+
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
 import { useReferences, type Reference } from "@/hooks/useReferences";
@@ -130,7 +128,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
-  const hasSTT = profile?.tier === "tier_2" || profile?.tier === "tier_3";
+  
 
   useEffect(() => {
     setActiveConvId(conversationId || null);
@@ -184,21 +182,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     }
   }, [spaceReferences, loadSpaceReferences]);
 
-  const { startRecording, stopRecording, isRecording, isConnecting: isSTTConnecting, partialText } = useSpeechToText({
-    onTranscript: (text) => setInput(text),
-    onPartial: () => {}, // partialText state is used in render
-  });
-
   const handleVoiceTranscript = (text: string) => {
     setInput(text);
-  };
-
-  const handleMicToggle = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
   };
 
   const scrollToBottom = () => {
@@ -458,35 +443,12 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-              placeholder={isRecording ? (partialText || "Listening...") : (noCredits ? "No credits remaining..." : "Ask anything...")}
+              placeholder={noCredits ? "No credits remaining..." : "Ask anything..."}
               disabled={noCredits}
               className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm h-10"
             />
 
-            {/* STT mic button (Tier 2+) */}
-            {hasSTT && (
-              <Button
-                variant={isRecording ? "destructive" : "ghost"}
-                size="icon"
-                className={cn(
-                  "h-9 w-9 rounded-xl transition-all flex-shrink-0",
-                  isRecording && "animate-pulse"
-                )}
-                onClick={handleMicToggle}
-                disabled={noCredits || isLoading || isSTTConnecting}
-                title={isRecording ? "Stop recording" : "Dictate message"}
-              >
-                {isSTTConnecting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : isRecording ? (
-                  <MicOff className="w-4 h-4" />
-                ) : (
-                  <Mic className="w-4 h-4" />
-                )}
-              </Button>
-            )}
-
-            {/* Voice button (Tier 3) — compact */}
+            {/* Voice button (Tier 3 / Elite only) */}
             {isTier3 && (
               <VoiceChat 
                 onTranscript={handleVoiceTranscript}
