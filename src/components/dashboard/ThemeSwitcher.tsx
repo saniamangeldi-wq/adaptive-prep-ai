@@ -4,8 +4,6 @@ import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
-type AppTheme = "dark" | "light" | "midnight" | "sepia";
-
 type AppTheme = "dark" | "midnight" | "sepia";
 
 const themes: { id: AppTheme; label: string; color: string; preview: string }[] = [
