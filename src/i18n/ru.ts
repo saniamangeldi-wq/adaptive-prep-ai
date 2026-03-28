@@ -55,6 +55,12 @@ export default {
     profileUpdated: "Профиль успешно обновлён!",
     profileError: "Не удалось обновить профиль",
     logoutError: "Не удалось выйти",
+    learningStyle: "Оценка стиля обучения",
+    currentStyle: "Текущий стиль",
+    lastTaken: "Последний раз пройден",
+    retakeDesc: "Проходите оценку еженедельно, чтобы AI адаптировался к вашему стилю обучения.",
+    retakeAssessment: "Пройти заново",
+    availableOn: "Доступно",
   },
   // Роли
   roles: {

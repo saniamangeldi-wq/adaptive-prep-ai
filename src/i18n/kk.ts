@@ -55,6 +55,12 @@ export default {
     profileUpdated: "Профиль сәтті жаңартылды!",
     profileError: "Профильді жаңарту сәтсіз аяқталды",
     logoutError: "Шығу сәтсіз аяқталды",
+    learningStyle: "Оқу стилін бағалау",
+    currentStyle: "Ағымдағы стиль",
+    lastTaken: "Соңғы рет тапсырылды",
+    retakeDesc: "AI сіздің дамып келе жатқан оқу стиліңізге бейімделуі үшін бағалауды апта сайын қайта тапсырыңыз.",
+    retakeAssessment: "Қайта тапсыру",
+    availableOn: "Қолжетімді",
   },
   // Рөлдер
   roles: {
