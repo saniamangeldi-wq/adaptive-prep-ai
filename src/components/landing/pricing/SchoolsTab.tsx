@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { Check, Sparkles, Plus, Minus, Info } from "lucide-react";
+import { Check, Sparkles, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   PRICING_CONFIG,
