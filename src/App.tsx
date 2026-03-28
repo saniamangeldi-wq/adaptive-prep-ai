@@ -97,6 +97,20 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Syncs i18n language to the user's saved preference on profile load
+function LanguageSync() {
+  const { profile } = useAuth();
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    if (profile?.preferred_language && profile.preferred_language !== i18n.language) {
+      i18n.changeLanguage(profile.preferred_language);
+    }
+  }, [profile?.preferred_language, i18n]);
+
+  return null;
+}
+
 function AppRoutes() {
   return (
     <Routes>
