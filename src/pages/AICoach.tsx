@@ -31,7 +31,7 @@ export default function AICoach() {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
   const [eliteModel, setEliteModel] = useState<EliteModel>(
-    (profile?.preferred_ai_model as EliteModel) || "gemini-pro"
+    (profile?.preferred_ai_model as EliteModel) || "perplexity-pro"
   );
   const isElite = profile?.tier === "tier_3";
   const coachType = (profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") ? "tutor" : "student";
