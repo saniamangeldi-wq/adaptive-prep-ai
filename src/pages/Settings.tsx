@@ -46,9 +46,21 @@ export default function Settings() {
     { value: "ru", label: "Русский", flag: "🇷🇺" },
   ];
 
-  const handleLanguageChange = (lang: string) => {
+  const handleLanguageChange = async (lang: string) => {
     setPreferredLanguage(lang);
     i18n.changeLanguage(lang);
+    // Auto-save language preference to database
+    if (profile?.user_id) {
+      try {
+        await supabase
+          .from("profiles")
+          .update({ preferred_language: lang })
+          .eq("user_id", profile.user_id);
+        toast.success(lang === "kk" ? "Тіл өзгертілді" : lang === "ru" ? "Язык изменён" : "Language updated");
+      } catch (error) {
+        console.error("Error saving language:", error);
+      }
+    }
   };
 
   const handleSaveProfile = async () => {
