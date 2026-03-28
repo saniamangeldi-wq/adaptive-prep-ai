@@ -46,6 +46,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateProfile: (updates: Partial<Profile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -193,12 +194,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProfile = (updates: Partial<Profile>) => {
+    setProfile((currentProfile) =>
+      currentProfile ? { ...currentProfile, ...updates } : currentProfile
+    );
+  };
+
   const signOut = async () => {
     await hardSignOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
