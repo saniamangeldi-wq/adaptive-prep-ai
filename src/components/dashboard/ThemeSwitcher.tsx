@@ -4,11 +4,10 @@ import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
-type AppTheme = "dark" | "light" | "midnight" | "sepia";
+type AppTheme = "dark" | "midnight" | "sepia";
 
 const themes: { id: AppTheme; label: string; color: string; preview: string }[] = [
   { id: "dark", label: "Dark", color: "bg-[#0f0f0f]", preview: "border-emerald-500" },
-  { id: "light", label: "Light", color: "bg-[#f5f5f5]", preview: "border-teal-600" },
   { id: "midnight", label: "Midnight", color: "bg-[#0a0f1e]", preview: "border-indigo-500" },
   { id: "sepia", label: "Sepia", color: "bg-[#1c1713]", preview: "border-amber-500" },
 ];
@@ -16,12 +15,9 @@ const themes: { id: AppTheme; label: string; color: string; preview: string }[] 
 function applyTheme(theme: AppTheme) {
   const root = document.documentElement;
   // Remove all theme classes
-  root.classList.remove("dark", "light", "theme-midnight", "theme-sepia");
+  root.classList.remove("dark", "theme-midnight", "theme-sepia");
 
   switch (theme) {
-    case "light":
-      root.classList.add("light");
-      break;
     case "midnight":
       root.classList.add("dark", "theme-midnight");
       break;
