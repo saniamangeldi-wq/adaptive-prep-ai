@@ -15,12 +15,9 @@ const themes: { id: AppTheme; label: string; color: string; preview: string }[] 
 function applyTheme(theme: AppTheme) {
   const root = document.documentElement;
   // Remove all theme classes
-  root.classList.remove("dark", "light", "theme-midnight", "theme-sepia");
+  root.classList.remove("dark", "theme-midnight", "theme-sepia");
 
   switch (theme) {
-    case "light":
-      root.classList.add("light");
-      break;
     case "midnight":
       root.classList.add("dark", "theme-midnight");
       break;
