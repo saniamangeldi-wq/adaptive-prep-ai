@@ -103,8 +103,8 @@ function SchoolPlanCard({
 
       {/* CTA */}
       <div className="mt-6">
-        <Button variant="hero" className="w-full" asChild>
-          <a href="mailto:schools@adaptiveprep.ai">Contact Us</a>
+        <Button variant="hero" className="w-full" onClick={() => {}}>
+          Contact Us
         </Button>
       </div>
     </div>
