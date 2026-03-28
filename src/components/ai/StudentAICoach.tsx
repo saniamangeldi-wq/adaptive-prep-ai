@@ -371,28 +371,6 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       {/* Floating input bar — Perplexity style */}
       <div className="pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 flex-shrink-0">
         <div className="max-w-[760px] mx-auto px-4">
-          {/* References panel above input */}
-          {showReferences && (
-            <div className="mb-2">
-              <ReferencesPanel
-                references={references}
-                isProcessing={isRefProcessing}
-                onAddDocument={addRefDocument}
-                onAddUrl={addRefUrl}
-                onAddText={addRefText}
-                onRemove={removeReference}
-                onClose={() => setShowReferences(false)}
-              />
-            </div>
-          )}
-
-          {/* Active references badge */}
-          {!showReferences && references.length > 0 && (
-            <div className="mb-2">
-              <ReferencesBadge count={references.length} onClick={() => setShowReferences(true)} />
-            </div>
-          )}
-
           {/* Attachment previews above input */}
           {showAttachments && (
             <div className="mb-2">
@@ -412,21 +390,6 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             "relative flex items-end gap-2 rounded-2xl border border-border/30 bg-muted/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-200",
             "focus-within:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.35)] focus-within:border-primary/50"
           )}>
-            {/* References button */}
-            <button
-              onClick={() => { setShowReferences(!showReferences); setShowAttachments(false); }}
-              disabled={noCredits || isLoading}
-              className={cn(
-                "p-1.5 rounded-lg transition-colors disabled:opacity-40",
-                showReferences || references.length > 0
-                  ? "text-primary hover:text-primary/80"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              title="References & Sources"
-            >
-              <BookOpen className="w-4 h-4" />
-            </button>
-
             {/* Attach button */}
             <button
               onClick={() => { setShowAttachments(!showAttachments); setShowReferences(false); }}
