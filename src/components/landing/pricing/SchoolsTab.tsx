@@ -3,11 +3,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   PRICING_CONFIG,
-  BILLING_MULTIPLIERS,
-  BILLING_PERIOD_MONTHS,
-  calcPrice,
-  fmtKZT,
-  fmtUSD,
   type BillingCycle,
   type SchoolPlan,
 } from "@/lib/pricing-config";
