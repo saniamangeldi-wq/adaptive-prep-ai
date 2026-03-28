@@ -209,39 +209,8 @@ function SchoolPlanCard({
 
       {/* Price */}
       <div className="mb-4">
-        {isEnterprise ? (
-          <p className="text-3xl font-bold text-foreground">Custom</p>
-        ) : (
-          <>
-            <div className="flex items-baseline gap-2">
-              {billingCycle !== "monthly" && (
-                <span className="text-sm text-muted-foreground line-through">
-                  {fmtKZT(plan.monthlyPriceKZT!)}
-                </span>
-              )}
-              <span className="text-3xl font-bold text-foreground">
-                {fmtKZT(discountedKZT!)}
-              </span>
-              <span className="text-muted-foreground text-sm">/mo</span>
-            </div>
-            <div className="flex items-baseline gap-2 mt-0.5">
-              {billingCycle !== "monthly" && (
-                <span className="text-xs text-muted-foreground line-through">
-                  {fmtUSD(plan.monthlyPriceUSD!)}
-                </span>
-              )}
-              <span className="text-sm text-muted-foreground">
-                {fmtUSD(discountedUSD!)}/mo
-              </span>
-            </div>
-            {billingCycle !== "monthly" && (
-              <p className="text-[11px] text-muted-foreground mt-1">
-                {fmtKZT(totalPeriodKZT!)} / {fmtUSD(totalPeriodUSD!)}{" "}
-                {billingCycle === "term" ? "billed every 3 months" : "billed yearly"}
-              </p>
-            )}
-          </>
-        )}
+        <p className="text-3xl font-bold text-foreground">Custom</p>
+        <p className="text-sm text-muted-foreground mt-1">Contact us for pricing</p>
       </div>
 
       {/* Base students */}
@@ -261,45 +230,14 @@ function SchoolPlanCard({
         ))}
       </ul>
 
-      {/* Add-on blocks for non-enterprise */}
-      {!isEnterprise && (
-        <>
-          <StudentAddonBlock billingCycle={billingCycle} />
-          <TeacherAddonCounter
-            billingCycle={billingCycle}
-            basePlanKZT={plan.monthlyPriceKZT!}
-            basePlanUSD={plan.monthlyPriceUSD!}
-          />
-        </>
-      )}
-
       {/* Spacer */}
       <div className="flex-1" />
 
       {/* CTA */}
       <div className="mt-6">
-        {isEnterprise ? (
-          <Button variant="hero" className="w-full" asChild>
-            <a href="mailto:schools@adaptiveprep.ai">Contact Us</a>
-          </Button>
-        ) : (
-          <>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email to get started"
-              className="mb-3"
-            />
-            <Button
-              variant="hero"
-              className="w-full"
-              disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
-            >
-              Get Started
-            </Button>
-          </>
-        )}
+        <Button variant="hero" className="w-full" asChild>
+          <a href="mailto:schools@adaptiveprep.ai">Contact Us</a>
+        </Button>
       </div>
     </div>
   );
