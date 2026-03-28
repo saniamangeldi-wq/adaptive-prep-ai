@@ -29,6 +29,7 @@ import { useAIChat, type Message } from "@/hooks/useAIChat";
 import ReactMarkdown from "react-markdown";
 import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
 import { useReferences, type Reference } from "@/hooks/useReferences";
@@ -129,6 +130,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
+  const hasSTT = profile?.tier === "tier_2" || profile?.tier === "tier_3";
 
   useEffect(() => {
     setActiveConvId(conversationId || null);
@@ -182,8 +184,21 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     }
   }, [spaceReferences, loadSpaceReferences]);
 
+  const { startRecording, stopRecording, isRecording, isConnecting: isSTTConnecting, partialText } = useSpeechToText({
+    onTranscript: (text) => setInput(text),
+    onPartial: () => {}, // partialText state is used in render
+  });
+
   const handleVoiceTranscript = (text: string) => {
     setInput(text);
+  };
+
+  const handleMicToggle = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
   };
 
   const scrollToBottom = () => {
