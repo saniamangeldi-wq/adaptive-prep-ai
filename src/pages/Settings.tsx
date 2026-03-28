@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +27,7 @@ import { getTierLimits, PricingTier } from "@/lib/tier-limits";
 import { SchoolSettingsSection } from "@/components/settings/SchoolSettingsSection";
 
 export default function Settings() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, updateProfile } = useAuth();
   const { theme, setTheme } = useTheme();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -35,6 +35,14 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [preferredLanguage, setPreferredLanguage] = useState(profile?.preferred_language || "en");
+
+  useEffect(() => {
+    setFullName(profile?.full_name || "");
+  }, [profile?.full_name]);
+
+  useEffect(() => {
+    setPreferredLanguage(profile?.preferred_language || "en");
+  }, [profile?.preferred_language]);
 
   // Preferences
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -48,19 +56,28 @@ export default function Settings() {
 
   const handleLanguageChange = async (lang: string) => {
     setPreferredLanguage(lang);
-    i18n.changeLanguage(lang);
-    // Auto-save language preference to database
+
     if (profile?.user_id) {
       try {
-        await supabase
+        const { error } = await supabase
           .from("profiles")
           .update({ preferred_language: lang })
           .eq("user_id", profile.user_id);
+
+        if (error) throw error;
+
+        updateProfile({ preferred_language: lang });
+        await i18n.changeLanguage(lang);
         toast.success(lang === "kk" ? "Тіл өзгертілді" : lang === "ru" ? "Язык изменён" : "Language updated");
       } catch (error) {
         console.error("Error saving language:", error);
+        setPreferredLanguage(profile.preferred_language || "en");
+        toast.error(t("settings.profileError"));
       }
+      return;
     }
+
+    await i18n.changeLanguage(lang);
   };
 
   const handleSaveProfile = async () => {
@@ -74,6 +91,7 @@ export default function Settings() {
         .eq("user_id", profile.user_id);
 
       if (error) throw error;
+      updateProfile({ full_name: fullName });
       toast.success(t("settings.profileUpdated"));
     } catch (error) {
       console.error("Error updating profile:", error);
