@@ -179,10 +179,10 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <TooltipProvider>
-            <LanguageSync />
             <Toaster />
             <Sonner />
             <InstallPrompt />
+            <LanguageSync />
             <AppRoutes />
           </TooltipProvider>
         </AuthProvider>
