@@ -371,9 +371,25 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       {/* Floating input bar — Perplexity style */}
       <div className="pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 flex-shrink-0">
         <div className="max-w-[760px] mx-auto px-4">
+          {/* Attachment previews above input */}
+          {showAttachments && (
+            <div className="mb-2">
+              <ChatAttachments
+                attachments={attachments}
+                isUploading={isUploading}
+                onUploadFile={uploadFile}
+                onAttachUrl={attachUrl}
+                onWebSearch={performWebSearch}
+                onRemove={removeAttachment}
+                disabled={noCredits || isLoading}
+              />
+            </div>
+          )}
 
-
-
+          <div className={cn(
+            "relative flex items-end gap-2 rounded-2xl border border-border/30 bg-muted/30 backdrop-blur-sm px-4 py-2.5 transition-all duration-200",
+            "focus-within:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.35)] focus-within:border-primary/50"
+          )}>
             {/* Attach button */}
             <button
               onClick={() => { setShowAttachments(!showAttachments); setShowReferences(false); }}
