@@ -18,6 +18,7 @@ import {
   Check,
   GraduationCap,
   Mic,
+  MicOff,
   Crown,
   BookOpen
 } from "lucide-react";
