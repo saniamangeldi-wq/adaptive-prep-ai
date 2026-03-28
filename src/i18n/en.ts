@@ -55,6 +55,12 @@ export default {
     profileUpdated: "Profile updated successfully!",
     profileError: "Failed to update profile",
     logoutError: "Failed to log out",
+    learningStyle: "Learning Style Assessment",
+    currentStyle: "Current Style",
+    lastTaken: "Last taken",
+    retakeDesc: "Retake the assessment weekly so the AI adapts to your evolving learning style.",
+    retakeAssessment: "Retake Assessment",
+    availableOn: "Available",
   },
   // Roles
   roles: {
