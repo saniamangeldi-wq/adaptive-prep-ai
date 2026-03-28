@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { useScribe } from "@elevenlabs/react";
+import { useScribe, CommitStrategy } from "@elevenlabs/react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -16,7 +16,7 @@ export function useSpeechToText({ onTranscript, onPartial }: UseSpeechToTextOpti
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
-    commitStrategy: "vad",
+    commitStrategy: CommitStrategy.VAD,
     onPartialTranscript: (data) => {
       setPartialText(data.text);
       onPartial?.(data.text);
