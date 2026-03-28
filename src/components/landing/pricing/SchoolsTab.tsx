@@ -14,139 +14,14 @@ import {
 } from "@/components/ui/tooltip";
 
 /* ────────────────────────────────────────────
-   TEACHER ADD-ON COUNTER
-   ──────────────────────────────────────────── */
-
-function TeacherAddonCounter({
-  billingCycle,
-  basePlanKZT,
-  basePlanUSD,
-}: {
-  billingCycle: BillingCycle;
-  basePlanKZT: number;
-  basePlanUSD: number;
-}) {
-  const [extra, setExtra] = useState(0);
-
-  const addonKZT = calcPrice(PRICING_CONFIG.teacherAddOn.priceKZT, billingCycle);
-  const addonUSD = calcPrice(PRICING_CONFIG.teacherAddOn.priceUSD, billingCycle);
-  const baseKZT = calcPrice(basePlanKZT, billingCycle);
-  const baseUSD = calcPrice(basePlanUSD, billingCycle);
-  const totalKZT = baseKZT + extra * addonKZT;
-  const totalUSD = baseUSD + extra * addonUSD;
-
-  return (
-    <div className="mt-4 p-3 rounded-xl border border-border/40 bg-muted/20">
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-sm">👨‍🏫</span>
-        <span className="text-xs font-semibold text-foreground">+1 Teacher Add-On</span>
-        {billingCycle !== "monthly" && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
-            {billingCycle === "term" ? "−10%" : "−20%"}
-          </span>
-        )}
-      </div>
-      <p className="text-[11px] text-muted-foreground mb-2">
-        {PRICING_CONFIG.teacherAddOn.description}
-      </p>
-
-      <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-        <span>/ mo per extra teacher</span>
-        <span className="text-foreground font-medium">
-          {fmtKZT(addonKZT)}{" "}
-          <span className="text-muted-foreground">/ {fmtUSD(addonUSD)}</span>
-        </span>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setExtra(Math.max(0, extra - 1))}
-          className="w-7 h-7 rounded-lg bg-card border border-border text-foreground flex items-center justify-center text-sm font-bold hover:border-primary transition-colors"
-        >
-          <Minus className="w-3.5 h-3.5" />
-        </button>
-        <span className="text-sm font-bold text-foreground w-6 text-center">{extra}</span>
-        <button
-          onClick={() => setExtra(extra + 1)}
-          className="w-7 h-7 rounded-lg bg-card border border-border text-foreground flex items-center justify-center text-sm font-bold hover:border-primary transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
-        <span className="text-[11px] text-muted-foreground">
-          {extra > 0
-            ? `= ${fmtKZT(extra * addonKZT)} / ${fmtUSD(extra * addonUSD)} mo`
-            : "extra teachers"}
-        </span>
-      </div>
-
-      {extra > 0 && (
-        <div className="mt-3 pt-2 border-t border-border/30">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Combined total</span>
-            <div className="text-right">
-              <p className="text-sm font-bold text-primary">{fmtKZT(totalKZT)}/mo</p>
-              <p className="text-[11px] text-muted-foreground">{fmtUSD(totalUSD)}/mo</p>
-            </div>
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-1 text-right">
-            {billingCycle === "monthly"
-              ? "billed monthly"
-              : billingCycle === "term"
-              ? "billed every 3 months"
-              : "billed yearly"}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ────────────────────────────────────────────
-   STUDENT ADD-ON BLOCK
-   ──────────────────────────────────────────── */
-
-function StudentAddonBlock({ billingCycle }: { billingCycle: BillingCycle }) {
-  const addonKZT = calcPrice(PRICING_CONFIG.schoolOverage.monthlyPriceKZT, billingCycle);
-  const addonUSD = calcPrice(PRICING_CONFIG.schoolOverage.monthlyPriceUSD, billingCycle);
-
-  return (
-    <div className="mt-3 p-3 rounded-xl border border-border/40 bg-muted/20">
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-sm">🎓</span>
-        <span className="text-xs font-semibold text-foreground">+ Add Students</span>
-        {billingCycle !== "monthly" && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
-            {billingCycle === "term" ? "−10%" : "−20%"}
-          </span>
-        )}
-      </div>
-      <p className="text-[11px] text-muted-foreground mb-2">
-        {PRICING_CONFIG.schoolOverage.description}
-      </p>
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>per {PRICING_CONFIG.schoolOverage.studentsPerBlock} students / mo</span>
-        <span className="text-foreground font-medium">
-          {fmtKZT(addonKZT)}{" "}
-          <span className="text-muted-foreground">/ {fmtUSD(addonUSD)}</span>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ────────────────────────────────────────────
    SCHOOL PLAN CARD
    ──────────────────────────────────────────── */
 
 function SchoolPlanCard({
   plan,
-  billingCycle,
 }: {
   plan: SchoolPlan;
-  billingCycle: BillingCycle;
 }) {
-  const [email, setEmail] = useState("");
-  const isCustom = plan.monthlyPriceKZT === null;
 
   const teacherLabel = plan.bundledTeachers === Infinity ? "Unlimited" : `${plan.bundledTeachers}`;
   const showTooltip = plan.id === "school-pro" || plan.id === "school-enterprise";
