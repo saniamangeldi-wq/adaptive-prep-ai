@@ -21,6 +21,7 @@ import {
    GraduationCap,
    Users
 } from "lucide-react";
+import { getStripeLink } from "@/lib/stripe-links";
 
 // Tutor plan definitions
 const tutorPlans = [
@@ -85,6 +86,7 @@ export default function Billing() {
 
 function TutorBillingView() {
   const { profile } = useAuth();
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
 
   const currentPlanName = profile?.tier === "tier_3" ? "Tutor Business" : profile?.tier === "tier_2" ? "Professional" : "Solo Tutor";
   const currentPrice = profile?.tier === "tier_3" ? 449 : profile?.tier === "tier_2" ? 169 : 59;
@@ -98,6 +100,18 @@ function TutorBillingView() {
           <p className="text-muted-foreground mt-1">
             Manage your tutoring subscription
           </p>
+        </div>
+
+        {/* Billing Cycle Toggle */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-foreground">Choose Your Plan</h2>
+          <Tabs value={billingCycle} onValueChange={(v) => setBillingCycle(v as BillingCycle)}>
+            <TabsList>
+              <TabsTrigger value="monthly">Monthly</TabsTrigger>
+              <TabsTrigger value="term">Term (10% off)</TabsTrigger>
+              <TabsTrigger value="yearly">Yearly (20% off)</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Current Plan */}
@@ -122,6 +136,7 @@ function TutorBillingView() {
         <div className="grid md:grid-cols-3 gap-6">
           {tutorPlans.map((plan) => {
             const isCurrentPlan = profile?.tier === plan.tier;
+            const stripeLink = getStripeLink("tutor", plan.tier as "tier_1" | "tier_2" | "tier_3", billingCycle);
             return (
               <Card
                 key={plan.tier}
@@ -152,8 +167,12 @@ function TutorBillingView() {
                     <CardTitle className="text-base">{plan.name}</CardTitle>
                   </div>
                   <CardDescription>
-                    <span className="text-2xl font-bold text-foreground">${plan.price}</span>
-                    <span className="text-muted-foreground text-sm">/mo</span>
+                    <span className="text-2xl font-bold text-foreground">
+                      ${Math.round(plan.price * BILLING_MULTIPLIERS[billingCycle])}
+                    </span>
+                    <span className="text-muted-foreground text-sm">
+                      /mo{billingCycle !== "monthly" ? ` (${billingCycle})` : ""}
+                    </span>
                   </CardDescription>
                   <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
                 </CardHeader>
@@ -174,7 +193,12 @@ function TutorBillingView() {
                         Current Plan
                       </Button>
                     ) : (
-                      <Button variant={plan.tier === "tier_3" ? "hero" : "outline"} className="w-full" size="sm">
+                      <Button
+                        variant={plan.tier === "tier_3" ? "hero" : "outline"}
+                        className="w-full"
+                        size="sm"
+                        onClick={() => stripeLink && window.open(stripeLink, "_blank")}
+                      >
                         {(["tier_0","tier_1","tier_2","tier_3"].indexOf(profile?.tier || "tier_1") > ["tier_0","tier_1","tier_2","tier_3"].indexOf(plan.tier)) ? "Downgrade" : plan.tier === "tier_3" ? "Go Business" : "Upgrade"}
                       </Button>
                     )}
@@ -496,7 +520,15 @@ function StudentBillingView() {
                         Current Plan
                       </Button>
                     ) : isTrialTier ? (
-                      <Button variant="hero" className="w-full" size="sm">
+                      <Button
+                        variant="hero"
+                        className="w-full"
+                        size="sm"
+                        onClick={() => {
+                          const link = getStripeLink("student", plan.tierKey as "tier_1" | "tier_2" | "tier_3", billingCycle);
+                          if (link) window.open(link, "_blank");
+                        }}
+                      >
                         <CreditCard className="w-3.5 h-3.5 mr-1.5" />
                         Subscribe
                       </Button>
@@ -509,6 +541,10 @@ function StudentBillingView() {
                         variant={plan.tierKey === "tier_3" ? "hero" : "outline"} 
                         className="w-full"
                         size="sm"
+                        onClick={() => {
+                          const link = getStripeLink("student", plan.tierKey as "tier_1" | "tier_2" | "tier_3", billingCycle);
+                          if (link) window.open(link, "_blank");
+                        }}
                       >
                         {plan.tierKey === "tier_3" ? "Go Elite" : "Upgrade"}
                       </Button>

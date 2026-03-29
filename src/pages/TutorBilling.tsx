@@ -9,6 +9,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BILLING_MULTIPLIERS, type BillingCycle } from "@/lib/pricing-config";
+import { getStripeLink } from "@/lib/stripe-links";
 
 const plans = [
   {
@@ -60,6 +63,7 @@ const plans = [
 
 export default function TutorBilling() {
   const { profile } = useAuth();
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
 
   return (
     <DashboardLayout>
@@ -70,6 +74,18 @@ export default function TutorBilling() {
           <p className="text-muted-foreground mt-1">
             Manage your tutoring subscription
           </p>
+        </div>
+
+        {/* Billing Cycle Toggle */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-foreground">Choose Your Plan</h2>
+          <Tabs value={billingCycle} onValueChange={(v) => setBillingCycle(v as BillingCycle)}>
+            <TabsList>
+              <TabsTrigger value="monthly">Monthly</TabsTrigger>
+              <TabsTrigger value="term">Term (10% off)</TabsTrigger>
+              <TabsTrigger value="yearly">Yearly (20% off)</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Current Plan */}
@@ -95,48 +111,55 @@ export default function TutorBilling() {
 
         {/* Plans */}
         <div className="grid md:grid-cols-3 gap-6">
-          {plans.map((plan) => (
-            <div
-              key={plan.tier}
-              className={cn(
-                "p-6 rounded-2xl border transition-all",
-                plan.popular
-                  ? "bg-gradient-to-b from-primary/10 to-transparent border-primary/50"
-                  : "bg-card border-border/50"
-              )}
-            >
-              {plan.popular && (
-                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium mb-4">
-                  <Sparkles className="w-3 h-3" />
-                  Most Popular
-                </div>
-              )}
-              <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
-              <div className="mt-4">
-                <span className="text-3xl font-bold text-foreground">${plan.price}</span>
-                <span className="text-muted-foreground">/month</span>
-              </div>
-              <ul className="mt-6 space-y-3">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-sm text-foreground">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button
-                variant={profile?.tier === plan.tier ? "secondary" : "hero"}
+          {plans.map((plan) => {
+            const stripeLink = getStripeLink("tutor", plan.tier as "tier_1" | "tier_2" | "tier_3", billingCycle);
+            const adjustedPrice = Math.round(plan.price * BILLING_MULTIPLIERS[billingCycle]);
+            return (
+              <div
+                key={plan.tier}
                 className={cn(
-                  "w-full mt-6",
-                  profile?.tier === plan.tier && "bg-muted text-muted-foreground"
+                  "p-6 rounded-2xl border transition-all",
+                  plan.popular
+                    ? "bg-gradient-to-b from-primary/10 to-transparent border-primary/50"
+                    : "bg-card border-border/50"
                 )}
-                disabled={profile?.tier === plan.tier}
               >
-                {profile?.tier === plan.tier ? "Current Plan" : "Upgrade"}
-              </Button>
-            </div>
-          ))}
+                {plan.popular && (
+                  <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium mb-4">
+                    <Sparkles className="w-3 h-3" />
+                    Most Popular
+                  </div>
+                )}
+                <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+                <div className="mt-4">
+                  <span className="text-3xl font-bold text-foreground">${adjustedPrice}</span>
+                  <span className="text-muted-foreground">
+                    /mo{billingCycle !== "monthly" ? ` (${billingCycle})` : ""}
+                  </span>
+                </div>
+                <ul className="mt-6 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-sm text-foreground">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  variant={profile?.tier === plan.tier ? "secondary" : "hero"}
+                  className={cn(
+                    "w-full mt-6",
+                    profile?.tier === plan.tier && "bg-muted text-muted-foreground"
+                  )}
+                  disabled={profile?.tier === plan.tier}
+                  onClick={() => stripeLink && window.open(stripeLink, "_blank")}
+                >
+                  {profile?.tier === plan.tier ? "Current Plan" : "Upgrade"}
+                </Button>
+              </div>
+            );
+          })}
         </div>
 
         {/* Features comparison */}

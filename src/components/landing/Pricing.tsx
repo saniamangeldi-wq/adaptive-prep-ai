@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { PRICING_CONFIG, calcPrice, fmtKZT, fmtUSD, type BillingCycle } from "@/lib/pricing-config";
 import { SchoolsTab } from "@/components/landing/pricing/SchoolsTab";
+import { getStripeLink } from "@/lib/stripe-links";
 
 type PricingRole = "student" | "tutor" | "school";
 
@@ -105,7 +106,7 @@ export function Pricing() {
               ? PRICING_CONFIG.students
               : PRICING_CONFIG.tutors
             ).map((plan) => (
-              <GenericPlanCard key={plan.id} plan={plan} billingCycle={billingCycle} />
+              <GenericPlanCard key={plan.id} plan={plan} billingCycle={billingCycle} role={selectedRole as "student" | "tutor"} />
             ))}
           </div>
         )}
@@ -147,13 +148,20 @@ export function Pricing() {
 function GenericPlanCard({
   plan,
   billingCycle,
+  role,
 }: {
   plan: { id: string; tier: string; name: string; badge: string | null; description: string; monthlyPriceKZT: number; monthlyPriceUSD: number; mostPopular: boolean; features: string[] };
   billingCycle: BillingCycle;
+  role: "student" | "tutor";
 }) {
   const discountedKZT = calcPrice(plan.monthlyPriceKZT, billingCycle);
   const discountedUSD = calcPrice(plan.monthlyPriceUSD, billingCycle);
   const isFree = plan.monthlyPriceKZT === 0;
+
+  // Map tier string (e.g. "Tier 2") to tier key (e.g. "tier_1")
+  const tierIndex = parseInt(plan.tier.replace("Tier ", "")) - 1;
+  const tierKey = `tier_${tierIndex}` as "tier_1" | "tier_2" | "tier_3";
+  const stripeLink = tierIndex >= 1 ? getStripeLink(role, tierKey, billingCycle) : null;
 
   return (
     <div
@@ -222,13 +230,23 @@ function GenericPlanCard({
 
       <div className="flex-1" />
 
-      <Button
-        variant="hero"
-        className={cn("w-full", !plan.mostPopular && "opacity-80 hover:opacity-100")}
-        asChild
-      >
-        <Link to="/signup">Get Started</Link>
-      </Button>
+      {stripeLink ? (
+        <Button
+          variant="hero"
+          className={cn("w-full", !plan.mostPopular && "opacity-80 hover:opacity-100")}
+          onClick={() => window.open(stripeLink, "_blank")}
+        >
+          Get Started
+        </Button>
+      ) : (
+        <Button
+          variant="hero"
+          className={cn("w-full", !plan.mostPopular && "opacity-80 hover:opacity-100")}
+          asChild
+        >
+          <Link to="/signup">Get Started</Link>
+        </Button>
+      )}
     </div>
   );
 }
