@@ -39,7 +39,7 @@ export function GuideSection({ title, icon: Icon, description, items, defaultOpe
           {items.map((item, i) => (
             <div key={i} className="flex items-start gap-2.5">
               {item.type === "do" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
               ) : (
                 <XCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
               )}
