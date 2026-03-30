@@ -214,7 +214,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </TooltipTrigger>
           {!sidebarExpanded && <TooltipContent side="right" className="text-xs">AdaptivePrep</TooltipContent>}
         </Tooltip>
-
+];
 
         <nav className="flex-1 py-2 px-1.5 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {navigation.map((item) => {
