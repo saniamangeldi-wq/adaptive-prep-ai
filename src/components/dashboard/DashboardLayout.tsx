@@ -61,7 +61,6 @@ const studentNav: NavItem[] = [
   { nameKey: "nav.progress", href: "/dashboard/progress", icon: LineChart },
   { nameKey: "nav.flashcards", href: "/dashboard/flashcards", icon: Layers },
   { nameKey: "nav.billing", href: "/dashboard/billing", icon: CreditCard },
-  { nameKey: "nav.guide", href: "/dashboard/guide", icon: HelpCircle },
   { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -74,7 +73,6 @@ const tutorNav: NavItem[] = [
   { nameKey: "nav.studentProgress", href: "/dashboard/analytics", icon: BarChart3 },
   { nameKey: "nav.schedule", href: "/dashboard/schedule", icon: Calendar },
   { nameKey: "nav.billing", href: "/dashboard/billing", icon: CreditCard },
-  { nameKey: "nav.guide", href: "/dashboard/guide", icon: HelpCircle },
   { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -86,7 +84,6 @@ const teacherNav: NavItem[] = [
   { nameKey: "nav.classAnalytics", href: "/dashboard/analytics", icon: BarChart3 },
   { nameKey: "nav.calendar", href: "/dashboard/calendar", icon: Calendar },
   { nameKey: "nav.resources", href: "/dashboard/resources", icon: Layers },
-  { nameKey: "nav.guide", href: "/dashboard/guide", icon: HelpCircle },
   { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -99,7 +96,7 @@ const adminNav: NavItem[] = [
   { nameKey: "nav.students", href: "/dashboard/school/students", icon: GraduationCap },
   { nameKey: "nav.analytics", href: "/dashboard/school/analytics", icon: BarChart3 },
   { nameKey: "nav.billing", href: "/dashboard/school/billing", icon: CreditCard },
-  { nameKey: "nav.guide", href: "/dashboard/guide", icon: HelpCircle },
+  
   { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];
 
