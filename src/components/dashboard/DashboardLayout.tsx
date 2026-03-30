@@ -76,6 +76,7 @@ const tutorNav: NavItem[] = [
   { nameKey: "nav.billing", href: "/dashboard/billing", icon: CreditCard },
   { nameKey: "nav.guide", href: "/dashboard/guide", icon: HelpCircle },
   { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
+];
 
 const teacherNav: NavItem[] = [
   { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
