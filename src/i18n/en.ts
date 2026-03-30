@@ -26,6 +26,7 @@ export default {
     teachers: "Teachers",
     students: "Students",
     analytics: "Analytics",
+    guide: "Guide",
   },
   // Settings page
   settings: {
