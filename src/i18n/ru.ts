@@ -26,6 +26,7 @@ export default {
     teachers: "Учителя",
     students: "Ученики",
     analytics: "Аналитика",
+    guide: "Гид",
   },
   // Страница настроек
   settings: {

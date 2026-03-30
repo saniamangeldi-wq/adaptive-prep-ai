@@ -26,6 +26,7 @@ export default {
     teachers: "Мұғалімдер",
     students: "Оқушылар",
     analytics: "Аналитика",
+    guide: "Нұсқаулық",
   },
   // Баптаулар беті
   settings: {

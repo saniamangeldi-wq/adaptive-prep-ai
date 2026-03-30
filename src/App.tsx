@@ -51,6 +51,7 @@ import Grades from "./pages/Grades";
 import Calendar from "./pages/Calendar";
 import Curriculum from "./pages/Curriculum";
 import Assignments from "./pages/Assignments";
+import Guide from "./pages/Guide";
 
 const queryClient = new QueryClient();
 
@@ -166,6 +167,7 @@ function AppRoutes() {
       <Route path="/dashboard/grades" element={<ProtectedRoute><Grades /></ProtectedRoute>} />
       <Route path="/dashboard/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       <Route path="/dashboard/curriculum" element={<ProtectedRoute><Curriculum /></ProtectedRoute>} />
+      <Route path="/dashboard/guide" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
       
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
