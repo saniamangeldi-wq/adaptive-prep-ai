@@ -52,6 +52,7 @@ import Calendar from "./pages/Calendar";
 import Curriculum from "./pages/Curriculum";
 import Assignments from "./pages/Assignments";
 import Guide from "./pages/Guide";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
