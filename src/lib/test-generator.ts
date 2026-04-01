@@ -130,20 +130,19 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     allQuestions = [...allQuestions, ...questions];
   }
 
-  // Fetch previously seen question IDs to avoid repetition
+  // Fetch previously seen question IDs to avoid repetition (include incomplete attempts too)
   const { data: recentAttempts } = await supabase
     .from("test_attempts")
     .select("answers")
     .eq("user_id", userId)
-    .not("completed_at", "is", null)
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(100);
 
   const seenQuestionIds = new Set<string>();
   if (recentAttempts) {
     for (const attempt of recentAttempts) {
-      const answers = attempt.answers as Record<string, string> | null;
-      if (answers && typeof answers === "object") {
+      const answers = attempt.answers as Record<string, string> | unknown[] | null;
+      if (answers && typeof answers === "object" && !Array.isArray(answers)) {
         Object.keys(answers).forEach(id => seenQuestionIds.add(id));
       }
     }
@@ -152,29 +151,30 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   // Prioritize unseen questions, fall back to seen ones if pool is too small
   const unseenQuestions = allQuestions.filter(q => !seenQuestionIds.has(q.id));
   const seenQuestions = allQuestions.filter(q => seenQuestionIds.has(q.id));
-  
-  // Use unseen first, then fill with least-recently-seen if needed
-  const prioritized = [
-    ...unseenQuestions.sort(() => Math.random() - 0.5),
-    ...seenQuestions.sort(() => Math.random() - 0.5),
-  ];
 
-  const selectedQuestions = prioritized.slice(0, Math.min(targetQuestions, prioritized.length));
-
-  // If combined, try to balance math and reading/writing
-  if (config.testType === "combined" && selectedQuestions.length > 1) {
-    const mathQs = allQuestions.filter(q => q.section === "math");
-    const rwQs = allQuestions.filter(q => q.section === "reading_writing");
-    
+  // If combined, balance math and reading/writing with dedup awareness
+  let selectedQuestions: Question[];
+  if (config.testType === "combined") {
     const halfTarget = Math.floor(targetQuestions / 2);
-    const balancedQuestions = [
-      ...mathQs.sort(() => Math.random() - 0.5).slice(0, halfTarget),
-      ...rwQs.sort(() => Math.random() - 0.5).slice(0, halfTarget),
-    ].sort(() => Math.random() - 0.5);
     
-    if (balancedQuestions.length >= selectedQuestions.length) {
-      selectedQuestions.splice(0, selectedQuestions.length, ...balancedQuestions.slice(0, targetQuestions));
-    }
+    const unseenMath = unseenQuestions.filter(q => q.section === "math").sort(() => Math.random() - 0.5);
+    const unseenRW = unseenQuestions.filter(q => q.section === "reading_writing").sort(() => Math.random() - 0.5);
+    const seenMath = seenQuestions.filter(q => q.section === "math").sort(() => Math.random() - 0.5);
+    const seenRW = seenQuestions.filter(q => q.section === "reading_writing").sort(() => Math.random() - 0.5);
+
+    const mathPool = [...unseenMath, ...seenMath];
+    const rwPool = [...unseenRW, ...seenRW];
+
+    selectedQuestions = [
+      ...mathPool.slice(0, halfTarget),
+      ...rwPool.slice(0, targetQuestions - halfTarget),
+    ].sort(() => Math.random() - 0.5);
+  } else {
+    const prioritized = [
+      ...unseenQuestions.sort(() => Math.random() - 0.5),
+      ...seenQuestions.sort(() => Math.random() - 0.5),
+    ];
+    selectedQuestions = prioritized.slice(0, Math.min(targetQuestions, prioritized.length));
   }
 
   // Create test attempt in database
