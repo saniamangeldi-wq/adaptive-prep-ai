@@ -52,6 +52,7 @@ import Calendar from "./pages/Calendar";
 import Curriculum from "./pages/Curriculum";
 import Assignments from "./pages/Assignments";
 import Guide from "./pages/Guide";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
@@ -121,6 +122,7 @@ function AppRoutes() {
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/unsubscribe" element={<Unsubscribe />} />
       
       {/* Protected routes */}
       <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
