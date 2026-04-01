@@ -93,20 +93,22 @@ export default function ManageAssignments() {
 
     setCreating(true);
     try {
+      const assignmentId = crypto.randomUUID();
       const { data, error } = await supabase
         .from("assignments")
         .insert({
+          id: assignmentId,
           title,
           description: description || null,
           due_date: dueDate || null,
-        total_points: parseInt(totalPoints) || 100,
-        subject: subject || null,
-        grade_level: gradeLevel !== "all" ? gradeLevel : null,
-        created_by: user!.id,
-        school_id: affiliation.type === "school" ? affiliation.id : null,
-        tutor_id: affiliation.type === "tutor" ? affiliation.id : null,
-        status,
-      })
+          total_points: parseInt(totalPoints) || 100,
+          subject: subject || null,
+          grade_level: gradeLevel !== "all" ? gradeLevel : null,
+          created_by: user!.id,
+          school_id: affiliation.type === "school" ? affiliation.id : null,
+          tutor_id: affiliation.type === "tutor" ? affiliation.id : null,
+          status,
+        })
         .select()
         .single();
 
@@ -124,6 +126,66 @@ export default function ManageAssignments() {
           subject: subject || null,
           created_by: user!.id,
         });
+      }
+
+      // Send assignment notification emails to students (fire-and-forget)
+      if (status === "published") {
+        (async () => {
+          try {
+            let studentIds: string[] = [];
+            if (affiliation.type === "school") {
+              const { data: members } = await supabase
+                .from("school_members")
+                .select("user_id")
+                .eq("school_id", affiliation.id)
+                .eq("role", "student")
+                .eq("status", "active");
+              studentIds = (members || []).map((m) => m.user_id);
+            } else {
+              const { data: tutorStudents } = await supabase
+                .from("tutor_students")
+                .select("student_id")
+                .eq("tutor_id", affiliation.id);
+              studentIds = (tutorStudents || []).map((s) => s.student_id);
+            }
+
+            if (studentIds.length === 0) return;
+
+            // Fetch student profiles for names and emails
+            const { data: studentProfiles } = await supabase
+              .from("profiles")
+              .select("user_id, email, full_name")
+              .in("user_id", studentIds);
+
+            const formattedDue = dueDate
+              ? new Date(dueDate).toLocaleDateString("en-US", {
+                  month: "long", day: "numeric", year: "numeric",
+                })
+              : undefined;
+
+            for (const student of studentProfiles || []) {
+              supabase.functions.invoke("send-transactional-email", {
+                body: {
+                  templateName: "assignment-notification",
+                  recipientEmail: student.email,
+                  idempotencyKey: `assign-notif-${assignmentId}-${student.user_id}`,
+                  templateData: {
+                    studentName: student.full_name || undefined,
+                    assignmentTitle: title,
+                    subject: subject || undefined,
+                    dueDate: formattedDue,
+                    description: description || undefined,
+                    teacherName: profile?.full_name || undefined,
+                  },
+                },
+              }).catch((err) =>
+                console.error("Assignment email failed:", err)
+              );
+            }
+          } catch (err) {
+            console.error("Failed to send assignment notifications:", err);
+          }
+        })();
       }
 
       setAssignments(prev => [data, ...prev]);

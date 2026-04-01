@@ -123,7 +123,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         full_name: fullName,
         avatar_url: avatarUrl,
         role,
-        // Align with trial defaults used elsewhere in the app
         tier: "tier_2",
         is_trial: true,
         trial_started_at: new Date().toISOString(),
@@ -137,10 +136,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (insertError) {
-      // If RLS or constraints block insert, don't break auth; just proceed without profile.
       console.error("Error creating missing profile:", insertError);
       return null;
     }
+
+    // Send welcome email (fire-and-forget)
+    supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "welcome-email",
+        recipientEmail: currentUser.email,
+        idempotencyKey: `welcome-${currentUser.id}`,
+        templateData: { name: fullName || undefined },
+      },
+    }).catch((err) => console.error("Welcome email failed:", err));
 
     return inserted as Profile;
   };
