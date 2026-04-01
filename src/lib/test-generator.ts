@@ -130,9 +130,36 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     allQuestions = [...allQuestions, ...questions];
   }
 
-  // Shuffle and select the required number of questions
-  const shuffled = allQuestions.sort(() => Math.random() - 0.5);
-  const selectedQuestions = shuffled.slice(0, Math.min(targetQuestions, shuffled.length));
+  // Fetch previously seen question IDs to avoid repetition
+  const { data: recentAttempts } = await supabase
+    .from("test_attempts")
+    .select("answers")
+    .eq("user_id", userId)
+    .not("completed_at", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const seenQuestionIds = new Set<string>();
+  if (recentAttempts) {
+    for (const attempt of recentAttempts) {
+      const answers = attempt.answers as Record<string, string> | null;
+      if (answers && typeof answers === "object") {
+        Object.keys(answers).forEach(id => seenQuestionIds.add(id));
+      }
+    }
+  }
+
+  // Prioritize unseen questions, fall back to seen ones if pool is too small
+  const unseenQuestions = allQuestions.filter(q => !seenQuestionIds.has(q.id));
+  const seenQuestions = allQuestions.filter(q => seenQuestionIds.has(q.id));
+  
+  // Use unseen first, then fill with least-recently-seen if needed
+  const prioritized = [
+    ...unseenQuestions.sort(() => Math.random() - 0.5),
+    ...seenQuestions.sort(() => Math.random() - 0.5),
+  ];
+
+  const selectedQuestions = prioritized.slice(0, Math.min(targetQuestions, prioritized.length));
 
   // If combined, try to balance math and reading/writing
   if (config.testType === "combined" && selectedQuestions.length > 1) {
