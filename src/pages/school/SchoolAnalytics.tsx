@@ -3,14 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { 
-  BarChart3, 
   TrendingUp,
   Users,
   Target,
   UserPlus,
   Clock,
-  Brain,
-  Loader2
+  Loader2,
+  Mail,
+  ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -22,6 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface UserActivity {
   user_id: string;
@@ -44,6 +46,8 @@ interface UserActivity {
   avg_accuracy: number;
 }
 
+type SortField = "last_active" | "total_time_seconds" | "tests_completed" | "avg_accuracy";
+
 function formatTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
   if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
@@ -63,8 +67,23 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString();
 }
 
+function getDaysSinceActive(dateStr: string): number {
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function getActivityStatus(dateStr: string): { label: string; color: string } {
+  const days = getDaysSinceActive(dateStr);
+  if (days <= 1) return { label: "Active", color: "bg-green-500" };
+  if (days <= 3) return { label: "Recent", color: "bg-yellow-500" };
+  if (days <= 7) return { label: "Fading", color: "bg-orange-500" };
+  return { label: "Inactive", color: "bg-red-500" };
+}
+
 export default function SchoolAnalytics() {
   const { profile } = useAuth();
+  const [sortField, setSortField] = useState<SortField>("last_active");
+  const [sortAsc, setSortAsc] = useState(false);
+  const [sendingTo, setSendingTo] = useState<string | null>(null);
 
   const studentsHref = profile?.role === "tutor" ? "/dashboard/students" : "/dashboard/school/students";
 
@@ -85,16 +104,60 @@ export default function SchoolAnalytics() {
   });
 
   const users = activityData?.users || [];
+
+  const sortedUsers = [...users].sort((a, b) => {
+    let cmp = 0;
+    if (sortField === "last_active") {
+      cmp = new Date(b.last_active).getTime() - new Date(a.last_active).getTime();
+    } else {
+      cmp = (b[sortField] as number) - (a[sortField] as number);
+    }
+    return sortAsc ? -cmp : cmp;
+  });
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) setSortAsc(!sortAsc);
+    else { setSortField(field); setSortAsc(false); }
+  };
+
   const totalTests = users.reduce((s, u) => s + u.tests_completed, 0);
   const totalTime = users.reduce((s, u) => s + u.total_time_seconds, 0);
-  const avgAccuracy = users.length > 0
-    ? Math.round(users.reduce((s, u) => s + u.avg_accuracy, 0) / users.filter(u => u.total_questions_answered > 0).length || 0)
+  const usersWithQuestions = users.filter(u => u.total_questions_answered > 0);
+  const avgAccuracy = usersWithQuestions.length > 0
+    ? Math.round(usersWithQuestions.reduce((s, u) => s + u.avg_accuracy, 0) / usersWithQuestions.length)
     : 0;
+
+  const sendReminder = async (user: UserActivity) => {
+    setSendingTo(user.user_id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const days = getDaysSinceActive(user.last_active);
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "activity-reminder",
+          to: user.email,
+          data: {
+            studentName: user.full_name || undefined,
+            daysSinceActive: days,
+            senderName: profile?.full_name || undefined,
+          },
+          idempotencyKey: `reminder-${user.user_id}-${new Date().toISOString().slice(0, 10)}`,
+          purpose: "transactional",
+        },
+      });
+      toast.success(`Reminder sent to ${user.full_name || user.email}`);
+    } catch {
+      toast.error("Failed to send reminder");
+    } finally {
+      setSendingTo(null);
+    }
+  };
 
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        {/* Header */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Analytics</h1>
           <p className="text-muted-foreground mt-1">
@@ -104,30 +167,10 @@ export default function SchoolAnalytics() {
 
         {/* Stats Overview */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            icon={Users}
-            label="Active Users"
-            value={String(users.length)}
-            color="from-primary to-teal-400"
-          />
-          <StatCard
-            icon={Target}
-            label="Tests Completed"
-            value={String(totalTests)}
-            color="from-purple-500 to-pink-400"
-          />
-          <StatCard
-            icon={TrendingUp}
-            label="Avg. Accuracy"
-            value={avgAccuracy > 0 ? `${avgAccuracy}%` : "--"}
-            color="from-green-500 to-emerald-400"
-          />
-          <StatCard
-            icon={Clock}
-            label="Total Study Time"
-            value={totalTime > 0 ? formatTime(totalTime) : "--"}
-            color="from-accent to-orange-400"
-          />
+          <StatCard icon={Users} label="Active Users" value={String(users.length)} color="from-primary to-teal-400" />
+          <StatCard icon={Target} label="Tests Completed" value={String(totalTests)} color="from-purple-500 to-pink-400" />
+          <StatCard icon={TrendingUp} label="Avg. Accuracy" value={avgAccuracy > 0 ? `${avgAccuracy}%` : "--"} color="from-green-500 to-emerald-400" />
+          <StatCard icon={Clock} label="Total Study Time" value={totalTime > 0 ? formatTime(totalTime) : "--"} color="from-accent to-orange-400" />
         </div>
 
         {/* User Activity Table */}
@@ -143,10 +186,7 @@ export default function SchoolAnalytics() {
               <p className="font-medium text-foreground">No users yet</p>
               <p className="text-sm mt-1">Invite students and teachers to start tracking activity</p>
               <Button variant="hero" size="sm" className="mt-4" asChild>
-                <Link to={studentsHref}>
-                  <UserPlus className="w-4 h-4" />
-                  Add Student
-                </Link>
+                <Link to={studentsHref}><UserPlus className="w-4 h-4" />Add Student</Link>
               </Button>
             </div>
           ) : (
@@ -155,58 +195,83 @@ export default function SchoolAnalytics() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Tests</TableHead>
-                    <TableHead className="text-right">Questions</TableHead>
-                    <TableHead className="text-right">Accuracy</TableHead>
-                    <TableHead className="text-right">Time Spent</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">
+                      <button onClick={() => toggleSort("tests_completed")} className="inline-flex items-center gap-1 hover:text-foreground">
+                        Tests <ArrowUpDown className="w-3 h-3" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <button onClick={() => toggleSort("avg_accuracy")} className="inline-flex items-center gap-1 hover:text-foreground">
+                        Accuracy <ArrowUpDown className="w-3 h-3" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <button onClick={() => toggleSort("total_time_seconds")} className="inline-flex items-center gap-1 hover:text-foreground">
+                        Time <ArrowUpDown className="w-3 h-3" />
+                      </button>
+                    </TableHead>
                     <TableHead className="text-right">AI Chats</TableHead>
-                    <TableHead className="text-right">Best Score</TableHead>
-                    <TableHead>Last Active</TableHead>
+                    <TableHead>
+                      <button onClick={() => toggleSort("last_active")} className="inline-flex items-center gap-1 hover:text-foreground">
+                        Last Active <ArrowUpDown className="w-3 h-3" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.user_id}>
-                      <TableCell className="font-medium">
-                        {user.full_name || "—"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">
-                        {user.email}
-                      </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground capitalize">
-                          {user.role === "school_admin" ? "Admin" : user.role}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {user.tests_completed}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {user.total_questions_answered}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {user.total_questions_answered > 0 ? (
-                          <span className={user.avg_accuracy >= 70 ? "text-green-500" : user.avg_accuracy >= 50 ? "text-yellow-500" : "text-red-500"}>
-                            {user.avg_accuracy}%
+                  {sortedUsers.map((user) => {
+                    const status = getActivityStatus(user.last_active);
+                    const days = getDaysSinceActive(user.last_active);
+                    return (
+                      <TableRow key={user.user_id}>
+                        <TableCell>
+                          <div>
+                            <span className="font-medium">{user.full_name || "—"}</span>
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium">
+                            <span className={`w-2 h-2 rounded-full ${status.color}`} />
+                            {status.label}
                           </span>
-                        ) : "—"}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {user.total_time_seconds > 0 ? formatTime(user.total_time_seconds) : "—"}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {user.ai_conversations}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {user.best_score > 0 ? user.best_score : "—"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">
-                        {formatDate(user.last_active)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{user.tests_completed}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {user.total_questions_answered > 0 ? (
+                            <span className={user.avg_accuracy >= 70 ? "text-green-500" : user.avg_accuracy >= 50 ? "text-yellow-500" : "text-red-500"}>
+                              {user.avg_accuracy}%
+                            </span>
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {user.total_time_seconds > 0 ? formatTime(user.total_time_seconds) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{user.ai_conversations}</TableCell>
+                        <TableCell className="text-muted-foreground text-xs">{formatDate(user.last_active)}</TableCell>
+                        <TableCell className="text-right">
+                          {days >= 3 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => sendReminder(user)}
+                              disabled={sendingTo === user.user_id}
+                              className="text-xs gap-1"
+                            >
+                              {sendingTo === user.user_id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Mail className="w-3 h-3" />
+                              )}
+                              Remind
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -221,38 +286,27 @@ export default function SchoolAnalytics() {
               <div className="text-center">
                 <span className="text-4xl mb-3 block">📊</span>
                 <p className="font-medium text-foreground">
-                  {users.length === 0 
-                    ? "No analytics yet — add your first student to get started"
-                    : "Score distribution chart coming soon"}
+                  {users.length === 0 ? "No analytics yet — add your first student to get started" : "Score distribution chart coming soon"}
                 </p>
                 {users.length === 0 && (
                   <Button variant="hero" size="sm" className="mt-4" asChild>
-                    <Link to={studentsHref}>
-                      <UserPlus className="w-4 h-4" />
-                      Add Student
-                    </Link>
+                    <Link to={studentsHref}><UserPlus className="w-4 h-4" />Add Student</Link>
                   </Button>
                 )}
               </div>
             </div>
           </div>
-
           <div className="p-6 rounded-2xl bg-card border border-border/50">
             <h3 className="font-semibold text-foreground mb-4">Weekly Activity</h3>
             <div className="h-64 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <span className="text-4xl mb-3 block">📊</span>
                 <p className="font-medium text-foreground">
-                  {users.length === 0 
-                    ? "No analytics yet — add your first student to get started"
-                    : "Weekly activity chart coming soon"}
+                  {users.length === 0 ? "No analytics yet — add your first student to get started" : "Weekly activity chart coming soon"}
                 </p>
                 {users.length === 0 && (
                   <Button variant="hero" size="sm" className="mt-4" asChild>
-                    <Link to={studentsHref}>
-                      <UserPlus className="w-4 h-4" />
-                      Add Student
-                    </Link>
+                    <Link to={studentsHref}><UserPlus className="w-4 h-4" />Add Student</Link>
                   </Button>
                 )}
               </div>
@@ -264,17 +318,7 @@ export default function SchoolAnalytics() {
   );
 }
 
-function StatCard({ 
-  icon: Icon, 
-  label, 
-  value, 
-  color 
-}: { 
-  icon: React.ElementType; 
-  label: string; 
-  value: string;
-  color: string;
-}) {
+function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: string; color: string }) {
   return (
     <div className="p-5 rounded-xl bg-card border border-border/50">
       <div className="flex items-center justify-between mb-3">
