@@ -172,7 +172,7 @@ serve(async (req) => {
       }
     }
 
-    const users = Array.from(userMap.values()).sort((a, b) => b.total_time_seconds - a.total_time_seconds);
+    const users = Array.from(userMap.values()).sort((a, b) => new Date(b.last_active).getTime() - new Date(a.last_active).getTime());
 
     return new Response(JSON.stringify({ users }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
