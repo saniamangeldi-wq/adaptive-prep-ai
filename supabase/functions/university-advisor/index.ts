@@ -130,7 +130,7 @@ serve(async (req) => {
      const { data: userProfile, error: profileError } = await supabase
        .from("profiles")
        .select("tier, credits_remaining, credits_reset_at, is_trial")
-       .eq("user_id", student_id)
+       .eq("user_id", effectiveStudentId)
        .single();
  
      if (profileError || !userProfile) {
@@ -155,7 +155,7 @@ serve(async (req) => {
            credits_remaining: dailyLimit,
            credits_reset_at: new Date().toISOString()
          })
-         .eq("user_id", student_id);
+         .eq("user_id", effectiveStudentId);
      }
  
      // Check if user has enough credits
@@ -173,7 +173,7 @@ serve(async (req) => {
      const { error: updateError } = await supabase
        .from("profiles")
        .update({ credits_remaining: currentCredits - ADVISOR_CREDIT_COST })
-       .eq("user_id", student_id);
+       .eq("user_id", effectiveStudentId);
  
      if (updateError) {
        console.error("Failed to deduct credits:", updateError);
@@ -196,7 +196,7 @@ serve(async (req) => {
            application_deadline
          )
        `)
-       .eq("student_id", student_id)
+       .eq("student_id", effectiveStudentId)
        .order("match_score", { ascending: false })
        .limit(10);
  
@@ -204,21 +204,21 @@ serve(async (req) => {
      const { data: portfolio } = await supabase
        .from("student_portfolios")
        .select("*")
-       .eq("student_id", student_id)
+       .eq("student_id", effectiveStudentId)
        .maybeSingle();
  
      // Get student's preferences
      const { data: preferences } = await supabase
        .from("university_preferences")
        .select("*")
-       .eq("student_id", student_id)
+       .eq("student_id", effectiveStudentId)
        .maybeSingle();
  
      // Get student profile
      const { data: profile } = await supabase
        .from("profiles")
        .select("full_name, grade_level, study_subjects, primary_goal")
-       .eq("user_id", student_id)
+       .eq("user_id", effectiveStudentId)
        .maybeSingle();
  
      const matchesSummary = matches?.map(m => ({
