@@ -82,24 +82,47 @@ serve(async (req) => {
    }
  
    try {
+     // Authenticate the user
+     const authHeader = req.headers.get("Authorization");
+     if (!authHeader?.startsWith("Bearer ")) {
+       return new Response(JSON.stringify({ error: "Unauthorized" }), {
+         status: 401,
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
+     }
+
+     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+     const authSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+       global: { headers: { Authorization: authHeader } },
+     });
+
+     const { data: { user }, error: authError } = await authSupabase.auth.getUser();
+     if (authError || !user) {
+       return new Response(JSON.stringify({ error: "Unauthorized" }), {
+         status: 401,
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
+     }
+
      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
      if (!LOVABLE_API_KEY) {
        throw new Error("LOVABLE_API_KEY is not configured");
      }
  
-     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-     
-     // Use service role for data access
+     // Use service role for data access (needed for cross-table queries)
      const supabase = createClient(supabaseUrl, supabaseServiceKey);
  
      const { student_id, target_university, messages = [] } = await req.json();
- 
-     if (!student_id) {
+
+     // Ensure the authenticated user can only access their own data
+     const effectiveStudentId = user.id;
+     if (student_id && student_id !== effectiveStudentId) {
        return new Response(
-         JSON.stringify({ error: "student_id is required" }),
-         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+         JSON.stringify({ error: "Access denied" }),
+         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
        );
      }
  
