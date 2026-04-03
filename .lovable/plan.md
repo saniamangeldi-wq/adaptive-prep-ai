@@ -1,109 +1,39 @@
+## 🗓️ 30-Day Build Plan: AI Micro-Lessons Engine
 
+### Week 1: Foundation (Days 1-7)
+1. **Database schema** — Create `lessons`, `study_plans`, `lesson_progress` tables
+2. **Analysis engine** — Edge function: test results → weak topics ranked by priority
+3. **Lesson generation edge function** — AI generates structured micro-lessons (concept → worked example → key takeaway → practice questions)
+4. **Basic lesson viewer UI** — Page that renders a generated lesson with markdown + interactive questions
 
-# Implementation Plan: SAT Practice Test System
+### Week 2: Voice & Interactivity (Days 8-14)
+5. **TTS narration per lesson section** — ElevenLabs TTS reads each section aloud
+6. **Interactive practice questions** — Embed quizzes within lessons using existing QuestionWidget
+7. **Lesson completion tracking** — Mark sections done, track quiz scores, save progress
+8. **Study plan dashboard** — Ordered lesson list with progress bars and next-up indicators
 
-## Overview
-You're right - the "Start Test" button currently doesn't do anything! We need to build a complete test-taking system that includes:
-- Sample SAT questions in the database
-- A test-taking interface where you can answer questions
-- Timer functionality (optional based on your toggle)
-- Results/feedback screen after completing the test
-- Saving your test attempts to track progress
+### Week 3: Adaptive Loop (Days 15-21)
+9. **Re-assessment trigger** — Mini-assessment after completing a study plan
+10. **Plan regeneration** — AI analyzes new results, generates updated plan
+11. **Difficulty adaptation** — Rolling-window logic (80% → advance, <50% → simplify)
+12. **Teacher assignment integration** — Teachers can assign specific lesson topics
 
----
+### Week 4: Polish & Differentiation (Days 22-30)
+13. **VAK-aware lesson variants** — Adjust lesson style based on VAK profile
+14. **Session recording** — Browser MediaRecorder API for lesson session capture
+15. **Analytics for teachers** — Lesson completion, scores, time spent, weak areas
+16. **Mobile optimization & testing** — Ensure lessons work on phones/tablets
 
-## What Will Be Built
+### Existing Infrastructure to Leverage
+- AI chat streaming + edge functions + credit system
+- ElevenLabs TTS + STT integration
+- Test results & scoring data
+- VAK learning style profiles
+- Question rendering components
+- Spaces architecture
 
-### 1. Sample SAT Questions
-We'll add realistic SAT-style questions to the database covering:
-- **Math**: Algebra, geometry, data analysis (multiple choice & grid-in)
-- **Reading & Writing**: Passage comprehension, grammar, vocabulary
-
-Questions will be tagged by difficulty (easy/normal/hard) and section type.
-
-### 2. Test-Taking Interface
-A new page where you can:
-- See one question at a time with clear navigation
-- Select answers (multiple choice A/B/C/D or enter numbers)
-- See a timer counting down (if enabled)
-- Navigate between questions (Previous/Next)
-- Flag questions to review later
-- Submit when done
-
-### 3. Test Session Flow
-
-```text
-+------------------+     +------------------+     +------------------+
-|  Configure Test  | --> |   Taking Test    | --> |  Results Screen  |
-|  (current page)  |     |  (new page)      |     |  (new page)      |
-+------------------+     +------------------+     +------------------+
-        |                        |                        |
-   Select options           Answer Qs              See score,
-   Click "Start"            Use timer              feedback,
-                            Navigate               weak areas
-```
-
-### 4. Results & Feedback
-After submitting:
-- Overall score and percentage
-- Breakdown by topic/section
-- Review incorrect answers with explanations
-- Save attempt to your progress history
-
----
-
-## Technical Implementation
-
-### Database Changes
-- Seed the `sat_tests` table with sample questions organized by difficulty and type
-- Use the existing `test_attempts` table to track your progress
-
-### New Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/pages/TakeTest.tsx` | Main test-taking interface with timer, navigation, and question display |
-| `src/pages/TestResults.tsx` | Results page showing score, breakdown, and review |
-| `src/components/test/QuestionCard.tsx` | Displays a single question with answer options |
-| `src/components/test/TestTimer.tsx` | Countdown timer component |
-| `src/components/test/QuestionNav.tsx` | Navigation panel showing all questions |
-| `src/lib/test-generator.ts` | Logic to generate tests based on your configuration |
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/pages/PracticeTests.tsx` | Wire up "Start Test" button to create test and navigate |
-| `src/App.tsx` | Add routes for `/dashboard/tests/:testId` and `/dashboard/tests/:testId/results` |
-| `src/contexts/AuthContext.tsx` | Add function to decrement `tests_remaining` |
-
----
-
-## Question Format (in database)
-
-```text
-Each question stored in JSON format:
-- id: unique identifier
-- type: "multiple_choice" or "grid_in"
-- section: "math" or "reading_writing"
-- difficulty: "easy" | "normal" | "hard"
-- text: The question text
-- options: Array of choices (for multiple choice)
-- correct_answer: The correct answer
-- explanation: Why the answer is correct (shown in results)
-- topic: Specific topic (e.g., "algebra", "grammar")
-```
-
----
-
-## User Flow Summary
-
-1. **Configure** - Select test type, length, difficulty, timer (current page)
-2. **Start** - Click "Start Test" to begin
-3. **Take Test** - Answer questions, use timer, navigate freely
-4. **Submit** - Review flagged questions, confirm submission
-5. **Results** - See score, review mistakes, get feedback
-6. **Progress** - Results saved to your Progress page
-
-This will give you a fully functional SAT practice experience!
-
+### New Components to Build
+- Lesson data model + generation logic
+- Study plan algorithm (test gaps → ordered lessons)
+- Lesson player UI (structured, not chat-based)
+- Adaptive re-assessment loop
