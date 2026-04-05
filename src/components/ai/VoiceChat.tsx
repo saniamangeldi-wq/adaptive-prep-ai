@@ -76,11 +76,12 @@ export function VoiceChat({ onTranscript, isDisabled, className, fullMode = fals
       );
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({}));
         if (response.status === 403) {
           toast.error("Voice chat is only available for Elite tier subscribers");
         } else {
-          toast.error(error.error || "Failed to start voice chat");
+          const message = [error?.error, error?.action].filter(Boolean).join(" ");
+          toast.error(message || "Failed to start voice chat");
         }
         return;
       }
