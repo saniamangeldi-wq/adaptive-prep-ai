@@ -34,15 +34,33 @@ serve(async (req) => {
       });
     }
 
-    // Check tier
+    // Check user profile
     const { data: profile } = await supabase
       .from("profiles")
       .select("tier")
       .eq("user_id", user.id)
       .single();
 
-    if (!profile || profile.tier !== "tier_3") {
-      return new Response(JSON.stringify({ error: "Speech-to-text requires Elite tier subscription" }), {
+    if (!profile) {
+      return new Response(JSON.stringify({ error: "Profile not found" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check voice usage limits
+    const monthYear = new Date().toISOString().slice(0, 7);
+    const limitSeconds = profile.tier === "tier_3" ? 200 * 60 : 5 * 60;
+
+    const { data: usage } = await supabase
+      .from("voice_usage")
+      .select("seconds_used")
+      .eq("user_id", user.id)
+      .eq("month_year", monthYear)
+      .maybeSingle();
+
+    if (usage && usage.seconds_used >= limitSeconds) {
+      return new Response(JSON.stringify({ error: "Voice minutes exhausted for this month" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

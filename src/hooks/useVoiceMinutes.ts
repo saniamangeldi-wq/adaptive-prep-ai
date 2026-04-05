@@ -11,15 +11,15 @@ export function getVoiceMinutesLimit(tier: string | undefined, role?: string): V
   // School-level limits are handled separately via aggregation
   switch (tier) {
     case "tier_0":
-      return { minutesPerMonth: 0, planLabel: "Free" };
+      return { minutesPerMonth: 5, planLabel: "Free" };
     case "tier_1":
-      return { minutesPerMonth: 0, planLabel: "Basic" };
+      return { minutesPerMonth: 5, planLabel: "Basic" };
     case "tier_2":
-      return { minutesPerMonth: 0, planLabel: "Pro" };
+      return { minutesPerMonth: 5, planLabel: "Pro" };
     case "tier_3":
       return { minutesPerMonth: 200, planLabel: "Elite" };
     default:
-      return { minutesPerMonth: 0, planLabel: "Free" };
+      return { minutesPerMonth: 5, planLabel: "Free" };
   }
 }
 
