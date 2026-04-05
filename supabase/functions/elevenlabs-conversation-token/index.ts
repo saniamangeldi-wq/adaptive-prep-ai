@@ -6,6 +6,54 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+type ElevenLabsErrorInfo = {
+  code: string;
+  message: string;
+  providerStatus?: string;
+};
+
+const parseElevenLabsError = async (
+  response: Response,
+  requestType: "token" | "signed_url"
+): Promise<ElevenLabsErrorInfo> => {
+  const errorText = await response.text();
+  console.error(`ElevenLabs ${requestType} error:`, response.status, errorText);
+
+  try {
+    const parsed = JSON.parse(errorText);
+    const providerStatus = parsed?.detail?.status;
+    const providerMessage = parsed?.detail?.message;
+
+    if (
+      providerStatus === "missing_permissions" &&
+      typeof providerMessage === "string" &&
+      providerMessage.includes("convai_write")
+    ) {
+      return {
+        code: "elevenlabs_missing_convai_write",
+        message:
+          "ElevenLabs API key is missing the convai_write permission required for voice chat. Update the key permissions in your ElevenLabs connector, then try again.",
+        providerStatus,
+      };
+    }
+
+    if (typeof providerMessage === "string" && providerMessage.trim().length > 0) {
+      return {
+        code: `elevenlabs_${requestType}_failed`,
+        message: providerMessage,
+        providerStatus,
+      };
+    }
+  } catch {
+    // Fall through to generic error below.
+  }
+
+  return {
+    code: `elevenlabs_${requestType}_failed`,
+    message: `ElevenLabs ${requestType} request failed with status ${response.status}.`,
+  };
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -26,8 +74,11 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Validate user and check tier
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -35,7 +86,6 @@ serve(async (req) => {
       });
     }
 
-    // Check if user is Tier 3
     const { data: profile } = await supabase
       .from("profiles")
       .select("tier, learning_style")
@@ -66,56 +116,62 @@ serve(async (req) => {
     }
 
     const [tokenResponse, signedUrlResponse] = await Promise.all([
-      fetch(
-        `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${ELEVENLABS_AGENT_ID}`,
-        {
-          headers: {
-            "xi-api-key": ELEVENLABS_API_KEY,
-          },
-        }
-      ),
-      fetch(
-        `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${ELEVENLABS_AGENT_ID}`,
-        {
-          headers: {
-            "xi-api-key": ELEVENLABS_API_KEY,
-          },
-        }
-      ),
+      fetch(`https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${ELEVENLABS_AGENT_ID}`, {
+        headers: {
+          "xi-api-key": ELEVENLABS_API_KEY,
+        },
+      }),
+      fetch(`https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${ELEVENLABS_AGENT_ID}`, {
+        headers: {
+          "xi-api-key": ELEVENLABS_API_KEY,
+        },
+      }),
     ]);
 
     let token: string | null = null;
+    let tokenError: ElevenLabsErrorInfo | null = null;
     if (tokenResponse.ok) {
       const tokenJson = await tokenResponse.json();
       token = tokenJson?.token ?? null;
     } else {
-      const errorText = await tokenResponse.text();
-      console.error("ElevenLabs token error:", tokenResponse.status, errorText);
+      tokenError = await parseElevenLabsError(tokenResponse, "token");
     }
 
     let signedUrl: string | null = null;
+    let signedUrlError: ElevenLabsErrorInfo | null = null;
     if (signedUrlResponse.ok) {
       const signedUrlJson = await signedUrlResponse.json();
       signedUrl = signedUrlJson?.signed_url ?? null;
     } else {
-      const errorText = await signedUrlResponse.text();
-      console.error("ElevenLabs signed URL error:", signedUrlResponse.status, errorText);
+      signedUrlError = await parseElevenLabsError(signedUrlResponse, "signed_url");
     }
 
     if (!token && !signedUrl) {
-      return new Response(JSON.stringify({ error: "Failed to initialize voice session" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const primaryError = tokenError ?? signedUrlError;
+      const isPermissionError = primaryError?.code === "elevenlabs_missing_convai_write";
+
+      return new Response(
+        JSON.stringify({
+          error: primaryError?.message ?? "Failed to initialize voice session",
+          code: primaryError?.code ?? "voice_session_initialization_failed",
+        }),
+        {
+          status: isPermissionError ? 502 : 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    return new Response(JSON.stringify({ 
-      token,
-      signedUrl,
-      learningStyle: profile.learning_style 
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        token,
+        signedUrl,
+        learningStyle: profile.learning_style,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (e) {
     console.error("elevenlabs-conversation-token error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
