@@ -57,7 +57,7 @@ export function useSpeechToText({ onTranscript, onPartial }: UseSpeechToTextOpti
       if (!response.ok) {
         const error = await response.json();
         if (response.status === 403) {
-          toast.error("Speech-to-text requires Elite tier");
+          toast.error("Voice minutes exhausted for this month");
         } else {
           toast.error(error.error || "Failed to start recording");
         }

@@ -67,7 +67,7 @@ export function useTextToSpeech() {
       if (!response.ok) {
         const error = await response.json();
         if (response.status === 403) {
-          toast.error("Text-to-speech requires Elite tier");
+          toast.error("Voice minutes exhausted for this month");
         } else {
           toast.error(error.error || "Failed to generate speech");
         }
