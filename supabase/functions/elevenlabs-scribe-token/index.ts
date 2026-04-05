@@ -41,8 +41,8 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    if (!profile || (profile.tier !== "tier_2" && profile.tier !== "tier_3")) {
-      return new Response(JSON.stringify({ error: "Speech-to-text requires Pro or Elite tier" }), {
+    if (!profile || profile.tier !== "tier_3") {
+      return new Response(JSON.stringify({ error: "Speech-to-text requires Elite tier subscription" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
