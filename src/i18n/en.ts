@@ -27,6 +27,7 @@ export default {
     students: "Students",
     analytics: "Analytics",
     guide: "Guide",
+    achievements: "Achievements",
   },
   // Settings page
   settings: {
