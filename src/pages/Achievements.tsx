@@ -1,12 +1,12 @@
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useXPLevel } from "@/hooks/useXPLevel";
-import { useBadges, BADGE_DEFINITIONS } from "@/hooks/useBadges";
+import { useBadges } from "@/hooks/useBadges";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
-import { LEVELS, MILESTONE_REWARDS, getUnlockedMilestones } from "@/lib/gamification-config";
+import { LEVELS, MILESTONE_REWARDS } from "@/lib/gamification-config";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Zap, Medal, Star, Lock, Crown } from "lucide-react";
+import { Trophy, Zap, Star, Crown } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Achievements() {
