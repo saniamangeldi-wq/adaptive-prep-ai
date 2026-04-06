@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-generator";
 import { useToast } from "@/hooks/use-toast";
+import { useXPLevel } from "@/hooks/useXPLevel";
+import { XP_REWARDS } from "@/lib/gamification-config";
 import {
   AlertDialog,
   AlertDialogAction,

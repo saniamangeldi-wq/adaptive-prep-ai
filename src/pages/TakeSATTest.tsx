@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useXPLevel } from "@/hooks/useXPLevel";
+import { XP_REWARDS } from "@/lib/gamification-config";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-generator";
 import { 
