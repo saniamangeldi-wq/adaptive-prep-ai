@@ -1,39 +1,42 @@
-## 🗓️ 30-Day Build Plan: AI Micro-Lessons Engine
+## Gamification System Plan
 
-### Week 1: Foundation (Days 1-7)
-1. **Database schema** — Create `lessons`, `study_plans`, `lesson_progress` tables
-2. **Analysis engine** — Edge function: test results → weak topics ranked by priority
-3. **Lesson generation edge function** — AI generates structured micro-lessons (concept → worked example → key takeaway → practice questions)
-4. **Basic lesson viewer UI** — Page that renders a generated lesson with markdown + interactive questions
+### 1. Database Changes
+- **`student_levels`** table — tracks XP, current level, and rank title per student
+- **`daily_challenges`** table — stores generated daily tasks with XP rewards
+- **`daily_challenge_completions`** table — tracks which challenges a student completed
+- Add XP level definitions as constants (Level 1: 0 XP "Beginner", Level 5: 500 XP "Scholar", Level 10: 2000 XP "Master", etc.)
 
-### Week 2: Voice & Interactivity (Days 8-14)
-5. **TTS narration per lesson section** — ElevenLabs TTS reads each section aloud
-6. **Interactive practice questions** — Embed quizzes within lessons using existing QuestionWidget
-7. **Lesson completion tracking** — Mark sections done, track quiz scores, save progress
-8. **Study plan dashboard** — Ordered lesson list with progress bars and next-up indicators
+### 2. XP Levels & Ranks
+- **10 levels**: Beginner → Learner → Explorer → Achiever → Scholar → Expert → Champion → Master → Legend → Grandmaster
+- XP earned from: tests (+50), AI chats (+10), flashcard study (+15), streak days (+20), challenges (+varies)
+- Visual progress bar showing XP to next level on student dashboard
+- Rank badge displayed on profile
 
-### Week 3: Adaptive Loop (Days 15-21)
-9. **Re-assessment trigger** — Mini-assessment after completing a study plan
-10. **Plan regeneration** — AI analyzes new results, generates updated plan
-11. **Difficulty adaptation** — Rolling-window logic (80% → advance, <50% → simplify)
-12. **Teacher assignment integration** — Teachers can assign specific lesson topics
+### 3. Daily Challenges
+- 3 auto-generated challenges per day (e.g., "Complete 1 practice test", "Study flashcards for 10 min", "Ask the AI coach a question")
+- Bonus XP for completing all 3 ("Daily Hat Trick" bonus)
+- Challenges reset at midnight UTC
+- Small challenge widget on dashboard
 
-### Week 4: Polish & Differentiation (Days 22-30)
-13. **VAK-aware lesson variants** — Adjust lesson style based on VAK profile
-14. **Session recording** — Browser MediaRecorder API for lesson session capture
-15. **Analytics for teachers** — Lesson completion, scores, time spent, weak areas
-16. **Mobile optimization & testing** — Ensure lessons work on phones/tablets
+### 4. Leaderboard
+- Weekly leaderboard showing top students by XP
+- Filterable by school (for school members) or global
+- Podium display (🥇🥈🥉) for top 3
+- Collaborative tone: "Community Champions" header, focus on growth not competition
 
-### Existing Infrastructure to Leverage
-- AI chat streaming + edge functions + credit system
-- ElevenLabs TTS + STT integration
-- Test results & scoring data
-- VAK learning style profiles
-- Question rendering components
-- Spaces architecture
+### 5. Milestone Rewards & Unlockables  
+- Unlock titles at XP thresholds (e.g., "SAT Warrior" at 1000 XP, "Knowledge Seeker" at 2500 XP)
+- Milestone celebrations with confetti/toast when leveling up
+- Reward history visible in profile
 
-### New Components to Build
-- Lesson data model + generation logic
-- Study plan algorithm (test gaps → ordered lessons)
-- Lesson player UI (structured, not chat-based)
-- Adaptive re-assessment loop
+### 6. UI Integration
+- **Dashboard widget**: XP bar + level + daily challenges
+- **New "Achievements" page**: badges, milestones, leaderboard tabs
+- Integrate with existing streak/badge system
+
+### Implementation Order
+1. Database migration (tables + RLS)
+2. XP & Levels hook + daily challenges logic
+3. Dashboard gamification widget
+4. Achievements page with leaderboard
+5. Wire up XP earning across existing features
