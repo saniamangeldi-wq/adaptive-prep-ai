@@ -202,8 +202,6 @@ export function StudentDashboard() {
       {/* XP Level & Daily Challenges */}
       <GamificationWidget />
 
-      {/* Voice Minutes Usage */}
-      <VoiceMinutesBar />
 
       {/* Unlock / Credits Purchase */}
       <DonationBanner />
