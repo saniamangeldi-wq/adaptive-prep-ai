@@ -30,7 +30,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 export function useAIChat(conversationId?: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { refreshProfile } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const conversationIdRef = useRef(conversationId);
   conversationIdRef.current = conversationId;
 
