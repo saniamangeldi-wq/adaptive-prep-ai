@@ -27,6 +27,7 @@ export default {
     students: "Оқушылар",
     analytics: "Аналитика",
     guide: "Нұсқаулық",
+    achievements: "Жетістіктер",
   },
   // Баптаулар беті
   settings: {

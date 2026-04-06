@@ -27,6 +27,7 @@ export default {
     students: "Ученики",
     analytics: "Аналитика",
     guide: "Гид",
+    achievements: "Достижения",
   },
   // Страница настроек
   settings: {
