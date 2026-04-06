@@ -46,6 +46,7 @@ export default function TakeSATTest() {
   const navigate = useNavigate();
   const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const { addXP } = useXPLevel();
 
   const [flowState, setFlowState] = useState<TestFlowState>(INITIAL_TEST_FLOW);
   const [isLoading, setIsLoading] = useState(false);

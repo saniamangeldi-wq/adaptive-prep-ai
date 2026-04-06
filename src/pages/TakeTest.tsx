@@ -29,6 +29,7 @@ export default function TakeTest() {
   const navigate = useNavigate();
   const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const { addXP } = useXPLevel();
 
   const [test, setTest] = useState<GeneratedTest | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
