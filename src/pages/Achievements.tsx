@@ -16,7 +16,6 @@ export default function Achievements() {
   const { entries: leaderboard, isLoading: lbLoading } = useLeaderboard();
 
   const myRank = leaderboard.findIndex(e => e.student_id === user?.id) + 1;
-  const myRank = leaderboard.findIndex(e => e.student_id === user?.id) + 1;
 
   return (
     <DashboardLayout>
