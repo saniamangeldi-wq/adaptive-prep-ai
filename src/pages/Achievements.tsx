@@ -15,7 +15,7 @@ export default function Achievements() {
   const { earnedBadges, allBadges } = useBadges();
   const { entries: leaderboard, isLoading: lbLoading } = useLeaderboard();
 
-  const unlockedMilestones = getUnlockedMilestones(levelData.xp);
+  const myRank = leaderboard.findIndex(e => e.student_id === user?.id) + 1;
   const myRank = leaderboard.findIndex(e => e.student_id === user?.id) + 1;
 
   return (
