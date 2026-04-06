@@ -277,6 +277,9 @@ export default function TakeSATTest() {
 
       await refreshProfile();
 
+      // Award XP for completing SAT test
+      addXP.mutate(XP_REWARDS.complete_test);
+
       // Navigate to results
       navigate(`/dashboard/tests/${testSession.testId}/results`, {
         state: {

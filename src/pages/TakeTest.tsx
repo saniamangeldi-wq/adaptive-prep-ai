@@ -138,6 +138,10 @@ export default function TakeTest() {
 
       await refreshProfile();
 
+      // Award XP for completing test
+      const xp = result.score === 100 ? XP_REWARDS.perfect_test : XP_REWARDS.complete_test;
+      addXP.mutate(xp);
+
       // Navigate to results
       navigate(`/dashboard/tests/${test.id}/results`, {
         state: {
