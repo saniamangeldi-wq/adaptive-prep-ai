@@ -26,7 +26,7 @@ import { DashboardTutorial } from "./DashboardTutorial";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
 import { StudentAffiliationBanner } from "./StudentAffiliationBanner";
-import { VoiceMinutesBar } from "./VoiceMinutesBar";
+
 import { DonationBanner } from "@/components/landing/DonationBanner";
 import { GamificationWidget } from "./GamificationWidget";
 
@@ -202,8 +202,6 @@ export function StudentDashboard() {
       {/* XP Level & Daily Challenges */}
       <GamificationWidget />
 
-      {/* Voice Minutes Usage */}
-      <VoiceMinutesBar />
 
       {/* Unlock / Credits Purchase */}
       <DonationBanner />
