@@ -2,6 +2,8 @@ import { useState, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { awardXP } from "@/lib/award-xp";
+import { XP_REWARDS } from "@/lib/gamification-config";
 
 export interface Message {
   id: string;
