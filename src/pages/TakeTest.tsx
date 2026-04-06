@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-generator";
 import { useToast } from "@/hooks/use-toast";
+import { useXPLevel } from "@/hooks/useXPLevel";
+import { XP_REWARDS } from "@/lib/gamification-config";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +29,7 @@ export default function TakeTest() {
   const navigate = useNavigate();
   const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const { addXP } = useXPLevel();
 
   const [test, setTest] = useState<GeneratedTest | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -134,6 +137,10 @@ export default function TakeTest() {
       }
 
       await refreshProfile();
+
+      // Award XP for completing test
+      const xp = result.score === 100 ? XP_REWARDS.perfect_test : XP_REWARDS.complete_test;
+      addXP.mutate(xp);
 
       // Navigate to results
       navigate(`/dashboard/tests/${test.id}/results`, {

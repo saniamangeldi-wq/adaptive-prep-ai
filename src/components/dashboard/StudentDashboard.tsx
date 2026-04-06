@@ -28,6 +28,7 @@ import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
 import { StudentAffiliationBanner } from "./StudentAffiliationBanner";
 import { VoiceMinutesBar } from "./VoiceMinutesBar";
 import { DonationBanner } from "@/components/landing/DonationBanner";
+import { GamificationWidget } from "./GamificationWidget";
 
 // Subject icons map
 const subjectIcons: Record<string, string> = {
@@ -197,6 +198,9 @@ export function StudentDashboard() {
           tooltip="Your daily study streak and total points earned"
         />
       </div>
+
+      {/* XP Level & Daily Challenges */}
+      <GamificationWidget />
 
       {/* Voice Minutes Usage */}
       <VoiceMinutesBar />

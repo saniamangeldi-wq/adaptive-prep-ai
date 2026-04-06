@@ -52,6 +52,7 @@ import Calendar from "./pages/Calendar";
 import Curriculum from "./pages/Curriculum";
 import Assignments from "./pages/Assignments";
 import Guide from "./pages/Guide";
+import Achievements from "./pages/Achievements";
 import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
@@ -170,6 +171,7 @@ function AppRoutes() {
       <Route path="/dashboard/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       <Route path="/dashboard/curriculum" element={<ProtectedRoute><Curriculum /></ProtectedRoute>} />
       <Route path="/dashboard/guide" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
+      <Route path="/dashboard/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
       
       {/* 404 */}
       <Route path="*" element={<NotFound />} />

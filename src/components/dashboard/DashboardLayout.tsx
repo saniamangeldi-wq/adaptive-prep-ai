@@ -60,6 +60,7 @@ const studentNav: NavItem[] = [
   { nameKey: "nav.universityMatch", href: "/dashboard/university-match", icon: GraduationCap },
   { nameKey: "nav.progress", href: "/dashboard/progress", icon: LineChart },
   { nameKey: "nav.flashcards", href: "/dashboard/flashcards", icon: Layers },
+  { nameKey: "nav.achievements", href: "/dashboard/achievements", icon: Trophy },
   { nameKey: "nav.billing", href: "/dashboard/billing", icon: CreditCard },
   { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];

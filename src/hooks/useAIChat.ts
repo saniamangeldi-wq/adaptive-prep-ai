@@ -2,6 +2,8 @@ import { useState, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { awardXP } from "@/lib/award-xp";
+import { XP_REWARDS } from "@/lib/gamification-config";
 
 export interface Message {
   id: string;
@@ -28,7 +30,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 export function useAIChat(conversationId?: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { refreshProfile } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const conversationIdRef = useRef(conversationId);
   conversationIdRef.current = conversationId;
 
@@ -201,6 +203,11 @@ export function useAIChat(conversationId?: string | null) {
 
       // Refresh profile to update credits
       await refreshProfile();
+
+      // Award XP for AI interaction (fire-and-forget)
+      if (user?.id) {
+        awardXP(user.id, XP_REWARDS.ai_chat_message).catch(() => {});
+      }
 
       // Save to database
       setMessages(prev => {

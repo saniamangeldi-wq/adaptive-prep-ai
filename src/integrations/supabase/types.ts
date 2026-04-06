@@ -443,6 +443,68 @@ export type Database = {
           },
         ]
       }
+      daily_challenge_completions: {
+        Row: {
+          challenge_id: string
+          completed_at: string
+          id: string
+          student_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string
+          id?: string
+          student_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string
+          id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_challenge_completions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "daily_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_challenges: {
+        Row: {
+          challenge_date: string
+          challenge_type: string
+          created_at: string
+          description: string | null
+          id: string
+          requirement_value: number
+          title: string
+          xp_reward: number
+        }
+        Insert: {
+          challenge_date?: string
+          challenge_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          requirement_value?: number
+          title: string
+          xp_reward?: number
+        }
+        Update: {
+          challenge_date?: string
+          challenge_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          requirement_value?: number
+          title?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       duplicate_account_flags: {
         Row: {
           created_at: string
@@ -1236,6 +1298,39 @@ export type Database = {
           id?: string
           name?: string
           tutor_id?: string
+        }
+        Relationships: []
+      }
+      student_levels: {
+        Row: {
+          created_at: string
+          id: string
+          level: number
+          rank_title: string
+          student_id: string
+          unlocked_titles: Json
+          updated_at: string
+          xp: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level?: number
+          rank_title?: string
+          student_id: string
+          unlocked_titles?: Json
+          updated_at?: string
+          xp?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: number
+          rank_title?: string
+          student_id?: string
+          unlocked_titles?: Json
+          updated_at?: string
+          xp?: number
         }
         Relationships: []
       }
