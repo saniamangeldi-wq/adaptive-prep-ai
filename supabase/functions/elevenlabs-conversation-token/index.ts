@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 type ElevenLabsErrorInfo = {
@@ -74,22 +74,23 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const jwt = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: authError } = await supabase.auth.getClaims(jwt);
 
-    if (authError || !user) {
+    if (authError || !claimsData?.claims) {
+      console.error("Auth error:", authError);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const userId = claimsData.claims.sub;
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("tier, learning_style")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (!profile || profile.tier !== "tier_3") {
