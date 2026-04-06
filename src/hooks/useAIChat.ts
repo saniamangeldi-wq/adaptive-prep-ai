@@ -204,6 +204,11 @@ export function useAIChat(conversationId?: string | null) {
       // Refresh profile to update credits
       await refreshProfile();
 
+      // Award XP for AI interaction (fire-and-forget)
+      if (user?.id) {
+        awardXP(user.id, XP_REWARDS.ai_chat_message).catch(() => {});
+      }
+
       // Save to database
       setMessages(prev => {
         saveMessages(prev);
