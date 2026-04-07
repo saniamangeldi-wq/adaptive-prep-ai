@@ -1,5 +1,12 @@
 import { useState, useCallback, useRef } from "react";
 
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
 interface UseBrowserSTTOptions {
   onTranscript?: (text: string) => void;
   onPartial?: (text: string) => void;
@@ -17,8 +24,8 @@ export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: U
   const startRecording = useCallback(() => {
     if (!isSupported || isRecording) return;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SR();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = language;
