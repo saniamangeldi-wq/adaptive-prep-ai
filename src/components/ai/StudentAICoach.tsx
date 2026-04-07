@@ -319,7 +319,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Messages area — centered */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto min-h-0">
         <div className="max-w-[760px] mx-auto px-4">
           {messages.length === 0 ? (
             /* Empty state — Space-specific or generic */
