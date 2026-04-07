@@ -381,18 +381,18 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
           ) : (
             /* Active chat — Perplexity style: no bubbles */
             <div className="py-6">
-              {messages.map((message, index) => (
+              {messages.filter(m => !m.hidden).map((message, index, filtered) => (
                 <PerplexityMessage
                   key={`${message.id}-${message.role}`}
                   message={message}
                   isTier3={hasTTS}
-                  isLast={index === messages.length - 1}
+                  isLast={index === filtered.length - 1}
                   onRetry={() => {
-                    // Find the previous user message and resend
-                    const prevUserMsg = messages.slice(0, index).reverse().find(m => m.role === "user");
+                    const prevUserMsg = messages.slice(0, messages.indexOf(message)).reverse().find(m => m.role === "user");
                     if (prevUserMsg) handleSend(prevUserMsg.content);
                   }}
                   onSend={(text) => handleSend(text)}
+                  onSendSilent={(text) => handleSend(text, { hidden: true })}
                 />
               ))}
               {isLoading && (!messages.length || messages[messages.length - 1]?.role !== "assistant" || messages[messages.length - 1]?.content === "") && (
