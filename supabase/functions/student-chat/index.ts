@@ -645,7 +645,7 @@ serve(async (req) => {
     const lastUserMessage = alternatingMessages.filter((m) => m.role === "user").pop()?.content || "";
 
     // Detect or use explicit subject
-    const userSubjects = profile.study_subjects || ['SAT'];
+    const userSubjects = Array.isArray(profile.study_subjects) ? profile.study_subjects : ['SAT'];
     const detectedSubject = explicitSubject || detectSubject(lastUserMessage, userSubjects);
     
     console.log(`Detected subject: ${detectedSubject} for user with subjects: ${userSubjects.join(', ')}`);
@@ -673,7 +673,14 @@ serve(async (req) => {
       // gpt-4o is "coming soon" — ignored if sent
     }
     
-    const systemPrompt = getStudentSystemPrompt(profile.learning_style, modelConfig.qualityNote, detectedSubject);
+    const profileCtx: StudentProfileContext = {
+      learningStyle: profile.learning_style,
+      gradeLevel: profile.grade_level ?? null,
+      primaryGoal: profile.primary_goal ?? null,
+      fullName: profile.full_name ?? null,
+      studySubjects: userSubjects,
+    };
+    const systemPrompt = getStudentSystemPrompt(profileCtx, modelConfig.qualityNote, detectedSubject);
 
     let response: Response;
 
