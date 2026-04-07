@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Send, 
@@ -31,6 +31,7 @@ import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useBrowserSTT } from "@/hooks/useBrowserSTT";
 
+import { supabase } from "@/integrations/supabase/client";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
 import { useReferences, type Reference } from "@/hooks/useReferences";
@@ -132,10 +133,38 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const isTier3 = profile?.tier === "tier_3";
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
 
-  const { startRecording: startSTT, stopRecording: stopSTT, isRecording: isSTTRecording, isSupported: isSTTSupported } = useBrowserSTT({
-    onTranscript: (text) => {
-      setInput(prev => prev ? prev + " " + text : text);
-    },
+  const handleSendRef = useRef<(text: string) => void>(() => {});
+  const [isCleaningSTT, setIsCleaningSTT] = useState(false);
+  
+  const handleSTTComplete = useCallback(async (rawText: string) => {
+    if (!rawText.trim()) return;
+    setIsCleaningSTT(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cleanup-stt`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ rawText }),
+        }
+      );
+      const data = await response.json();
+      const cleaned = data?.cleaned || rawText.trim();
+      handleSendRef.current(cleaned);
+    } catch {
+      // Fallback: send raw text
+      handleSendRef.current(rawText.trim());
+    } finally {
+      setIsCleaningSTT(false);
+    }
+  }, []);
+
+  const { startRecording: startSTT, stopRecording: stopSTT, isRecording: isSTTRecording, isSupported: isSTTSupported, partialText: sttPartialText } = useBrowserSTT({
+    onComplete: handleSTTComplete,
   });
 
 
@@ -236,6 +265,9 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     setShowReferences(false);
     await streamChat(fullInput, { endpoint: "student-chat", modelOverride }, text, attachMeta);
   };
+
+  // Keep handleSendRef in sync so the STT callback can call it
+  handleSendRef.current = handleSend;
 
   const handleChipClick = (prompt: string) => {
     handleSend(prompt);
@@ -413,12 +445,13 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
               <textarea
               ref={inputRef}
               rows={1}
-              value={input}
+              value={isSTTRecording ? sttPartialText : input}
               onChange={(e) => {
-                setInput(e.target.value);
-                // Auto-grow
-                e.target.style.height = "auto";
-                e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+                if (!isSTTRecording) {
+                  setInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+                }
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -426,8 +459,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                   handleSend();
                 }
               }}
-              placeholder={noCredits ? "No credits remaining..." : "Ask anything..."}
-              disabled={noCredits}
+              placeholder={isSTTRecording ? "Listening..." : isCleaningSTT ? "Cleaning up..." : noCredits ? "No credits remaining..." : "Ask anything..."}
+              disabled={noCredits || isSTTRecording}
               className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm min-h-[40px] max-h-[160px] resize-none py-2"
             />
 
@@ -435,16 +468,18 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             {isSTTSupported && (
               <button
                 onClick={isSTTRecording ? stopSTT : startSTT}
-                disabled={noCredits || isLoading}
+                disabled={noCredits || isLoading || isCleaningSTT}
                 className={cn(
                   "p-1.5 rounded-lg transition-colors disabled:opacity-40",
                   isSTTRecording 
                     ? "text-destructive animate-pulse" 
+                    : isCleaningSTT
+                    ? "text-primary animate-spin"
                     : "text-muted-foreground hover:text-foreground"
                 )}
-                title={isSTTRecording ? "Stop dictation" : "Dictate message"}
+                title={isSTTRecording ? "Stop & send" : isCleaningSTT ? "Processing..." : "Dictate message"}
               >
-                {isSTTRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                {isCleaningSTT ? <Loader2 className="w-4 h-4" /> : isSTTRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
             )}
 
