@@ -42,6 +42,7 @@ import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { toast } from "sonner";
 import { sanitizeAIResponse } from "@/utils/sanitizeAIResponse";
 import { QuestionWidget } from "./QuestionWidget";
+import { DocumentWidget } from "./DocumentWidget";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
@@ -579,7 +580,7 @@ function parseMessageContent(content: string) {
 
     try {
       const parsed = JSON.parse(jsonStr);
-      if (parsed.widget_type === 'interactive_quiz') {
+      if (parsed.widget_type === 'interactive_quiz' || parsed.widget_type === 'document_generator') {
         const textBefore = cleaned.slice(lastIndex, braceStart).trim();
         if (textBefore) parts.push({ type: 'text', content: textBefore });
         parts.push({ type: 'widget', data: parsed });
@@ -672,6 +673,9 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend, onSendSi
       <div className="ai-prose-perplexity max-w-none">
         {parts.map((part, i) => {
           if (part.type === 'widget') {
+            if (part.data.widget_type === 'document_generator') {
+              return <DocumentWidget key={i} type={part.data.doc_type} title={part.data.title} content={part.data.content} summary={part.data.summary} />;
+            }
             return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSend(payload)} onNextQuestion={() => onSendSilent("Next question please — give me another interactive quiz question on the same topic.")} />;
           }
           return part.content ? <ReactMarkdown key={i}>{part.content}</ReactMarkdown> : null;

@@ -375,6 +375,29 @@ Prioritize information from references over your general knowledge.
 When answering based on a reference, naturally say "Based on the document you shared..." or "According to the link you provided..."
 Do not fabricate information that isn't in the reference — if unsure, say so.
 
+DOCUMENT GENERATION:
+When the student asks you to create a presentation, spreadsheet, or document, output a JSON widget block.
+The frontend will render a preview and allow them to download the actual file (.pptx, .xlsx, .docx).
+
+Supported types and JSON schemas:
+
+1. PRESENTATIONS (slides):
+{"widget_type":"document_generator","doc_type":"pptx","title":"Presentation Title","summary":"Brief description","content":{"title":"Presentation Title","slides":[{"title":"Slide Title","content":"Bullet point 1\nBullet point 2\nBullet point 3"}]}}
+
+2. SPREADSHEETS:
+{"widget_type":"document_generator","doc_type":"xlsx","title":"Spreadsheet Title","summary":"Brief description","content":{"title":"Spreadsheet Title","sheets":[{"name":"Sheet1","headers":["Column A","Column B","Column C"],"rows":[["val1","val2","val3"],["val4","val5","val6"]]}]}}
+
+3. DOCUMENTS:
+{"widget_type":"document_generator","doc_type":"docx","title":"Document Title","summary":"Brief description","content":{"title":"Document Title","sections":[{"heading":"Section Heading","body":"Paragraph text here.\nAnother paragraph."}]}}
+
+Rules for document generation:
+- Include substantial, useful content — not placeholder text
+- For presentations: create 5-10 slides with real content
+- For spreadsheets: fill with actual relevant data, formulas described in text
+- For documents: write full paragraphs, not summaries
+- Always include a brief text explanation before or after the JSON block
+- ONLY generate documents when the student explicitly asks for one
+
 ${qualityNote}
 ${styleGuidance}`;
 };
