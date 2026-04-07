@@ -131,7 +131,13 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
-  
+
+  const { startRecording: startSTT, stopRecording: stopSTT, isRecording: isSTTRecording, isSupported: isSTTSupported } = useBrowserSTT({
+    onTranscript: (text) => {
+      setInput(prev => prev ? prev + " " + text : text);
+    },
+  });
+
 
   useEffect(() => {
     setActiveConvId(conversationId || null);
