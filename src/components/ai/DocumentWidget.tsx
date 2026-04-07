@@ -143,7 +143,7 @@ export function DocumentWidget({ type, title, content, summary }: DocumentWidget
 
       {renderPreview()}
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-1">
         {!downloadUrl ? (
           <Button
             size="sm"
