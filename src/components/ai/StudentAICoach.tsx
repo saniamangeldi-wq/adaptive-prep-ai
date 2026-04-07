@@ -18,7 +18,9 @@ import {
   Check,
   GraduationCap,
   Crown,
-  BookOpen
+  BookOpen,
+  Mic,
+  MicOff
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -27,6 +29,7 @@ import { useAIChat, type Message } from "@/hooks/useAIChat";
 import ReactMarkdown from "react-markdown";
 import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useBrowserSTT } from "@/hooks/useBrowserSTT";
 
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
@@ -128,7 +131,13 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
-  
+
+  const { startRecording: startSTT, stopRecording: stopSTT, isRecording: isSTTRecording, isSupported: isSTTSupported } = useBrowserSTT({
+    onTranscript: (text) => {
+      setInput(prev => prev ? prev + " " + text : text);
+    },
+  });
+
 
   useEffect(() => {
     setActiveConvId(conversationId || null);
@@ -422,7 +431,24 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
               className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm min-h-[40px] max-h-[160px] resize-none py-2"
             />
 
-            {/* Voice button (Tier 3 / Elite only) */}
+            {/* STT mic button (free, browser-native, all tiers) */}
+            {isSTTSupported && (
+              <button
+                onClick={isSTTRecording ? stopSTT : startSTT}
+                disabled={noCredits || isLoading}
+                className={cn(
+                  "p-1.5 rounded-lg transition-colors disabled:opacity-40",
+                  isSTTRecording 
+                    ? "text-destructive animate-pulse" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                title={isSTTRecording ? "Stop dictation" : "Dictate message"}
+              >
+                {isSTTRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+            )}
+
+            {/* Voice chat button (Tier 3 / Elite only) */}
             {isTier3 && (
               <VoiceChat 
                 onTranscript={handleVoiceTranscript}
