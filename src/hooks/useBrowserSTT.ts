@@ -46,6 +46,7 @@ interface UseBrowserSTTOptions {
 export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: UseBrowserSTTOptions = {}) {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const processedIndexRef = useRef(0);
 
   const isSupported = typeof window !== "undefined" && 
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
@@ -53,6 +54,7 @@ export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: U
   const startRecording = useCallback(() => {
     if (!isSupported || isRecording) return;
 
+    processedIndexRef.current = 0;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SR();
     recognition.continuous = true;
@@ -61,20 +63,17 @@ export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: U
 
     recognition.onresult = (event) => {
       let interim = "";
-      let final = "";
 
-      for (let i = 0; i < event.results.length; i++) {
+      for (let i = processedIndexRef.current; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
-          final += result[0].transcript;
+          onTranscript?.(result[0].transcript.trim());
+          processedIndexRef.current = i + 1;
         } else {
           interim += result[0].transcript;
         }
       }
 
-      if (final) {
-        onTranscript?.(final.trim());
-      }
       if (interim) {
         onPartial?.(interim);
       }
