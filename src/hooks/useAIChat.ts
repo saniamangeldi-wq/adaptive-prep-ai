@@ -50,7 +50,8 @@ export function useAIChat(conversationId?: string | null) {
     userInput: string,
     options: StreamChatOptions,
     visibleText?: string,
-    attachmentMeta?: Array<{ type: string; name: string; preview?: string }>
+    attachmentMeta?: Array<{ type: string; name: string; preview?: string }>,
+    hidden?: boolean
   ) => {
     if (!userInput.trim() || isLoading) return;
 
@@ -60,6 +61,7 @@ export function useAIChat(conversationId?: string | null) {
       content: userInput.trim(),
       timestamp: new Date(),
       visibleText: visibleText || undefined,
+      hidden: hidden || undefined,
       attachmentMeta: attachmentMeta?.length ? attachmentMeta : undefined,
     };
 
