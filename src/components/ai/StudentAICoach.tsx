@@ -669,7 +669,7 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: {
       <div className="ai-prose-perplexity max-w-none">
         {parts.map((part, i) => {
           if (part.type === 'widget') {
-            return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSend(payload)} />;
+            return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSend(payload)} onNextQuestion={() => onSend("Next question please")} />;
           }
           return part.content ? <ReactMarkdown key={i}>{part.content}</ReactMarkdown> : null;
         })}
