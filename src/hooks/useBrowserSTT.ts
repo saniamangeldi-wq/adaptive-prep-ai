@@ -1,9 +1,39 @@
 import { useState, useCallback, useRef } from "react";
 
+interface SpeechRecognitionResult {
+  readonly isFinal: boolean;
+  readonly length: number;
+  [index: number]: { transcript: string; confidence: number };
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  readonly results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: string;
+}
+
+interface SpeechRecognitionInstance extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+}
+
 declare global {
   interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
+    SpeechRecognition: new () => SpeechRecognitionInstance;
+    webkitSpeechRecognition: new () => SpeechRecognitionInstance;
   }
 }
 
@@ -15,8 +45,7 @@ interface UseBrowserSTTOptions {
 
 export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: UseBrowserSTTOptions = {}) {
   const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const fullTranscriptRef = useRef("");
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   const isSupported = typeof window !== "undefined" && 
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
@@ -30,9 +59,7 @@ export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: U
     recognition.interimResults = true;
     recognition.lang = language;
 
-    fullTranscriptRef.current = "";
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event) => {
       let interim = "";
       let final = "";
 
@@ -46,7 +73,6 @@ export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: U
       }
 
       if (final) {
-        fullTranscriptRef.current = final;
         onTranscript?.(final.trim());
       }
       if (interim) {
