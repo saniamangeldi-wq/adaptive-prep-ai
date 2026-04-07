@@ -11,6 +11,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   visibleText?: string;
+  hidden?: boolean;
   attachmentMeta?: Array<{ type: string; name: string; preview?: string }>;
 }
 
