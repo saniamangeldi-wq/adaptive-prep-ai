@@ -445,12 +445,13 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
               <textarea
               ref={inputRef}
               rows={1}
-              value={input}
+              value={isSTTRecording ? sttPartialText : input}
               onChange={(e) => {
-                setInput(e.target.value);
-                // Auto-grow
-                e.target.style.height = "auto";
-                e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+                if (!isSTTRecording) {
+                  setInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+                }
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -458,8 +459,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                   handleSend();
                 }
               }}
-              placeholder={noCredits ? "No credits remaining..." : "Ask anything..."}
-              disabled={noCredits}
+              placeholder={isSTTRecording ? "Listening..." : isCleaningSTT ? "Cleaning up..." : noCredits ? "No credits remaining..." : "Ask anything..."}
+              disabled={noCredits || isSTTRecording}
               className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm min-h-[40px] max-h-[160px] resize-none py-2"
             />
 
@@ -467,16 +468,18 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             {isSTTSupported && (
               <button
                 onClick={isSTTRecording ? stopSTT : startSTT}
-                disabled={noCredits || isLoading}
+                disabled={noCredits || isLoading || isCleaningSTT}
                 className={cn(
                   "p-1.5 rounded-lg transition-colors disabled:opacity-40",
                   isSTTRecording 
                     ? "text-destructive animate-pulse" 
+                    : isCleaningSTT
+                    ? "text-primary animate-spin"
                     : "text-muted-foreground hover:text-foreground"
                 )}
-                title={isSTTRecording ? "Stop dictation" : "Dictate message"}
+                title={isSTTRecording ? "Stop & send" : isCleaningSTT ? "Processing..." : "Dictate message"}
               >
-                {isSTTRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                {isCleaningSTT ? <Loader2 className="w-4 h-4" /> : isSTTRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
             )}
 
