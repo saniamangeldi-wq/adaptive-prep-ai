@@ -224,13 +224,37 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     setInput(text);
   };
 
+  const shouldScrollRef = useRef(true);
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (shouldScrollRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
+  // Only auto-scroll when a new message is added (not on content updates during streaming)
+  const prevMessageCountRef = useRef(0);
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (messages.length > prevMessageCountRef.current) {
+      shouldScrollRef.current = true;
+      scrollToBottom();
+    }
+    prevMessageCountRef.current = messages.length;
+  }, [messages.length]);
+
+  // Detect manual scroll-up to pause auto-scroll
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      // If user scrolled up more than 100px from bottom, stop auto-scrolling
+      shouldScrollRef.current = scrollHeight - scrollTop - clientHeight < 100;
+    };
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleSend = async (overrideInput?: string) => {
     const text = overrideInput ?? input;
@@ -295,7 +319,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Messages area — centered */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto min-h-0">
         <div className="max-w-[760px] mx-auto px-4">
           {messages.length === 0 ? (
             /* Empty state — Space-specific or generic */
@@ -645,7 +669,7 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: {
       <div className="ai-prose-perplexity max-w-none">
         {parts.map((part, i) => {
           if (part.type === 'widget') {
-            return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSend(payload)} />;
+            return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSend(payload)} onNextQuestion={() => onSend("Next question please")} />;
           }
           return part.content ? <ReactMarkdown key={i}>{part.content}</ReactMarkdown> : null;
         })}
