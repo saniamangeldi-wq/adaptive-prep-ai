@@ -54,6 +54,7 @@ export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: U
   const startRecording = useCallback(() => {
     if (!isSupported || isRecording) return;
 
+    processedIndexRef.current = 0;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SR();
     recognition.continuous = true;
