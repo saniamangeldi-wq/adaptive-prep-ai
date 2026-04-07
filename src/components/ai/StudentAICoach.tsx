@@ -31,6 +31,7 @@ import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useBrowserSTT } from "@/hooks/useBrowserSTT";
 
+import { supabase } from "@/integrations/supabase/client";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
 import { useReferences, type Reference } from "@/hooks/useReferences";
