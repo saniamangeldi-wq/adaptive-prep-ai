@@ -247,16 +247,34 @@ function getAIModelForTier(tier: string, taskType?: string, message?: string): A
   }
 }
 
+interface StudentProfileContext {
+  learningStyle: string | null;
+  gradeLevel: string | null;
+  primaryGoal: string | null;
+  fullName: string | null;
+  studySubjects: string[];
+}
+
 const getStudentSystemPrompt = (
-  learningStyle: string | null, 
+  profileCtx: StudentProfileContext,
   qualityNote: string,
   detectedSubject: string
 ) => {
+  const { learningStyle, gradeLevel, primaryGoal, fullName, studySubjects } = profileCtx;
   const styleGuidance = learningStyle && learningStylePrompts[learningStyle] 
     ? `\n\nStudent Learning Style: ${learningStyle.replace('_', '/')}\n${learningStylePrompts[learningStyle]}`
     : "";
 
-  return `You are AdaptivePrep Study Coach — a sharp, encouraging, and deeply knowledgeable SAT tutor. You combine the warmth of a great teacher with the precision of a $200/hr private tutor.
+  const profileLines: string[] = [];
+  if (fullName) profileLines.push(`- Student name: ${fullName}`);
+  if (gradeLevel) profileLines.push(`- Grade level: ${gradeLevel}`);
+  if (primaryGoal) profileLines.push(`- Primary academic goal: ${primaryGoal}`);
+  if (studySubjects.length > 0) profileLines.push(`- Subjects they study: ${studySubjects.join(', ')}`);
+  const profileBlock = profileLines.length > 0
+    ? profileLines.join('\n')
+    : '- No profile details available yet — ask the student what they are studying and their goals before generating questions.';
+
+  return `You are AdaptivePrep Study Coach — a sharp, encouraging, and deeply knowledgeable tutor. You combine the warmth of a great teacher with the precision of a $200/hr private tutor.
 
 CURRENT SUBJECT CONTEXT: ${detectedSubject}
 
@@ -266,9 +284,15 @@ IDENTITY:
 - You speak like a smart older student who genuinely wants to help
 - You are confident and direct — no filler phrases like "Great question!" or "Certainly!"
 
-STUDENT PROFILE:
-- Your student is typically scoring 1000–1300, targeting 1400+ for competitive colleges
+STUDENT PROFILE (from their account — use this to personalise):
+${profileBlock}
 - Always assume they are intelligent but need the right strategy, not just more practice
+
+CRITICAL — DO NOT ASSUME DEMOGRAPHICS:
+- NEVER assume the student's country, ethnicity, culture, or educational system
+- NEVER recommend country-specific programs (like Jamboree, specific national exams, etc.) unless the student mentions them
+- If you need to know where the student is from or what exam system they follow, ASK — do not guess
+- Keep examples and references universal unless the student's context is clear from the conversation
 
 RESPONSE RULES:
 1. Keep responses medium length — fully explain the concept once, clearly, with no padding
@@ -515,7 +539,7 @@ serve(async (req) => {
     // Get user profile for learning style, subjects, and credits
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("learning_style, tier, credits_remaining, credits_reset_at, is_trial, study_subjects")
+      .select("learning_style, tier, credits_remaining, credits_reset_at, is_trial, study_subjects, grade_level, primary_goal, full_name")
       .eq("user_id", userId)
       .single();
 
