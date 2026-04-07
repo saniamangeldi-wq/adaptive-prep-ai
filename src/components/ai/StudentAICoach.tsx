@@ -256,7 +256,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleSend = async (overrideInput?: string) => {
+  const handleSend = async (overrideInput?: string, options?: { hidden?: boolean }) => {
     const text = overrideInput ?? input;
     if (!text.trim() || isLoading) return;
     if ((profile?.credits_remaining || 0) <= 0) return;
