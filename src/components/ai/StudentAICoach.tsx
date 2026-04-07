@@ -256,7 +256,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleSend = async (overrideInput?: string) => {
+  const handleSend = async (overrideInput?: string, options?: { hidden?: boolean }) => {
     const text = overrideInput ?? input;
     if (!text.trim() || isLoading) return;
     if ((profile?.credits_remaining || 0) <= 0) return;
@@ -282,12 +282,14 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
         preview: a.type === 'image' ? a.file_url || undefined : undefined,
       }));
     
-    setInput("");
-    if (inputRef.current) inputRef.current.style.height = "auto";
-    clearAttachments();
-    setShowAttachments(false);
-    setShowReferences(false);
-    await streamChat(fullInput, { endpoint: "student-chat", modelOverride }, text, attachMeta);
+    if (!options?.hidden) {
+      setInput("");
+      if (inputRef.current) inputRef.current.style.height = "auto";
+      clearAttachments();
+      setShowAttachments(false);
+      setShowReferences(false);
+    }
+    await streamChat(fullInput, { endpoint: "student-chat", modelOverride }, text, attachMeta, options?.hidden);
   };
 
   // Keep handleSendRef in sync so the STT callback can call it
@@ -379,18 +381,18 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
           ) : (
             /* Active chat — Perplexity style: no bubbles */
             <div className="py-6">
-              {messages.map((message, index) => (
+              {messages.filter(m => !m.hidden).map((message, index, filtered) => (
                 <PerplexityMessage
                   key={`${message.id}-${message.role}`}
                   message={message}
                   isTier3={hasTTS}
-                  isLast={index === messages.length - 1}
+                  isLast={index === filtered.length - 1}
                   onRetry={() => {
-                    // Find the previous user message and resend
-                    const prevUserMsg = messages.slice(0, index).reverse().find(m => m.role === "user");
+                    const prevUserMsg = messages.slice(0, messages.indexOf(message)).reverse().find(m => m.role === "user");
                     if (prevUserMsg) handleSend(prevUserMsg.content);
                   }}
                   onSend={(text) => handleSend(text)}
+                  onSendSilent={(text) => handleSend(text, { hidden: true })}
                 />
               ))}
               {isLoading && (!messages.length || messages[messages.length - 1]?.role !== "assistant" || messages[messages.length - 1]?.content === "") && (
@@ -598,12 +600,13 @@ function parseMessageContent(content: string) {
 }
 
 /* ─── Perplexity-style message (no bubbles) ─── */
-function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: { 
+function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend, onSendSilent }: { 
   message: Message; 
   isTier3: boolean; 
   isLast: boolean;
   onRetry: () => void;
   onSend: (text: string) => void;
+  onSendSilent: (text: string) => void;
 }) {
   const { speak, stop, isPlaying, isLoading: ttsLoading } = useTextToSpeech();
   const [copied, setCopied] = useState(false);
@@ -669,7 +672,7 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: {
       <div className="ai-prose-perplexity max-w-none">
         {parts.map((part, i) => {
           if (part.type === 'widget') {
-            return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSend(payload)} onNextQuestion={() => onSend("Next question please")} />;
+            return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSend(payload)} onNextQuestion={() => onSendSilent("Next question please — give me another interactive quiz question on the same topic.")} />;
           }
           return part.content ? <ReactMarkdown key={i}>{part.content}</ReactMarkdown> : null;
         })}
