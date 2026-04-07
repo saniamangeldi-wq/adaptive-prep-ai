@@ -600,12 +600,13 @@ function parseMessageContent(content: string) {
 }
 
 /* ─── Perplexity-style message (no bubbles) ─── */
-function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend }: { 
+function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend, onSendSilent }: { 
   message: Message; 
   isTier3: boolean; 
   isLast: boolean;
   onRetry: () => void;
   onSend: (text: string) => void;
+  onSendSilent: (text: string) => void;
 }) {
   const { speak, stop, isPlaying, isLoading: ttsLoading } = useTextToSpeech();
   const [copied, setCopied] = useState(false);
