@@ -282,12 +282,14 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
         preview: a.type === 'image' ? a.file_url || undefined : undefined,
       }));
     
-    setInput("");
-    if (inputRef.current) inputRef.current.style.height = "auto";
-    clearAttachments();
-    setShowAttachments(false);
-    setShowReferences(false);
-    await streamChat(fullInput, { endpoint: "student-chat", modelOverride }, text, attachMeta);
+    if (!options?.hidden) {
+      setInput("");
+      if (inputRef.current) inputRef.current.style.height = "auto";
+      clearAttachments();
+      setShowAttachments(false);
+      setShowReferences(false);
+    }
+    await streamChat(fullInput, { endpoint: "student-chat", modelOverride }, text, attachMeta, options?.hidden);
   };
 
   // Keep handleSendRef in sync so the STT callback can call it
