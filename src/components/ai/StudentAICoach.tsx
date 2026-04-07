@@ -18,7 +18,9 @@ import {
   Check,
   GraduationCap,
   Crown,
-  BookOpen
+  BookOpen,
+  Mic,
+  MicOff
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -27,6 +29,7 @@ import { useAIChat, type Message } from "@/hooks/useAIChat";
 import ReactMarkdown from "react-markdown";
 import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useBrowserSTT } from "@/hooks/useBrowserSTT";
 
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
