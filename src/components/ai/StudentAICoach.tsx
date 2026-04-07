@@ -266,6 +266,9 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     await streamChat(fullInput, { endpoint: "student-chat", modelOverride }, text, attachMeta);
   };
 
+  // Keep handleSendRef in sync so the STT callback can call it
+  handleSendRef.current = handleSend;
+
   const handleChipClick = (prompt: string) => {
     handleSend(prompt);
   };
