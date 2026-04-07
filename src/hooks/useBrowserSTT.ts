@@ -38,15 +38,18 @@ declare global {
 }
 
 interface UseBrowserSTTOptions {
-  onTranscript?: (text: string) => void;
-  onPartial?: (text: string) => void;
+  onComplete?: (fullText: string) => void;
   language?: string;
 }
 
-export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: UseBrowserSTTOptions = {}) {
+export function useBrowserSTT({ onComplete, language = "en-US" }: UseBrowserSTTOptions = {}) {
   const [isRecording, setIsRecording] = useState(false);
+  const [partialText, setPartialText] = useState("");
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const processedIndexRef = useRef(0);
+  const accumulatedRef = useRef("");
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   const isSupported = typeof window !== "undefined" && 
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
@@ -55,6 +58,8 @@ export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: U
     if (!isSupported || isRecording) return;
 
     processedIndexRef.current = 0;
+    accumulatedRef.current = "";
+    setPartialText("");
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SR();
     recognition.continuous = true;
@@ -67,16 +72,17 @@ export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: U
       for (let i = processedIndexRef.current; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
-          onTranscript?.(result[0].transcript.trim());
+          const chunk = result[0].transcript.trim();
+          if (chunk) {
+            accumulatedRef.current += (accumulatedRef.current ? " " : "") + chunk;
+          }
           processedIndexRef.current = i + 1;
         } else {
           interim += result[0].transcript;
         }
       }
 
-      if (interim) {
-        onPartial?.(interim);
-      }
+      setPartialText(accumulatedRef.current + (interim ? " " + interim : ""));
     };
 
     recognition.onerror = (event) => {
@@ -86,17 +92,21 @@ export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: U
 
     recognition.onend = () => {
       setIsRecording(false);
+      const fullText = accumulatedRef.current.trim();
+      if (fullText) {
+        onCompleteRef.current?.(fullText);
+      }
+      setPartialText("");
     };
 
     recognitionRef.current = recognition;
     recognition.start();
     setIsRecording(true);
-  }, [isSupported, isRecording, language, onTranscript, onPartial]);
+  }, [isSupported, isRecording, language]);
 
   const stopRecording = useCallback(() => {
     recognitionRef.current?.stop();
     recognitionRef.current = null;
-    setIsRecording(false);
   }, []);
 
   return {
@@ -104,5 +114,6 @@ export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: U
     stopRecording,
     isRecording,
     isSupported,
+    partialText,
   };
 }
