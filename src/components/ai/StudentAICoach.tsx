@@ -388,6 +388,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                   message={message}
                   isTier3={hasTTS}
                   isLast={index === filtered.length - 1}
+                  isStreaming={isLoading}
                   onRetry={() => {
                     const prevUserMsg = messages.slice(0, messages.indexOf(message)).reverse().find(m => m.role === "user");
                     if (prevUserMsg) handleSend(prevUserMsg.content);
@@ -558,7 +559,7 @@ function extractBalancedJSON(str: string, startIdx: number): string | null {
   return null;
 }
 
-function parseMessageContent(content: string) {
+function parseMessageContent(content: string, isStreaming = false) {
   const parts: Array<{ type: 'text'; content: string } | { type: 'widget'; data: any }> = [];
   // Strip markdown code fences around JSON
   const cleaned = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
@@ -576,7 +577,17 @@ function parseMessageContent(content: string) {
     if (cleaned[braceStart] !== '{') { searchFrom = markerIdx + marker.length; continue; }
 
     const jsonStr = extractBalancedJSON(cleaned, braceStart);
-    if (!jsonStr) { searchFrom = markerIdx + marker.length; continue; }
+    if (!jsonStr) {
+      // During streaming, hide the incomplete JSON being built up
+      if (isStreaming) {
+        const textBefore = cleaned.slice(lastIndex, braceStart).trim();
+        if (textBefore) parts.push({ type: 'text', content: textBefore });
+        // Don't show anything after braceStart (it's incomplete JSON)
+        return parts.length ? parts : [{ type: 'text' as const, content: textBefore || '' }];
+      }
+      searchFrom = markerIdx + marker.length;
+      continue;
+    }
 
     try {
       const parsed = JSON.parse(jsonStr);
@@ -601,10 +612,11 @@ function parseMessageContent(content: string) {
 }
 
 /* ─── Perplexity-style message (no bubbles) ─── */
-function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend, onSendSilent }: { 
+function PerplexityMessage({ message, isTier3, isLast, isStreaming, onRetry, onSend, onSendSilent }: { 
   message: Message; 
   isTier3: boolean; 
   isLast: boolean;
+  isStreaming: boolean;
   onRetry: () => void;
   onSend: (text: string) => void;
   onSendSilent: (text: string) => void;
@@ -658,7 +670,7 @@ function PerplexityMessage({ message, isTier3, isLast, onRetry, onSend, onSendSi
     .replace(/\[\d+\]/g, '');
 
   // Parse message into text + interactive widget parts
-  const parts = parseMessageContent(cleanContent);
+  const parts = parseMessageContent(cleanContent, isStreaming && isLast);
 
   // Detect citation patterns in AI response
   const citationPatterns = [
