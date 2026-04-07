@@ -132,10 +132,37 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const isTier3 = profile?.tier === "tier_3";
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
 
-  const { startRecording: startSTT, stopRecording: stopSTT, isRecording: isSTTRecording, isSupported: isSTTSupported } = useBrowserSTT({
-    onTranscript: (text) => {
-      setInput(prev => prev ? prev + " " + text : text);
-    },
+  const [isCleaningSTT, setIsCleaningSTT] = useState(false);
+  
+  const handleSTTComplete = useCallback(async (rawText: string) => {
+    if (!rawText.trim()) return;
+    setIsCleaningSTT(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cleanup-stt`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ rawText }),
+        }
+      );
+      const data = await response.json();
+      const cleaned = data?.cleaned || rawText.trim();
+      handleSendRef.current(cleaned);
+    } catch {
+      // Fallback: send raw text
+      handleSendRef.current(rawText.trim());
+    } finally {
+      setIsCleaningSTT(false);
+    }
+  }, []);
+
+  const { startRecording: startSTT, stopRecording: stopSTT, isRecording: isSTTRecording, isSupported: isSTTSupported, partialText: sttPartialText } = useBrowserSTT({
+    onComplete: handleSTTComplete,
   });
 
 
