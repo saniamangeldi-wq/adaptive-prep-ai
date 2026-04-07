@@ -183,6 +183,126 @@ ${slides.map((_, i) => `<Override PartName="/ppt/slides/slide${i + 1}.xml" Conte
 }
 
 // ---------------------------------------------------------------------------
+// Minimal PDF generator for slides
+// ---------------------------------------------------------------------------
+function generateSlidesPdf(data: { title: string; slides: Array<{ title: string; content: string }> }): Uint8Array {
+  const slides = data.slides && data.slides.length > 0
+    ? data.slides
+    : [{ title: data.title || "Presentation", content: "No content provided" }];
+
+  const enc = new TextEncoder();
+
+  // PDF with landscape pages (792x612 = letter landscape)
+  const pageW = 792;
+  const pageH = 612;
+
+  const objects: string[] = [];
+  const addObj = (content: string) => { objects.push(content); return objects.length; };
+
+  // Obj 1: Catalog
+  addObj("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj");
+
+  // Obj 2: Pages (placeholder, filled later)
+  addObj(""); // placeholder
+
+  // Obj 3: Font
+  addObj("3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj");
+  // Obj 4: Bold font
+  addObj("4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>\nendobj");
+
+  const pageObjIds: number[] = [];
+
+  const escPdf = (s: string) => s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+
+  // Wrap text to fit width (approximate: ~7.2px per char at size 14)
+  const wrapText = (text: string, maxChars: number): string[] => {
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let current = "";
+    for (const word of words) {
+      if (current.length + word.length + 1 > maxChars) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = current ? current + " " + word : word;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  };
+
+  for (const slide of slides) {
+    let stream = "";
+    // Background
+    stream += "0.15 0.15 0.2 rg\n";
+    stream += `0 0 ${pageW} ${pageH} re f\n`;
+
+    // Title bar background
+    stream += "0.2 0.4 0.8 rg\n";
+    stream += `0 ${pageH - 80} ${pageW} 80 re f\n`;
+
+    // Title text (white, bold)
+    stream += "1 1 1 rg\n";
+    stream += "BT\n";
+    stream += "/F2 24 Tf\n";
+    stream += `50 ${pageH - 55} Td\n`;
+    stream += `(${escPdf(slide.title)}) Tj\n`;
+    stream += "ET\n";
+
+    // Content text
+    const bulletLines = slide.content.split("\n").filter(Boolean);
+    stream += "0.9 0.9 0.95 rg\n";
+    stream += "BT\n";
+    stream += "/F1 14 Tf\n";
+    stream += "16 TL\n";
+    stream += `70 ${pageH - 130} Td\n`;
+    const maxChars = 90;
+    for (const line of bulletLines) {
+      const cleanLine = line.replace(/^[-•]\s*/, "");
+      const wrapped = wrapText(cleanLine, maxChars);
+      // First line with bullet
+      stream += `(\\267  ${escPdf(wrapped[0])}) Tj T*\n`;
+      // Continuation lines indented
+      for (let w = 1; w < wrapped.length; w++) {
+        stream += `(    ${escPdf(wrapped[w])}) Tj T*\n`;
+      }
+    }
+    stream += "ET\n";
+
+    const streamBytes = enc.encode(stream);
+    const contentId = addObj(
+      `${objects.length + 1} 0 obj\n<< /Length ${streamBytes.length} >>\nstream\n${stream}endstream\nendobj`
+    );
+
+    const pageId = addObj(
+      `${objects.length + 1} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Contents ${contentId} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> >>\nendobj`
+    );
+    pageObjIds.push(pageId);
+  }
+
+  // Fill in Pages object
+  const kids = pageObjIds.map(id => `${id} 0 R`).join(" ");
+  objects[1] = `2 0 obj\n<< /Type /Pages /Kids [${kids}] /Count ${pageObjIds.length} >>\nendobj`;
+
+  // Build PDF
+  let pdf = "%PDF-1.4\n";
+  const offsets: number[] = [];
+  for (const obj of objects) {
+    offsets.push(pdf.length);
+    pdf += obj + "\n";
+  }
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  for (const off of offsets) {
+    pdf += `${String(off).padStart(10, "0")} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+  return enc.encode(pdf);
+}
+
+// ---------------------------------------------------------------------------
 // Minimal DOCX generator
 // ---------------------------------------------------------------------------
 function generateDocx(data: { title: string; sections: Array<{ heading?: string; body: string }> }): Uint8Array {
@@ -404,6 +524,12 @@ serve(async (req) => {
         fileData = generatePptx(content);
         extension = "pptx";
         mimeType = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+        break;
+      }
+      case "slides_pdf": {
+        fileData = generateSlidesPdf(content);
+        extension = "pdf";
+        mimeType = "application/pdf";
         break;
       }
       case "docx": {
