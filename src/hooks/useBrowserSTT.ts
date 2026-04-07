@@ -46,6 +46,7 @@ interface UseBrowserSTTOptions {
 export function useBrowserSTT({ onTranscript, onPartial, language = "en-US" }: UseBrowserSTTOptions = {}) {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const processedIndexRef = useRef(0);
 
   const isSupported = typeof window !== "undefined" && 
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
