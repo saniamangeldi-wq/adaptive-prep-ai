@@ -36,15 +36,14 @@ const typeConfig = {
 };
 
 export function DocumentWidget({ type, title, content, summary }: DocumentWidgetProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState<string | null>(null);
+  const [downloads, setDownloads] = useState<Record<string, { url: string; fileName: string }>>({});
 
   const config = typeConfig[type] || typeConfig.docx;
   const Icon = config.icon;
 
-  const handleGenerate = async () => {
-    setIsGenerating(true);
+  const handleGenerate = async (genType: string) => {
+    setIsGenerating(genType);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
@@ -59,7 +58,7 @@ export function DocumentWidget({ type, title, content, summary }: DocumentWidget
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ type, content }),
+        body: JSON.stringify({ type: genType, content }),
       });
 
       if (!response.ok) {
@@ -68,18 +67,16 @@ export function DocumentWidget({ type, title, content, summary }: DocumentWidget
       }
 
       const result = await response.json();
-      setDownloadUrl(result.url);
-      setFileName(result.fileName);
-      toast.success(`${config.label} generated successfully!`);
+      setDownloads(prev => ({ ...prev, [genType]: { url: result.url, fileName: result.fileName } }));
+      toast.success(`File generated successfully!`);
     } catch (error) {
       console.error("Document generation error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to generate document");
     } finally {
-      setIsGenerating(false);
+      setIsGenerating(null);
     }
   };
 
-  // Preview content
   const renderPreview = () => {
     if (type === "pptx" && content.slides) {
       const slides = content.slides as Array<{ title: string; content: string }>;
@@ -125,6 +122,41 @@ export function DocumentWidget({ type, title, content, summary }: DocumentWidget
     return null;
   };
 
+  const renderDownloadButton = (genType: string, label: string, ext: string) => {
+    const dl = downloads[genType];
+    if (dl) {
+      return (
+        <Button size="sm" asChild className="flex-1">
+          <a href={dl.url} download={dl.fileName || `${title}.${ext}`} target="_blank" rel="noopener noreferrer">
+            <Download className="w-4 h-4 mr-2" />
+            .{ext}
+          </a>
+        </Button>
+      );
+    }
+    return (
+      <Button
+        size="sm"
+        variant={genType === type ? "default" : "outline"}
+        onClick={() => handleGenerate(genType)}
+        disabled={isGenerating !== null}
+        className="flex-1"
+      >
+        {isGenerating === genType ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Generating...
+          </>
+        ) : (
+          <>
+            <FileIcon className="w-4 h-4 mr-2" />
+            .{ext}
+          </>
+        )}
+      </Button>
+    );
+  };
+
   return (
     <div className={`rounded-xl border ${config.border} ${config.bg} p-4 space-y-3`}>
       <div className="flex items-center gap-3">
@@ -133,7 +165,7 @@ export function DocumentWidget({ type, title, content, summary }: DocumentWidget
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="font-medium text-sm truncate">{title}</h4>
-          <p className="text-xs text-muted-foreground">{config.label} • .{type}</p>
+          <p className="text-xs text-muted-foreground">{config.label}</p>
         </div>
       </div>
 
@@ -144,36 +176,13 @@ export function DocumentWidget({ type, title, content, summary }: DocumentWidget
       {renderPreview()}
 
       <div className="flex gap-2 pt-1">
-        {!downloadUrl ? (
-          <Button
-            size="sm"
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="w-full"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <FileIcon className="w-4 h-4 mr-2" />
-                Generate & Download
-              </>
-            )}
-          </Button>
+        {type === "pptx" ? (
+          <>
+            {renderDownloadButton("pptx", "PowerPoint", "pptx")}
+            {renderDownloadButton("slides_pdf", "PDF", "pdf")}
+          </>
         ) : (
-          <Button
-            size="sm"
-            asChild
-            className="w-full"
-          >
-            <a href={downloadUrl} download={fileName || `${title}.${type}`} target="_blank" rel="noopener noreferrer">
-              <Download className="w-4 h-4 mr-2" />
-              Download {config.label}
-            </a>
-          </Button>
+          renderDownloadButton(type, config.label, type)
         )}
       </div>
     </div>
