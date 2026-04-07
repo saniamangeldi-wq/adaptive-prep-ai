@@ -133,6 +133,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const isTier3 = profile?.tier === "tier_3";
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
 
+  const handleSendRef = useRef<(text: string) => void>(() => {});
   const [isCleaningSTT, setIsCleaningSTT] = useState(false);
   
   const handleSTTComplete = useCallback(async (rawText: string) => {
