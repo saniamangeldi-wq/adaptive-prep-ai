@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { MyChances } from "@/components/university-match/MyChances";
 import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useSchoolStudent } from "@/hooks/useSchoolStudent";
