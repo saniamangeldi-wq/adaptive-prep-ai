@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { LessonSlide } from "./LessonSlide";
 import {
@@ -11,7 +10,6 @@ import {
   SkipForward,
   Volume2,
   VolumeX,
-  CheckCircle2,
   Loader2,
   BookOpen,
   Mic,
@@ -35,7 +33,6 @@ interface LessonSection {
   section_title: string;
   narration: string;
   slide: SlideData;
-  visual_description?: string;
   duration_estimate_seconds: number;
 }
 
@@ -90,7 +87,7 @@ export function LessonPlayer({
   const [answeredCheckpoints, setAnsweredCheckpoints] = useState<Set<number>>(new Set());
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showNarration, setShowNarration] = useState(true);
+  const [showNarration, setShowNarration] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -100,6 +97,7 @@ export function LessonPlayer({
   const hasAudio = !!narratedSection?.audio_url || !!narratedSection?.audio_base64;
   const totalSections = content.sections.length;
   const progressPct = (completedSections.size / totalSections) * 100;
+  const narrationProgress = duration > 0 ? currentTime / duration : 0;
 
   // Audio setup
   useEffect(() => {
@@ -130,10 +128,16 @@ export function LessonPlayer({
 
     setCurrentTime(0);
     setDuration(0);
-    setIsPlaying(false);
 
     return () => { audioRef.current?.pause(); };
   }, [currentSection, narratedSection]);
+
+  // Auto-play when moving to next slide (video-like behavior)
+  useEffect(() => {
+    if (hasAudio && audioRef.current && isPlaying) {
+      audioRef.current.play().catch(() => {});
+    }
+  }, [currentSection, hasAudio]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.muted = isMuted;
@@ -166,6 +170,7 @@ export function LessonPlayer({
       setSelectedAnswer(null);
     } else if (currentSection < totalSections - 1) {
       setCurrentSection(prev => prev + 1);
+      // Keep playing state so next slide auto-plays
     } else {
       onComplete?.();
     }
@@ -176,9 +181,13 @@ export function LessonPlayer({
       toast({ title: "No narration", description: "Generate narration first." });
       return;
     }
-    if (isPlaying) audioRef.current.pause();
-    else audioRef.current.play();
-    setIsPlaying(!isPlaying);
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
   };
 
   const goToPrevious = () => {
@@ -203,8 +212,11 @@ export function LessonPlayer({
     });
     setTimeout(() => {
       setShowCheckpoint(null);
-      if (currentSection < totalSections - 1) setCurrentSection(prev => prev + 1);
-      else onComplete?.();
+      if (currentSection < totalSections - 1) {
+        setCurrentSection(prev => prev + 1);
+      } else {
+        onComplete?.();
+      }
     }, 2000);
   };
 
@@ -251,7 +263,7 @@ export function LessonPlayer({
 
   return (
     <div ref={containerRef} className={cn("space-y-4", isFullscreen && "bg-background p-6 flex flex-col h-screen")}>
-      {/* Progress */}
+      {/* Overall progress */}
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Slide {currentSection + 1} of {totalSections}</span>
@@ -270,11 +282,13 @@ export function LessonPlayer({
             slideIndex={idx}
             totalSlides={totalSections}
             isActive={idx === currentSection}
+            narrationProgress={idx === currentSection ? narrationProgress : 0}
+            isNarrating={idx === currentSection && isPlaying}
           />
         ))}
       </div>
 
-      {/* Narration transcript (collapsible) */}
+      {/* Narration transcript (collapsed by default - this is a video, not a reader) */}
       {showNarration && section && (
         <div className="bg-muted/30 border border-border rounded-lg px-4 py-3 max-h-32 overflow-y-auto">
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -283,13 +297,13 @@ export function LessonPlayer({
         </div>
       )}
 
-      {/* Controls */}
+      {/* Video-style controls */}
       <div className="space-y-2">
         {hasAudio && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground w-10 text-right">{formatTime(currentTime)}</span>
             <div
-              className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden cursor-pointer"
+              className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden cursor-pointer relative group"
               onClick={(e) => {
                 if (!audioRef.current || !duration) return;
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -300,6 +314,11 @@ export function LessonPlayer({
               <div
                 className="h-full bg-primary rounded-full transition-all duration-150"
                 style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+              />
+              {/* Scrubber dot */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-primary shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`, marginLeft: "-6px" }}
               />
             </div>
             <span className="text-xs text-muted-foreground w-10">{formatTime(duration)}</span>
