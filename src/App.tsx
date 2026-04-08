@@ -54,6 +54,7 @@ import Assignments from "./pages/Assignments";
 import Guide from "./pages/Guide";
 import Achievements from "./pages/Achievements";
 import Unsubscribe from "./pages/Unsubscribe";
+import VideoLessons from "./pages/VideoLessons";
 
 const queryClient = new QueryClient();
 
