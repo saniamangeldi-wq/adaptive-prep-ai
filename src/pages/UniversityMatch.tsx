@@ -30,6 +30,7 @@ import {
   Sparkles,
   Clock,
   DollarSign,
+  Target,
 } from "lucide-react";
 import {
   Dialog,
