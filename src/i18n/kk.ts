@@ -12,6 +12,7 @@ export default {
     universityMatch: "Университет таңдау",
     progress: "Прогресс",
     flashcards: "Флэш-карталар",
+    videoLessons: "Бейне сабақтар",
     billing: "Төлем",
     settings: "Баптаулар",
     myStudents: "Менің оқушыларым",
