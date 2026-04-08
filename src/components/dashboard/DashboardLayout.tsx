@@ -13,7 +13,6 @@ import {
   FolderOpen,
   Settings,
   LogOut,
-  Video,
   
   Sparkles,
   Zap,
