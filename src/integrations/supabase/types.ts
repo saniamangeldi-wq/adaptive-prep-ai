@@ -990,6 +990,45 @@ export type Database = {
           },
         ]
       }
+      performance_checkpoints: {
+        Row: {
+          created_at: string
+          id: string
+          score_pct: number | null
+          source_id: string | null
+          source_type: string | null
+          strong_areas: Json | null
+          subject: string
+          topic: string | null
+          user_id: string
+          weak_areas: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          score_pct?: number | null
+          source_id?: string | null
+          source_type?: string | null
+          strong_areas?: Json | null
+          subject: string
+          topic?: string | null
+          user_id: string
+          weak_areas?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          score_pct?: number | null
+          source_id?: string | null
+          source_type?: string | null
+          strong_areas?: Json | null
+          subject?: string
+          topic?: string | null
+          user_id?: string
+          weak_areas?: Json | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1451,6 +1490,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      study_plan_lessons: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          is_completed: boolean | null
+          lesson_id: string
+          order_index: number
+          study_plan_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          lesson_id: string
+          order_index?: number
+          study_plan_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          lesson_id?: string
+          order_index?: number
+          study_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_plan_lessons_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "video_lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_plan_lessons_study_plan_id_fkey"
+            columns: ["study_plan_id"]
+            isOneToOne: false
+            referencedRelation: "study_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_plans: {
+        Row: {
+          created_at: string
+          current_topic_index: number | null
+          generated_from: string | null
+          id: string
+          status: string
+          subject: string | null
+          title: string
+          topics: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_topic_index?: number | null
+          generated_from?: string | null
+          id?: string
+          status?: string
+          subject?: string | null
+          title: string
+          topics?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_topic_index?: number | null
+          generated_from?: string | null
+          id?: string
+          status?: string
+          subject?: string | null
+          title?: string
+          topics?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       study_subjects: {
         Row: {
@@ -1964,6 +2087,116 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      video_lessons: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          difficulty_level: string | null
+          duration_seconds: number | null
+          id: string
+          render_job_id: string | null
+          script_content: string | null
+          status: string
+          subject: string | null
+          thumbnail_url: string | null
+          title: string
+          topic: string | null
+          updated_at: string
+          user_id: string
+          vak_style: string | null
+          video_url: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          difficulty_level?: string | null
+          duration_seconds?: number | null
+          id?: string
+          render_job_id?: string | null
+          script_content?: string | null
+          status?: string
+          subject?: string | null
+          thumbnail_url?: string | null
+          title: string
+          topic?: string | null
+          updated_at?: string
+          user_id: string
+          vak_style?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          difficulty_level?: string | null
+          duration_seconds?: number | null
+          id?: string
+          render_job_id?: string | null
+          script_content?: string | null
+          status?: string
+          subject?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          topic?: string | null
+          updated_at?: string
+          user_id?: string
+          vak_style?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      video_render_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          lesson_id: string | null
+          output_url: string | null
+          render_config: Json | null
+          render_engine: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lesson_id?: string | null
+          output_url?: string | null
+          render_config?: Json | null
+          render_engine?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lesson_id?: string | null
+          output_url?: string | null
+          render_config?: Json | null
+          render_engine?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_render_jobs_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "video_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       voice_usage: {
         Row: {
