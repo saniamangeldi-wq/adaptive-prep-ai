@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { MyChances } from "@/components/university-match/MyChances";
 import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useSchoolStudent } from "@/hooks/useSchoolStudent";
@@ -29,6 +30,7 @@ import {
   Sparkles,
   Clock,
   DollarSign,
+  Target,
 } from "lucide-react";
 import {
   Dialog,
@@ -38,6 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface UniversityMatch {
   id: string;
@@ -113,6 +116,7 @@ export default function UniversityMatch() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [editStep, setEditStep] = useState<"portfolio" | "preferences">("portfolio");
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [mainTab, setMainTab] = useState<"matches" | "chances">("matches");
 
   // Handle payment success redirect
   useEffect(() => {
@@ -563,78 +567,103 @@ export default function UniversityMatch() {
               </div>
             </div>
 
-            {/* Enhanced Filter Toolbar */}
-            {matches.length > 0 && (
-              <UniversityFilterToolbar
-                filters={filters}
-                sortBy={sortBy}
-                onFiltersChange={setFilters}
-                onSortChange={setSortBy}
-                totalResults={filteredAndSorted.length}
-                onRefreshScholarships={() => setConfirmRefreshOpen(true)}
-                refreshing={refreshing}
-                lastRefreshed={lastRefreshed}
-              />
-            )}
+            {/* Tabs: Matches vs My Chances */}
+            <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as "matches" | "chances")} className="w-full">
+              <TabsList className="w-full max-w-md">
+                <TabsTrigger value="matches" className="flex-1 gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  Matches
+                </TabsTrigger>
+                <TabsTrigger value="chances" className="flex-1 gap-1.5">
+                  <Target className="w-3.5 h-3.5" />
+                  My Chances
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Loading */}
-            {(loading || generating) && (
-              <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">
-                  {generating
-                    ? "Analyzing your profile and finding matches..."
-                    : "Loading matches..."}
-                </p>
-              </div>
-            )}
-
-            {/* Empty State - No matches at all */}
-            {!loading && !generating && matches.length === 0 && (
-              <div className="text-center py-20 space-y-4">
-                <GraduationCap className="w-14 h-14 mx-auto text-muted-foreground" />
-                <h3 className="text-lg font-semibold text-foreground">No matches yet</h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Complete your profile and preferences to get personalized university recommendations.
-                </p>
-                <Button onClick={() => { setEditStep("portfolio"); setEditingProfile(true); }} className="gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Set Up Profile
-                </Button>
-              </div>
-            )}
-
-            {/* Empty State - Filters returned nothing */}
-            {!loading && !generating && matches.length > 0 && filteredAndSorted.length === 0 && (
-              <EmptyFilterState onClear={clearAllFilters} />
-            )}
-
-            {/* University Cards Grid */}
-            {!loading && !generating && filteredAndSorted.length > 0 && (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                {filteredAndSorted.map((match) => (
-                  <UniversityCard
-                    key={match.id}
-                    university={match.university}
-                    matchScore={match.match_score}
-                    matchReason={match.match_reason}
-                    financialEstimate={match.financial_estimate}
-                    saved={match.saved}
-                    matchId={match.id}
-                    onToggleSave={toggleSaved}
-                    onGetPlan={handleGetPlan}
+              <TabsContent value="matches" className="space-y-4 mt-4">
+                {/* Enhanced Filter Toolbar */}
+                {matches.length > 0 && (
+                  <UniversityFilterToolbar
+                    filters={filters}
+                    sortBy={sortBy}
+                    onFiltersChange={setFilters}
+                    onSortChange={setSortBy}
+                    totalResults={filteredAndSorted.length}
+                    onRefreshScholarships={() => setConfirmRefreshOpen(true)}
+                    refreshing={refreshing}
+                    lastRefreshed={lastRefreshed}
                   />
-                ))}
-              </div>
-            )}
+                )}
 
-            {/* Shortlist Panel */}
-            {savedMatches.length > 0 && (
-              <ShortlistPanel
-                savedMatches={savedMatches}
-                onRemove={(id) => toggleSaved(id, true)}
-              />
-            )}
+                {/* Loading */}
+                {(loading || generating) && (
+                  <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                    <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">
+                      {generating
+                        ? "Analyzing your profile and finding matches..."
+                        : "Loading matches..."}
+                    </p>
+                  </div>
+                )}
+
+                {/* Empty State - No matches at all */}
+                {!loading && !generating && matches.length === 0 && (
+                  <div className="text-center py-20 space-y-4">
+                    <GraduationCap className="w-14 h-14 mx-auto text-muted-foreground" />
+                    <h3 className="text-lg font-semibold text-foreground">No matches yet</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      Complete your profile and preferences to get personalized university recommendations.
+                    </p>
+                    <Button onClick={() => { setEditStep("portfolio"); setEditingProfile(true); }} className="gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Set Up Profile
+                    </Button>
+                  </div>
+                )}
+
+                {/* Empty State - Filters returned nothing */}
+                {!loading && !generating && matches.length > 0 && filteredAndSorted.length === 0 && (
+                  <EmptyFilterState onClear={clearAllFilters} />
+                )}
+
+                {/* University Cards Grid */}
+                {!loading && !generating && filteredAndSorted.length > 0 && (
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    {filteredAndSorted.map((match) => (
+                      <UniversityCard
+                        key={match.id}
+                        university={match.university}
+                        matchScore={match.match_score}
+                        matchReason={match.match_reason}
+                        financialEstimate={match.financial_estimate}
+                        saved={match.saved}
+                        matchId={match.id}
+                        onToggleSave={toggleSaved}
+                        onGetPlan={handleGetPlan}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Shortlist Panel */}
+                {savedMatches.length > 0 && (
+                  <ShortlistPanel
+                    savedMatches={savedMatches}
+                    onRemove={(id) => toggleSaved(id, true)}
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent value="chances" className="mt-4">
+                <MyChances
+                  onAskAdvisor={(prompt) => {
+                    setSelectedUniversity(prompt);
+                    setAdvisorOpen(true);
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       )}
