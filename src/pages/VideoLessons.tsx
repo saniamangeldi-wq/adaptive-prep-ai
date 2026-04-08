@@ -221,11 +221,11 @@ export default function VideoLessons() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Video className="h-6 w-6 text-primary" />
-              Video Lessons
+              <BookOpen className="h-6 w-6 text-primary" />
+              Lessons
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              AI-generated lessons personalized to your learning style
+              AI-generated slide lessons with narration, personalized to your learning style
             </p>
           </div>
           <Button onClick={() => setShowCreate(true)} className="gap-2">
