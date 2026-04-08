@@ -43,14 +43,10 @@ serve(async (req) => {
     if (!topic || !subject) {
       return new Response(
         JSON.stringify({ error: "topic and subject are required" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get user profile for personalization
     const { data: profile } = await supabase
       .from("profiles")
       .select("vak_primary_style, vak_secondary_style, grade_level, preferred_language, full_name")
@@ -65,26 +61,18 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       return new Response(
         JSON.stringify({ error: "AI service not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // VAK-specific teaching strategies
     const vakStrategies: Record<string, string> = {
-      visual:
-        "Use diagrams, charts, color-coded explanations, spatial metaphors, and 'picture this' language. Describe visuals the viewer should imagine. Reference on-screen graphics frequently.",
-      auditory:
-        "Use rhythmic explanations, mnemonics, verbal repetition, analogies to sounds/music. Explain concepts conversationally as if in dialogue. Use 'listen' and 'hear' language.",
-      reading_writing:
-        "Structure content with clear headings, numbered steps, definitions, and written examples. Reference on-screen text. Use precise academic vocabulary. Include note-taking cues.",
-      kinesthetic:
-        "Use action verbs, real-world scenarios, hands-on examples, physical metaphors. Encourage the viewer to try things. Use 'feel' and 'do' language. Include practice pauses.",
+      visual: "Use diagrams, charts, color-coded explanations, spatial metaphors.",
+      auditory: "Use rhythmic explanations, mnemonics, verbal repetition, analogies.",
+      reading_writing: "Structure with clear headings, numbered steps, definitions.",
+      kinesthetic: "Use action verbs, real-world scenarios, hands-on examples.",
     };
 
-    const scriptPrompt = `Generate a detailed video lesson script for a ${gradeLevel} student.
+    const scriptPrompt = `Generate a slide-based lesson presentation for a ${gradeLevel} student.
 
 TOPIC: ${topic}
 SUBJECT: ${subject}
@@ -92,20 +80,19 @@ DIFFICULTY: ${difficulty || "medium"}
 LEARNING STYLE: ${vakStyle}
 LANGUAGE: ${language === "en" ? "English" : language === "ru" ? "Russian" : language === "kk" ? "Kazakh" : "English"}
 
-VAK Teaching Strategy:
-${vakStrategies[vakStyle] || vakStrategies.visual}
+VAK Strategy: ${vakStrategies[vakStyle] || vakStrategies.visual}
 
-Requirements:
-1. Duration: 7-15 minutes of narration (approximately 1000-2000 words)
-2. Start with a hook that grabs attention in the first 10 seconds
-3. Break content into 4-6 clear sections with transitions
-4. Include 2-3 interactive checkpoint questions (pause and think moments)
-5. End with a summary and 3 key takeaways
-6. Use age-appropriate language for ${gradeLevel}
-7. Include specific examples and practice problems
-8. Add visual/scene descriptions in [brackets] for video production
+Create 4-6 sections. Each section has ONE slide and narration text the AI will read aloud.
+Each slide should have:
+- A clear heading
+- 2-5 bullet points (short, concise)
+- Optional: key terms to highlight during narration
+- Optional: an equation or formula
+- A slide_type: "title" for intro, "content" for regular, "example" for worked examples, "summary" for recap
 
-Format the script as a JSON object.`;
+The narration should be conversational and explain what's on the slide in detail (100-250 words per section).
+Include 2-3 checkpoint questions between sections.
+End with 3 key takeaways.`;
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -120,8 +107,7 @@ Format the script as a JSON object.`;
           messages: [
             {
               role: "system",
-              content:
-                "You are an expert educational content creator specializing in personalized video lesson scripts. Create engaging, clear, and pedagogically sound content adapted to the student's learning style.",
+              content: "You are an expert educational content creator. Create engaging slide-based lessons adapted to learning styles.",
             },
             { role: "user", content: scriptPrompt },
           ],
@@ -130,22 +116,36 @@ Format the script as a JSON object.`;
               type: "function",
               function: {
                 name: "generate_lesson_script",
-                description: "Generate a structured video lesson script",
+                description: "Generate a slide-based lesson",
                 parameters: {
                   type: "object",
                   properties: {
                     title: { type: "string", description: "Engaging lesson title" },
+                    subtitle: { type: "string", description: "Brief subtitle or tagline" },
                     sections: {
                       type: "array",
                       items: {
                         type: "object",
                         properties: {
                           section_title: { type: "string" },
-                          narration: { type: "string", description: "Full narration text for this section" },
-                          visual_description: { type: "string", description: "What should appear on screen" },
+                          narration: { type: "string", description: "Full narration text (100-250 words)" },
+                          slide: {
+                            type: "object",
+                            properties: {
+                              slide_type: { type: "string", enum: ["title", "content", "example", "summary"] },
+                              heading: { type: "string" },
+                              subheading: { type: "string" },
+                              bullets: { type: "array", items: { type: "string" } },
+                              highlight_terms: { type: "array", items: { type: "string" }, description: "Key terms to highlight on the slide" },
+                              equation: { type: "string", description: "Optional math equation or formula" },
+                              code_snippet: { type: "string", description: "Optional code example" },
+                              note: { type: "string", description: "Optional tip or important note" },
+                            },
+                            required: ["slide_type", "heading", "bullets"],
+                          },
                           duration_estimate_seconds: { type: "number" },
                         },
-                        required: ["section_title", "narration", "visual_description", "duration_estimate_seconds"],
+                        required: ["section_title", "narration", "slide", "duration_estimate_seconds"],
                       },
                     },
                     checkpoint_questions: {
@@ -154,21 +154,15 @@ Format the script as a JSON object.`;
                         type: "object",
                         properties: {
                           question: { type: "string" },
-                          options: {
-                            type: "array",
-                            items: { type: "string" },
-                          },
+                          options: { type: "array", items: { type: "string" } },
                           correct_index: { type: "number" },
                           explanation: { type: "string" },
-                          after_section: { type: "number", description: "0-indexed section number after which this question appears" },
+                          after_section: { type: "number" },
                         },
                         required: ["question", "options", "correct_index", "explanation", "after_section"],
                       },
                     },
-                    key_takeaways: {
-                      type: "array",
-                      items: { type: "string" },
-                    },
+                    key_takeaways: { type: "array", items: { type: "string" } },
                     estimated_duration_seconds: { type: "number" },
                   },
                   required: ["title", "sections", "checkpoint_questions", "key_takeaways", "estimated_duration_seconds"],
@@ -176,10 +170,7 @@ Format the script as a JSON object.`;
               },
             },
           ],
-          tool_choice: {
-            type: "function",
-            function: { name: "generate_lesson_script" },
-          },
+          tool_choice: { type: "function", function: { name: "generate_lesson_script" } },
         }),
       }
     );
@@ -217,7 +208,6 @@ Format the script as a JSON object.`;
 
     const lessonContent = JSON.parse(toolCall.function.arguments);
 
-    // Save the lesson to the database
     const { data: lesson, error: lessonError } = await supabase
       .from("video_lessons")
       .insert({
@@ -247,20 +237,15 @@ Format the script as a JSON object.`;
         lesson_id: lesson.id,
         content: lessonContent,
         status: "draft",
-        message: "Lesson content generated. Ready for audio narration and video rendering.",
+        message: "Lesson generated. Ready for narration.",
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
     console.error("generate-lesson-content error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
