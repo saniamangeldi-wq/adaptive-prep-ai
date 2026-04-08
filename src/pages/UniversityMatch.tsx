@@ -115,6 +115,7 @@ export default function UniversityMatch() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [editStep, setEditStep] = useState<"portfolio" | "preferences">("portfolio");
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [mainTab, setMainTab] = useState<"matches" | "chances">("matches");
 
   // Handle payment success redirect
   useEffect(() => {
