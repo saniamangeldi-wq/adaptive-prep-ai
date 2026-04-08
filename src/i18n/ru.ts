@@ -12,6 +12,7 @@ export default {
     universityMatch: "Подбор университета",
     progress: "Прогресс",
     flashcards: "Флэш-карты",
+    videoLessons: "Видеоуроки",
     billing: "Оплата",
     settings: "Настройки",
     myStudents: "Мои ученики",

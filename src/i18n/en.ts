@@ -12,6 +12,7 @@ export default {
     universityMatch: "University Match",
     progress: "Progress",
     flashcards: "Flashcards",
+    videoLessons: "Video Lessons",
     billing: "Billing",
     settings: "Settings",
     myStudents: "My Students",
