@@ -59,6 +59,7 @@ export default function VideoLessons() {
   const [newDifficulty, setNewDifficulty] = useState("medium");
   const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null);
   const abortRef = useRef(false);
+  const isGeneratingRef = useRef(false);
 
   const { data: lessons = [], isLoading } = useQuery({
     queryKey: ["video-lessons", user?.id],
@@ -118,7 +119,7 @@ export default function VideoLessons() {
   }, [toast]);
 
   const generateVideo = useCallback(async (lesson: LessonRow) => {
-    if (abortRef.current === false && generationProgress) return; // prevent double-trigger
+    if (isGeneratingRef.current) return; // prevent double-trigger
     if (!lesson.script_content) return;
     const content = JSON.parse(lesson.script_content);
     const sections = content.sections || [];
