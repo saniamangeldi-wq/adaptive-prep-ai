@@ -111,6 +111,12 @@ export default function VideoLessons() {
     return total > 0 && completed >= total;
   }, [getSectionAudioStatus]);
 
+  const cancelGeneration = useCallback(() => {
+    abortRef.current = true;
+    setGenerationProgress(null);
+    toast({ title: "Generation cancelled", description: "Progress has been saved. You can resume later." });
+  }, [toast]);
+
   const generateVideo = useCallback(async (lesson: LessonRow) => {
     if (!lesson.script_content) return;
     const content = JSON.parse(lesson.script_content);
@@ -125,11 +131,16 @@ export default function VideoLessons() {
     }
 
     if (needsGeneration.length === 0) {
-      // All audio exists — open player directly
       setNarratedSections(existingNarrated);
       setSelectedLesson(lesson);
       return;
     }
+
+    // Confirm before starting (costs ElevenLabs credits)
+    const proceed = window.confirm(
+      `This will generate audio for ${needsGeneration.length} slide(s). This uses ElevenLabs credits. Continue?`
+    );
+    if (!proceed) return;
 
     abortRef.current = false;
     const startTime = Date.now();
@@ -427,6 +438,14 @@ export default function VideoLessons() {
                             {getEstimatedRemaining() && (
                               <p className="text-xs text-muted-foreground">{getEstimatedRemaining()}</p>
                             )}
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="mt-1 h-7 text-xs"
+                              onClick={(e) => { e.stopPropagation(); cancelGeneration(); }}
+                            >
+                              Cancel
+                            </Button>
                           </div>
                         )}
 
