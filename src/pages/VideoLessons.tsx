@@ -114,6 +114,7 @@ export default function VideoLessons() {
 
   const cancelGeneration = useCallback(() => {
     abortRef.current = true;
+    isGeneratingRef.current = false;
     setGenerationProgress(null);
     toast({ title: "Generation cancelled", description: "Progress has been saved. You can resume later." });
   }, [toast]);
