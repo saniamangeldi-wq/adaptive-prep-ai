@@ -147,6 +147,7 @@ export default function VideoLessons() {
     );
     if (!proceed) return;
 
+    isGeneratingRef.current = true;
     abortRef.current = false;
     const startTime = Date.now();
     setGenerationProgress({
