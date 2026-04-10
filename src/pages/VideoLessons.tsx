@@ -19,7 +19,6 @@ import {
   Play,
   Sparkles,
   ArrowLeft,
-  CheckCircle2,
   Film,
 } from "lucide-react";
 
@@ -49,7 +48,7 @@ interface GenerationProgress {
 export default function VideoLessons() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [selectedLesson, setSelectedLesson] = useState<LessonRow | null>(null);
