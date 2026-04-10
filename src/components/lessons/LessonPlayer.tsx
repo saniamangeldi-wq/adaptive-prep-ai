@@ -236,7 +236,36 @@ export function LessonPlayer({
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
 
   // Checkpoint overlay
+  const handleCheckpointAnswer = (correct: boolean) => {
+    if (!showCheckpoint) return;
+    setAnsweredCheckpoints(prev => new Set([...prev, showCheckpoint.after_section]));
+    toast({
+      title: correct ? "Correct! 🎉" : "Not quite",
+      description: showCheckpoint.explanation,
+      variant: correct ? "default" : "destructive",
+    });
+    setTimeout(() => {
+      setShowCheckpoint(null);
+      if (currentSection < totalSections - 1) {
+        setCurrentSection(prev => prev + 1);
+      } else {
+        onComplete?.();
+      }
+    }, 500);
+  };
+
   if (showCheckpoint) {
+    const cp = showCheckpoint as any;
+    const renderVAKCheckpoint = () => {
+      if (cp.question_type === "diagram_label") return <VisualCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
+      if (cp.question_type === "scenario_decision") return <KinestheticCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
+      if (cp.question_type === "text_analysis") return <ReadingWritingCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
+      if (vakStyle === "auditory") return <AuditoryCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
+      return null; // fallback to default
+    };
+
+    const vakCheckpoint = renderVAKCheckpoint();
+
     return (
       <Card className="border-primary/30 bg-card">
         <CardHeader>
@@ -246,29 +275,29 @@ export function LessonPlayer({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-foreground font-medium">{showCheckpoint.question}</p>
-          <div className="space-y-2">
-            {showCheckpoint.options.map((opt, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedAnswer(idx)}
-                className={cn(
-                  "w-full text-left p-3 rounded-lg border transition-colors",
-                  selectedAnswer === idx
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-muted-foreground/30"
-                )}
-              >
-                <span className="text-sm font-medium text-muted-foreground mr-2">
-                  {String.fromCharCode(65 + idx)}.
-                </span>
-                {opt}
-              </button>
-            ))}
-          </div>
-          <Button onClick={submitCheckpointAnswer} disabled={selectedAnswer === null} className="w-full">
-            Submit Answer
-          </Button>
+          {vakCheckpoint || (
+            <>
+              <p className="text-foreground font-medium">{showCheckpoint.question}</p>
+              <div className="space-y-2">
+                {showCheckpoint.options.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedAnswer(idx)}
+                    className={cn(
+                      "w-full text-left p-3 rounded-lg border transition-colors",
+                      selectedAnswer === idx ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground/30"
+                    )}
+                  >
+                    <span className="text-sm font-medium text-muted-foreground mr-2">{String.fromCharCode(65 + idx)}.</span>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+              <Button onClick={submitCheckpointAnswer} disabled={selectedAnswer === null} className="w-full">
+                Submit Answer
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     );
