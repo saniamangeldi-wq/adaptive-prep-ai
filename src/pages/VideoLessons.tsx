@@ -59,6 +59,7 @@ export default function VideoLessons() {
   const [newDifficulty, setNewDifficulty] = useState("medium");
   const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null);
   const abortRef = useRef(false);
+  const isGeneratingRef = useRef(false);
 
   const { data: lessons = [], isLoading } = useQuery({
     queryKey: ["video-lessons", user?.id],
@@ -113,24 +114,29 @@ export default function VideoLessons() {
 
   const cancelGeneration = useCallback(() => {
     abortRef.current = true;
+    isGeneratingRef.current = false;
     setGenerationProgress(null);
     toast({ title: "Generation cancelled", description: "Progress has been saved. You can resume later." });
   }, [toast]);
 
   const generateVideo = useCallback(async (lesson: LessonRow) => {
+    if (isGeneratingRef.current) return; // prevent double-trigger
     if (!lesson.script_content) return;
     const content = JSON.parse(lesson.script_content);
     const sections = content.sections || [];
     const existingNarrated: any[] = content.narrated_sections || [];
 
-    // Find which sections still need audio
+    // Find which sections still need audio — strict guard
     const needsGeneration: number[] = [];
     for (let i = 0; i < sections.length; i++) {
-      const existing = existingNarrated.find((n: any) => n.section_index === i && n.status === "completed" && n.audio_url);
+      const existing = existingNarrated.find(
+        (n: any) => n.section_index === i && n.status === "completed" && n.audio_url && n.audio_url.trim() !== ""
+      );
       if (!existing) needsGeneration.push(i);
     }
 
     if (needsGeneration.length === 0) {
+      // All audio exists — open player directly, zero ElevenLabs calls
       setNarratedSections(existingNarrated);
       setSelectedLesson(lesson);
       return;
@@ -142,6 +148,7 @@ export default function VideoLessons() {
     );
     if (!proceed) return;
 
+    isGeneratingRef.current = true;
     abortRef.current = false;
     const startTime = Date.now();
     setGenerationProgress({
@@ -218,6 +225,7 @@ export default function VideoLessons() {
     }
 
     // Finalize
+    isGeneratingRef.current = false;
     setGenerationProgress(null);
 
     if (!abortRef.current) {
