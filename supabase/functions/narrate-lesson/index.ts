@@ -8,6 +8,111 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+interface WordTimestamp {
+  word: string;
+  start: number;
+  end: number;
+}
+
+function extractWordTimestamps(alignment: {
+  characters: string[];
+  character_start_times_seconds: number[];
+  character_end_times_seconds: number[];
+}): WordTimestamp[] {
+  const { characters, character_start_times_seconds, character_end_times_seconds } = alignment;
+  const words: WordTimestamp[] = [];
+  let currentWord = "";
+  let wordStart = -1;
+  let wordEnd = -1;
+
+  for (let i = 0; i < characters.length; i++) {
+    const ch = characters[i];
+    if (ch === " " || ch === "\n" || ch === "\t") {
+      if (currentWord.length > 0) {
+        words.push({ word: currentWord, start: wordStart, end: wordEnd });
+        currentWord = "";
+        wordStart = -1;
+      }
+    } else {
+      if (currentWord.length === 0) {
+        wordStart = character_start_times_seconds[i];
+      }
+      currentWord += ch;
+      wordEnd = character_end_times_seconds[i];
+    }
+  }
+  if (currentWord.length > 0) {
+    words.push({ word: currentWord, start: wordStart, end: wordEnd });
+  }
+  return words;
+}
+
+async function generateTTSWithTimestamps(
+  narrationText: string,
+  voiceId: string,
+  apiKey: string,
+  ttsBody: Record<string, unknown>
+): Promise<{ audioBuffer: ArrayBuffer; audioBase64: string; wordTimestamps: WordTimestamp[] }> {
+  // Try /with-timestamps endpoint first
+  try {
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps?output_format=mp3_44100_128`,
+      {
+        method: "POST",
+        headers: {
+          "xi-api-key": apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(ttsBody),
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      const audioBase64 = data.audio_base64;
+      // Decode base64 to buffer
+      const binaryStr = atob(audioBase64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      const audioBuffer = bytes.buffer;
+
+      let wordTimestamps: WordTimestamp[] = [];
+      if (data.alignment) {
+        wordTimestamps = extractWordTimestamps(data.alignment);
+      }
+
+      return { audioBuffer, audioBase64, wordTimestamps };
+    }
+
+    console.warn(`/with-timestamps failed (${response.status}), falling back to standard endpoint`);
+  } catch (e) {
+    console.warn("with-timestamps error, falling back:", e);
+  }
+
+  // Fallback to standard endpoint
+  const fallbackResponse = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(ttsBody),
+    }
+  );
+
+  if (!fallbackResponse.ok) {
+    throw new Error(`TTS generation failed: ${fallbackResponse.status}`);
+  }
+
+  const audioBuffer = await fallbackResponse.arrayBuffer();
+  const audioBase64 = base64Encode(audioBuffer);
+  return { audioBuffer, audioBase64, wordTimestamps: [] };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -48,7 +153,6 @@ serve(async (req) => {
       );
     }
 
-    // Fetch the lesson
     const { data: lesson, error: lessonError } = await supabase
       .from("video_lessons")
       .select("*")
@@ -81,11 +185,8 @@ serve(async (req) => {
       );
     }
 
-    // Educational voice - Sarah (warm, clear, educational)
     const selectedVoiceId = voice_id || "EXAVITQu4vr4xnSDxMaL";
 
-    // If section_index is provided, narrate only that section
-    // Otherwise, narrate all sections and return metadata
     const sectionsToNarrate =
       section_index !== undefined && section_index !== null
         ? [{ ...sections[section_index], index: section_index }]
@@ -97,7 +198,6 @@ serve(async (req) => {
       const narrationText = section.narration;
       if (!narrationText || narrationText.trim().length === 0) continue;
 
-      // Use request stitching for natural flow between sections
       const previousSection =
         section.index > 0 ? sections[section.index - 1]?.narration?.slice(-200) : undefined;
       const nextSection =
@@ -105,7 +205,7 @@ serve(async (req) => {
           ? sections[section.index + 1]?.narration?.slice(0, 200)
           : undefined;
 
-      const ttsBody: any = {
+      const ttsBody: Record<string, unknown> = {
         text: narrationText.slice(0, 5000),
         model_id: "eleven_turbo_v2_5",
         voice_settings: {
@@ -120,60 +220,51 @@ serve(async (req) => {
       if (previousSection) ttsBody.previous_text = previousSection;
       if (nextSection) ttsBody.next_text = nextSection;
 
-      const ttsResponse = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}?output_format=mp3_44100_128`,
-        {
-          method: "POST",
-          headers: {
-            "xi-api-key": ELEVENLABS_API_KEY,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(ttsBody),
-        }
-      );
+      try {
+        const { audioBuffer, audioBase64, wordTimestamps } = await generateTTSWithTimestamps(
+          narrationText,
+          selectedVoiceId,
+          ELEVENLABS_API_KEY,
+          ttsBody
+        );
 
-      if (!ttsResponse.ok) {
-        const errText = await ttsResponse.text();
-        console.error(`TTS error for section ${section.index}:`, ttsResponse.status, errText);
+        // Upload to storage
+        const fileName = `${user.id}/${lesson_id}/section_${section.index}.mp3`;
+        const serviceSupabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+        const { error: uploadError } = await serviceSupabase.storage
+          .from("generated-documents")
+          .upload(fileName, new Uint8Array(audioBuffer), {
+            contentType: "audio/mpeg",
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error(`Upload error for section ${section.index}:`, uploadError);
+        }
+
+        const { data: urlData } = serviceSupabase.storage
+          .from("generated-documents")
+          .getPublicUrl(fileName);
+
+        results.push({
+          section_index: section.index,
+          section_title: section.section_title,
+          status: "completed",
+          audio_url: urlData?.publicUrl || null,
+          audio_base64: audioBase64,
+          word_timestamps: wordTimestamps,
+          duration_estimate: section.duration_estimate_seconds,
+        });
+      } catch (err) {
+        console.error(`TTS error for section ${section.index}:`, err);
         results.push({
           section_index: section.index,
           section_title: section.section_title,
           status: "failed",
-          error: `TTS generation failed: ${ttsResponse.status}`,
+          error: `TTS generation failed: ${err instanceof Error ? err.message : "Unknown"}`,
         });
-        continue;
       }
-
-      const audioBuffer = await ttsResponse.arrayBuffer();
-      const audioBase64 = base64Encode(audioBuffer);
-
-      // Upload to storage
-      const fileName = `${user.id}/${lesson_id}/section_${section.index}.mp3`;
-      const serviceSupabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-
-      const { error: uploadError } = await serviceSupabase.storage
-        .from("generated-documents")
-        .upload(fileName, new Uint8Array(audioBuffer), {
-          contentType: "audio/mpeg",
-          upsert: true,
-        });
-
-      if (uploadError) {
-        console.error(`Upload error for section ${section.index}:`, uploadError);
-      }
-
-      const { data: urlData } = serviceSupabase.storage
-        .from("generated-documents")
-        .getPublicUrl(fileName);
-
-      results.push({
-        section_index: section.index,
-        section_title: section.section_title,
-        status: "completed",
-        audio_url: urlData?.publicUrl || null,
-        audio_base64: audioBase64,
-        duration_estimate: section.duration_estimate_seconds,
-      });
     }
 
     // Update lesson status

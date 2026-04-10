@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { LessonSlide } from "./LessonSlide";
+import { VisualCheckpoint } from "./checkpoints/VisualCheckpoint";
+import { KinestheticCheckpoint } from "./checkpoints/KinestheticCheckpoint";
+import { ReadingWritingCheckpoint } from "./checkpoints/ReadingWritingCheckpoint";
+import { AuditoryCheckpoint } from "./checkpoints/AuditoryCheckpoint";
 import {
   Play,
   Pause,
@@ -53,10 +57,17 @@ interface LessonContent {
   estimated_duration_seconds: number;
 }
 
+export interface WordTimestamp {
+  word: string;
+  start: number;
+  end: number;
+}
+
 interface NarratedSection {
   section_index: number;
   audio_url?: string;
   audio_base64?: string;
+  word_timestamps?: WordTimestamp[];
   status: string;
 }
 
@@ -67,6 +78,7 @@ interface LessonPlayerProps {
   onComplete?: () => void;
   onGenerateNarration?: (sectionIndex?: number) => Promise<void>;
   isNarrating?: boolean;
+  vakStyle?: string;
 }
 
 export function LessonPlayer({
@@ -76,6 +88,7 @@ export function LessonPlayer({
   onComplete,
   onGenerateNarration,
   isNarrating = false,
+  vakStyle,
 }: LessonPlayerProps) {
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -98,6 +111,7 @@ export function LessonPlayer({
   const totalSections = content.sections.length;
   const progressPct = (completedSections.size / totalSections) * 100;
   const narrationProgress = duration > 0 ? currentTime / duration : 0;
+  const wordTimestamps = narratedSection?.word_timestamps || [];
 
   // Audio setup
   useEffect(() => {
@@ -170,7 +184,6 @@ export function LessonPlayer({
       setSelectedAnswer(null);
     } else if (currentSection < totalSections - 1) {
       setCurrentSection(prev => prev + 1);
-      // Keep playing state so next slide auto-plays
     } else {
       onComplete?.();
     }
@@ -223,7 +236,36 @@ export function LessonPlayer({
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
 
   // Checkpoint overlay
+  const handleCheckpointAnswer = (correct: boolean) => {
+    if (!showCheckpoint) return;
+    setAnsweredCheckpoints(prev => new Set([...prev, showCheckpoint.after_section]));
+    toast({
+      title: correct ? "Correct! 🎉" : "Not quite",
+      description: showCheckpoint.explanation,
+      variant: correct ? "default" : "destructive",
+    });
+    setTimeout(() => {
+      setShowCheckpoint(null);
+      if (currentSection < totalSections - 1) {
+        setCurrentSection(prev => prev + 1);
+      } else {
+        onComplete?.();
+      }
+    }, 500);
+  };
+
   if (showCheckpoint) {
+    const cp = showCheckpoint as any;
+    const renderVAKCheckpoint = () => {
+      if (cp.question_type === "diagram_label") return <VisualCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
+      if (cp.question_type === "scenario_decision") return <KinestheticCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
+      if (cp.question_type === "text_analysis") return <ReadingWritingCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
+      if (vakStyle === "auditory") return <AuditoryCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
+      return null; // fallback to default
+    };
+
+    const vakCheckpoint = renderVAKCheckpoint();
+
     return (
       <Card className="border-primary/30 bg-card">
         <CardHeader>
@@ -233,29 +275,29 @@ export function LessonPlayer({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-foreground font-medium">{showCheckpoint.question}</p>
-          <div className="space-y-2">
-            {showCheckpoint.options.map((opt, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedAnswer(idx)}
-                className={cn(
-                  "w-full text-left p-3 rounded-lg border transition-colors",
-                  selectedAnswer === idx
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-muted-foreground/30"
-                )}
-              >
-                <span className="text-sm font-medium text-muted-foreground mr-2">
-                  {String.fromCharCode(65 + idx)}.
-                </span>
-                {opt}
-              </button>
-            ))}
-          </div>
-          <Button onClick={submitCheckpointAnswer} disabled={selectedAnswer === null} className="w-full">
-            Submit Answer
-          </Button>
+          {vakCheckpoint || (
+            <>
+              <p className="text-foreground font-medium">{showCheckpoint.question}</p>
+              <div className="space-y-2">
+                {showCheckpoint.options.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedAnswer(idx)}
+                    className={cn(
+                      "w-full text-left p-3 rounded-lg border transition-colors",
+                      selectedAnswer === idx ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground/30"
+                    )}
+                  >
+                    <span className="text-sm font-medium text-muted-foreground mr-2">{String.fromCharCode(65 + idx)}.</span>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+              <Button onClick={submitCheckpointAnswer} disabled={selectedAnswer === null} className="w-full">
+                Submit Answer
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     );
@@ -284,11 +326,14 @@ export function LessonPlayer({
             isActive={idx === currentSection}
             narrationProgress={idx === currentSection ? narrationProgress : 0}
             isNarrating={idx === currentSection && isPlaying}
+            currentTime={idx === currentSection ? currentTime : 0}
+            wordTimestamps={idx === currentSection ? wordTimestamps : []}
+            vakStyle={vakStyle}
           />
         ))}
       </div>
 
-      {/* Narration transcript (collapsed by default - this is a video, not a reader) */}
+      {/* Narration transcript */}
       {showNarration && section && (
         <div className="bg-muted/30 border border-border rounded-lg px-4 py-3 max-h-32 overflow-y-auto">
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -315,7 +360,6 @@ export function LessonPlayer({
                 className="h-full bg-primary rounded-full transition-all duration-150"
                 style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
               />
-              {/* Scrubber dot */}
               <div
                 className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-primary shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                 style={{ left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`, marginLeft: "-6px" }}
