@@ -2,6 +2,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { LessonSlide } from "./LessonSlide";
 import { VisualCheckpoint } from "./checkpoints/VisualCheckpoint";
 import { KinestheticCheckpoint } from "./checkpoints/KinestheticCheckpoint";
@@ -16,6 +19,7 @@ import {
   VolumeX,
   BookOpen,
   Maximize2,
+  Settings,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -77,6 +81,8 @@ interface LessonPlayerProps {
   vakStyle?: string;
 }
 
+type BufferDuration = "3" | "5" | "10" | "manual";
+
 export function LessonPlayer({
   lessonId: _lessonId,
   content,
@@ -95,10 +101,19 @@ export function LessonPlayer({
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showNarration, setShowNarration] = useState(false);
+
+  // Buffer state
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [bufferCountdown, setBufferCountdown] = useState(0);
+  const [bufferDuration, setBufferDuration] = useState<BufferDuration>("5");
+  // When audio ends, lock narrationProgress at 1.0 so all content stays visible
+  const [audioEnded, setAudioEnded] = useState(false);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const preloadRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const handleSectionCompleteRef = useRef<() => void>(() => {});
+  const bufferIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
   const section = content.sections[currentSection];
@@ -106,8 +121,51 @@ export function LessonPlayer({
   const hasAudio = !!narratedSection?.audio_url || !!narratedSection?.audio_base64;
   const totalSections = content.sections.length;
   const progressPct = (completedSections.size / totalSections) * 100;
-  const narrationProgress = duration > 0 ? currentTime / duration : 0;
   const wordTimestamps = narratedSection?.word_timestamps || [];
+
+  // narrationProgress: 1.0 when audio ended so everything stays visible
+  const narrationProgress = audioEnded ? 1.0 : (duration > 0 ? currentTime / duration : 0);
+
+  // Cancel any active buffer countdown
+  const cancelBuffer = useCallback(() => {
+    if (bufferIntervalRef.current) {
+      clearInterval(bufferIntervalRef.current);
+      bufferIntervalRef.current = null;
+    }
+    setIsBuffering(false);
+    setBufferCountdown(0);
+  }, []);
+
+  // Start buffer countdown then advance
+  const startBufferCountdown = useCallback((nextAction: () => void) => {
+    if (bufferDuration === "manual") {
+      // In manual mode, just show the buffer bar — user must click Continue
+      setIsBuffering(true);
+      setBufferCountdown(-1); // -1 signals "manual"
+      // Store the action so Continue can call it
+      handleSectionCompleteRef.current = nextAction;
+      return;
+    }
+
+    const seconds = parseInt(bufferDuration, 10);
+    setIsBuffering(true);
+    setBufferCountdown(seconds);
+
+    const interval = setInterval(() => {
+      setBufferCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          bufferIntervalRef.current = null;
+          setIsBuffering(false);
+          nextAction();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    bufferIntervalRef.current = interval;
+  }, [bufferDuration]);
 
   // Keep handleSectionComplete in a ref to avoid stale closures in audio event listeners
   const handleSectionComplete = useCallback(() => {
@@ -123,7 +181,6 @@ export function LessonPlayer({
     } else if (currentSection < totalSections - 1) {
       setCurrentSection(prev => prev + 1);
     } else {
-      // Last slide — do NOT wrap to 0, just complete
       onComplete?.();
     }
   }, [currentSection, content.checkpoint_questions, answeredCheckpoints, totalSections, onComplete]);
@@ -133,8 +190,11 @@ export function LessonPlayer({
     handleSectionCompleteRef.current = handleSectionComplete;
   }, [handleSectionComplete]);
 
-  // Audio setup for current section — use ref for onEnded to avoid stale closure
+  // Audio setup for current section
   useEffect(() => {
+    cancelBuffer();
+    setAudioEnded(false);
+
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -159,7 +219,9 @@ export function LessonPlayer({
       });
       audioRef.current.addEventListener("ended", () => {
         setIsPlaying(false);
-        handleSectionCompleteRef.current();
+        setAudioEnded(true); // lock narrationProgress at 1.0
+        // Start buffer countdown instead of immediately advancing
+        startBufferCountdown(() => handleSectionCompleteRef.current());
       });
     }
 
@@ -167,7 +229,6 @@ export function LessonPlayer({
     setDuration(0);
 
     return () => { audioRef.current?.pause(); };
-    // Only re-run when the slide changes — use stable identifiers, not object refs
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSection]);
 
@@ -210,7 +271,6 @@ export function LessonPlayer({
     else document.exitFullscreen();
   };
 
-
   const togglePlay = () => {
     if (!audioRef.current) {
       toast({ title: "No audio available", description: "Audio for this slide is missing." });
@@ -226,11 +286,23 @@ export function LessonPlayer({
   };
 
   const goToPrevious = () => {
-    if (currentSection > 0) { setShowCheckpoint(null); setCurrentSection(prev => prev - 1); }
+    if (currentSection > 0) {
+      cancelBuffer();
+      setShowCheckpoint(null);
+      setCurrentSection(prev => prev - 1);
+    }
   };
 
   const goToNext = () => {
-    if (currentSection < totalSections - 1) handleSectionComplete();
+    if (currentSection < totalSections - 1) {
+      cancelBuffer();
+      handleSectionComplete();
+    }
+  };
+
+  const handleBufferSkip = () => {
+    cancelBuffer();
+    handleSectionCompleteRef.current();
   };
 
   const submitCheckpointAnswer = () => {
@@ -315,6 +387,8 @@ export function LessonPlayer({
     );
   }
 
+  const bufferSeconds = bufferDuration === "manual" ? 5 : parseInt(bufferDuration, 10);
+
   return (
     <div ref={containerRef} className={cn("space-y-4", isFullscreen && "bg-background p-6 flex flex-col h-screen")}>
       <div className="space-y-1">
@@ -341,6 +415,31 @@ export function LessonPlayer({
             vakStyle={vakStyle}
           />
         ))}
+
+        {/* Buffer countdown bar */}
+        {isBuffering && (
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-card/80 backdrop-blur-md border border-border/50 rounded-full px-5 py-2">
+            <div className="w-28 h-1 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full"
+                style={{
+                  animation: bufferCountdown === -1 ? "none" : `buffer-drain ${bufferSeconds}s linear forwards`,
+                }}
+              />
+            </div>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {bufferCountdown === -1
+                ? "Click to continue"
+                : `Next slide in ${bufferCountdown}s`}
+            </span>
+            <button
+              onClick={handleBufferSkip}
+              className="text-xs text-primary hover:opacity-80 whitespace-nowrap font-medium"
+            >
+              Continue →
+            </button>
+          </div>
+        )}
       </div>
 
       {showNarration && section && (
@@ -391,6 +490,37 @@ export function LessonPlayer({
           <Button variant="ghost" size="icon" onClick={() => setShowNarration(!showNarration)}>
             <BookOpen className="h-4 w-4" />
           </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56" align="center">
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-foreground">Reading time after each slide</p>
+                <RadioGroup
+                  value={bufferDuration}
+                  onValueChange={(v) => setBufferDuration(v as BufferDuration)}
+                  className="space-y-2"
+                >
+                  {[
+                    { value: "3", label: "3 seconds" },
+                    { value: "5", label: "5 seconds" },
+                    { value: "10", label: "10 seconds" },
+                    { value: "manual", label: "Manual (I'll click)" },
+                  ].map((opt) => (
+                    <div key={opt.value} className="flex items-center space-x-2">
+                      <RadioGroupItem value={opt.value} id={`buffer-${opt.value}`} />
+                      <Label htmlFor={`buffer-${opt.value}`} className="text-sm text-foreground cursor-pointer">
+                        {opt.label}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
             <Maximize2 className="h-4 w-4" />
           </Button>
@@ -401,7 +531,7 @@ export function LessonPlayer({
         {content.sections.map((_, idx) => (
           <button
             key={idx}
-            onClick={() => { setShowCheckpoint(null); setCurrentSection(idx); }}
+            onClick={() => { cancelBuffer(); setShowCheckpoint(null); setCurrentSection(idx); }}
             className={cn(
               "h-8 w-8 rounded-full text-xs font-medium flex items-center justify-center transition-colors",
               idx === currentSection
@@ -433,6 +563,13 @@ export function LessonPlayer({
           </CardContent>
         </Card>
       )}
+
+      <style>{`
+        @keyframes buffer-drain {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      `}</style>
     </div>
   );
 }
