@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { LessonSlide } from "./LessonSlide";
+import { VisualCheckpoint } from "./checkpoints/VisualCheckpoint";
+import { KinestheticCheckpoint } from "./checkpoints/KinestheticCheckpoint";
+import { ReadingWritingCheckpoint } from "./checkpoints/ReadingWritingCheckpoint";
+import { AuditoryCheckpoint } from "./checkpoints/AuditoryCheckpoint";
 import {
   Play,
   Pause,
