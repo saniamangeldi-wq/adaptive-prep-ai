@@ -14,9 +14,7 @@ import {
   SkipForward,
   Volume2,
   VolumeX,
-  Loader2,
   BookOpen,
-  Mic,
   Maximize2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -76,18 +74,14 @@ interface LessonPlayerProps {
   content: LessonContent;
   narratedSections?: NarratedSection[];
   onComplete?: () => void;
-  onGenerateNarration?: (sectionIndex?: number) => Promise<void>;
-  isNarrating?: boolean;
   vakStyle?: string;
 }
 
 export function LessonPlayer({
-  lessonId,
+  lessonId: _lessonId,
   content,
   narratedSections = [],
   onComplete,
-  onGenerateNarration,
-  isNarrating = false,
   vakStyle,
 }: LessonPlayerProps) {
   const [currentSection, setCurrentSection] = useState(0);
@@ -102,6 +96,7 @@ export function LessonPlayer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showNarration, setShowNarration] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const preloadRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -113,7 +108,7 @@ export function LessonPlayer({
   const narrationProgress = duration > 0 ? currentTime / duration : 0;
   const wordTimestamps = narratedSection?.word_timestamps || [];
 
-  // Audio setup
+  // Audio setup for current section
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -146,10 +141,26 @@ export function LessonPlayer({
     return () => { audioRef.current?.pause(); };
   }, [currentSection, narratedSection]);
 
-  // Auto-play when moving to next slide (video-like behavior)
+  // Pre-load next slide's audio
   useEffect(() => {
-    if (hasAudio && audioRef.current && isPlaying) {
-      audioRef.current.play().catch(() => {});
+    if (currentSection < totalSections - 1) {
+      const nextNarrated = narratedSections.find(s => s.section_index === currentSection + 1);
+      if (nextNarrated?.audio_url) {
+        preloadRef.current = new Audio();
+        preloadRef.current.preload = "auto";
+        preloadRef.current.src = nextNarrated.audio_url;
+      }
+    }
+    return () => { preloadRef.current = null; };
+  }, [currentSection, narratedSections, totalSections]);
+
+  // Auto-play on mount and on slide change
+  useEffect(() => {
+    if (hasAudio && audioRef.current) {
+      const timer = setTimeout(() => {
+        audioRef.current?.play().then(() => setIsPlaying(true)).catch(() => {});
+      }, currentSection === 0 ? 300 : 100);
+      return () => clearTimeout(timer);
     }
   }, [currentSection, hasAudio]);
 
@@ -165,11 +176,8 @@ export function LessonPlayer({
   }, []);
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
+    if (!document.fullscreenElement) containerRef.current?.requestFullscreen();
+    else document.exitFullscreen();
   };
 
   const handleSectionComplete = useCallback(() => {
@@ -191,7 +199,7 @@ export function LessonPlayer({
 
   const togglePlay = () => {
     if (!audioRef.current) {
-      toast({ title: "No narration", description: "Generate narration first." });
+      toast({ title: "No audio available", description: "Audio for this slide is missing." });
       return;
     }
     if (isPlaying) {
@@ -204,10 +212,7 @@ export function LessonPlayer({
   };
 
   const goToPrevious = () => {
-    if (currentSection > 0) {
-      setShowCheckpoint(null);
-      setCurrentSection(prev => prev - 1);
-    }
+    if (currentSection > 0) { setShowCheckpoint(null); setCurrentSection(prev => prev - 1); }
   };
 
   const goToNext = () => {
@@ -225,17 +230,13 @@ export function LessonPlayer({
     });
     setTimeout(() => {
       setShowCheckpoint(null);
-      if (currentSection < totalSections - 1) {
-        setCurrentSection(prev => prev + 1);
-      } else {
-        onComplete?.();
-      }
+      if (currentSection < totalSections - 1) setCurrentSection(prev => prev + 1);
+      else onComplete?.();
     }, 2000);
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
 
-  // Checkpoint overlay
   const handleCheckpointAnswer = (correct: boolean) => {
     if (!showCheckpoint) return;
     setAnsweredCheckpoints(prev => new Set([...prev, showCheckpoint.after_section]));
@@ -246,11 +247,8 @@ export function LessonPlayer({
     });
     setTimeout(() => {
       setShowCheckpoint(null);
-      if (currentSection < totalSections - 1) {
-        setCurrentSection(prev => prev + 1);
-      } else {
-        onComplete?.();
-      }
+      if (currentSection < totalSections - 1) setCurrentSection(prev => prev + 1);
+      else onComplete?.();
     }, 500);
   };
 
@@ -261,7 +259,7 @@ export function LessonPlayer({
       if (cp.question_type === "scenario_decision") return <KinestheticCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
       if (cp.question_type === "text_analysis") return <ReadingWritingCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
       if (vakStyle === "auditory") return <AuditoryCheckpoint checkpoint={cp} onAnswer={handleCheckpointAnswer} />;
-      return null; // fallback to default
+      return null;
     };
 
     const vakCheckpoint = renderVAKCheckpoint();
@@ -305,7 +303,6 @@ export function LessonPlayer({
 
   return (
     <div ref={containerRef} className={cn("space-y-4", isFullscreen && "bg-background p-6 flex flex-col h-screen")}>
-      {/* Overall progress */}
       <div className="space-y-1">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Slide {currentSection + 1} of {totalSections}</span>
@@ -314,7 +311,6 @@ export function LessonPlayer({
         <Progress value={progressPct} className="h-1.5" />
       </div>
 
-      {/* Slide area */}
       <div className={cn("relative", isFullscreen && "flex-1")}>
         {content.sections.map((sec, idx) => (
           <LessonSlide
@@ -333,16 +329,12 @@ export function LessonPlayer({
         ))}
       </div>
 
-      {/* Narration transcript */}
       {showNarration && section && (
         <div className="bg-muted/30 border border-border rounded-lg px-4 py-3 max-h-32 overflow-y-auto">
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {section.narration}
-          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{section.narration}</p>
         </div>
       )}
 
-      {/* Video-style controls */}
       <div className="space-y-2">
         {hasAudio && (
           <div className="flex items-center gap-2">
@@ -373,48 +365,24 @@ export function LessonPlayer({
           <Button variant="ghost" size="icon" onClick={goToPrevious} disabled={currentSection === 0}>
             <SkipBack className="h-4 w-4" />
           </Button>
-
-          <Button
-            variant="default"
-            size="icon"
-            className="h-11 w-11 rounded-full"
-            onClick={togglePlay}
-            disabled={!hasAudio}
-          >
+          <Button variant="default" size="icon" className="h-11 w-11 rounded-full" onClick={togglePlay} disabled={!hasAudio}>
             {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
           </Button>
-
           <Button variant="ghost" size="icon" onClick={goToNext} disabled={currentSection >= totalSections - 1}>
             <SkipForward className="h-4 w-4" />
           </Button>
-
           <Button variant="ghost" size="icon" onClick={() => setIsMuted(!isMuted)}>
             {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </Button>
-
           <Button variant="ghost" size="icon" onClick={() => setShowNarration(!showNarration)}>
             <BookOpen className="h-4 w-4" />
           </Button>
-
           <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
             <Maximize2 className="h-4 w-4" />
           </Button>
         </div>
-
-        {!hasAudio && onGenerateNarration && (
-          <Button
-            variant="outline"
-            className="w-full gap-2"
-            onClick={() => onGenerateNarration(currentSection)}
-            disabled={isNarrating}
-          >
-            {isNarrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
-            {isNarrating ? "Generating narration..." : "Generate Narration for This Slide"}
-          </Button>
-        )}
       </div>
 
-      {/* Slide navigation dots */}
       <div className="flex gap-1.5 flex-wrap justify-center">
         {content.sections.map((_, idx) => (
           <button
@@ -434,7 +402,6 @@ export function LessonPlayer({
         ))}
       </div>
 
-      {/* Key takeaways */}
       {completedSections.size === totalSections && content.key_takeaways?.length > 0 && (
         <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-2">
