@@ -224,6 +224,7 @@ export default function VideoLessons() {
     }
 
     // Finalize
+    isGeneratingRef.current = false;
     setGenerationProgress(null);
 
     if (!abortRef.current) {
