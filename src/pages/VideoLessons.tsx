@@ -118,7 +118,7 @@ export default function VideoLessons() {
   }, [toast]);
 
   const generateVideo = useCallback(async (lesson: LessonRow) => {
-    if (generationProgress) return; // prevent double-trigger
+    if (abortRef.current === false && generationProgress) return; // prevent double-trigger
     if (!lesson.script_content) return;
     const content = JSON.parse(lesson.script_content);
     const sections = content.sections || [];

@@ -210,22 +210,6 @@ export function LessonPlayer({
     else document.exitFullscreen();
   };
 
-  const handleSectionComplete = useCallback(() => {
-    setCompletedSections(prev => new Set([...prev, currentSection]));
-
-    const checkpoint = content.checkpoint_questions.find(
-      q => q.after_section === currentSection && !answeredCheckpoints.has(q.after_section)
-    );
-
-    if (checkpoint) {
-      setShowCheckpoint(checkpoint);
-      setSelectedAnswer(null);
-    } else if (currentSection < totalSections - 1) {
-      setCurrentSection(prev => prev + 1);
-    } else {
-      onComplete?.();
-    }
-  }, [currentSection, content.checkpoint_questions, answeredCheckpoints, totalSections, onComplete]);
 
   const togglePlay = () => {
     if (!audioRef.current) {
