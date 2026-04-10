@@ -118,19 +118,23 @@ export default function VideoLessons() {
   }, [toast]);
 
   const generateVideo = useCallback(async (lesson: LessonRow) => {
+    if (generationProgress) return; // prevent double-trigger
     if (!lesson.script_content) return;
     const content = JSON.parse(lesson.script_content);
     const sections = content.sections || [];
     const existingNarrated: any[] = content.narrated_sections || [];
 
-    // Find which sections still need audio
+    // Find which sections still need audio — strict guard
     const needsGeneration: number[] = [];
     for (let i = 0; i < sections.length; i++) {
-      const existing = existingNarrated.find((n: any) => n.section_index === i && n.status === "completed" && n.audio_url);
+      const existing = existingNarrated.find(
+        (n: any) => n.section_index === i && n.status === "completed" && n.audio_url && n.audio_url.trim() !== ""
+      );
       if (!existing) needsGeneration.push(i);
     }
 
     if (needsGeneration.length === 0) {
+      // All audio exists — open player directly, zero ElevenLabs calls
       setNarratedSections(existingNarrated);
       setSelectedLesson(lesson);
       return;

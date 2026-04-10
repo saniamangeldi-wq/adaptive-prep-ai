@@ -98,6 +98,7 @@ export function LessonPlayer({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const preloadRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const handleSectionCompleteRef = useRef<() => void>(() => {});
   const { toast } = useToast();
 
   const section = content.sections[currentSection];
@@ -108,17 +109,44 @@ export function LessonPlayer({
   const narrationProgress = duration > 0 ? currentTime / duration : 0;
   const wordTimestamps = narratedSection?.word_timestamps || [];
 
-  // Audio setup for current section
+  // Keep handleSectionComplete in a ref to avoid stale closures in audio event listeners
+  const handleSectionComplete = useCallback(() => {
+    setCompletedSections(prev => new Set([...prev, currentSection]));
+
+    const checkpoint = content.checkpoint_questions.find(
+      q => q.after_section === currentSection && !answeredCheckpoints.has(q.after_section)
+    );
+
+    if (checkpoint) {
+      setShowCheckpoint(checkpoint);
+      setSelectedAnswer(null);
+    } else if (currentSection < totalSections - 1) {
+      setCurrentSection(prev => prev + 1);
+    } else {
+      // Last slide — do NOT wrap to 0, just complete
+      onComplete?.();
+    }
+  }, [currentSection, content.checkpoint_questions, answeredCheckpoints, totalSections, onComplete]);
+
+  // Update ref whenever callback changes
+  useEffect(() => {
+    handleSectionCompleteRef.current = handleSectionComplete;
+  }, [handleSectionComplete]);
+
+  // Audio setup for current section — use ref for onEnded to avoid stale closure
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
 
-    if (narratedSection?.audio_url) {
-      audioRef.current = new Audio(narratedSection.audio_url);
-    } else if (narratedSection?.audio_base64) {
-      audioRef.current = new Audio(`data:audio/mpeg;base64,${narratedSection.audio_base64}`);
+    const audioUrl = narratedSection?.audio_url;
+    const audioBase64 = narratedSection?.audio_base64;
+
+    if (audioUrl) {
+      audioRef.current = new Audio(audioUrl);
+    } else if (audioBase64) {
+      audioRef.current = new Audio(`data:audio/mpeg;base64,${audioBase64}`);
     }
 
     if (audioRef.current) {
@@ -131,7 +159,7 @@ export function LessonPlayer({
       });
       audioRef.current.addEventListener("ended", () => {
         setIsPlaying(false);
-        handleSectionComplete();
+        handleSectionCompleteRef.current();
       });
     }
 
@@ -139,7 +167,9 @@ export function LessonPlayer({
     setDuration(0);
 
     return () => { audioRef.current?.pause(); };
-  }, [currentSection, narratedSection]);
+    // Only re-run when the slide changes — use stable identifiers, not object refs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSection]);
 
   // Pre-load next slide's audio
   useEffect(() => {
