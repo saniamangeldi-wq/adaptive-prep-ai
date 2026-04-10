@@ -74,6 +74,7 @@ interface LessonPlayerProps {
   onComplete?: () => void;
   onGenerateNarration?: (sectionIndex?: number) => Promise<void>;
   isNarrating?: boolean;
+  vakStyle?: string;
 }
 
 export function LessonPlayer({
