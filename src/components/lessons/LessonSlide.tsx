@@ -188,6 +188,10 @@ export function LessonSlide({
     return mapBulletsToTimestamps(slide.bullets, wordTimestamps);
   }, [slide.bullets, wordTimestamps, hasWordTimestamps]);
 
+  // Anticipation offset: reveal content slightly before audio reaches it
+  const REVEAL_ANTICIPATION = 0.1; // 100ms early for word-timestamp mode
+  const FALLBACK_ANTICIPATION_PCT = 0.05; // 5% early for percentage-based fallback
+
   const headingDone = narrationProgress > 0.12;
   const bulletProgress = Math.max(0, (narrationProgress - 0.12) / 0.88);
   const fallbackActiveBulletIndex = Math.floor(bulletProgress * bulletCount);
