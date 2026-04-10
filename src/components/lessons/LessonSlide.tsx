@@ -199,6 +199,7 @@ export function LessonSlide({
 
   const getBulletState = useCallback((idx: number): "visible" | "revealed" | "active" | "hidden" => {
     if (!isNarrating && narrationProgress === 0) return "visible";
+    // narrationProgress >= 1.0 means audio ended — show everything
     if (!isNarrating && narrationProgress > 0) return "revealed";
 
     if (hasWordTimestamps) {
@@ -209,14 +210,27 @@ export function LessonSlide({
         return "hidden";
       }
       if (currentTime >= range.endTime) return "revealed";
-      if (currentTime >= range.startTime) return "active";
+      // Apply 100ms anticipation offset so bullet appears just before narration
+      if (currentTime >= (range.startTime - REVEAL_ANTICIPATION)) return "active";
+      return "hidden";
+    }
+
+    // Fallback: apply 5% anticipation for percentage-based reveal
+    const totalDur = narrationProgress > 0 ? 1 : 0;
+    if (totalDur > 0) {
+      const threshold = ((idx + 1) / bulletCount) * 0.88 + 0.12 - FALLBACK_ANTICIPATION_PCT;
+      if (narrationProgress >= threshold) {
+        const nextThreshold = ((idx + 2) / bulletCount) * 0.88 + 0.12 - FALLBACK_ANTICIPATION_PCT;
+        if (narrationProgress < nextThreshold || idx === bulletCount - 1) return "active";
+        return "revealed";
+      }
       return "hidden";
     }
 
     if (idx < fallbackActiveBulletIndex) return "revealed";
     if (idx === fallbackActiveBulletIndex) return "active";
     return "hidden";
-  }, [isNarrating, narrationProgress, hasWordTimestamps, bulletRanges, currentTime, fallbackActiveBulletIndex]);
+  }, [isNarrating, narrationProgress, hasWordTimestamps, bulletRanges, currentTime, fallbackActiveBulletIndex, bulletCount, REVEAL_ANTICIPATION, FALLBACK_ANTICIPATION_PCT]);
 
   const renderBulletContent = useCallback((bullet: string, idx: number, state: string) => {
     const range = bulletRanges[idx];
