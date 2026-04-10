@@ -78,7 +78,7 @@ interface LessonPlayerProps {
 }
 
 export function LessonPlayer({
-  lessonId,
+  lessonId: _lessonId,
   content,
   narratedSections = [],
   onComplete,
