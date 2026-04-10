@@ -53,10 +53,17 @@ interface LessonContent {
   estimated_duration_seconds: number;
 }
 
+export interface WordTimestamp {
+  word: string;
+  start: number;
+  end: number;
+}
+
 interface NarratedSection {
   section_index: number;
   audio_url?: string;
   audio_base64?: string;
+  word_timestamps?: WordTimestamp[];
   status: string;
 }
 
@@ -98,6 +105,7 @@ export function LessonPlayer({
   const totalSections = content.sections.length;
   const progressPct = (completedSections.size / totalSections) * 100;
   const narrationProgress = duration > 0 ? currentTime / duration : 0;
+  const wordTimestamps = narratedSection?.word_timestamps || [];
 
   // Audio setup
   useEffect(() => {
@@ -170,7 +178,6 @@ export function LessonPlayer({
       setSelectedAnswer(null);
     } else if (currentSection < totalSections - 1) {
       setCurrentSection(prev => prev + 1);
-      // Keep playing state so next slide auto-plays
     } else {
       onComplete?.();
     }
@@ -284,11 +291,13 @@ export function LessonPlayer({
             isActive={idx === currentSection}
             narrationProgress={idx === currentSection ? narrationProgress : 0}
             isNarrating={idx === currentSection && isPlaying}
+            currentTime={idx === currentSection ? currentTime : 0}
+            wordTimestamps={idx === currentSection ? wordTimestamps : []}
           />
         ))}
       </div>
 
-      {/* Narration transcript (collapsed by default - this is a video, not a reader) */}
+      {/* Narration transcript */}
       {showNarration && section && (
         <div className="bg-muted/30 border border-border rounded-lg px-4 py-3 max-h-32 overflow-y-auto">
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -315,7 +324,6 @@ export function LessonPlayer({
                 className="h-full bg-primary rounded-full transition-all duration-150"
                 style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
               />
-              {/* Scrubber dot */}
               <div
                 className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-primary shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                 style={{ left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`, marginLeft: "-6px" }}

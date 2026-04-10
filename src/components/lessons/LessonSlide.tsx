@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
+import type { WordTimestamp } from "./LessonPlayer";
 
 interface SlideData {
   slide_type: "title" | "content" | "example" | "summary";
@@ -18,10 +20,136 @@ interface LessonSlideProps {
   slideIndex: number;
   totalSlides: number;
   isActive: boolean;
-  /** 0-1 progress through this slide's narration */
   narrationProgress?: number;
-  /** Whether narration is currently playing */
   isNarrating?: boolean;
+  currentTime?: number;
+  wordTimestamps?: WordTimestamp[];
+}
+
+/** Normalize a word for fuzzy matching */
+function normalize(w: string) {
+  return w.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Find the timestamp range for a bullet by matching its first few words
+ * against the word timestamps array. Returns { start, end } indices into wordTimestamps.
+ */
+function findBulletTimestampRange(
+  bulletText: string,
+  wordTimestamps: WordTimestamp[],
+  searchStartIdx: number
+): { startIdx: number; endIdx: number } | null {
+  const bulletWords = bulletText.split(/\s+/).filter(Boolean);
+  if (bulletWords.length === 0 || wordTimestamps.length === 0) return null;
+
+  // Match first 3 words of the bullet against wordTimestamps
+  const matchWords = bulletWords.slice(0, Math.min(3, bulletWords.length)).map(normalize);
+
+  for (let i = searchStartIdx; i < wordTimestamps.length; i++) {
+    let matched = true;
+    for (let j = 0; j < matchWords.length; j++) {
+      if (i + j >= wordTimestamps.length) { matched = false; break; }
+      if (normalize(wordTimestamps[i + j].word) !== matchWords[j]) { matched = false; break; }
+    }
+    if (matched) {
+      // Found the start. Now find the end by matching last few words or using next bullet's start.
+      const lastWords = bulletWords.slice(-Math.min(3, bulletWords.length)).map(normalize);
+      let endIdx = i + bulletWords.length - 1; // estimate
+
+      // Try to find exact end by matching last words
+      for (let k = Math.min(i + bulletWords.length + 10, wordTimestamps.length - 1); k >= i + matchWords.length; k--) {
+        let endMatched = true;
+        for (let j = 0; j < lastWords.length; j++) {
+          const checkIdx = k - lastWords.length + 1 + j;
+          if (checkIdx < 0 || checkIdx >= wordTimestamps.length) { endMatched = false; break; }
+          if (normalize(wordTimestamps[checkIdx].word) !== lastWords[j]) { endMatched = false; break; }
+        }
+        if (endMatched) {
+          endIdx = k;
+          break;
+        }
+      }
+
+      return { startIdx: i, endIdx: Math.min(endIdx, wordTimestamps.length - 1) };
+    }
+  }
+  return null;
+}
+
+/** Map all bullets to their timestamp ranges */
+function mapBulletsToTimestamps(
+  bullets: string[],
+  wordTimestamps: WordTimestamp[]
+): Array<{ startIdx: number; endIdx: number; startTime: number; endTime: number } | null> {
+  const ranges: Array<{ startIdx: number; endIdx: number; startTime: number; endTime: number } | null> = [];
+  let searchFrom = 0;
+  for (const bullet of bullets) {
+    const range = findBulletTimestampRange(bullet, wordTimestamps, searchFrom);
+    if (range) {
+      ranges.push({
+        ...range,
+        startTime: wordTimestamps[range.startIdx].start,
+        endTime: wordTimestamps[range.endIdx].end,
+      });
+      searchFrom = range.endIdx + 1;
+    } else {
+      ranges.push(null);
+    }
+  }
+  return ranges;
+}
+
+/** Render text with word-level highlighting */
+function WordHighlightedText({
+  text,
+  highlightTerms,
+  isActive,
+  currentTime,
+  wordTimestamps,
+  rangeStartIdx,
+}: {
+  text: string;
+  highlightTerms: string[];
+  isActive: boolean;
+  currentTime: number;
+  wordTimestamps: WordTimestamp[];
+  rangeStartIdx: number;
+}) {
+  const words = text.split(/(\s+)/); // keep spaces
+  let tsIdx = rangeStartIdx;
+
+  return (
+    <>
+      {words.map((segment, i) => {
+        if (/^\s+$/.test(segment)) return <span key={i}>{segment}</span>;
+
+        const currentTsIdx = tsIdx;
+        tsIdx++;
+
+        const ts = wordTimestamps[currentTsIdx];
+        const isSpoken = ts && currentTime >= ts.start && currentTime < ts.end;
+        const isHighlightTerm = highlightTerms.some(
+          t => normalize(t) === normalize(segment)
+        );
+
+        return (
+          <span
+            key={i}
+            className={cn(
+              "transition-colors duration-100 rounded px-0.5",
+              isSpoken && "bg-primary/20 text-primary font-semibold",
+              isHighlightTerm && "font-semibold text-primary",
+              isHighlightTerm && isActive && "bg-primary/15 scale-105 inline-block",
+              isHighlightTerm && isSpoken && "bg-primary/30 text-primary ring-1 ring-primary/40"
+            )}
+          >
+            {segment}
+          </span>
+        );
+      })}
+    </>
+  );
 }
 
 function highlightText(text: string, terms: string[], isActive: boolean) {
@@ -56,24 +184,65 @@ export function LessonSlide({
   isActive,
   narrationProgress = 0,
   isNarrating = false,
+  currentTime = 0,
+  wordTimestamps = [],
 }: LessonSlideProps) {
   const allHighlights = slide.highlight_terms || [];
   const bulletCount = slide.bullets?.length || 1;
+  const hasWordTimestamps = wordTimestamps.length > 0;
 
-  // Calculate which bullet is "active" based on narration progress
-  // First ~15% is heading, rest is split among bullets + extras
+  // Map bullets to their timestamp ranges (memoized)
+  const bulletRanges = useMemo(() => {
+    if (!hasWordTimestamps || !slide.bullets?.length) return [];
+    return mapBulletsToTimestamps(slide.bullets, wordTimestamps);
+  }, [slide.bullets, wordTimestamps, hasWordTimestamps]);
+
+  // Fallback: approximate bullet states from narrationProgress
   const headingDone = narrationProgress > 0.12;
   const bulletProgress = Math.max(0, (narrationProgress - 0.12) / 0.88);
-  const activeBulletIndex = Math.floor(bulletProgress * bulletCount);
+  const fallbackActiveBulletIndex = Math.floor(bulletProgress * bulletCount);
   const equationProgress = narrationProgress > 0.6;
 
-  const getBulletState = (idx: number) => {
-    if (!isNarrating && narrationProgress === 0) return "visible"; // no narration, show all
-    if (!isNarrating && narrationProgress > 0) return "revealed"; // paused mid-way
-    if (idx < activeBulletIndex) return "revealed";
-    if (idx === activeBulletIndex) return "active";
+  const getBulletState = (idx: number): "visible" | "revealed" | "active" | "hidden" => {
+    if (!isNarrating && narrationProgress === 0) return "visible";
+    if (!isNarrating && narrationProgress > 0) return "revealed";
+
+    if (hasWordTimestamps) {
+      const range = bulletRanges[idx];
+      if (!range) {
+        // No timestamp match — use fallback
+        if (idx < fallbackActiveBulletIndex) return "revealed";
+        if (idx === fallbackActiveBulletIndex) return "active";
+        return "hidden";
+      }
+      if (currentTime >= range.endTime) return "revealed";
+      if (currentTime >= range.startTime) return "active";
+      return "hidden";
+    }
+
+    // Fallback: evenly spaced
+    if (idx < fallbackActiveBulletIndex) return "revealed";
+    if (idx === fallbackActiveBulletIndex) return "active";
     return "hidden";
   };
+
+  // Equation reveal based on word timestamps or fallback
+  const isEquationRevealed = useMemo(() => {
+    if (!slide.equation) return false;
+    if (!isNarrating) return narrationProgress > 0 || narrationProgress === 0;
+
+    if (hasWordTimestamps) {
+      // Find equation trigger in narration by looking for equation-related words
+      const eqWords = slide.equation.split(/\s+/).slice(0, 2).map(normalize);
+      for (let i = 0; i < wordTimestamps.length; i++) {
+        if (eqWords[0] && normalize(wordTimestamps[i].word) === eqWords[0]) {
+          return currentTime >= wordTimestamps[i].start;
+        }
+      }
+      return equationProgress;
+    }
+    return equationProgress;
+  }, [slide.equation, isNarrating, narrationProgress, hasWordTimestamps, wordTimestamps, currentTime, equationProgress]);
 
   return (
     <div
@@ -163,10 +332,9 @@ export function LessonSlide({
             {slide.equation && (
               <div className={cn(
                 "bg-muted/50 border border-border rounded-lg px-6 py-4 text-center transition-all duration-700",
-                isNarrating && equationProgress
-                  ? "border-primary/40 bg-primary/5 scale-[1.02]"
-                  : "",
-                isNarrating && !equationProgress ? "opacity-40" : "opacity-100"
+                isNarrating && isEquationRevealed
+                  ? "border-primary/40 bg-primary/5 scale-[1.02] opacity-100"
+                  : isNarrating ? "opacity-40" : "opacity-100"
               )}>
                 <code className="text-lg md:text-xl font-mono text-primary font-semibold">
                   {slide.equation}
@@ -178,6 +346,9 @@ export function LessonSlide({
               <ul className="space-y-3">
                 {slide.bullets.map((bullet, i) => {
                   const state = getBulletState(i);
+                  const range = bulletRanges[i];
+                  const useWordHighlight = hasWordTimestamps && range && state === "active";
+
                   return (
                     <li
                       key={i}
@@ -197,7 +368,18 @@ export function LessonSlide({
                         "text-sm md:text-base leading-relaxed transition-all duration-500",
                         state === "active" ? "text-foreground font-medium" : "text-foreground/80"
                       )}>
-                        {highlightText(bullet, allHighlights, state === "active")}
+                        {useWordHighlight ? (
+                          <WordHighlightedText
+                            text={bullet}
+                            highlightTerms={allHighlights}
+                            isActive={state === "active"}
+                            currentTime={currentTime}
+                            wordTimestamps={wordTimestamps}
+                            rangeStartIdx={range.startIdx}
+                          />
+                        ) : (
+                          highlightText(bullet, allHighlights, state === "active")
+                        )}
                       </span>
                     </li>
                   );
