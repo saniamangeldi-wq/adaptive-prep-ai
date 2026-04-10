@@ -84,6 +84,7 @@ export function LessonPlayer({
   onComplete,
   onGenerateNarration,
   isNarrating = false,
+  vakStyle,
 }: LessonPlayerProps) {
   const [currentSection, setCurrentSection] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
