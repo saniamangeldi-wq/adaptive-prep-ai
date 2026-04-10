@@ -295,6 +295,7 @@ export function LessonPlayer({
             isNarrating={idx === currentSection && isPlaying}
             currentTime={idx === currentSection ? currentTime : 0}
             wordTimestamps={idx === currentSection ? wordTimestamps : []}
+            vakStyle={vakStyle}
           />
         ))}
       </div>
