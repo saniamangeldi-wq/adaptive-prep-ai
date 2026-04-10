@@ -438,6 +438,14 @@ export default function VideoLessons() {
                             {getEstimatedRemaining() && (
                               <p className="text-xs text-muted-foreground">{getEstimatedRemaining()}</p>
                             )}
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="mt-1 h-7 text-xs"
+                              onClick={(e) => { e.stopPropagation(); cancelGeneration(); }}
+                            >
+                              Cancel
+                            </Button>
                           </div>
                         )}
 
