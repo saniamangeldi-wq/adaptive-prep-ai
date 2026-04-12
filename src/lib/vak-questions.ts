@@ -40,6 +40,13 @@ export const EXPRESSIVE_AUDITORY_QS = [16, 22, 27, 36, 39, 45];
 // Physical kinesthetic indicator questions
 export const PHYSICAL_KINESTHETIC_QS = [12, 20, 25, 43, 47];
 
+import { VAK_QUESTIONS_RU } from "./vak-questions-ru";
+
+export function getLocalizedVAKQuestions(lang: string): VAKQuestion[] {
+  if (lang === "ru") return VAK_QUESTIONS_RU;
+  return VAK_QUESTIONS;
+}
+
 export const VAK_QUESTIONS: VAKQuestion[] = [
   // ==================== FREE TIER: Q1–Q15 ====================
   {
