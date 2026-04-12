@@ -2,9 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTranslation } from "react-i18next";
 import {
-  getLocalizedVAKQuestions,
+  VAK_QUESTIONS,
   getQuestionCountForTier,
   getEstimatedMinutes,
   type VAKStyle,
@@ -23,11 +22,8 @@ export function VAKAssessment({
   onComplete,
   onProgressSave,
 }: VAKAssessmentProps) {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language;
-
   const totalQuestions = getQuestionCountForTier(tier);
-  const questions = getLocalizedVAKQuestions(lang).slice(0, totalQuestions);
+  const questions = VAK_QUESTIONS.slice(0, totalQuestions);
   const estimatedMinutes = getEstimatedMinutes(totalQuestions);
 
   const [started, setStarted] = useState(!!savedProgress);
@@ -72,36 +68,38 @@ export function VAKAssessment({
       <div className="space-y-8 text-center">
         <div className="space-y-3">
           <h2 className="text-2xl font-bold text-foreground">
-            {t("vak.assessmentTitle", "Learning Style Assessment")}
+            Learning Style Assessment
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            {t("vak.assessmentDesc", "Discover how you learn best. Your results will personalize your entire platform experience.")}
+            Discover how you learn best. Your results will personalize your
+            entire platform experience.
           </p>
         </div>
 
         <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <AlertCircle className="w-4 h-4" />
-            {totalQuestions} {t("vak.questions", "questions")}
+            {totalQuestions} questions
           </span>
           <span className="flex items-center gap-1.5">
             <Clock className="w-4 h-4" />
-            ~{estimatedMinutes} {t("vak.minutes", "minutes")}
+            ~{estimatedMinutes} minutes
           </span>
         </div>
 
         <div className="p-4 rounded-xl bg-secondary/50 border border-border text-left max-w-sm mx-auto">
           <p className="text-sm text-muted-foreground">
-            <strong className="text-foreground">{t("vak.howItWorks", "How it works:")}</strong>{" "}
-            {t("vak.howItWorksDesc", "Choose the option that best describes you in each scenario. There are no right or wrong answers — just be honest!")}
+            <strong className="text-foreground">How it works:</strong> Choose the
+            option that best describes you in each scenario. There are no right
+            or wrong answers — just be honest!
           </p>
         </div>
 
         {savedProgress && Object.keys(savedProgress.answers).length > 0 && (
           <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-sm">
             <p className="text-foreground">
-              {t("vak.leftAt", "You left your assessment at Question")}{" "}
-              {savedProgress.currentIndex + 1}. {t("vak.continueQuestion", "Continue where you left off?")}
+              You left your assessment at Question{" "}
+              {savedProgress.currentIndex + 1}. Continue where you left off?
             </p>
           </div>
         )}
@@ -113,8 +111,8 @@ export function VAKAssessment({
           className="min-w-[200px]"
         >
           {savedProgress && Object.keys(savedProgress.answers).length > 0
-            ? t("vak.continueAssessment", "Continue Assessment")
-            : t("vak.startAssessment", "Start Assessment")}
+            ? "Continue Assessment"
+            : "Start Assessment"}
         </Button>
       </div>
     );
@@ -130,7 +128,7 @@ export function VAKAssessment({
       <div className="sticky top-0 z-10 bg-background pt-2 pb-4 -mx-2 px-2">
         <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
           <span>
-            {t("vak.questionOf", "Question {{current}} of {{total}}", { current: currentIndex + 1, total: totalQuestions })}
+            Question {currentIndex + 1} of {totalQuestions}
           </span>
           <span>{Math.round(progress)}%</span>
         </div>
@@ -186,7 +184,7 @@ export function VAKAssessment({
           onClick={handleBack}
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          {t("vak.previousQuestion", "← Previous question")}
+          ← Previous question
         </button>
       )}
     </div>
