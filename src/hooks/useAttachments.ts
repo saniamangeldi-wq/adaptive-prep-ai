@@ -107,28 +107,35 @@ async function extractPDFText(file: File): Promise<{ text: string; pageCount: nu
        let extractedText = "";
       let metadata: Json = {};
  
-       if (type === "image") {
-         // Use AI vision to analyze image
-         const { data: { session } } = await supabase.auth.getSession();
-         if (session?.access_token) {
-           try {
-             const response = await fetch(`${SUPABASE_URL}/functions/v1/analyze-image`, {
-               method: "POST",
-               headers: {
-                 "Authorization": `Bearer ${session.access_token}`,
-                 "Content-Type": "application/json",
-               },
-               body: JSON.stringify({ imageUrl: fileUrl }),
-             });
- 
-             if (response.ok) {
-               const data = await response.json();
-               extractedText = data.analysis || "";
-             }
-           } catch (err) {
-             console.error("Image analysis failed:", err);
-           }
-         }
+        if (type === "image") {
+          // Convert image to base64 data URL for AI vision (bucket is private)
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            try {
+              const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+              });
+
+              const response = await fetch(`${SUPABASE_URL}/functions/v1/analyze-image`, {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${session.access_token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ imageUrl: base64 }),
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                extractedText = data.analysis || "";
+              }
+            } catch (err) {
+              console.error("Image analysis failed:", err);
+            }
+          }
          
          // Get image dimensions
          const img = new Image();
