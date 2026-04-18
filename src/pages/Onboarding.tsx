@@ -34,6 +34,14 @@ export default function Onboarding() {
 
   const userTier = profile?.tier || "tier_0";
 
+  // If onboarding is already complete and this isn't an explicit retake, bounce to dashboard.
+  // Prevents users from being stranded on /onboarding after idle/session refresh.
+  useEffect(() => {
+    if (profile?.onboarding_completed && !isRetake) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [profile?.onboarding_completed, isRetake, navigate]);
+
   // Check for saved VAK progress on mount
   useEffect(() => {
     if (user && profile?.vak_progress) {
