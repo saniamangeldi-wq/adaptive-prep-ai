@@ -157,7 +157,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
-        // Update state immediately - don't block on validation
+        // Ignore transient null sessions from token refresh hiccups.
+        // Only clear user state on explicit SIGNED_OUT or USER_DELETED events.
+        if (!currentSession && event !== "SIGNED_OUT") {
+          return;
+        }
+
         setSession(currentSession);
         const nextUser = currentSession?.user ?? null;
         setUser(nextUser);
@@ -177,6 +182,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // Proactively refresh the session when the tab becomes visible again
+    // (covers cases where the browser throttles timers on idle tabs).
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        supabase.auth.getSession().then(({ data }) => {
+          if (data.session) {
+            supabase.auth.refreshSession().catch(() => {
+              // Silent: keep existing session if refresh fails transiently
+            });
+          }
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
     // Check for existing session - don't block on getUser validation
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
@@ -192,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);
 
