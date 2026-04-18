@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, currentSession) => {
         // Ignore transient null sessions from token refresh hiccups.
         // Only clear user state on explicit SIGNED_OUT or USER_DELETED events.
-        if (!currentSession && event !== "SIGNED_OUT" && event !== "USER_DELETED") {
+        if (!currentSession && event !== "SIGNED_OUT") {
           return;
         }
 
