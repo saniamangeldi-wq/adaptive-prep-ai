@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { Loader2, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SlideData {
   slide_type: "title" | "content" | "example" | "summary";
@@ -119,9 +120,15 @@ export function LessonPlayer({
   const { toast } = useToast();
   const { speak: ttsSpeak, stop: ttsStop, isPlaying: ttsPlaying, isLoading: ttsLoading } = useTextToSpeech();
 
+  const [cachedAudioUrl, setCachedAudioUrl] = useState<string | null>(null);
+  const [isFetchingCachedAudio, setIsFetchingCachedAudio] = useState(false);
+
   const section = content.sections[currentSection];
   const narratedSection = narratedSections.find(s => s.section_index === currentSection);
-  const hasAudio = !!narratedSection?.audio_url || !!narratedSection?.audio_base64;
+  const prerecordedAudioUrl = narratedSection?.audio_url;
+  const prerecordedAudioBase64 = narratedSection?.audio_base64;
+  const effectiveAudioUrl = prerecordedAudioUrl || cachedAudioUrl;
+  const hasAudio = !!effectiveAudioUrl || !!prerecordedAudioBase64;
   const totalSections = content.sections.length;
   const progressPct = (completedSections.size / totalSections) * 100;
   const wordTimestamps = narratedSection?.word_timestamps || [];
@@ -193,7 +200,40 @@ export function LessonPlayer({
     handleSectionCompleteRef.current = handleSectionComplete;
   }, [handleSectionComplete]);
 
-  // Audio setup for current section
+  // Fetch cached/generate audio when no prerecorded audio exists
+  useEffect(() => {
+    setCachedAudioUrl(null);
+    if (prerecordedAudioUrl || prerecordedAudioBase64) return;
+    if (!_lessonId || !section?.narration) return;
+
+    let cancelled = false;
+    setIsFetchingCachedAudio(true);
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("verbal-lesson-tts", {
+          body: {
+            lesson_id: _lessonId,
+            section_index: currentSection,
+            text: section.narration,
+          },
+        });
+        if (cancelled) return;
+        if (error) {
+          console.error("Cached TTS error:", error);
+        } else if (data?.audio_url) {
+          setCachedAudioUrl(data.audio_url);
+        }
+      } catch (e) {
+        console.error("verbal-lesson-tts invoke failed:", e);
+      } finally {
+        if (!cancelled) setIsFetchingCachedAudio(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [_lessonId, currentSection, prerecordedAudioUrl, prerecordedAudioBase64, section?.narration]);
+
+  // Audio element setup for current section
   useEffect(() => {
     cancelBuffer();
     setAudioEnded(false);
@@ -204,13 +244,10 @@ export function LessonPlayer({
       audioRef.current = null;
     }
 
-    const audioUrl = narratedSection?.audio_url;
-    const audioBase64 = narratedSection?.audio_base64;
-
-    if (audioUrl) {
-      audioRef.current = new Audio(audioUrl);
-    } else if (audioBase64) {
-      audioRef.current = new Audio(`data:audio/mpeg;base64,${audioBase64}`);
+    if (effectiveAudioUrl) {
+      audioRef.current = new Audio(effectiveAudioUrl);
+    } else if (prerecordedAudioBase64) {
+      audioRef.current = new Audio(`data:audio/mpeg;base64,${prerecordedAudioBase64}`);
     }
 
     if (audioRef.current) {
@@ -234,7 +271,7 @@ export function LessonPlayer({
 
     return () => { audioRef.current?.pause(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSection]);
+  }, [currentSection, effectiveAudioUrl, prerecordedAudioBase64]);
 
   // Pre-load next slide's audio
   useEffect(() => {
@@ -485,6 +522,10 @@ export function LessonPlayer({
           {hasAudio ? (
             <Button variant="default" size="icon" className="h-11 w-11 rounded-full" onClick={togglePlay}>
               {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+            </Button>
+          ) : isFetchingCachedAudio ? (
+            <Button variant="default" size="icon" className="h-11 w-11 rounded-full" disabled title="Preparing audio…">
+              <Loader2 className="h-5 w-5 animate-spin" />
             </Button>
           ) : (
             <Button
