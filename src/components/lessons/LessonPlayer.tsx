@@ -22,6 +22,8 @@ import {
   Settings,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { Loader2, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SlideData {
@@ -115,6 +117,7 @@ export function LessonPlayer({
   const handleSectionCompleteRef = useRef<() => void>(() => {});
   const bufferIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
+  const { speak: ttsSpeak, stop: ttsStop, isPlaying: ttsPlaying, isLoading: ttsLoading } = useTextToSpeech();
 
   const section = content.sections[currentSection];
   const narratedSection = narratedSections.find(s => s.section_index === currentSection);
@@ -194,6 +197,7 @@ export function LessonPlayer({
   useEffect(() => {
     cancelBuffer();
     setAudioEnded(false);
+    ttsStop();
 
     if (audioRef.current) {
       audioRef.current.pause();
@@ -478,9 +482,36 @@ export function LessonPlayer({
           <Button variant="ghost" size="icon" onClick={goToPrevious} disabled={currentSection === 0}>
             <SkipBack className="h-4 w-4" />
           </Button>
-          <Button variant="default" size="icon" className="h-11 w-11 rounded-full" onClick={togglePlay} disabled={!hasAudio}>
-            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-          </Button>
+          {hasAudio ? (
+            <Button variant="default" size="icon" className="h-11 w-11 rounded-full" onClick={togglePlay}>
+              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="icon"
+              className="h-11 w-11 rounded-full"
+              onClick={() => {
+                if (ttsPlaying) {
+                  ttsStop();
+                } else if (section?.narration) {
+                  ttsSpeak(section.narration);
+                } else {
+                  toast({ title: "Nothing to read", description: "This slide has no narration text." });
+                }
+              }}
+              disabled={ttsLoading}
+              title="Listen to this slide"
+            >
+              {ttsLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : ttsPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Headphones className="h-5 w-5" />
+              )}
+            </Button>
+          )}
           <Button variant="ghost" size="icon" onClick={goToNext} disabled={currentSection >= totalSections - 1}>
             <SkipForward className="h-4 w-4" />
           </Button>
