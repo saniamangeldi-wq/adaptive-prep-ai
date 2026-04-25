@@ -55,6 +55,7 @@ import Guide from "./pages/Guide";
 import Achievements from "./pages/Achievements";
 import Unsubscribe from "./pages/Unsubscribe";
 import VideoLessons from "./pages/VideoLessons";
+import SATVerbal from "./pages/SATVerbal";
 
 const queryClient = new QueryClient();
 
@@ -173,7 +174,8 @@ function AppRoutes() {
       <Route path="/dashboard/curriculum" element={<ProtectedRoute><Curriculum /></ProtectedRoute>} />
       <Route path="/dashboard/guide" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
       <Route path="/dashboard/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-      <Route path="/dashboard/lessons" element={<ProtectedRoute><VideoLessons /></ProtectedRoute>} />
+      <Route path="/dashboard/lessons" element={<ProtectedRoute><SATVerbal /></ProtectedRoute>} />
+      <Route path="/dashboard/lessons/generate" element={<ProtectedRoute><VideoLessons /></ProtectedRoute>} />
       
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
