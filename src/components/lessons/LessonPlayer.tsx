@@ -197,6 +197,7 @@ export function LessonPlayer({
   useEffect(() => {
     cancelBuffer();
     setAudioEnded(false);
+    ttsStop();
 
     if (audioRef.current) {
       audioRef.current.pause();
