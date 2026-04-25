@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { Loader2, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SlideData {
   slide_type: "title" | "content" | "example" | "summary";
@@ -119,9 +120,15 @@ export function LessonPlayer({
   const { toast } = useToast();
   const { speak: ttsSpeak, stop: ttsStop, isPlaying: ttsPlaying, isLoading: ttsLoading } = useTextToSpeech();
 
+  const [cachedAudioUrl, setCachedAudioUrl] = useState<string | null>(null);
+  const [isFetchingCachedAudio, setIsFetchingCachedAudio] = useState(false);
+
   const section = content.sections[currentSection];
   const narratedSection = narratedSections.find(s => s.section_index === currentSection);
-  const hasAudio = !!narratedSection?.audio_url || !!narratedSection?.audio_base64;
+  const prerecordedAudioUrl = narratedSection?.audio_url;
+  const prerecordedAudioBase64 = narratedSection?.audio_base64;
+  const effectiveAudioUrl = prerecordedAudioUrl || cachedAudioUrl;
+  const hasAudio = !!effectiveAudioUrl || !!prerecordedAudioBase64;
   const totalSections = content.sections.length;
   const progressPct = (completedSections.size / totalSections) * 100;
   const wordTimestamps = narratedSection?.word_timestamps || [];
