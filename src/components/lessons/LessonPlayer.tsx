@@ -117,6 +117,7 @@ export function LessonPlayer({
   const handleSectionCompleteRef = useRef<() => void>(() => {});
   const bufferIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
+  const { speak: ttsSpeak, stop: ttsStop, isPlaying: ttsPlaying, isLoading: ttsLoading } = useTextToSpeech();
 
   const section = content.sections[currentSection];
   const narratedSection = narratedSections.find(s => s.section_index === currentSection);
