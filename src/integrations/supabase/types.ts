@@ -2088,6 +2088,47 @@ export type Database = {
         }
         Relationships: []
       }
+      verbal_lesson_audio: {
+        Row: {
+          audio_url: string
+          created_at: string
+          id: string
+          lesson_id: string
+          section_index: number
+          storage_path: string
+          text_hash: string
+          voice_id: string
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          id?: string
+          lesson_id: string
+          section_index: number
+          storage_path: string
+          text_hash: string
+          voice_id?: string
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          section_index?: number
+          storage_path?: string
+          text_hash?: string
+          voice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verbal_lesson_audio_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "verbal_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       verbal_lessons: {
         Row: {
           checkpoint_questions: Json
