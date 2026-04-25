@@ -22,6 +22,8 @@ import {
   Settings,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { Loader2, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SlideData {
