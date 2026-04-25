@@ -481,9 +481,36 @@ export function LessonPlayer({
           <Button variant="ghost" size="icon" onClick={goToPrevious} disabled={currentSection === 0}>
             <SkipBack className="h-4 w-4" />
           </Button>
-          <Button variant="default" size="icon" className="h-11 w-11 rounded-full" onClick={togglePlay} disabled={!hasAudio}>
-            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-          </Button>
+          {hasAudio ? (
+            <Button variant="default" size="icon" className="h-11 w-11 rounded-full" onClick={togglePlay}>
+              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="icon"
+              className="h-11 w-11 rounded-full"
+              onClick={() => {
+                if (ttsPlaying) {
+                  ttsStop();
+                } else if (section?.narration) {
+                  ttsSpeak(section.narration);
+                } else {
+                  toast({ title: "Nothing to read", description: "This slide has no narration text." });
+                }
+              }}
+              disabled={ttsLoading}
+              title="Listen to this slide"
+            >
+              {ttsLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : ttsPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Headphones className="h-5 w-5" />
+              )}
+            </Button>
+          )}
           <Button variant="ghost" size="icon" onClick={goToNext} disabled={currentSection >= totalSections - 1}>
             <SkipForward className="h-4 w-4" />
           </Button>
