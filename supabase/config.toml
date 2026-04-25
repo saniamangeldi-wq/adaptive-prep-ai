@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.elevenlabs-tts]
 verify_jwt = false
 
+[functions.verbal-lesson-tts]
+verify_jwt = false
+
 [functions.elevenlabs-conversation-token]
 verify_jwt = false
 
