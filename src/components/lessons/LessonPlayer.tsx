@@ -523,6 +523,10 @@ export function LessonPlayer({
             <Button variant="default" size="icon" className="h-11 w-11 rounded-full" onClick={togglePlay}>
               {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
             </Button>
+          ) : isFetchingCachedAudio ? (
+            <Button variant="default" size="icon" className="h-11 w-11 rounded-full" disabled title="Preparing audio…">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </Button>
           ) : (
             <Button
               variant="default"
