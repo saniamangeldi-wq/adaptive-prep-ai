@@ -200,7 +200,40 @@ export function LessonPlayer({
     handleSectionCompleteRef.current = handleSectionComplete;
   }, [handleSectionComplete]);
 
-  // Audio setup for current section
+  // Fetch cached/generate audio when no prerecorded audio exists
+  useEffect(() => {
+    setCachedAudioUrl(null);
+    if (prerecordedAudioUrl || prerecordedAudioBase64) return;
+    if (!_lessonId || !section?.narration) return;
+
+    let cancelled = false;
+    setIsFetchingCachedAudio(true);
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("verbal-lesson-tts", {
+          body: {
+            lesson_id: _lessonId,
+            section_index: currentSection,
+            text: section.narration,
+          },
+        });
+        if (cancelled) return;
+        if (error) {
+          console.error("Cached TTS error:", error);
+        } else if (data?.audio_url) {
+          setCachedAudioUrl(data.audio_url);
+        }
+      } catch (e) {
+        console.error("verbal-lesson-tts invoke failed:", e);
+      } finally {
+        if (!cancelled) setIsFetchingCachedAudio(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [_lessonId, currentSection, prerecordedAudioUrl, prerecordedAudioBase64, section?.narration]);
+
+  // Audio element setup for current section
   useEffect(() => {
     cancelBuffer();
     setAudioEnded(false);
@@ -211,13 +244,10 @@ export function LessonPlayer({
       audioRef.current = null;
     }
 
-    const audioUrl = narratedSection?.audio_url;
-    const audioBase64 = narratedSection?.audio_base64;
-
-    if (audioUrl) {
-      audioRef.current = new Audio(audioUrl);
-    } else if (audioBase64) {
-      audioRef.current = new Audio(`data:audio/mpeg;base64,${audioBase64}`);
+    if (effectiveAudioUrl) {
+      audioRef.current = new Audio(effectiveAudioUrl);
+    } else if (prerecordedAudioBase64) {
+      audioRef.current = new Audio(`data:audio/mpeg;base64,${prerecordedAudioBase64}`);
     }
 
     if (audioRef.current) {
@@ -241,7 +271,7 @@ export function LessonPlayer({
 
     return () => { audioRef.current?.pause(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSection]);
+  }, [currentSection, effectiveAudioUrl, prerecordedAudioBase64]);
 
   // Pre-load next slide's audio
   useEffect(() => {
