@@ -2088,6 +2088,145 @@ export type Database = {
         }
         Relationships: []
       }
+      verbal_lessons: {
+        Row: {
+          checkpoint_questions: Json
+          created_at: string
+          estimated_minutes: number | null
+          hook: string | null
+          id: string
+          is_published: boolean
+          learning_style: string
+          sections: Json
+          summary: string | null
+          title: string
+          topic_id: string
+          updated_at: string
+        }
+        Insert: {
+          checkpoint_questions?: Json
+          created_at?: string
+          estimated_minutes?: number | null
+          hook?: string | null
+          id?: string
+          is_published?: boolean
+          learning_style: string
+          sections?: Json
+          summary?: string | null
+          title: string
+          topic_id: string
+          updated_at?: string
+        }
+        Update: {
+          checkpoint_questions?: Json
+          created_at?: string
+          estimated_minutes?: number | null
+          hook?: string | null
+          id?: string
+          is_published?: boolean
+          learning_style?: string
+          sections?: Json
+          summary?: string | null
+          title?: string
+          topic_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verbal_lessons_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "verbal_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verbal_topic_progress: {
+        Row: {
+          best_checkpoint_score: number | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          last_viewed_at: string | null
+          status: string
+          topic_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          best_checkpoint_score?: number | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_viewed_at?: string | null
+          status?: string
+          topic_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          best_checkpoint_score?: number | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_viewed_at?: string | null
+          status?: string
+          topic_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verbal_topic_progress_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "verbal_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verbal_topics: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          estimated_minutes: number | null
+          id: string
+          is_published: boolean
+          order_index: number
+          slug: string
+          target_skill: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          slug: string
+          target_skill?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          slug?: string
+          target_skill?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       video_lessons: {
         Row: {
           audio_url: string | null
