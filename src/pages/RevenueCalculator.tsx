@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Navigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { PRICING_CONFIG, fmtKZT } from "@/lib/pricing-config";
 import { Calculator, TrendingUp, Building2, GraduationCap, Receipt } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { canAccessCalculator } from "@/lib/calculator-access";
 
 // KZ tax rates
 const VAT_RATE = 0.12; // 12% NDS
