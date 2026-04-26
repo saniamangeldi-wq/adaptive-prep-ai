@@ -84,6 +84,12 @@ export default function SchoolQuoteBuilder() {
   const [toggleAddons, setToggleAddons] = useState<Record<string, boolean>>({});
   const [qtyAddons, setQtyAddons] = useState<Record<string, number>>({});
 
+  // Tax & cost model
+  const [taxRegime, setTaxRegime] = useState<TaxRegime>("simplified");
+  const [aiCostPerStudent, setAiCostPerStudent] = useState(0.75); // USD/mo realistic
+  const [fixedOverhead, setFixedOverhead] = useState(53);          // USD/mo allocated per school
+  const [includeStripe, setIncludeStripe] = useState(true);
+
   // Update headcount + base when tier changes
   useEffect(() => {
     const t = TIERS[tier];
