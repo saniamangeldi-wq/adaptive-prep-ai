@@ -521,7 +521,63 @@ export default function SchoolQuoteBuilder() {
             ))}
           </CardContent>
         </Card>
+
+        {/* Step 5: Tax & Cost Model */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Receipt className="h-4 w-4" /> Tax & Cost Model <Badge variant="secondary" className="ml-auto text-[10px]">Step 5</Badge>
+            </CardTitle>
+            <CardDescription className="text-xs">KZ 2026 — switch regime based on your annual turnover.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setTaxRegime("simplified")}
+                className={`p-2 rounded-md border text-left text-[11px] transition-all ${
+                  taxRegime === "simplified" ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 hover:bg-muted"
+                }`}
+              >
+                <div className="font-semibold">Simplified (СНР)</div>
+                <div className="text-[10px] text-muted-foreground">4% on revenue · no VAT · &lt; ~₸124M/yr</div>
+              </button>
+              <button
+                onClick={() => setTaxRegime("general")}
+                className={`p-2 rounded-md border text-left text-[11px] transition-all ${
+                  taxRegime === "general" ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 hover:bg-muted"
+                }`}
+              >
+                <div className="font-semibold">General regime</div>
+                <div className="text-[10px] text-muted-foreground">VAT 16% + CIT 20% on profit</div>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">AI cost / student / mo (USD)</Label>
+                <Input type="number" step="0.05" min={0} value={aiCostPerStudent}
+                  onChange={(e) => setAiCostPerStudent(parseFloat(e.target.value) || 0)} className="h-9" />
+                <span className="text-[10px] text-muted-foreground/80">Gemini + ElevenLabs blended</span>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Fixed overhead / school / mo (USD)</Label>
+                <Input type="number" min={0} value={fixedOverhead}
+                  onChange={(e) => setFixedOverhead(parseFloat(e.target.value) || 0)} className="h-9" />
+                <span className="text-[10px] text-muted-foreground/80">Hosting, support, tools allocation</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-md border bg-muted/30 p-2.5">
+              <div>
+                <div className="text-sm font-medium">Include Stripe fees</div>
+                <div className="text-[10.5px] text-muted-foreground">3.9% + $0.30 per charge (KZ international card)</div>
+              </div>
+              <Switch checked={includeStripe} onCheckedChange={setIncludeStripe} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
 
       {/* RIGHT: RESULTS */}
       <div className="lg:sticky lg:top-4">
