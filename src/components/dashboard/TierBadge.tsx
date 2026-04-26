@@ -26,9 +26,10 @@ export function TierBadge() {
   const daysRemaining = isTrialUser ? getDaysRemaining(profile.trial_ends_at) : 0;
   const showUpgrade = profile.tier === "tier_0" || profile.tier === "tier_1" || profile.tier === "tier_2";
 
-  // Calculate credits usage
+  // Calculate credits usage (cap displayed value at maxCredits to prevent over-cap drift)
   const maxCredits = isTrialUser ? TRIAL_LIMITS.creditsPerDay : tierLimits.creditsPerDay;
-  const creditsUsed = maxCredits - (profile.credits_remaining || 0);
+  const displayedCredits = Math.min(maxCredits, profile.credits_remaining || 0);
+  const creditsUsed = Math.max(0, maxCredits - displayedCredits);
   const creditsPercentage = Math.min(100, (creditsUsed / maxCredits) * 100);
 
   const getBillingPath = () => {
@@ -90,7 +91,7 @@ export function TierBadge() {
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-sidebar-foreground/70">AI Credits</span>
             <span className="text-xs font-medium text-sidebar-foreground">
-              {profile.credits_remaining}/{maxCredits}
+              {displayedCredits}/{maxCredits}
             </span>
           </div>
           <Progress value={100 - creditsPercentage} className="h-1.5" />
