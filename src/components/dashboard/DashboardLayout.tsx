@@ -26,6 +26,7 @@ import {
   Trophy,
   Download,
   HelpCircle,
+  Calculator,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,6 +36,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 import { SIDEBAR } from "@/lib/design-system";
+import { canAccessCalculator } from "@/lib/calculator-access";
 
 type NavItem = {
   nameKey: string;
@@ -105,7 +107,7 @@ const adminNav: NavItem[] = [
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const sidebarExpanded = false;
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { isSchoolStudent } = useSchoolStudent();
@@ -156,17 +158,28 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   };
 
   const getNavigation = (): NavItem[] => {
+    let nav: NavItem[];
     switch (profile?.role) {
       case "tutor":
-        return tutorNav;
+        nav = tutorNav;
+        break;
       case "teacher":
-        return teacherNav;
+        nav = teacherNav;
+        break;
       case "school_admin":
-        return adminNav;
+        nav = adminNav;
+        break;
       case "student":
       default:
-        return studentNav.filter((item) => !item.schoolOnly || isSchoolStudent);
+        nav = studentNav.filter((item) => !item.schoolOnly || isSchoolStudent);
     }
+    if (canAccessCalculator(user?.id)) {
+      const settingsIdx = nav.findIndex((n) => n.href === "/dashboard/settings");
+      const calcItem: NavItem = { nameKey: "Calculator", href: "/dashboard/revenue-calculator", icon: Calculator };
+      if (settingsIdx >= 0) nav = [...nav.slice(0, settingsIdx), calcItem, ...nav.slice(settingsIdx)];
+      else nav = [...nav, calcItem];
+    }
+    return nav;
   };
 
   const navigation = getNavigation();
