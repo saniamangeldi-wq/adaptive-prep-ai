@@ -137,27 +137,40 @@ export default function SchoolQuoteBuilder() {
       }
     }
 
-    const subtotal = periodNet + upfrontAmt;
-    const vat = subtotal * VAT_RATE;
+    const subtotal = periodNet + upfrontAmt; // net price the school agrees to (excl. VAT)
+
+    // KZ tax model
+    //  • Simplified: NOT a VAT payer → invoice = subtotal, pay 4% on gross revenue received
+    //  • General:    VAT 16% added on top → invoice = subtotal * 1.16; CIT 20% on profit
+    const vat = taxRegime === "general" ? subtotal * VAT_RATE : 0;
     const invoice = subtotal + vat;
-    const simpTax = subtotal * SIMPLIFIED_TAX;
 
     // Cost-to-serve
-    const fixedShare = 53;
-    const aiCost = students * 0.03;
-    const supportBuf = moNet * 0.05;
-    const costMo = fixedShare + aiCost + supportBuf;
+    const aiCost = students * aiCostPerStudent;          // AI/audio per active student
+    const supportBuf = moNet * 0.05;                      // 5% support buffer
+    const costMo = fixedOverhead + aiCost + supportBuf;
     const cost = costMo * periodInfo.months;
 
-    const profit = subtotal - cost - simpTax;
+    // Stripe processing on the gross invoice (single charge per period assumed)
+    const stripeFee = includeStripe ? invoice * STRIPE_PCT + STRIPE_FIXED : 0;
+
+    // Tax payable
+    const simpTax = taxRegime === "simplified" ? subtotal * SIMPLIFIED_RATE : 0;
+    // For general regime, CIT is 20% of (revenue - costs - stripe). VAT is pass-through (collected, not income).
+    const profitBeforeTax = subtotal - cost - stripeFee;
+    const citTax = taxRegime === "general" ? Math.max(0, profitBeforeTax) * CIT_RATE : 0;
+    const taxTotal = simpTax + citTax;
+
+    const profit = profitBeforeTax - taxTotal;
     const margin = subtotal > 0 ? (profit / subtotal) * 100 : 0;
 
     return {
       topicFee, addonTotal, hasExtras, moBase, discount, moNet, periodNet,
       upfrontAmt, upfrontLbl, useUpfront, autoFirstMonth, autoSetupFee,
-      subtotal, vat, invoice, simpTax, cost, profit, margin,
+      subtotal, vat, invoice, simpTax, citTax, taxTotal, stripeFee,
+      cost, profit, margin,
     };
-  }, [basePrice, selectedTopics, toggleAddons, qtyAddons, periodInfo, upfrontEnabled, upfrontMode, upfrontCustomAmount, upfrontLabel, students]);
+  }, [basePrice, selectedTopics, toggleAddons, qtyAddons, periodInfo, upfrontEnabled, upfrontMode, upfrontCustomAmount, upfrontLabel, students, taxRegime, aiCostPerStudent, fixedOverhead, includeStripe]);
 
   const toggleTopic = (t: string) => {
     setSelectedTopics((prev) => {
