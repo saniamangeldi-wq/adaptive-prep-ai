@@ -36,6 +36,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 import { SIDEBAR } from "@/lib/design-system";
+import { canAccessCalculator } from "@/lib/calculator-access";
 
 type NavItem = {
   nameKey: string;
