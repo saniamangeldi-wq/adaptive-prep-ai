@@ -84,8 +84,10 @@ export default function SchoolQuoteBuilder() {
   const [toggleAddons, setToggleAddons] = useState<Record<string, boolean>>({});
   const [qtyAddons, setQtyAddons] = useState<Record<string, number>>({});
 
-  // Tax & cost model
-  const [taxRegime, setTaxRegime] = useState<TaxRegime>("simplified");
+  // Tax & cost model — regime is AUTO by default (based on projected annual turnover)
+  const [taxAuto, setTaxAuto] = useState(true);
+  const [taxRegimeManual, setTaxRegimeManual] = useState<TaxRegime>("simplified");
+  const [estSchoolCount, setEstSchoolCount] = useState(1); // how many schools at this price (for auto threshold)
   const [aiCostPerStudent, setAiCostPerStudent] = useState(0.75); // USD/mo realistic
   const [fixedOverhead, setFixedOverhead] = useState(53);          // USD/mo allocated per school
   const [includeStripe, setIncludeStripe] = useState(true);
@@ -117,7 +119,7 @@ export default function SchoolQuoteBuilder() {
 
     const moBase = basePrice + topicFee + addonTotal;
     const discount = moBase * periodInfo.discount;
-    const moNet = moBase - discount;
+    const moNet = moBase - discount;            // net monthly price (excl. VAT) — what 1 school pays per month
     const periodNet = moNet * periodInfo.months;
 
     let upfrontAmt = 0;
@@ -139,24 +141,31 @@ export default function SchoolQuoteBuilder() {
 
     const subtotal = periodNet + upfrontAmt; // net price the school agrees to (excl. VAT)
 
+    // ===== AUTO TAX REGIME =====
+    // KZ Simplified threshold ≈ ₸124M / yr → in USD ≈ 124_000_000 / kztRate
+    // Project annual gross across all schools at this price (× estSchoolCount × 12 / period months for upfront-less recurring view)
+    const annualNetPerSchool = moNet * 12;
+    const projectedAnnualGross = annualNetPerSchool * Math.max(1, estSchoolCount);
+    const thresholdUSD = 124_000_000 / Math.max(1, kztRate);
+    const autoRegime: TaxRegime = projectedAnnualGross < thresholdUSD ? "simplified" : "general";
+    const taxRegime: TaxRegime = taxAuto ? autoRegime : taxRegimeManual;
+
     // KZ tax model
-    //  • Simplified: NOT a VAT payer → invoice = subtotal, pay 4% on gross revenue received
-    //  • General:    VAT 16% added on top → invoice = subtotal * 1.16; CIT 20% on profit
     const vat = taxRegime === "general" ? subtotal * VAT_RATE : 0;
     const invoice = subtotal + vat;
+    const monthlySchoolPays = moNet * (taxRegime === "general" ? 1 + VAT_RATE : 1);
 
     // Cost-to-serve
-    const aiCost = students * aiCostPerStudent;          // AI/audio per active student
-    const supportBuf = moNet * 0.05;                      // 5% support buffer
+    const aiCost = students * aiCostPerStudent;
+    const supportBuf = moNet * 0.05;
     const costMo = fixedOverhead + aiCost + supportBuf;
     const cost = costMo * periodInfo.months;
 
-    // Stripe processing on the gross invoice (single charge per period assumed)
+    // Stripe processing on the gross invoice
     const stripeFee = includeStripe ? invoice * STRIPE_PCT + STRIPE_FIXED : 0;
 
     // Tax payable
     const simpTax = taxRegime === "simplified" ? subtotal * SIMPLIFIED_RATE : 0;
-    // For general regime, CIT is 20% of (revenue - costs - stripe). VAT is pass-through (collected, not income).
     const profitBeforeTax = subtotal - cost - stripeFee;
     const citTax = taxRegime === "general" ? Math.max(0, profitBeforeTax) * CIT_RATE : 0;
     const taxTotal = simpTax + citTax;
@@ -167,10 +176,11 @@ export default function SchoolQuoteBuilder() {
     return {
       topicFee, addonTotal, hasExtras, moBase, discount, moNet, periodNet,
       upfrontAmt, upfrontLbl, useUpfront, autoFirstMonth, autoSetupFee,
-      subtotal, vat, invoice, simpTax, citTax, taxTotal, stripeFee,
+      subtotal, vat, invoice, monthlySchoolPays, simpTax, citTax, taxTotal, stripeFee,
       cost, profit, margin,
+      taxRegime, autoRegime, projectedAnnualGross, thresholdUSD,
     };
-  }, [basePrice, selectedTopics, toggleAddons, qtyAddons, periodInfo, upfrontEnabled, upfrontMode, upfrontCustomAmount, upfrontLabel, students, taxRegime, aiCostPerStudent, fixedOverhead, includeStripe]);
+  }, [basePrice, selectedTopics, toggleAddons, qtyAddons, periodInfo, upfrontEnabled, upfrontMode, upfrontCustomAmount, upfrontLabel, students, taxAuto, taxRegimeManual, estSchoolCount, kztRate, aiCostPerStudent, fixedOverhead, includeStripe]);
 
   const toggleTopic = (t: string) => {
     setSelectedTopics((prev) => {
@@ -231,7 +241,8 @@ export default function SchoolQuoteBuilder() {
       `Billing: ${periodInfo.label}${discLine}${upfrontLine}`,
       `Base Price: $${basePrice}/mo`,
       "",
-      `Invoice Total${taxRegime === "general" ? " (incl. 16% VAT)" : ""}: ${fmt(calc.invoice)}`,
+      `School pays / month: ${fmt(calc.monthlySchoolPays)}${calc.taxRegime === "general" ? " (incl. 16% VAT)" : ""}`,
+      `Invoice Total${calc.taxRegime === "general" ? " (incl. 16% VAT)" : ""}: ${fmt(calc.invoice)}`,
       `In KZT: ${fmtKzt(calc.invoice * kztRate)}`,
       `Est. Net Profit: ${fmt(calc.profit)} (${calc.margin.toFixed(1)}% margin)`,
       "------------------------------------",
@@ -528,29 +539,51 @@ export default function SchoolQuoteBuilder() {
             <CardTitle className="flex items-center gap-2 text-base">
               <Receipt className="h-4 w-4" /> Tax & Cost Model <Badge variant="secondary" className="ml-auto text-[10px]">Step 5</Badge>
             </CardTitle>
-            <CardDescription className="text-xs">KZ 2026 — switch regime based on your annual turnover.</CardDescription>
+            <CardDescription className="text-xs">KZ 2026 — Auto picks the regime based on your projected annual revenue.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setTaxRegime("simplified")}
-                className={`p-2 rounded-md border text-left text-[11px] transition-all ${
-                  taxRegime === "simplified" ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 hover:bg-muted"
-                }`}
-              >
-                <div className="font-semibold">Simplified (СНР)</div>
-                <div className="text-[10px] text-muted-foreground">4% on revenue · no VAT · &lt; ~₸124M/yr</div>
-              </button>
-              <button
-                onClick={() => setTaxRegime("general")}
-                className={`p-2 rounded-md border text-left text-[11px] transition-all ${
-                  taxRegime === "general" ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 hover:bg-muted"
-                }`}
-              >
-                <div className="font-semibold">General regime</div>
-                <div className="text-[10px] text-muted-foreground">VAT 16% + CIT 20% on profit</div>
-              </button>
+            <div className="flex items-center justify-between rounded-md border bg-primary/5 p-2.5">
+              <div>
+                <div className="text-sm font-medium">Auto-pick tax regime</div>
+                <div className="text-[10.5px] text-muted-foreground">
+                  Currently: <strong className="text-primary">{calc.autoRegime === "simplified" ? "Simplified (СНР 4%)" : "General (VAT 16% + CIT 20%)"}</strong>
+                  {" · "}projected ${calc.projectedAnnualGross.toLocaleString("en-US", {maximumFractionDigits: 0})}/yr vs threshold ${calc.thresholdUSD.toLocaleString("en-US", {maximumFractionDigits: 0})}/yr
+                </div>
+              </div>
+              <Switch checked={taxAuto} onCheckedChange={setTaxAuto} />
             </div>
+
+            {taxAuto && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground"># of schools at this price (for threshold calc)</Label>
+                <Input type="number" min={1} value={estSchoolCount}
+                  onChange={(e) => setEstSchoolCount(Math.max(1, parseInt(e.target.value) || 1))} className="h-9" />
+                <span className="text-[10px] text-muted-foreground/80">If total annual revenue from all schools exceeds ~₸124M, we auto-switch to General regime.</span>
+              </div>
+            )}
+
+            {!taxAuto && (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setTaxRegimeManual("simplified")}
+                  className={`p-2 rounded-md border text-left text-[11px] transition-all ${
+                    taxRegimeManual === "simplified" ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 hover:bg-muted"
+                  }`}
+                >
+                  <div className="font-semibold">Simplified (СНР)</div>
+                  <div className="text-[10px] text-muted-foreground">4% on revenue · no VAT · &lt; ~₸124M/yr</div>
+                </button>
+                <button
+                  onClick={() => setTaxRegimeManual("general")}
+                  className={`p-2 rounded-md border text-left text-[11px] transition-all ${
+                    taxRegimeManual === "general" ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 hover:bg-muted"
+                  }`}
+                >
+                  <div className="font-semibold">General regime</div>
+                  <div className="text-[10px] text-muted-foreground">VAT 16% + CIT 20% on profit</div>
+                </button>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -589,8 +622,19 @@ export default function SchoolQuoteBuilder() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary tracking-tight">{fmt(calc.invoice)}</div>
-            <div className="text-sm text-muted-foreground">≈ {fmtKzt(calc.invoice * kztRate)} {suffix}</div>
+            {/* HERO: monthly amount the school pays */}
+            <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 mb-3">
+              <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">School pays per month</div>
+              <div className="text-3xl font-bold text-primary tracking-tight">{fmt(calc.monthlySchoolPays)}</div>
+              <div className="text-xs text-muted-foreground">
+                ≈ {fmtKzt(calc.monthlySchoolPays * kztRate)} / mo
+                {calc.taxRegime === "general" && <span className="ml-1">· incl. 16% VAT</span>}
+              </div>
+            </div>
+
+            <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Invoice for {periodInfo.label.toLowerCase()}</div>
+            <div className="text-xl font-semibold tracking-tight">{fmt(calc.invoice)}</div>
+            <div className="text-xs text-muted-foreground">≈ {fmtKzt(calc.invoice * kztRate)} {suffix}</div>
 
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 font-semibold mt-4 mb-1">Breakdown</div>
             <Row label="Base plan price/mo" value={fmt(basePrice)} />
@@ -611,9 +655,10 @@ export default function SchoolQuoteBuilder() {
             />
 
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 font-semibold mt-3 mb-1">
-              Kazakhstan Tax · {taxRegime === "simplified" ? "Simplified (СНР 4%)" : "General (VAT 16% + CIT 20%)"}
+              Kazakhstan Tax · {calc.taxRegime === "simplified" ? "Simplified (СНР 4%)" : "General (VAT 16% + CIT 20%)"}
+              {taxAuto && <span className="ml-1 text-emerald-500 normal-case">(auto)</span>}
             </div>
-            {taxRegime === "general" && (
+            {calc.taxRegime === "general" && (
               <Row label="VAT 16% (collected, pass-through)" value={"+" + fmt(calc.vat)} valueClass="text-amber-500" />
             )}
             <Row
@@ -628,7 +673,7 @@ export default function SchoolQuoteBuilder() {
             {calc.stripeFee > 0 && (
               <Row label="Stripe fee (3.9% + $0.30)" value={"−" + fmt(calc.stripeFee)} valueClass="text-rose-500" />
             )}
-            {taxRegime === "simplified" ? (
+            {calc.taxRegime === "simplified" ? (
               <Row label="Simplified tax 4% (on revenue)" value={"−" + fmt(calc.simpTax)} valueClass="text-amber-500" />
             ) : (
               <Row label="CIT 20% (on profit)" value={"−" + fmt(calc.citTax)} valueClass="text-amber-500" />
