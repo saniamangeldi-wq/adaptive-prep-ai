@@ -107,7 +107,7 @@ const adminNav: NavItem[] = [
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const sidebarExpanded = false;
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { isSchoolStudent } = useSchoolStudent();
