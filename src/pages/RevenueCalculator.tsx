@@ -84,6 +84,10 @@ function StatRow({ label, value, bold, accent, negative }: { label: string; valu
 }
 
 export default function RevenueCalculator() {
+  const { user } = useAuth();
+  if (!canAccessCalculator(user?.id)) {
+    return <Navigate to="/dashboard" replace />;
+  }
   const [scenario, setScenario] = useState<Scenario>("base");
 
   // Schools
