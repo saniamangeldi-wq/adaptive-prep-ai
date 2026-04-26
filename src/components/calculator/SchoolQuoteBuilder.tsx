@@ -554,20 +554,31 @@ export default function SchoolQuoteBuilder() {
               bold
             />
 
-            <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 font-semibold mt-3 mb-1">Kazakhstan Tax (2026)</div>
-            <Row label="VAT 16% (to collect)" value={"+" + fmt(calc.vat)} valueClass="text-amber-500" />
+            <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 font-semibold mt-3 mb-1">
+              Kazakhstan Tax · {taxRegime === "simplified" ? "Simplified (СНР 4%)" : "General (VAT 16% + CIT 20%)"}
+            </div>
+            {taxRegime === "general" && (
+              <Row label="VAT 16% (collected, pass-through)" value={"+" + fmt(calc.vat)} valueClass="text-amber-500" />
+            )}
             <Row
-              label={periodInfo.months > 1 ? `Invoice Total – ${periodInfo.label}` : "Invoice Total (incl. VAT)"}
+              label={periodInfo.months > 1 ? `Invoice Total – ${periodInfo.label}` : "Invoice Total"}
               value={fmt(calc.invoice)}
               bold
             />
             <Row label="Invoice in KZT" value={fmtKzt(calc.invoice * kztRate)} valueClass="text-muted-foreground" />
 
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 font-semibold mt-3 mb-1">Your Profit</div>
-            <Row label="Est. cost to serve" value={"~" + fmt(calc.cost)} valueClass="text-rose-500" />
-            <Row label="Simplified tax 4%" value={"−" + fmt(calc.simpTax)} valueClass="text-amber-500" />
+            <Row label="Est. cost to serve" value={"−" + fmt(calc.cost)} valueClass="text-rose-500" />
+            {calc.stripeFee > 0 && (
+              <Row label="Stripe fee (3.9% + $0.30)" value={"−" + fmt(calc.stripeFee)} valueClass="text-rose-500" />
+            )}
+            {taxRegime === "simplified" ? (
+              <Row label="Simplified tax 4% (on revenue)" value={"−" + fmt(calc.simpTax)} valueClass="text-amber-500" />
+            ) : (
+              <Row label="CIT 20% (on profit)" value={"−" + fmt(calc.citTax)} valueClass="text-amber-500" />
+            )}
             <Row label="Net profit" value={fmt(calc.profit)} valueClass="text-emerald-500 font-semibold" />
-            <Row label="Gross margin" value={calc.margin.toFixed(1) + "%"} />
+            <Row label="Net margin" value={calc.margin.toFixed(1) + "%"} />
 
             <Separator className="my-4" />
             <div className="flex gap-2">
