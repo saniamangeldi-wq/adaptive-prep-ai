@@ -247,71 +247,110 @@ export default function SATVerbal() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
             <BookOpen className="h-7 w-7 text-primary" />
-            SAT Verbal Curriculum
+            SAT Curriculum
           </h1>
           <p className="text-muted-foreground mt-1">
-            25 topics covering the entire Digital SAT Reading & Writing section. Every lesson is recorded at 700+ difficulty in 4 learning styles.
+            Full-coverage Digital SAT lessons recorded at 700+ difficulty in 4 learning styles.
           </p>
-          <div className="flex gap-2 mt-3">
-            <Badge variant="outline">25 Topics</Badge>
-            <Badge variant="outline">100 Lessons</Badge>
-            <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
-              700+ Mastery Track
-            </Badge>
-          </div>
         </div>
 
-        {loadingTopics ? (
-          <div className="grid gap-3 md:grid-cols-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {topics.map((topic) => {
-              const isCompleted = completedTopicIds.has(topic.id);
-              return (
-                <Card
-                  key={topic.id}
-                  className="cursor-pointer hover:border-primary/40 transition-colors"
-                  onClick={() => setSelectedTopicId(topic.id)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
-                        {topic.order_index}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-semibold text-foreground">{topic.title}</h3>
-                          {isCompleted && (
-                            <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                          )}
+        <Tabs defaultValue="verbal" className="w-full">
+          <TabsList className="grid w-full sm:w-96 grid-cols-2">
+            <TabsTrigger value="verbal" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              Verbal
+            </TabsTrigger>
+            <TabsTrigger value="math" className="gap-2">
+              <Calculator className="h-4 w-4" />
+              Math
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="verbal" className="space-y-6 mt-6">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">25 Topics</Badge>
+              <Badge variant="outline">100 Lessons</Badge>
+              <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
+                700+ Mastery Track
+              </Badge>
+            </div>
+
+            {loadingTopics ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-24" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                {topics.map((topic) => {
+                  const isCompleted = completedTopicIds.has(topic.id);
+                  return (
+                    <Card
+                      key={topic.id}
+                      className="cursor-pointer hover:border-primary/40 transition-colors"
+                      onClick={() => setSelectedTopicId(topic.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
+                            {topic.order_index}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="font-semibold text-foreground">{topic.title}</h3>
+                              {isCompleted && (
+                                <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              )}
+                            </div>
+                            {topic.description && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                {topic.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="secondary" className="text-xs">
+                                4 styles
+                              </Badge>
+                              {topic.category && (
+                                <Badge variant="outline" className="text-xs capitalize">
+                                  {topic.category.replace("_", " ")}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        {topic.description && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {topic.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="secondary" className="text-xs">
-                            4 styles
-                          </Badge>
-                          {topic.category && (
-                            <Badge variant="outline" className="text-xs capitalize">
-                              {topic.category.replace("_", " ")}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="math" className="mt-6">
+            <Card className="border-dashed border-border/60">
+              <CardContent className="p-10 flex flex-col items-center text-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Calculator className="h-8 w-8 text-primary" />
+                </div>
+                <div className="space-y-2 max-w-md">
+                  <h3 className="text-xl font-semibold text-foreground">SAT Math Curriculum</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Math lessons covering Algebra, Advanced Math, Problem-Solving & Data Analysis, and Geometry & Trigonometry — all at 700+ difficulty in 4 learning styles.
+                  </p>
+                </div>
+                <Badge variant="outline" className="gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
+                  Coming soon
+                </Badge>
+                <p className="text-xs text-muted-foreground max-w-sm">
+                  We're building the Math track next. In the meantime, practice math with full-length tests and the AI Coach.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
