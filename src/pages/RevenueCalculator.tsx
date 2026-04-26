@@ -10,6 +10,7 @@ import { PRICING_CONFIG, fmtKZT } from "@/lib/pricing-config";
 import { Calculator, TrendingUp, Building2, GraduationCap, Receipt } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { canAccessCalculator } from "@/lib/calculator-access";
+import SchoolQuoteBuilder from "@/components/calculator/SchoolQuoteBuilder";
 
 // KZ tax rates
 const VAT_RATE = 0.12; // 12% NDS
