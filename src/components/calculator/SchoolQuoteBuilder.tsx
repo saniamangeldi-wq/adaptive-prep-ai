@@ -119,7 +119,7 @@ export default function SchoolQuoteBuilder() {
 
     const moBase = basePrice + topicFee + addonTotal;
     const discount = moBase * periodInfo.discount;
-    const moNet = moBase - discount;
+    const moNet = moBase - discount;            // net monthly price (excl. VAT) — what 1 school pays per month
     const periodNet = moNet * periodInfo.months;
 
     let upfrontAmt = 0;
@@ -141,24 +141,31 @@ export default function SchoolQuoteBuilder() {
 
     const subtotal = periodNet + upfrontAmt; // net price the school agrees to (excl. VAT)
 
+    // ===== AUTO TAX REGIME =====
+    // KZ Simplified threshold ≈ ₸124M / yr → in USD ≈ 124_000_000 / kztRate
+    // Project annual gross across all schools at this price (× estSchoolCount × 12 / period months for upfront-less recurring view)
+    const annualNetPerSchool = moNet * 12;
+    const projectedAnnualGross = annualNetPerSchool * Math.max(1, estSchoolCount);
+    const thresholdUSD = 124_000_000 / Math.max(1, kztRate);
+    const autoRegime: TaxRegime = projectedAnnualGross < thresholdUSD ? "simplified" : "general";
+    const taxRegime: TaxRegime = taxAuto ? autoRegime : taxRegimeManual;
+
     // KZ tax model
-    //  • Simplified: NOT a VAT payer → invoice = subtotal, pay 4% on gross revenue received
-    //  • General:    VAT 16% added on top → invoice = subtotal * 1.16; CIT 20% on profit
     const vat = taxRegime === "general" ? subtotal * VAT_RATE : 0;
     const invoice = subtotal + vat;
+    const monthlySchoolPays = moNet * (taxRegime === "general" ? 1 + VAT_RATE : 1);
 
     // Cost-to-serve
-    const aiCost = students * aiCostPerStudent;          // AI/audio per active student
-    const supportBuf = moNet * 0.05;                      // 5% support buffer
+    const aiCost = students * aiCostPerStudent;
+    const supportBuf = moNet * 0.05;
     const costMo = fixedOverhead + aiCost + supportBuf;
     const cost = costMo * periodInfo.months;
 
-    // Stripe processing on the gross invoice (single charge per period assumed)
+    // Stripe processing on the gross invoice
     const stripeFee = includeStripe ? invoice * STRIPE_PCT + STRIPE_FIXED : 0;
 
     // Tax payable
     const simpTax = taxRegime === "simplified" ? subtotal * SIMPLIFIED_RATE : 0;
-    // For general regime, CIT is 20% of (revenue - costs - stripe). VAT is pass-through (collected, not income).
     const profitBeforeTax = subtotal - cost - stripeFee;
     const citTax = taxRegime === "general" ? Math.max(0, profitBeforeTax) * CIT_RATE : 0;
     const taxTotal = simpTax + citTax;
@@ -169,10 +176,11 @@ export default function SchoolQuoteBuilder() {
     return {
       topicFee, addonTotal, hasExtras, moBase, discount, moNet, periodNet,
       upfrontAmt, upfrontLbl, useUpfront, autoFirstMonth, autoSetupFee,
-      subtotal, vat, invoice, simpTax, citTax, taxTotal, stripeFee,
+      subtotal, vat, invoice, monthlySchoolPays, simpTax, citTax, taxTotal, stripeFee,
       cost, profit, margin,
+      taxRegime, autoRegime, projectedAnnualGross, thresholdUSD,
     };
-  }, [basePrice, selectedTopics, toggleAddons, qtyAddons, periodInfo, upfrontEnabled, upfrontMode, upfrontCustomAmount, upfrontLabel, students, taxRegime, aiCostPerStudent, fixedOverhead, includeStripe]);
+  }, [basePrice, selectedTopics, toggleAddons, qtyAddons, periodInfo, upfrontEnabled, upfrontMode, upfrontCustomAmount, upfrontLabel, students, taxAuto, taxRegimeManual, estSchoolCount, kztRate, aiCostPerStudent, fixedOverhead, includeStripe]);
 
   const toggleTopic = (t: string) => {
     setSelectedTopics((prev) => {
