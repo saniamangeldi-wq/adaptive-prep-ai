@@ -143,6 +143,7 @@ function AppRoutes() {
       <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
       <Route path="/dashboard/tutor-billing" element={<ProtectedRoute><TutorBilling /></ProtectedRoute>} />
+      <Route path="/dashboard/revenue-calculator" element={<ProtectedRoute><RevenueCalculator /></ProtectedRoute>} />
       
       {/* Admin routes */}
       <Route path="/admin/upload-tests" element={<ProtectedRoute><UploadTests /></ProtectedRoute>} />
