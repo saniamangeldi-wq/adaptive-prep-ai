@@ -91,7 +91,7 @@ export function TierBadge() {
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-sidebar-foreground/70">AI Credits</span>
             <span className="text-xs font-medium text-sidebar-foreground">
-              {profile.credits_remaining}/{maxCredits}
+              {displayedCredits}/{maxCredits}
             </span>
           </div>
           <Progress value={100 - creditsPercentage} className="h-1.5" />
