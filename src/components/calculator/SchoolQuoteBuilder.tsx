@@ -231,7 +231,7 @@ export default function SchoolQuoteBuilder() {
       `Billing: ${periodInfo.label}${discLine}${upfrontLine}`,
       `Base Price: $${basePrice}/mo`,
       "",
-      `Invoice Total (incl. 16% VAT): ${fmt(calc.invoice)}`,
+      `Invoice Total${taxRegime === "general" ? " (incl. 16% VAT)" : ""}: ${fmt(calc.invoice)}`,
       `In KZT: ${fmtKzt(calc.invoice * kztRate)}`,
       `Est. Net Profit: ${fmt(calc.profit)} (${calc.margin.toFixed(1)}% margin)`,
       "------------------------------------",
