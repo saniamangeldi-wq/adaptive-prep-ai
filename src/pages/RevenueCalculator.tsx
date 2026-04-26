@@ -311,7 +311,8 @@ export default function RevenueCalculator() {
               </CardContent>
             </Card>
           </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
