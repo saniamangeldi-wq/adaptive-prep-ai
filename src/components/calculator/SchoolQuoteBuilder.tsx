@@ -46,9 +46,16 @@ const PERIODS = {
 } as const;
 type PeriodKey = keyof typeof PERIODS;
 
-// KZ 2026: VAT 16%, Simplified tax 4%
+// KZ 2026 tax regimes:
+//  • Simplified (СНР) — 4% on gross revenue, NOT a VAT payer (turnover < ~₸124M/yr threshold ≈ $236k)
+//  • General — 20% CIT on profit + 16% VAT on top of price (registered VAT payer)
+// Stripe international card fee (KZ): 3.9% + $0.30/charge
+const STRIPE_PCT = 0.039;
+const STRIPE_FIXED = 0.30;
+type TaxRegime = "simplified" | "general";
 const VAT_RATE = 0.16;
-const SIMPLIFIED_TAX = 0.04;
+const SIMPLIFIED_RATE = 0.04;
+const CIT_RATE = 0.20;
 
 const fmt = (n: number) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtKzt = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 0 }) + " ₸";
