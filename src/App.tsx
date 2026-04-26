@@ -56,6 +56,7 @@ import Achievements from "./pages/Achievements";
 import Unsubscribe from "./pages/Unsubscribe";
 import VideoLessons from "./pages/VideoLessons";
 import SATVerbal from "./pages/SATVerbal";
+import RevenueCalculator from "./pages/RevenueCalculator";
 
 const queryClient = new QueryClient();
 
