@@ -176,11 +176,24 @@ export default function RevenueCalculator() {
           <div>
             <h1 className="text-2xl font-bold">Revenue Calculator</h1>
             <p className="text-sm text-muted-foreground">
-              Schools + Tutors revenue with KZ taxes (12% VAT + 20% CIT)
+              Portfolio projections + per-school quote builder
             </p>
           </div>
         </div>
 
+        <Tabs defaultValue="portfolio" className="w-full">
+          <TabsList>
+            <TabsTrigger value="portfolio">Portfolio P&L</TabsTrigger>
+            <TabsTrigger value="quote">School Quote Builder</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="quote" className="mt-6">
+            <SchoolQuoteBuilder />
+          </TabsContent>
+
+          <TabsContent value="portfolio" className="mt-6 space-y-6">
+
+        
         <Tabs value={scenario} onValueChange={(v) => setScenario(v as Scenario)}>
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="low">Low (×0.5)</TabsTrigger>
