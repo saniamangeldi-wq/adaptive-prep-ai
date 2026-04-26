@@ -622,8 +622,19 @@ export default function SchoolQuoteBuilder() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary tracking-tight">{fmt(calc.invoice)}</div>
-            <div className="text-sm text-muted-foreground">≈ {fmtKzt(calc.invoice * kztRate)} {suffix}</div>
+            {/* HERO: monthly amount the school pays */}
+            <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 mb-3">
+              <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground font-semibold">School pays per month</div>
+              <div className="text-3xl font-bold text-primary tracking-tight">{fmt(calc.monthlySchoolPays)}</div>
+              <div className="text-xs text-muted-foreground">
+                ≈ {fmtKzt(calc.monthlySchoolPays * kztRate)} / mo
+                {calc.taxRegime === "general" && <span className="ml-1">· incl. 16% VAT</span>}
+              </div>
+            </div>
+
+            <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Invoice for {periodInfo.label.toLowerCase()}</div>
+            <div className="text-xl font-semibold tracking-tight">{fmt(calc.invoice)}</div>
+            <div className="text-xs text-muted-foreground">≈ {fmtKzt(calc.invoice * kztRate)} {suffix}</div>
 
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 font-semibold mt-4 mb-1">Breakdown</div>
             <Row label="Base plan price/mo" value={fmt(basePrice)} />
@@ -644,9 +655,10 @@ export default function SchoolQuoteBuilder() {
             />
 
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 font-semibold mt-3 mb-1">
-              Kazakhstan Tax · {taxRegime === "simplified" ? "Simplified (СНР 4%)" : "General (VAT 16% + CIT 20%)"}
+              Kazakhstan Tax · {calc.taxRegime === "simplified" ? "Simplified (СНР 4%)" : "General (VAT 16% + CIT 20%)"}
+              {taxAuto && <span className="ml-1 text-emerald-500 normal-case">(auto)</span>}
             </div>
-            {taxRegime === "general" && (
+            {calc.taxRegime === "general" && (
               <Row label="VAT 16% (collected, pass-through)" value={"+" + fmt(calc.vat)} valueClass="text-amber-500" />
             )}
             <Row
@@ -661,7 +673,7 @@ export default function SchoolQuoteBuilder() {
             {calc.stripeFee > 0 && (
               <Row label="Stripe fee (3.9% + $0.30)" value={"−" + fmt(calc.stripeFee)} valueClass="text-rose-500" />
             )}
-            {taxRegime === "simplified" ? (
+            {calc.taxRegime === "simplified" ? (
               <Row label="Simplified tax 4% (on revenue)" value={"−" + fmt(calc.simpTax)} valueClass="text-amber-500" />
             ) : (
               <Row label="CIT 20% (on profit)" value={"−" + fmt(calc.citTax)} valueClass="text-amber-500" />
