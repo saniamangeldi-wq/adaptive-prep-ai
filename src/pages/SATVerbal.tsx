@@ -2,20 +2,20 @@ import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LessonPlayer } from "@/components/lessons/LessonPlayer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, BookOpen, Play, CheckCircle2, Lock, Sparkles, Calculator, Clock } from "lucide-react";
+import { ArrowLeft, BookOpen, Play, CheckCircle2, Sparkles, Calculator, Loader2, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Style = "visual" | "auditory" | "kinesthetic" | "reading_writing";
+type Track = "verbal" | "math";
 
-interface VerbalTopic {
+interface Topic {
   id: string;
   slug: string;
   title: string;
@@ -24,7 +24,7 @@ interface VerbalTopic {
   category: string | null;
 }
 
-interface VerbalLesson {
+interface Lesson {
   id: string;
   topic_id: string;
   learning_style: string;
@@ -53,11 +53,14 @@ const STYLE_EMOJI: Record<Style, string> = {
 export default function SATVerbal() {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [activeTrack, setActiveTrack] = useState<Track>("verbal");
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
-  const [activeLesson, setActiveLesson] = useState<VerbalLesson | null>(null);
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [completedTopicIds, setCompletedTopicIds] = useState<Set<string>>(new Set());
+  const [generatingTopicId, setGeneratingTopicId] = useState<string | null>(null);
 
-  // Resolve user's preferred VAK style
+  // Auto-resolve user's preferred VAK style — no manual override
   const userStyle: Style = useMemo(() => {
     const primary = profile?.vak_primary_style as string | null | undefined;
     if (primary === "visual" || primary === "auditory" || primary === "kinesthetic" || primary === "reading_writing") {
@@ -66,46 +69,58 @@ export default function SATVerbal() {
     return "visual";
   }, [profile?.vak_primary_style]);
 
-  const [styleOverride, setStyleOverride] = useState<Style>(userStyle);
+  const topicsTable = activeTrack === "verbal" ? "verbal_topics" : "math_topics";
+  const lessonsTable = activeTrack === "verbal" ? "verbal_lessons" : "math_lessons";
 
   const { data: topics = [], isLoading: loadingTopics } = useQuery({
-    queryKey: ["verbal-topics"],
+    queryKey: [topicsTable],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("verbal_topics")
+        .from(topicsTable as any)
         .select("*")
         .order("order_index", { ascending: true });
       if (error) throw error;
-      return data as VerbalTopic[];
+      return (data as unknown) as Topic[];
     },
   });
 
   const { data: lessonsForTopic, isLoading: loadingLessons } = useQuery({
-    queryKey: ["verbal-lessons", selectedTopicId],
+    queryKey: [lessonsTable, selectedTopicId],
     queryFn: async () => {
       if (!selectedTopicId) return [];
       const { data, error } = await supabase
-        .from("verbal_lessons")
+        .from(lessonsTable as any)
         .select("*")
         .eq("topic_id", selectedTopicId);
       if (error) throw error;
-      return data as VerbalLesson[];
+      return (data as unknown) as Lesson[];
     },
     enabled: !!selectedTopicId,
   });
 
-  const startLesson = (lesson: VerbalLesson) => {
-    setActiveLesson(lesson);
-  };
+  const startLesson = (lesson: Lesson) => setActiveLesson(lesson);
 
   const onLessonComplete = () => {
     if (activeLesson) {
       setCompletedTopicIds((prev) => new Set([...prev, activeLesson.topic_id]));
     }
-    toast({
-      title: "Lesson complete! 🎉",
-      description: "Great work — you mastered a 700+ verbal skill.",
-    });
+    toast({ title: "Lesson complete! 🎉", description: "Great work — you mastered a 700+ skill." });
+  };
+
+  const generateMathLesson = async (topicId: string) => {
+    setGeneratingTopicId(topicId);
+    try {
+      const { error } = await supabase.functions.invoke("generate-math-lesson", {
+        body: { topic_id: topicId, styles: [userStyle] },
+      });
+      if (error) throw error;
+      toast({ title: "Lesson ready! ✨", description: "Your personalized math lesson has been generated." });
+      await queryClient.invalidateQueries({ queryKey: [lessonsTable, topicId] });
+    } catch (e: any) {
+      toast({ title: "Generation failed", description: e.message || "Try again", variant: "destructive" });
+    } finally {
+      setGeneratingTopicId(null);
+    }
   };
 
   // -------- Player view --------
@@ -124,15 +139,15 @@ export default function SATVerbal() {
         <div className="max-w-3xl mx-auto space-y-4">
           <Button variant="ghost" className="gap-2" onClick={() => setActiveLesson(null)}>
             <ArrowLeft className="h-4 w-4" />
-            Back to Verbal Curriculum
+            Back to Curriculum
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">{activeLesson.title}</h1>
             <div className="flex gap-2 mt-2">
-              <Badge variant="outline">SAT Verbal</Badge>
+              <Badge variant="outline">SAT {activeTrack === "math" ? "Math" : "Verbal"}</Badge>
               <Badge variant="outline">700+ Difficulty</Badge>
               <Badge variant="secondary">
-                {STYLE_EMOJI[activeLesson.learning_style as Style]} {STYLE_LABEL[activeLesson.learning_style as Style]} learner
+                {STYLE_EMOJI[activeLesson.learning_style as Style]} {STYLE_LABEL[activeLesson.learning_style as Style]}
               </Badge>
             </div>
             {activeLesson.hook && (
@@ -154,7 +169,11 @@ export default function SATVerbal() {
   // -------- Topic detail view --------
   if (selectedTopicId) {
     const topic = topics.find((t) => t.id === selectedTopicId);
-    const lesson = lessonsForTopic?.find((l) => l.learning_style === styleOverride);
+    // Auto-pick user's style; fall back to any available variant
+    const lesson =
+      lessonsForTopic?.find((l) => l.learning_style === userStyle) ||
+      lessonsForTopic?.[0];
+    const isGenerating = generatingTopicId === selectedTopicId;
 
     return (
       <DashboardLayout>
@@ -171,36 +190,19 @@ export default function SATVerbal() {
                 <p className="text-muted-foreground mt-2">{topic.description}</p>
               )}
               <div className="flex gap-2 mt-3">
-                <Badge variant="outline">SAT Verbal</Badge>
+                <Badge variant="outline">SAT {activeTrack === "math" ? "Math" : "Verbal"}</Badge>
                 <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
                   700+ Difficulty
+                </Badge>
+                <Badge variant="secondary">
+                  {STYLE_EMOJI[userStyle]} Auto-matched to your {STYLE_LABEL[userStyle]} style
                 </Badge>
               </div>
             </div>
           )}
 
           <Card className="border-border/50">
-            <CardContent className="p-5 space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground">Choose your learning style</label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Each lesson is recorded in 4 styles. Pick the one that matches how you learn best.
-                </p>
-              </div>
-              <Select value={styleOverride} onValueChange={(v) => setStyleOverride(v as Style)}>
-                <SelectTrigger className="w-full sm:w-72">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(STYLE_LABEL) as Style[]).map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {STYLE_EMOJI[s]} {STYLE_LABEL[s]}
-                      {s === userStyle ? " (your style)" : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
+            <CardContent className="p-5">
               {loadingLessons ? (
                 <Skeleton className="h-32" />
               ) : lesson ? (
@@ -230,8 +232,38 @@ export default function SATVerbal() {
                     </div>
                   </CardContent>
                 </Card>
+              ) : activeTrack === "math" ? (
+                <div className="flex flex-col items-center text-center py-8 gap-4">
+                  <div className="w-14 h-14 rounded-full bg-primary/15 flex items-center justify-center">
+                    <Wand2 className="h-7 w-7 text-primary" />
+                  </div>
+                  <div className="space-y-1 max-w-md">
+                    <h3 className="font-semibold text-foreground">Generate this lesson now</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Personalized to your <span className="text-foreground font-medium">{STYLE_LABEL[userStyle]}</span> learning style. Takes ~20 seconds.
+                    </p>
+                  </div>
+                  <Button
+                    size="lg"
+                    onClick={() => generateMathLesson(selectedTopicId)}
+                    disabled={isGenerating}
+                    className="gap-2"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating your lesson...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Generate Lesson
+                      </>
+                    )}
+                  </Button>
+                </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No lesson found for this style.</p>
+                <p className="text-sm text-muted-foreground">No lesson found for this topic.</p>
               )}
             </CardContent>
           </Card>
@@ -250,11 +282,12 @@ export default function SATVerbal() {
             SAT Curriculum
           </h1>
           <p className="text-muted-foreground mt-1">
-            Full-coverage Digital SAT lessons recorded at 700+ difficulty in 4 learning styles.
+            Full-coverage Digital SAT lessons recorded at 700+ difficulty — automatically matched to your{" "}
+            <span className="text-foreground font-medium">{STYLE_LABEL[userStyle]}</span> learning style.
           </p>
         </div>
 
-        <Tabs defaultValue="verbal" className="w-full">
+        <Tabs value={activeTrack} onValueChange={(v) => { setActiveTrack(v as Track); setSelectedTopicId(null); }} className="w-full">
           <TabsList className="grid w-full sm:w-96 grid-cols-2">
             <TabsTrigger value="verbal" className="gap-2">
               <BookOpen className="h-4 w-4" />
@@ -270,88 +303,73 @@ export default function SATVerbal() {
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline">25 Topics</Badge>
               <Badge variant="outline">100 Lessons</Badge>
-              <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">
-                700+ Mastery Track
-              </Badge>
+              <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">700+ Mastery Track</Badge>
             </div>
-
-            {loadingTopics ? (
-              <div className="grid gap-3 md:grid-cols-2">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2">
-                {topics.map((topic) => {
-                  const isCompleted = completedTopicIds.has(topic.id);
-                  return (
-                    <Card
-                      key={topic.id}
-                      className="cursor-pointer hover:border-primary/40 transition-colors"
-                      onClick={() => setSelectedTopicId(topic.id)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
-                            {topic.order_index}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-semibold text-foreground">{topic.title}</h3>
-                              {isCompleted && (
-                                <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                              )}
-                            </div>
-                            {topic.description && (
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                {topic.description}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="secondary" className="text-xs">
-                                4 styles
-                              </Badge>
-                              {topic.category && (
-                                <Badge variant="outline" className="text-xs capitalize">
-                                  {topic.category.replace("_", " ")}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
+            {renderTopicGrid()}
           </TabsContent>
 
-          <TabsContent value="math" className="mt-6">
-            <Card className="border-dashed border-border/60">
-              <CardContent className="p-10 flex flex-col items-center text-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Calculator className="h-8 w-8 text-primary" />
-                </div>
-                <div className="space-y-2 max-w-md">
-                  <h3 className="text-xl font-semibold text-foreground">SAT Math Curriculum</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Math lessons covering Algebra, Advanced Math, Problem-Solving & Data Analysis, and Geometry & Trigonometry — all at 700+ difficulty in 4 learning styles.
-                  </p>
-                </div>
-                <Badge variant="outline" className="gap-1.5">
-                  <Clock className="h-3.5 w-3.5" />
-                  Coming soon
-                </Badge>
-                <p className="text-xs text-muted-foreground max-w-sm">
-                  We're building the Math track next. In the meantime, practice math with full-length tests and the AI Coach.
-                </p>
-              </CardContent>
-            </Card>
+          <TabsContent value="math" className="space-y-6 mt-6">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">22 Topics</Badge>
+              <Badge variant="outline">Algebra · Advanced · Data · Geometry</Badge>
+              <Badge variant="default" className="bg-primary/20 text-primary border-primary/30">700+ Mastery Track</Badge>
+              <Badge variant="secondary" className="gap-1.5">
+                <Sparkles className="h-3 w-3" /> Generated on-demand
+              </Badge>
+            </div>
+            {renderTopicGrid()}
           </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
   );
+
+  function renderTopicGrid() {
+    if (loadingTopics) {
+      return (
+        <div className="grid gap-3 md:grid-cols-2">
+          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
+        </div>
+      );
+    }
+    return (
+      <div className="grid gap-3 md:grid-cols-2">
+        {topics.map((topic) => {
+          const isCompleted = completedTopicIds.has(topic.id);
+          return (
+            <Card
+              key={topic.id}
+              className="cursor-pointer hover:border-primary/40 transition-colors"
+              onClick={() => setSelectedTopicId(topic.id)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
+                    {topic.order_index}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-foreground">{topic.title}</h3>
+                      {isCompleted && <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />}
+                    </div>
+                    {topic.description && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{topic.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="secondary" className="text-xs">Auto-styled</Badge>
+                      {topic.category && (
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {topic.category.replace("_", " ")}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  }
 }
