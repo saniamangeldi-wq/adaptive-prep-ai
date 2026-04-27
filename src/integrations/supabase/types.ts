@@ -924,6 +924,130 @@ export type Database = {
         }
         Relationships: []
       }
+      math_lessons: {
+        Row: {
+          checkpoint_questions: Json
+          created_at: string
+          estimated_minutes: number | null
+          hook: string | null
+          id: string
+          is_published: boolean
+          learning_style: string
+          sections: Json
+          summary: string | null
+          title: string
+          topic_id: string
+          updated_at: string
+        }
+        Insert: {
+          checkpoint_questions?: Json
+          created_at?: string
+          estimated_minutes?: number | null
+          hook?: string | null
+          id?: string
+          is_published?: boolean
+          learning_style: string
+          sections?: Json
+          summary?: string | null
+          title: string
+          topic_id: string
+          updated_at?: string
+        }
+        Update: {
+          checkpoint_questions?: Json
+          created_at?: string
+          estimated_minutes?: number | null
+          hook?: string | null
+          id?: string
+          is_published?: boolean
+          learning_style?: string
+          sections?: Json
+          summary?: string | null
+          title?: string
+          topic_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "math_lessons_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "math_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      math_topic_progress: {
+        Row: {
+          completed_at: string
+          id: string
+          topic_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          topic_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          topic_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "math_topic_progress_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "math_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      math_topics: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          estimated_minutes: number | null
+          id: string
+          is_published: boolean
+          order_index: number
+          slug: string
+          target_skill: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          slug: string
+          target_skill?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          is_published?: boolean
+          order_index?: number
+          slug?: string
+          target_skill?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       module_attempts: {
         Row: {
           answers: Json
