@@ -80,7 +80,7 @@ export default function SATVerbal() {
         .select("*")
         .order("order_index", { ascending: true });
       if (error) throw error;
-      return data as Topic[];
+      return (data as unknown) as Topic[];
     },
   });
 
@@ -93,7 +93,7 @@ export default function SATVerbal() {
         .select("*")
         .eq("topic_id", selectedTopicId);
       if (error) throw error;
-      return data as Lesson[];
+      return (data as unknown) as Lesson[];
     },
     enabled: !!selectedTopicId,
   });
