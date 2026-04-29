@@ -10,10 +10,12 @@ import { GradeLevelStep } from "@/components/onboarding/GradeLevelStep";
 import { SubjectSelectionStep } from "@/components/onboarding/SubjectSelectionStep";
 import { VAKAssessment } from "@/components/onboarding/VAKAssessment";
 import { VAKResults } from "@/components/onboarding/VAKResults";
+import { CognitiveBaseline } from "@/components/onboarding/CognitiveBaseline";
 import { calculateVAKResult, type VAKResult } from "@/lib/vak-scoring";
 import { type VAKStyle } from "@/lib/vak-questions";
+import type { CognitiveScores } from "@/lib/cognitive-baseline";
 
-type OnboardingPhase = "grade" | "subjects" | "vak" | "results";
+type OnboardingPhase = "grade" | "subjects" | "vak" | "results" | "cognitive";
 
 export default function Onboarding() {
   const [searchParams] = useSearchParams();
