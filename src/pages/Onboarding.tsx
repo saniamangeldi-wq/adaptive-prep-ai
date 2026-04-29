@@ -10,10 +10,12 @@ import { GradeLevelStep } from "@/components/onboarding/GradeLevelStep";
 import { SubjectSelectionStep } from "@/components/onboarding/SubjectSelectionStep";
 import { VAKAssessment } from "@/components/onboarding/VAKAssessment";
 import { VAKResults } from "@/components/onboarding/VAKResults";
+import { CognitiveBaseline } from "@/components/onboarding/CognitiveBaseline";
 import { calculateVAKResult, type VAKResult } from "@/lib/vak-scoring";
 import { type VAKStyle } from "@/lib/vak-questions";
+import type { CognitiveScores } from "@/lib/cognitive-baseline";
 
-type OnboardingPhase = "grade" | "subjects" | "vak" | "results";
+type OnboardingPhase = "grade" | "subjects" | "vak" | "results" | "cognitive";
 
 export default function Onboarding() {
   const [searchParams] = useSearchParams();
@@ -118,9 +120,8 @@ export default function Onboarding() {
     setPhase("results");
   };
 
-  const handleComplete = async () => {
+  const saveVAKAndContinue = async (goToCognitive: boolean) => {
     if (!user || !vakResult) return;
-
     setLoading(true);
     try {
       const updateData: Record<string, any> = {
@@ -136,12 +137,11 @@ export default function Onboarding() {
         vak_progress: null,
       };
 
-      // Only set these on first onboarding, not retake
       if (!isRetake) {
         updateData.grade_level = gradeLevel;
         updateData.primary_goal = "SAT";
         updateData.study_subjects = selectedSubjects;
-        updateData.onboarding_completed = true;
+        // onboarding_completed gets set after cognitive baseline
       }
 
       const { error: profileError } = await supabase
@@ -152,29 +152,29 @@ export default function Onboarding() {
       if (profileError) throw profileError;
 
       const answersObj = savedVAKProgress?.answers ?? {};
-      const { error: quizError } = await supabase
-        .from("learning_style_responses")
-        .insert({
-          user_id: user.id,
-          responses: answersObj,
-          calculated_style: vakResult.primaryStyle,
-          confidence_scores: {
-            visual: vakResult.scores.visual,
-            auditory: vakResult.scores.auditory,
-            kinesthetic: vakResult.scores.kinesthetic,
-          },
-        });
-
-      if (quizError) throw quizError;
+      await supabase.from("learning_style_responses").insert({
+        user_id: user.id,
+        responses: answersObj,
+        calculated_style: vakResult.primaryStyle,
+        confidence_scores: {
+          visual: vakResult.scores.visual,
+          auditory: vakResult.scores.auditory,
+          kinesthetic: vakResult.scores.kinesthetic,
+        },
+      });
 
       await refreshProfile();
 
       if (isRetake) {
         toast.success(`✅ Learning style updated to ${vakResult.label}!`);
         navigate("/settings");
+        return;
+      }
+
+      if (goToCognitive && !(profile as any)?.cognitive_baseline_completed) {
+        setPhase("cognitive");
       } else {
-        toast.success(`✅ Your platform is now personalized for ${vakResult.label}s!`);
-        navigate("/dashboard");
+        await finalizeOnboarding();
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to save preferences");
@@ -182,6 +182,61 @@ export default function Onboarding() {
       setLoading(false);
     }
   };
+
+  const handleComplete = async () => {
+    await saveVAKAndContinue(true);
+  };
+
+  const finalizeOnboarding = async () => {
+    if (!user) return;
+    await supabase
+      .from("profiles")
+      .update({ onboarding_completed: true } as any)
+      .eq("user_id", user.id);
+    await refreshProfile();
+    toast.success(`✅ Your platform is now personalized for you!`);
+    navigate("/dashboard");
+  };
+
+  const handleCognitiveComplete = async (scores: CognitiveScores, raw: any) => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      await supabase.from("cognitive_profiles" as any).upsert(
+        {
+          user_id: user.id,
+          processing_speed: scores.processing_speed,
+          working_memory: scores.working_memory,
+          reasoning_style: scores.reasoning_style,
+          attention_stamina: scores.attention_stamina,
+          baseline_data: raw,
+          sample_count: 1,
+          confidence: 40,
+        },
+        { onConflict: "user_id" }
+      );
+      await supabase
+        .from("profiles")
+        .update({ cognitive_baseline_completed: true } as any)
+        .eq("user_id", user.id);
+      await finalizeOnboarding();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save cognitive profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (phase === "cognitive") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 dark">
+        <div className="max-w-xl w-full">
+          <CognitiveBaseline onComplete={handleCognitiveComplete} />
+          {loading && <div className="text-center text-sm text-muted-foreground mt-4">Saving...</div>}
+        </div>
+      </div>
+    );
+  }
 
   if (phase === "results" && vakResult) {
     return (

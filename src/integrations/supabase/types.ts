@@ -298,6 +298,90 @@ export type Database = {
           },
         ]
       }
+      cognitive_events: {
+        Row: {
+          created_at: string
+          difficulty: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          response_time_ms: number | null
+          retry_count: number | null
+          subject: string | null
+          used_hint: boolean | null
+          user_id: string
+          was_correct: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          retry_count?: number | null
+          subject?: string | null
+          used_hint?: boolean | null
+          user_id: string
+          was_correct?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          retry_count?: number | null
+          subject?: string | null
+          used_hint?: boolean | null
+          user_id?: string
+          was_correct?: boolean | null
+        }
+        Relationships: []
+      }
+      cognitive_profiles: {
+        Row: {
+          attention_stamina: number
+          baseline_data: Json
+          confidence: number
+          created_at: string
+          id: string
+          last_updated_at: string
+          processing_speed: number
+          reasoning_style: number
+          sample_count: number
+          user_id: string
+          working_memory: number
+        }
+        Insert: {
+          attention_stamina?: number
+          baseline_data?: Json
+          confidence?: number
+          created_at?: string
+          id?: string
+          last_updated_at?: string
+          processing_speed?: number
+          reasoning_style?: number
+          sample_count?: number
+          user_id: string
+          working_memory?: number
+        }
+        Update: {
+          attention_stamina?: number
+          baseline_data?: Json
+          confidence?: number
+          created_at?: string
+          id?: string
+          last_updated_at?: string
+          processing_speed?: number
+          reasoning_style?: number
+          sample_count?: number
+          user_id?: string
+          working_memory?: number
+        }
+        Relationships: []
+      }
       conversation_attachments: {
         Row: {
           conversation_id: string | null
@@ -1156,6 +1240,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          cognitive_baseline_completed: boolean
           created_at: string
           credits_remaining: number
           credits_reset_at: string | null
@@ -1195,6 +1280,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          cognitive_baseline_completed?: boolean
           created_at?: string
           credits_remaining?: number
           credits_reset_at?: string | null
@@ -1234,6 +1320,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          cognitive_baseline_completed?: boolean
           created_at?: string
           credits_remaining?: number
           credits_reset_at?: string | null
