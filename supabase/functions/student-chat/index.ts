@@ -703,7 +703,29 @@ serve(async (req) => {
       fullName: profile.full_name ?? null,
       studySubjects: userSubjects,
     };
-    const systemPrompt = getStudentSystemPrompt(profileCtx, modelConfig.qualityNote, detectedSubject);
+    let systemPrompt = getStudentSystemPrompt(profileCtx, modelConfig.qualityNote, detectedSubject);
+
+    // Append cognitive profile guidance if available
+    try {
+      const { data: cog } = await supabase
+        .from("cognitive_profiles")
+        .select("processing_speed, working_memory, reasoning_style, attention_stamina")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (cog) {
+        const cogLines: string[] = ["\n\nSTUDENT COGNITIVE PROFILE (adapt your tone and depth accordingly):"];
+        if (cog.processing_speed >= 70) cogLines.push("- Fast processor: skip filler, get to the point quickly.");
+        else if (cog.processing_speed <= 35) cogLines.push("- Deliberate processor: slow down, give them time, avoid information overload.");
+        if (cog.working_memory >= 70) cogLines.push("- Strong working memory: dense multi-step explanations OK.");
+        else if (cog.working_memory <= 35) cogLines.push("- Limited working memory: chunk into 2-3 steps max, repeat key facts.");
+        if (cog.reasoning_style >= 70) cogLines.push("- Logical/step-by-step thinker: show numbered steps, justify each move.");
+        else if (cog.reasoning_style <= 35) cogLines.push("- Intuitive/pattern thinker: lead with the big-picture insight or analogy first.");
+        if (cog.attention_stamina <= 40) cogLines.push("- Lower attention stamina: keep responses under ~150 words.");
+        if (cogLines.length > 1) systemPrompt += cogLines.join("\n") + "\n";
+      }
+    } catch (e) {
+      console.error("Could not load cognitive profile:", e);
+    }
 
     let response: Response;
 
