@@ -31,7 +31,7 @@ const lengthToQuestions: Record<string, number> = {
   short: 25,
   medium: 50,
   long: 75,
-  full: 154,
+  full: 98, // Official Digital SAT: 54 R&W + 44 Math
 };
 
 const lengthToMinutes: Record<string, number> = {
