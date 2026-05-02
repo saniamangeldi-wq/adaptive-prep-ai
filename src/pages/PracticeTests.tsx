@@ -103,6 +103,18 @@ export default function PracticeTests() {
         return;
       }
 
+      // Warn the user if the official test couldn't reach the full 98-question pool
+      if (testMode === "official") {
+        const rwCount = test.questions.filter(q => q.section === "reading_writing").length;
+        const mathCount = test.questions.filter(q => q.section === "math").length;
+        if (rwCount < 54 || mathCount < 44) {
+          toast({
+            title: "Limited question pool",
+            description: `Only ${rwCount} Reading/Writing and ${mathCount} Math questions were available. The full SAT requires 54 + 44. More need to be ingested.`,
+          });
+        }
+      }
+
       // Navigate to the appropriate test-taking page based on mode
       if (testMode === "official") {
         navigate(`/dashboard/sat-test/${test.id}`, { state: { test } });
