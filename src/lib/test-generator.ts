@@ -98,16 +98,25 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     testTypes = [config.testType];
   }
   
-  // Fetch questions from sat_tests table - try adapted difficulty first, fallback to original
-  let { data: tests, error } = await supabase
+  // For the official Digital SAT (combined + full) we MUST hit 54 R&W + 44 Math.
+  // The DB doesn't always have enough questions at a single difficulty, so for
+  // that mode we pull across all difficulties to maximize the available pool.
+  const isOfficialFull = config.testType === "combined" && config.length === "full";
+
+  let testsQuery = supabase
     .from("sat_tests")
     .select("id, questions, difficulty, test_type")
-    .eq("difficulty", adaptedDifficulty)
     .in("test_type", testTypes)
     .eq("is_official", true);
-  
+
+  if (!isOfficialFull) {
+    testsQuery = testsQuery.eq("difficulty", adaptedDifficulty);
+  }
+
+  let { data: tests, error } = await testsQuery;
+
   // Fallback to original difficulty if adapted yields no results
-  if ((!tests || tests.length === 0) && adaptedDifficulty !== config.difficulty) {
+  if (!isOfficialFull && (!tests || tests.length === 0) && adaptedDifficulty !== config.difficulty) {
     const fallback = await supabase
       .from("sat_tests")
       .select("id, questions, difficulty, test_type")
