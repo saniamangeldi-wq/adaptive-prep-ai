@@ -165,7 +165,7 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   let selectedQuestions: Question[];
   if (config.testType === "combined") {
     // Official Digital SAT structure: 54 R&W + 44 Math = 98 questions.
-    // For "full" length we must hit those exact counts so the test renders
+    // For "full" length we MUST hit those exact counts so the test renders
     // 27 + 27 R&W and 22 + 22 Math modules. Other lengths use a 50/50 split.
     const isFullOfficial = config.length === "full";
     const rwTarget = isFullOfficial ? 54 : Math.floor(targetQuestions / 2);
@@ -179,11 +179,39 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     const mathPool = [...unseenMath, ...seenMath];
     const rwPool = [...unseenRW, ...seenRW];
 
-    selectedQuestions = [
-      ...rwPool.slice(0, rwTarget),
-      ...mathPool.slice(0, mathTarget),
-    ];
+    // For official mode, GUARANTEE the exact module counts. If the bank is
+    // smaller than the target, repeat questions (with fresh ids per repeat)
+    // so the modules always render the correct number of slots.
+    const fillToTarget = (pool: Question[], target: number, sectionLabel: string): Question[] => {
+      if (pool.length === 0) return [];
+      if (pool.length >= target) return pool.slice(0, target);
+      const out: Question[] = [...pool];
+      let i = 0;
+      let repeatRound = 1;
+      while (out.length < target) {
+        const original = pool[i % pool.length];
+        // Clone with a unique id so React keys + answer tracking stay stable.
+        out.push({ ...original, id: `${original.id}__rep${repeatRound}` });
+        i++;
+        if (i % pool.length === 0) repeatRound++;
+      }
+      console.warn(`[SAT] ${sectionLabel} pool short (${pool.length}/${target}) — padded with repeats.`);
+      return out;
+    };
+
+    if (isFullOfficial) {
+      selectedQuestions = [
+        ...fillToTarget(rwPool, rwTarget, "Reading & Writing"),
+        ...fillToTarget(mathPool, mathTarget, "Math"),
+      ];
+    } else {
+      selectedQuestions = [
+        ...rwPool.slice(0, rwTarget),
+        ...mathPool.slice(0, mathTarget),
+      ];
+    }
     // NOTE: do NOT shuffle here — TakeSATTest splits by section/module.
+  } else {
     const prioritized = [
       ...unseenQuestions.sort(() => Math.random() - 0.5),
       ...seenQuestions.sort(() => Math.random() - 0.5),

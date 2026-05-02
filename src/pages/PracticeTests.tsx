@@ -103,14 +103,18 @@ export default function PracticeTests() {
         return;
       }
 
-      // Warn the user if the official test couldn't reach the full 98-question pool
+      // Detect if the official test was padded (some questions repeat because the bank is short)
       if (testMode === "official") {
-        const rwCount = test.questions.filter(q => q.section === "reading_writing").length;
-        const mathCount = test.questions.filter(q => q.section === "math").length;
-        if (rwCount < 54 || mathCount < 44) {
+        const rwUnique = new Set(
+          test.questions.filter(q => q.section === "reading_writing").map(q => q.id.split("__rep")[0])
+        ).size;
+        const mathUnique = new Set(
+          test.questions.filter(q => q.section === "math").map(q => q.id.split("__rep")[0])
+        ).size;
+        if (rwUnique < 54 || mathUnique < 44) {
           toast({
-            title: "Limited question pool",
-            description: `Only ${rwCount} Reading/Writing and ${mathCount} Math questions were available. The full SAT requires 54 + 44. More need to be ingested.`,
+            title: "Note: question bank is still growing",
+            description: `Only ${rwUnique} unique Reading/Writing and ${mathUnique} unique Math questions are available. Some will repeat to fill the official 54 + 44 module structure.`,
           });
         }
       }
