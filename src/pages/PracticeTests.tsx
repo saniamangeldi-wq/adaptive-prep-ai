@@ -32,7 +32,7 @@ const testLengths: { id: TestLength; label: string; questions: number; time: str
   { id: "short", label: "Short", questions: 25, time: "25 min" },
   { id: "medium", label: "Medium", questions: 50, time: "50 min" },
   { id: "long", label: "Long", questions: 75, time: "75 min" },
-  { id: "full", label: "Full-Length", questions: 154, time: "~3 hrs" },
+  { id: "full", label: "Full-Length", questions: 98, time: "~2h 14m" },
 ];
 
 const difficulties: { id: Difficulty; label: string; description: string }[] = [
