@@ -31,7 +31,7 @@ const lengthToQuestions: Record<string, number> = {
   short: 25,
   medium: 50,
   long: 75,
-  full: 154,
+  full: 98, // Official Digital SAT: 54 R&W + 44 Math
 };
 
 const lengthToMinutes: Record<string, number> = {
@@ -155,8 +155,13 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   // If combined, balance math and reading/writing with dedup awareness
   let selectedQuestions: Question[];
   if (config.testType === "combined") {
-    const halfTarget = Math.floor(targetQuestions / 2);
-    
+    // Official Digital SAT structure: 54 R&W + 44 Math = 98 questions.
+    // For "full" length we must hit those exact counts so the test renders
+    // 27 + 27 R&W and 22 + 22 Math modules. Other lengths use a 50/50 split.
+    const isFullOfficial = config.length === "full";
+    const rwTarget = isFullOfficial ? 54 : Math.floor(targetQuestions / 2);
+    const mathTarget = isFullOfficial ? 44 : targetQuestions - rwTarget;
+
     const unseenMath = unseenQuestions.filter(q => q.section === "math").sort(() => Math.random() - 0.5);
     const unseenRW = unseenQuestions.filter(q => q.section === "reading_writing").sort(() => Math.random() - 0.5);
     const seenMath = seenQuestions.filter(q => q.section === "math").sort(() => Math.random() - 0.5);
@@ -166,10 +171,10 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     const rwPool = [...unseenRW, ...seenRW];
 
     selectedQuestions = [
-      ...mathPool.slice(0, halfTarget),
-      ...rwPool.slice(0, targetQuestions - halfTarget),
-    ].sort(() => Math.random() - 0.5);
-  } else {
+      ...rwPool.slice(0, rwTarget),
+      ...mathPool.slice(0, mathTarget),
+    ];
+    // NOTE: do NOT shuffle here — TakeSATTest splits by section/module.
     const prioritized = [
       ...unseenQuestions.sort(() => Math.random() - 0.5),
       ...seenQuestions.sort(() => Math.random() - 0.5),
