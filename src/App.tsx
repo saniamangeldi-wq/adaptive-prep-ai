@@ -55,6 +55,7 @@ import Guide from "./pages/Guide";
 import Achievements from "./pages/Achievements";
 import Unsubscribe from "./pages/Unsubscribe";
 import VideoLessons from "./pages/VideoLessons";
+import LessonsComingSoon from "./pages/LessonsComingSoon";
 import SATVerbal from "./pages/SATVerbal";
 import RevenueCalculator from "./pages/RevenueCalculator";
 
