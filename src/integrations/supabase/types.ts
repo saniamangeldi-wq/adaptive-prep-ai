@@ -2627,6 +2627,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_school_invite_code: { Args: { _school_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -2655,6 +2656,7 @@ export type Database = {
         Args: { _student_id: string; _tutor_id: string }
         Returns: boolean
       }
+      lookup_tutor_by_invite_code: { Args: { _code: string }; Returns: string }
       move_to_dlq: {
         Args: {
           dlq_name: string

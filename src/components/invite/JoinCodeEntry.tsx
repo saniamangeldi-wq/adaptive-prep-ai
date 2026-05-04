@@ -80,14 +80,12 @@ export function JoinCodeEntry({ userRole = "student" }: JoinCodeEntryProps) {
       }
 
       // Students can join tutors or schools
-      // First check tutor codes (stored as UPPERCASE)
-      const { data: tutorCode } = await supabase
-        .from("tutor_invite_codes")
-        .select("tutor_user_id")
-        .eq("invite_code", normalizedCode)
-        .maybeSingle();
+      // First check tutor codes (stored as UPPERCASE) via secure RPC
+      const { data: tutorUserId } = await supabase
+        .rpc("lookup_tutor_by_invite_code", { _code: normalizedCode });
 
-      if (tutorCode) {
+      if (tutorUserId) {
+        const tutorCode = { tutor_user_id: tutorUserId as string };
         // Check if already requested
         const { data: existing } = await supabase
           .from("join_requests")
