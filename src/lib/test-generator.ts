@@ -247,11 +247,18 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     return null;
   }
 
+  // Count how many of the selected questions the user has already seen.
+  const repeatedCount = selectedQuestions.filter(q =>
+    seenQuestionIds.has(q.id.replace(/__rep\d+$/, ""))
+  ).length;
+
   return {
     id: attempt.id,
     questions: selectedQuestions,
     timeLimit: config.timerEnabled ? lengthToMinutes[config.length] : null,
     config,
+    repeatedCount,
+    poolSize: allQuestions.length,
   };
 }
 
