@@ -173,8 +173,11 @@ function FreeWriteWidget({ data, onSubmit, onNextQuestion }: { data: QuizData; o
         onChange={(e) => !submitted && setAnswer(e.target.value)}
         disabled={submitted}
         placeholder={data.placeholder || "Write your answer here..."}
-        rows={4}
-        className="resize-y mb-2 text-sm bg-background border-border/30 focus-visible:ring-primary/30 disabled:opacity-60"
+        rows={5}
+        spellCheck
+        autoCorrect="on"
+        autoCapitalize="sentences"
+        className="resize-y mb-2 text-sm bg-background border-border/30 focus-visible:ring-primary/30 disabled:opacity-60 leading-relaxed"
       />
 
       <p className={cn(
@@ -199,11 +202,36 @@ function FreeWriteWidget({ data, onSubmit, onNextQuestion }: { data: QuizData; o
         </button>
       ) : (
         <div className="space-y-3">
-          <div className="rounded-lg p-3 text-sm bg-primary/10 border border-primary/20">
-            <p className="font-medium text-foreground">✓ Answer submitted — AI is evaluating...</p>
+          {/* Student's submitted answer */}
+          <div className="rounded-lg border border-border/40 bg-background/60 overflow-hidden">
+            <div className="px-3 py-2 border-b border-border/40 bg-muted/30">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Your Answer</p>
+            </div>
+            <p className="px-3 py-2.5 text-sm text-foreground whitespace-pre-wrap break-words leading-relaxed">
+              {answer}
+            </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Evaluation criteria */}
+          {data.evaluation_criteria && data.evaluation_criteria.length > 0 && (
+            <div className="rounded-lg border border-border/40 bg-background/60 overflow-hidden">
+              <div className="px-3 py-2 border-b border-border/40 bg-muted/30">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Evaluation Criteria</p>
+              </div>
+              <ul className="px-4 py-2.5 text-sm text-foreground space-y-1 list-disc">
+                {data.evaluation_criteria.map((c, i) => (
+                  <li key={i} className="leading-relaxed">{c}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Status */}
+          <div className="rounded-lg p-3 text-sm bg-primary/10 border border-primary/20">
+            <p className="font-medium text-foreground">✓ Submitted — your AI coach is reviewing your response below.</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleTryAgain}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-border/30 transition-colors"
@@ -233,9 +261,13 @@ function FreeWriteWidget({ data, onSubmit, onNextQuestion }: { data: QuizData; o
           </div>
 
           {showSample && data.sample_answer && (
-            <div className="rounded-lg p-3 text-sm bg-green-500/10 border border-green-500/30">
-              <p className="font-medium text-foreground mb-1">Example Answer:</p>
-              <p className="text-muted-foreground">{data.sample_answer}</p>
+            <div className="rounded-lg border border-green-500/30 bg-green-500/10 overflow-hidden">
+              <div className="px-3 py-2 border-b border-green-500/20">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">Example Answer</p>
+              </div>
+              <p className="px-3 py-2.5 text-sm text-foreground whitespace-pre-wrap break-words leading-relaxed">
+                {data.sample_answer}
+              </p>
             </div>
           )}
         </div>

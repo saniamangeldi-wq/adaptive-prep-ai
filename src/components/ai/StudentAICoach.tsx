@@ -688,7 +688,7 @@ function PerplexityMessage({ message, isTier3, isLast, isStreaming, onRetry, onS
             if (part.data.widget_type === 'document_generator') {
               return <DocumentWidget key={i} type={part.data.doc_type} title={part.data.title} content={part.data.content} summary={part.data.summary} />;
             }
-            return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSend(payload)} onNextQuestion={() => onSendSilent("Next question please — give me another interactive quiz question on the same topic.")} />;
+            return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSendSilent(payload)} onNextQuestion={() => onSendSilent("Next question please — give me another interactive quiz question on the same topic.")} />;
           }
           return part.content ? <ReactMarkdown key={i}>{part.content}</ReactMarkdown> : null;
         })}
