@@ -67,15 +67,17 @@ export function SchoolSettingsSection() {
           return;
         }
 
-        // Get school details
+        // Get school details (invite_code fetched separately via secure RPC)
         const { data: schoolData } = await supabase
           .from("schools")
-          .select("*")
+          .select("id, name, tier, ai_tier, student_count, teacher_count, monthly_cost, created_at, created_by")
           .eq("id", membership.school_id)
           .single();
 
         if (schoolData) {
-          setSchool(schoolData);
+          const { data: inviteCode } = await supabase
+            .rpc("get_school_invite_code", { _school_id: membership.school_id });
+          setSchool({ ...schoolData, invite_code: (inviteCode as string) ?? "" } as any);
           setSchoolName(schoolData.name);
         }
 
