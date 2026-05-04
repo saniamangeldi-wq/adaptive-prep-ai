@@ -498,25 +498,17 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                 onClick={isSTTRecording ? stopSTT : startSTT}
                 disabled={noCredits || isLoading || isCleaningSTT}
                 className={cn(
-                  "p-1.5 rounded-lg transition-colors disabled:opacity-40",
+                  "flex-shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-lg transition-colors disabled:opacity-40",
                   isSTTRecording 
                     ? "text-destructive animate-pulse" 
                     : isCleaningSTT
                     ? "text-primary animate-spin"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 )}
                 title={isSTTRecording ? "Stop & send" : isCleaningSTT ? "Processing..." : "Dictate message"}
               >
                 {isCleaningSTT ? <Loader2 className="w-4 h-4" /> : isSTTRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
-            )}
-
-            {/* Voice chat button (Tier 3 / Elite only) */}
-            {isTier3 && (
-              <VoiceChat 
-                onTranscript={handleVoiceTranscript}
-                isDisabled={noCredits || isLoading}
-              />
             )}
 
             {/* Send button */}
