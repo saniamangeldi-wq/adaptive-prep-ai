@@ -103,63 +103,69 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   // that mode we pull across all difficulties to maximize the available pool.
   const isOfficialFull = config.testType === "combined" && config.length === "full";
 
-  let testsQuery = supabase
+  // Always pull across all difficulties so we have the largest possible pool.
+  // Difficulty becomes a *preference* used for ranking, not a hard filter — this
+  // is critical because some difficulty buckets only have ~10 questions and would
+  // otherwise repeat constantly.
+  const { data: tests, error } = await supabase
     .from("sat_tests")
     .select("id, questions, difficulty, test_type")
     .in("test_type", testTypes)
     .eq("is_official", true);
-
-  if (!isOfficialFull) {
-    testsQuery = testsQuery.eq("difficulty", adaptedDifficulty);
-  }
-
-  let { data: tests, error } = await testsQuery;
-
-  // Fallback to original difficulty if adapted yields no results
-  if (!isOfficialFull && (!tests || tests.length === 0) && adaptedDifficulty !== config.difficulty) {
-    const fallback = await supabase
-      .from("sat_tests")
-      .select("id, questions, difficulty, test_type")
-      .eq("difficulty", config.difficulty)
-      .in("test_type", testTypes)
-      .eq("is_official", true);
-    tests = fallback.data;
-    error = fallback.error;
-  }
 
   if (error || !tests || tests.length === 0) {
     console.error("Error fetching tests:", error);
     return null;
   }
 
-  // Collect all questions from matching tests
+  // Collect all questions from matching tests, tagging each with its source difficulty
+  // so we can rank by closeness to the requested difficulty.
+  const difficultyRank: Record<string, number> = { easy: 0, normal: 1, hard: 2 };
+  const preferredRank = difficultyRank[adaptedDifficulty] ?? 1;
   let allQuestions: Question[] = [];
   for (const test of tests) {
     const questions = test.questions as unknown as Question[];
-    allQuestions = [...allQuestions, ...questions];
+    // Override per-question difficulty with the parent test's difficulty when missing
+    for (const q of questions) {
+      allQuestions.push({ ...q, difficulty: q.difficulty || (test.difficulty as DifficultyLevel) });
+    }
   }
 
-  // Fetch previously seen question IDs to avoid repetition (include incomplete attempts too)
+  // Fetch previously seen question IDs across a wide attempt window so users
+  // genuinely cycle through the bank before any repeats appear.
   const { data: recentAttempts } = await supabase
     .from("test_attempts")
     .select("answers")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(500);
 
   const seenQuestionIds = new Set<string>();
   if (recentAttempts) {
     for (const attempt of recentAttempts) {
       const answers = attempt.answers as Record<string, string> | unknown[] | null;
       if (answers && typeof answers === "object" && !Array.isArray(answers)) {
-        Object.keys(answers).forEach(id => seenQuestionIds.add(id));
+        // Strip any __repN suffix added by the padding logic so a padded repeat
+        // still counts as "seen" for its base id.
+        Object.keys(answers).forEach(id => seenQuestionIds.add(id.replace(/__rep\d+$/, "")));
       }
     }
   }
 
-  // Prioritize unseen questions, fall back to seen ones if pool is too small
-  const unseenQuestions = allQuestions.filter(q => !seenQuestionIds.has(q.id));
-  const seenQuestions = allQuestions.filter(q => seenQuestionIds.has(q.id));
+  // Rank questions: unseen first, then by closeness to preferred difficulty, then random.
+  const rankQuestion = (q: Question) => {
+    const seenPenalty = seenQuestionIds.has(q.id) ? 1000 : 0;
+    const diffDistance = Math.abs((difficultyRank[q.difficulty] ?? 1) - preferredRank);
+    return seenPenalty + diffDistance;
+  };
+
+  // Prioritize unseen questions, fall back to seen ones if pool is exhausted
+  const unseenQuestions = allQuestions
+    .filter(q => !seenQuestionIds.has(q.id))
+    .sort((a, b) => rankQuestion(a) - rankQuestion(b) || Math.random() - 0.5);
+  const seenQuestions = allQuestions
+    .filter(q => seenQuestionIds.has(q.id))
+    .sort((a, b) => rankQuestion(a) - rankQuestion(b) || Math.random() - 0.5);
 
   // If combined, balance math and reading/writing with dedup awareness
   let selectedQuestions: Question[];
