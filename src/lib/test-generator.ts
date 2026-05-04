@@ -24,6 +24,10 @@ export interface GeneratedTest {
   questions: Question[];
   timeLimit: number | null;
   config: TestConfig;
+  /** How many of the selected questions the user has already seen before. */
+  repeatedCount: number;
+  /** Total unique questions available in the matching bank. */
+  poolSize: number;
 }
 
 const lengthToQuestions: Record<string, number> = {
