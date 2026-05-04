@@ -289,8 +289,9 @@ function FreeWriteWidget({ data, onSubmit, onNextQuestion }: { data: QuizData; o
 
           {showSample && data.sample_answer && (
             <div className="rounded-lg border border-green-500/30 bg-green-500/10 overflow-hidden">
-              <div className="px-3 py-2 border-b border-green-500/20">
+              <div className="px-3 py-2 border-b border-green-500/20 flex items-center justify-between gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">Example Answer</p>
+                <CopyButton text={data.sample_answer} label="Copy" />
               </div>
               <p className="px-3 py-2.5 text-sm text-foreground whitespace-pre-wrap break-words leading-relaxed">
                 {data.sample_answer}
