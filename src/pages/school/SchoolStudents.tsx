@@ -96,13 +96,10 @@ export default function SchoolStudents() {
         if (memberData?.school_id) {
           setSchoolId(memberData.school_id);
           
-          // Get school invite code
-          const { data: school } = await supabase
-            .from("schools")
-            .select("invite_code")
-            .eq("id", memberData.school_id)
-            .single();
-          if (school) setInviteCode(school.invite_code);
+          // Get school invite code (admin-only via RPC)
+          const { data: code } = await supabase
+            .rpc("get_school_invite_code", { _school_id: memberData.school_id });
+          if (code) setInviteCode(code as string);
 
           const { data: studentMembers } = await supabase
             .from("school_members")
