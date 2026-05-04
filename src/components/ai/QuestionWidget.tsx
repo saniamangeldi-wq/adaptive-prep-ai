@@ -241,8 +241,9 @@ function FreeWriteWidget({ data, onSubmit, onNextQuestion }: { data: QuizData; o
           {/* Evaluation criteria */}
           {data.evaluation_criteria && data.evaluation_criteria.length > 0 && (
             <div className="rounded-lg border border-border/40 bg-background/60 overflow-hidden">
-              <div className="px-3 py-2 border-b border-border/40 bg-muted/30">
+              <div className="px-3 py-2 border-b border-border/40 bg-muted/30 flex items-center justify-between gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Evaluation Criteria</p>
+                <CopyButton text={data.evaluation_criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")} label="Copy" />
               </div>
               <ul className="px-4 py-2.5 text-sm text-foreground space-y-1 list-disc">
                 {data.evaluation_criteria.map((c, i) => (
