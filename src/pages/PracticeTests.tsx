@@ -117,6 +117,13 @@ export default function PracticeTests() {
             description: `Only ${rwUnique} unique Reading/Writing and ${mathUnique} unique Math questions are available. Some will repeat to fill the official 54 + 44 module structure.`,
           });
         }
+      } else if (test.repeatedCount > 0) {
+        // Non-official mode: warn the student that some questions repeat
+        // because they've already seen most of the bank.
+        toast({
+          title: "You're seeing some repeat questions",
+          description: `${test.repeatedCount} of ${test.questions.length} questions are ones you've practiced before. Our question bank for this difficulty is still growing — try a different difficulty or section for fully fresh questions.`,
+        });
       }
 
       // Navigate to the appropriate test-taking page based on mode
