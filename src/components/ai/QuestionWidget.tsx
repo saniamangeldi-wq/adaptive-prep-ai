@@ -1,7 +1,32 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Check, X, PenLine, Eye, RotateCcw, ArrowRight } from "lucide-react";
+import { Check, X, PenLine, Eye, RotateCcw, ArrowRight, Copy } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+
+function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success("Copied to clipboard");
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Couldn't copy — try selecting manually");
+    }
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-border/30 transition-colors"
+      aria-label={`${label} to clipboard`}
+    >
+      {copied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
+      {copied ? "Copied" : label}
+    </button>
+  );
+}
 
 interface QuizOption {
   id: string;
