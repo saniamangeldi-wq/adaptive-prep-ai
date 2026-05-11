@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, BookOpen, Play, CheckCircle2, Sparkles, Calculator, Loader2, Wand2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Play, CheckCircle2, Sparkles, Calculator, Loader2, Wand2, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Style = "visual" | "auditory" | "kinesthetic" | "reading_writing";
