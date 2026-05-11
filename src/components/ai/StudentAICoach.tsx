@@ -553,46 +553,71 @@ function extractBalancedJSON(str: string, startIdx: number): string | null {
 
 function parseMessageContent(content: string, isStreaming = false) {
   const parts: Array<{ type: 'text'; content: string } | { type: 'widget'; data: any }> = [];
-  // Strip markdown code fences around JSON
-  const cleaned = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
-  const marker = '"widget_type"';
+  // Strip markdown fences (``` and ```json) and inline backticks wrapping JSON objects
+  let cleaned = content
+    .replace(/```json\s*/gi, '')
+    .replace(/```\s*/g, '')
+    .replace(/`(\s*\{[\s\S]*?\}\s*)`/g, '$1');
+
+  // Match both "widget_type" (quoted) and widget_type (unquoted, in case AI drops quotes)
+  const markerRe = /["']?widget_type["']?\s*:/g;
   let lastIndex = 0;
+  let m: RegExpExecArray | null;
   let searchFrom = 0;
 
-  while (searchFrom < cleaned.length) {
-    const markerIdx = cleaned.indexOf(marker, searchFrom);
-    if (markerIdx === -1) break;
+  while ((m = markerRe.exec(cleaned)) !== null) {
+    const markerIdx = m.index;
+    if (markerIdx < searchFrom) continue;
 
     // Walk back to find the opening {
     let braceStart = markerIdx;
     while (braceStart > lastIndex && cleaned[braceStart] !== '{') braceStart--;
-    if (cleaned[braceStart] !== '{') { searchFrom = markerIdx + marker.length; continue; }
+    if (cleaned[braceStart] !== '{') { searchFrom = markerIdx + 1; continue; }
 
     const jsonStr = extractBalancedJSON(cleaned, braceStart);
     if (!jsonStr) {
-      // During streaming, hide the incomplete JSON being built up
-      if (isStreaming) {
-        const textBefore = cleaned.slice(lastIndex, braceStart).trim();
-        if (textBefore) parts.push({ type: 'text', content: textBefore });
-        // Don't show anything after braceStart (it's incomplete JSON)
-        return parts.length ? parts : [{ type: 'text' as const, content: textBefore || '' }];
-      }
-      searchFrom = markerIdx + marker.length;
+      // Incomplete (likely streaming) — hide everything from braceStart onward
+      const textBefore = cleaned.slice(lastIndex, braceStart).trim();
+      if (textBefore) parts.push({ type: 'text', content: textBefore });
+      lastIndex = cleaned.length;
+      return parts.length ? parts : [{ type: 'text' as const, content: '' }];
+    }
+
+    let parsed: any = null;
+    try { parsed = JSON.parse(jsonStr); } catch { /* fall through */ }
+
+    // Try to recover from minor JSON issues (e.g. trailing commas, smart quotes)
+    if (!parsed) {
+      try {
+        const repaired = jsonStr
+          .replace(/[“”]/g, '"')
+          .replace(/[‘’]/g, "'")
+          .replace(/,(\s*[}\]])/g, '$1');
+        parsed = JSON.parse(repaired);
+      } catch { /* still bad */ }
+    }
+
+    if (parsed && (parsed.widget_type === 'interactive_quiz' || parsed.widget_type === 'document_generator')) {
+      const textBefore = cleaned.slice(lastIndex, braceStart).trim();
+      if (textBefore) parts.push({ type: 'text', content: textBefore });
+      parts.push({ type: 'widget', data: parsed });
+      lastIndex = braceStart + jsonStr.length;
+      searchFrom = lastIndex;
+      markerRe.lastIndex = lastIndex;
       continue;
     }
 
-    try {
-      const parsed = JSON.parse(jsonStr);
-      if (parsed.widget_type === 'interactive_quiz' || parsed.widget_type === 'document_generator') {
-        const textBefore = cleaned.slice(lastIndex, braceStart).trim();
-        if (textBefore) parts.push({ type: 'text', content: textBefore });
-        parts.push({ type: 'widget', data: parsed });
-        lastIndex = braceStart + jsonStr.length;
-        searchFrom = lastIndex;
-        continue;
-      }
-    } catch { /* not valid JSON, skip */ }
-    searchFrom = markerIdx + marker.length;
+    // Could not parse but it clearly looks like a widget payload — hide it instead of showing raw JSON
+    if (jsonStr.includes('widget_type')) {
+      const textBefore = cleaned.slice(lastIndex, braceStart).trim();
+      if (textBefore) parts.push({ type: 'text', content: textBefore });
+      lastIndex = braceStart + jsonStr.length;
+      searchFrom = lastIndex;
+      markerRe.lastIndex = lastIndex;
+      continue;
+    }
+
+    searchFrom = markerIdx + 1;
   }
 
   if (lastIndex < cleaned.length) {
@@ -600,7 +625,7 @@ function parseMessageContent(content: string, isStreaming = false) {
     if (remaining) parts.push({ type: 'text', content: remaining });
   }
 
-  return parts.length ? parts : [{ type: 'text' as const, content }];
+  return parts.length ? parts : [{ type: 'text' as const, content: cleaned }];
 }
 
 /* ─── Perplexity-style message (no bubbles) ─── */
