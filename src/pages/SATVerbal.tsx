@@ -336,16 +336,23 @@ export default function SATVerbal() {
       <div className="grid gap-3 md:grid-cols-2">
         {topics.map((topic) => {
           const isCompleted = completedTopicIds.has(topic.id);
+          const isLocked = topic.order_index !== 1;
           return (
             <Card
               key={topic.id}
-              className="cursor-pointer hover:border-primary/40 transition-colors"
-              onClick={() => setSelectedTopicId(topic.id)}
+              className={`transition-colors ${isLocked ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-primary/40"}`}
+              onClick={() => {
+                if (isLocked) {
+                  toast({ title: "Locked 🔒", description: "This lesson is part of the full curriculum — coming soon." });
+                  return;
+                }
+                setSelectedTopicId(topic.id);
+              }}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-sm font-semibold text-primary flex-shrink-0">
-                    {topic.order_index}
+                    {isLocked ? <Lock className="h-4 w-4" /> : topic.order_index}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
@@ -356,7 +363,11 @@ export default function SATVerbal() {
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{topic.description}</p>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="secondary" className="text-xs">Auto-styled</Badge>
+                      {isLocked ? (
+                        <Badge variant="outline" className="text-xs">Coming soon</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">Available now</Badge>
+                      )}
                       {topic.category && (
                         <Badge variant="outline" className="text-xs capitalize">
                           {topic.category.replace("_", " ")}
