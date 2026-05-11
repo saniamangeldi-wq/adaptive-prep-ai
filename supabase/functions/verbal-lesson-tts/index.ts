@@ -78,10 +78,10 @@ serve(async (req) => {
     // 2. Generate via ElevenLabs
     const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: "TTS not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ audio_url: null, fallback: true, reason: "tts_not_configured" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const ttsRes = await fetch(
@@ -108,10 +108,15 @@ serve(async (req) => {
     if (!ttsRes.ok) {
       const errText = await ttsRes.text();
       console.error("ElevenLabs error", ttsRes.status, errText);
-      return new Response(JSON.stringify({ error: "TTS generation failed" }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // Return 200 with fallback signal so client uses browser TTS / silent mode
+      return new Response(
+        JSON.stringify({
+          audio_url: null,
+          fallback: true,
+          reason: ttsRes.status === 401 ? "tts_payment_issue" : "tts_unavailable",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const audioBuf = await ttsRes.arrayBuffer();
