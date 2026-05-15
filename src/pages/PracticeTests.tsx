@@ -24,16 +24,24 @@ import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 
 type TestMode = "practice" | "official";
 type TestType = "math" | "reading_writing" | "combined";
-type TestLength = "quick" | "short" | "medium" | "long" | "full";
+type TestLength = "quick" | "short" | "full";
 type Difficulty = "easy" | "normal" | "hard";
 
-const testLengths: { id: TestLength; label: string; questions: number; time: string }[] = [
-  { id: "quick", label: "Quick", questions: 10, time: "10 min" },
-  { id: "short", label: "Short", questions: 25, time: "25 min" },
-  { id: "medium", label: "Medium", questions: 50, time: "50 min" },
-  { id: "long", label: "Long", questions: 75, time: "75 min" },
-  { id: "full", label: "Full-Length", questions: 98, time: "~2h 14m" },
+// `full` is section-aware: 44 Math, 54 R&W, 98 Combined (resolved at render time).
+const baseTestLengths: { id: TestLength; label: string }[] = [
+  { id: "quick", label: "Quick" },
+  { id: "short", label: "Short" },
+  { id: "full", label: "Full Section" },
 ];
+
+function getLengthMeta(id: TestLength, testType: TestType): { questions: number; time: string } {
+  if (id === "quick") return { questions: 10, time: "10 min" };
+  if (id === "short") return { questions: 25, time: "25 min" };
+  // full
+  if (testType === "math") return { questions: 44, time: "~70 min" };
+  if (testType === "reading_writing") return { questions: 54, time: "~64 min" };
+  return { questions: 98, time: "~2h 14m" };
+}
 
 const difficulties: { id: Difficulty; label: string; description: string }[] = [
   { id: "easy", label: "Easy", description: "Beginner-friendly questions" },
@@ -46,13 +54,13 @@ export default function PracticeTests() {
   const { toast } = useToast();
   const [testMode, setTestMode] = useState<TestMode>("official");
   const [testType, setTestType] = useState<TestType>("combined");
-  const [length, setLength] = useState<TestLength>("medium");
+  const [length, setLength] = useState<TestLength>("short");
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const { user, profile } = useAuth();
 
-  const selectedLength = testLengths.find(l => l.id === length);
+  const selectedLength = { id: length, label: baseTestLengths.find(l => l.id === length)?.label || "", ...getLengthMeta(length, testType) };
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
   const isTier0 = profile?.tier === "tier_0";
 
@@ -284,23 +292,26 @@ export default function PracticeTests() {
             {/* Test Length */}
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-foreground">Test Length</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                {testLengths.map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => setLength(option.id)}
-                    className={cn(
-                      "p-4 rounded-xl border-2 text-center transition-all duration-200",
-                      length === option.id
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50"
-                    )}
-                  >
-                    <div className="text-xl font-bold text-foreground">{option.questions}</div>
-                    <div className="text-xs text-muted-foreground">{option.label}</div>
-                    <div className="text-xs text-muted-foreground/70 mt-1">{option.time}</div>
-                  </button>
-                ))}
+              <div className="grid grid-cols-3 gap-3">
+                {baseTestLengths.map((option) => {
+                  const meta = getLengthMeta(option.id, testType);
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => setLength(option.id)}
+                      className={cn(
+                        "p-4 rounded-xl border-2 text-center transition-all duration-200",
+                        length === option.id
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <div className="text-xl font-bold text-foreground">{meta.questions}</div>
+                      <div className="text-xs text-muted-foreground">{option.label}</div>
+                      <div className="text-xs text-muted-foreground/70 mt-1">{meta.time}</div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
