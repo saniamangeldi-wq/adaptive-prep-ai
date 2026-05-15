@@ -257,7 +257,7 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   return {
     id: attempt.id,
     questions: selectedQuestions,
-    timeLimit: config.timerEnabled ? lengthToMinutes[config.length] : null,
+    timeLimit: config.timerEnabled ? getTimeMinutes(config) : null,
     config,
     repeatedCount,
     poolSize: allQuestions.length,
