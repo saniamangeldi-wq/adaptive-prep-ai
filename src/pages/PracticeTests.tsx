@@ -292,23 +292,26 @@ export default function PracticeTests() {
             {/* Test Length */}
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-foreground">Test Length</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                {testLengths.map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => setLength(option.id)}
-                    className={cn(
-                      "p-4 rounded-xl border-2 text-center transition-all duration-200",
-                      length === option.id
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50"
-                    )}
-                  >
-                    <div className="text-xl font-bold text-foreground">{option.questions}</div>
-                    <div className="text-xs text-muted-foreground">{option.label}</div>
-                    <div className="text-xs text-muted-foreground/70 mt-1">{option.time}</div>
-                  </button>
-                ))}
+              <div className="grid grid-cols-3 gap-3">
+                {baseTestLengths.map((option) => {
+                  const meta = getLengthMeta(option.id, testType);
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => setLength(option.id)}
+                      className={cn(
+                        "p-4 rounded-xl border-2 text-center transition-all duration-200",
+                        length === option.id
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <div className="text-xl font-bold text-foreground">{meta.questions}</div>
+                      <div className="text-xs text-muted-foreground">{option.label}</div>
+                      <div className="text-xs text-muted-foreground/70 mt-1">{meta.time}</div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
