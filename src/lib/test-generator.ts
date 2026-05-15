@@ -228,7 +228,24 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
       ...unseenQuestions.sort(() => Math.random() - 0.5),
       ...seenQuestions.sort(() => Math.random() - 0.5),
     ];
-    selectedQuestions = prioritized.slice(0, Math.min(targetQuestions, prioritized.length));
+    // For "full" single-section runs, pad with repeats so the user always
+    // gets the official module count (44 Math / 54 R&W) even when the bank
+    // is short. Otherwise just take what we have.
+    if (config.length === "full" && prioritized.length > 0 && prioritized.length < targetQuestions) {
+      const out: Question[] = [...prioritized];
+      let i = 0;
+      let repeatRound = 1;
+      while (out.length < targetQuestions) {
+        const original = prioritized[i % prioritized.length];
+        out.push({ ...original, id: `${original.id}__rep${repeatRound}` });
+        i++;
+        if (i % prioritized.length === 0) repeatRound++;
+      }
+      console.warn(`[SAT] ${config.testType} pool short (${prioritized.length}/${targetQuestions}) — padded with repeats.`);
+      selectedQuestions = out;
+    } else {
+      selectedQuestions = prioritized.slice(0, Math.min(targetQuestions, prioritized.length));
+    }
   }
 
   // Create test attempt in database
