@@ -14,7 +14,7 @@ export interface Question {
 
 export interface TestConfig {
   testType: "math" | "reading_writing" | "combined";
-  length: "quick" | "short" | "medium" | "long" | "full";
+  length: "quick" | "short" | "full";
   difficulty: "easy" | "normal" | "hard";
   timerEnabled: boolean;
 }
@@ -30,21 +30,23 @@ export interface GeneratedTest {
   poolSize: number;
 }
 
-const lengthToQuestions: Record<string, number> = {
-  quick: 10,
-  short: 25,
-  medium: 50,
-  long: 75,
-  full: 98, // Official Digital SAT: 54 R&W + 44 Math
-};
+function getTargetQuestions(config: TestConfig): number {
+  if (config.length === "quick") return 10;
+  if (config.length === "short") return 25;
+  // full: section-aware
+  if (config.testType === "math") return 44;
+  if (config.testType === "reading_writing") return 54;
+  return 98; // combined full SAT
+}
 
-const lengthToMinutes: Record<string, number> = {
-  quick: 10,
-  short: 25,
-  medium: 50,
-  long: 75,
-  full: 180,
-};
+function getTimeMinutes(config: TestConfig): number {
+  if (config.length === "quick") return 10;
+  if (config.length === "short") return 25;
+  // full
+  if (config.testType === "math") return 70;
+  if (config.testType === "reading_writing") return 64;
+  return 180;
+}
 
 type DifficultyLevel = "easy" | "normal" | "hard";
 
