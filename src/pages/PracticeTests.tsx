@@ -24,16 +24,24 @@ import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 
 type TestMode = "practice" | "official";
 type TestType = "math" | "reading_writing" | "combined";
-type TestLength = "quick" | "short" | "medium" | "long" | "full";
+type TestLength = "quick" | "short" | "full";
 type Difficulty = "easy" | "normal" | "hard";
 
-const testLengths: { id: TestLength; label: string; questions: number; time: string }[] = [
-  { id: "quick", label: "Quick", questions: 10, time: "10 min" },
-  { id: "short", label: "Short", questions: 25, time: "25 min" },
-  { id: "medium", label: "Medium", questions: 50, time: "50 min" },
-  { id: "long", label: "Long", questions: 75, time: "75 min" },
-  { id: "full", label: "Full-Length", questions: 98, time: "~2h 14m" },
+// `full` is section-aware: 44 Math, 54 R&W, 98 Combined (resolved at render time).
+const baseTestLengths: { id: TestLength; label: string }[] = [
+  { id: "quick", label: "Quick" },
+  { id: "short", label: "Short" },
+  { id: "full", label: "Full Section" },
 ];
+
+function getLengthMeta(id: TestLength, testType: TestType): { questions: number; time: string } {
+  if (id === "quick") return { questions: 10, time: "10 min" };
+  if (id === "short") return { questions: 25, time: "25 min" };
+  // full
+  if (testType === "math") return { questions: 44, time: "~70 min" };
+  if (testType === "reading_writing") return { questions: 54, time: "~64 min" };
+  return { questions: 98, time: "~2h 14m" };
+}
 
 const difficulties: { id: Difficulty; label: string; description: string }[] = [
   { id: "easy", label: "Easy", description: "Beginner-friendly questions" },
