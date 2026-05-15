@@ -91,7 +91,7 @@ async function getAdaptiveDifficulty(userId: string, baseDifficulty: DifficultyL
 }
 
 export async function generateTest(config: TestConfig, userId: string): Promise<GeneratedTest | null> {
-  const targetQuestions = lengthToQuestions[config.length];
+  const targetQuestions = getTargetQuestions(config);
   
   // Apply adaptive difficulty calibration
   const adaptedDifficulty = await getAdaptiveDifficulty(userId, config.difficulty);
