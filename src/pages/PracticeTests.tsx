@@ -54,13 +54,13 @@ export default function PracticeTests() {
   const { toast } = useToast();
   const [testMode, setTestMode] = useState<TestMode>("official");
   const [testType, setTestType] = useState<TestType>("combined");
-  const [length, setLength] = useState<TestLength>("medium");
+  const [length, setLength] = useState<TestLength>("short");
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const { user, profile } = useAuth();
 
-  const selectedLength = testLengths.find(l => l.id === length);
+  const selectedLength = { id: length, label: baseTestLengths.find(l => l.id === length)?.label || "", ...getLengthMeta(length, testType) };
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
   const isTier0 = profile?.tier === "tier_0";
 
