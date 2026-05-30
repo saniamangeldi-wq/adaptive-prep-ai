@@ -87,7 +87,7 @@ const teacherNav: NavItem[] = [
   { nameKey: "nav.aiCoach", href: "/dashboard/coach", icon: MessageSquare },
   { nameKey: "nav.classAnalytics", href: "/dashboard/analytics", icon: BarChart3 },
   { nameKey: "nav.calendar", href: "/dashboard/calendar", icon: Calendar },
-  { nameKey: "nav.resources", href: "/dashboard/resources", icon: Layers },
+  
   { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];
 

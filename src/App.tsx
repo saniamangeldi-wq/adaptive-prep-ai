@@ -177,7 +177,7 @@ function AppRoutes() {
       <Route path="/dashboard/curriculum" element={<ProtectedRoute><Curriculum /></ProtectedRoute>} />
       <Route path="/dashboard/guide" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
       <Route path="/dashboard/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-      <Route path="/dashboard/lessons" element={<ProtectedRoute><SATVerbal /></ProtectedRoute>} />
+      <Route path="/dashboard/lessons" element={<ProtectedRoute><LessonsComingSoon /></ProtectedRoute>} />
       <Route path="/dashboard/lessons/generate" element={<Navigate to="/dashboard/lessons" replace />} />
       
       {/* 404 */}
