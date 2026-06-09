@@ -21,6 +21,8 @@ import { generateTest } from "@/lib/test-generator";
 import { useToast } from "@/hooks/use-toast";
 import { getTierLimits, PricingTier } from "@/lib/tier-limits";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
+import { PageSeo } from "@/components/seo/PageSeo";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 type TestMode = "practice" | "official";
 type TestType = "math" | "reading_writing" | "combined";
@@ -152,7 +154,13 @@ export default function PracticeTests() {
   };
 
   return (
-    <DashboardLayout>
+    <>
+      <PageSeo
+        title="SAT Practice Tests | AdaptivePrep"
+        description="Take official-format SAT practice tests or quick custom sessions. Adaptive difficulty with instant scoring."
+        path="/dashboard/tests"
+      />
+      <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div>
@@ -399,6 +407,7 @@ export default function PracticeTests() {
         </div>
       </div>
     </DashboardLayout>
+    </>
   );
 }
 

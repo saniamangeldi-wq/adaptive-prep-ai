@@ -36,7 +36,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { PageSeo } from "@/components/seo/PageSeo";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 // Convert raw accuracy (0-100%) to SAT scaled score (200-800)
 function toSATScore(accuracy: number): number {
@@ -240,16 +242,29 @@ export default function Progress() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </DashboardLayout>
+      <>
+        <PageSeo
+          title="Progress | AdaptivePrep"
+          description="Track your SAT prep progress, view performance analytics, and monitor your improvement over time."
+          path="/dashboard/progress"
+        />
+        <DashboardLayout>
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
+      <PageSeo
+        title="Progress | AdaptivePrep"
+        description="Track your SAT prep progress, view performance analytics, and monitor your improvement over time."
+        path="/dashboard/progress"
+      />
+      <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -678,6 +693,7 @@ function RecommendationsSection({
         ))}
       </div>
     </div>
+  </>
   );
 }
 

@@ -14,6 +14,8 @@ import { CognitiveBaseline } from "@/components/onboarding/CognitiveBaseline";
 import { calculateVAKResult, type VAKResult } from "@/lib/vak-scoring";
 import { type VAKStyle } from "@/lib/vak-questions";
 import type { CognitiveScores } from "@/lib/cognitive-baseline";
+import { PageSeo } from "@/components/seo/PageSeo";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 type OnboardingPhase = "grade" | "subjects" | "vak" | "results" | "cognitive";
 
@@ -229,29 +231,49 @@ export default function Onboarding() {
 
   if (phase === "cognitive") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4 dark">
+      <>
+        <PageSeo
+          title="Get Started | AdaptivePrep"
+          description="Complete your AdaptivePrep setup. Tell us your grade, subjects, and learning style for a personalized SAT prep plan."
+          path="/onboarding"
+        />
+        <div className="min-h-screen bg-background flex items-center justify-center p-4 dark">
         <div className="max-w-xl w-full">
           <CognitiveBaseline onComplete={handleCognitiveComplete} />
           {loading && <div className="text-center text-sm text-muted-foreground mt-4">Saving...</div>}
         </div>
       </div>
+      </>
     );
   }
 
   if (phase === "results" && vakResult) {
     return (
-      <VAKResults
+      <>
+        <PageSeo
+          title="Get Started | AdaptivePrep"
+          description="Complete your AdaptivePrep setup. Tell us your grade, subjects, and learning style for a personalized SAT prep plan."
+          path="/onboarding"
+        />
+        <VAKResults
         result={vakResult}
         tier={userTier}
         selectedSubjects={selectedSubjects}
         onComplete={handleComplete}
         loading={loading}
       />
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col dark">
+    <>
+      <PageSeo
+        title="Get Started | AdaptivePrep"
+        description="Complete your AdaptivePrep setup. Tell us your grade, subjects, and learning style for a personalized SAT prep plan."
+        path="/onboarding"
+      />
+      <div className="min-h-screen bg-background flex flex-col dark">
       <div className="h-1 bg-secondary">
         <div
           className="h-full bg-primary transition-all duration-300"
@@ -311,5 +333,6 @@ export default function Onboarding() {
         </div>
       </div>
     </div>
+    </>
   );
 }

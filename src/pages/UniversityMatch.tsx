@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { PageSeo } from "@/components/seo/PageSeo";
+import { PageSeo } from "@/components/seo/PageSeo";
 import {
   Loader2,
   RefreshCw,
@@ -379,18 +381,31 @@ export default function UniversityMatch() {
 
   if (schoolLoading || accessLoading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </DashboardLayout>
+      <>
+        <PageSeo
+          title="University Match | AdaptivePrep"
+          description="Find your best-fit universities with AI-powered matching. Compare acceptance rates, tuition, and scholarships."
+          path="/dashboard/university-match"
+        />
+        <DashboardLayout>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </DashboardLayout>
+      </>
     );
   }
 
   // Paywall for users without subscription access
   if (!canAccess) {
     return (
-      <DashboardLayout>
+      <>
+        <PageSeo
+          title="University Match | AdaptivePrep"
+          description="Find your best-fit universities with AI-powered matching. Compare acceptance rates, tuition, and scholarships."
+          path="/dashboard/university-match"
+        />
+        <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="max-w-md w-full rounded-2xl border border-border/50 bg-card p-8 text-center space-y-6">
             <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -441,11 +456,18 @@ export default function UniversityMatch() {
           </div>
         </div>
       </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
+      <PageSeo
+        title="University Match | AdaptivePrep"
+        description="Find your best-fit universities with AI-powered matching. Compare acceptance rates, tuition, and scholarships."
+        path="/dashboard/university-match"
+      />
+      <DashboardLayout>
       {/* Timer banner for paid access */}
       {hasPaidAccess && !hasUniversityMatchAccess && (
         <div className="mb-4 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 flex items-center justify-between">
@@ -679,5 +701,6 @@ export default function UniversityMatch() {
         </button>
       )}
     </DashboardLayout>
+  </>
   );
 }
