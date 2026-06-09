@@ -41,9 +41,9 @@ export function Footer() {
               AI-powered SAT preparation that adapts to your learning style and helps you achieve your best score.
             </p>
             <div className="flex items-center gap-3">
-              <SocialLink icon={Twitter} href="#" />
-              <SocialLink icon={Github} href="#" />
-              <SocialLink icon={Linkedin} href="#" />
+              <SocialLink icon={Twitter} href="#" label="Twitter profile" />
+              <SocialLink icon={Github} href="#" label="GitHub repository" />
+              <SocialLink icon={Linkedin} href="#" label="LinkedIn profile" />
             </div>
           </div>
 
@@ -102,10 +102,11 @@ export function Footer() {
   );
 }
 
-function SocialLink({ icon: Icon, href }: { icon: React.ElementType; href: string }) {
+function SocialLink({ icon: Icon, href, label }: { icon: React.ElementType; href: string; label: string }) {
   return (
     <a
       href={href}
+      aria-label={label}
       className="w-9 h-9 rounded-lg bg-secondary/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
     >
       <Icon className="w-4 h-4" />
