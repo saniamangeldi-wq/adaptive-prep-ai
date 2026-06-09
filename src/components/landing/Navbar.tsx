@@ -11,7 +11,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 const navLinks = [
   { href: "#features", label: "Features" },
-  { href: "#pricing", label: "Pricing" },
+  { href: "/pricing", label: "Pricing" },
   { href: "#tutors", label: "For Tutors" },
   { href: "#schools", label: "For Schools" },
 ];
