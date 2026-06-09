@@ -36,6 +36,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { PageSeo } from "@/components/seo/PageSeo";
 import { toast } from "sonner";
 import { PageSeo } from "@/components/seo/PageSeo";
 
