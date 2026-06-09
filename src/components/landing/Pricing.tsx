@@ -208,7 +208,7 @@ function GenericPlanCard({
             {/* USD price — same visual weight */}
             <div className="flex items-baseline gap-2 mt-1">
               {billingCycle !== "monthly" && (
-                <span className="text-sm text-muted-foreground/60 line-through">
+                <span className="text-sm text-muted-foreground line-through">
                   {fmtUSD(plan.monthlyPriceUSD)}
                 </span>
               )}
