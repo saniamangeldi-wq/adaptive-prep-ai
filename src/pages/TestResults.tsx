@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Question, GeneratedTest } from "@/lib/test-generator";
+import { UpgradeModal } from "@/components/upgrade/UpgradeModal";
+import { useUpgradeModal } from "@/hooks/useUpgradeModal";
+
 
 interface ResultData {
   score: number;
@@ -37,6 +40,14 @@ export default function TestResults() {
   } || {};
 
   const [reviewIndex, setReviewIndex] = useState<number | null>(null);
+  const testsUpgrade = useUpgradeModal("tests");
+
+  useEffect(() => {
+    if (test && result) {
+      const t = setTimeout(() => testsUpgrade.trigger(), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [test, result, testsUpgrade]);
 
   if (!test || !result) {
     return (
