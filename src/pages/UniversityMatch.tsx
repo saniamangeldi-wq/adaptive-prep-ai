@@ -715,6 +715,7 @@ export default function UniversityMatch() {
           <span className="text-sm font-medium">Ask Advisor</span>
         </button>
       )}
+      <UpgradeModal open={universitiesUpgrade.isOpen} onClose={universitiesUpgrade.close} variant="universities" />
     </DashboardLayout>
   </>
   );
