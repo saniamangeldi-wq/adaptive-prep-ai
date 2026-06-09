@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -33,6 +34,12 @@ export default function ForgotPassword() {
   };
 
   return (
+    <>
+    <PageSeo
+      title="Forgot password — AdaptivePrep"
+      description="Reset your AdaptivePrep account password. Enter your email to receive a secure password reset link."
+      path="/forgot-password"
+    />
     <div className="min-h-screen flex items-center justify-center p-8 bg-background dark text-foreground">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
