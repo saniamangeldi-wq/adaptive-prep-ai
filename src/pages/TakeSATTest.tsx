@@ -337,18 +337,32 @@ export default function TakeSATTest() {
     case "test":
       if (!currentModule) return null;
       return (
-        <SATTestInterface
-          questions={currentModule.questions}
-          section={flowState.currentSection}
-          moduleNumber={flowState.currentModule}
-          timeLimitSeconds={moduleConfig.timeSeconds}
-          answers={currentModule.answers}
-          flaggedQuestions={currentModule.flaggedQuestions}
-          onAnswerChange={updateCurrentModuleAnswers}
-          onToggleFlag={toggleCurrentModuleFlag}
-          onTimeUp={handleTimeUp}
-          onReview={handleShowReview}
-        />
+        <>
+          {testData?.poolWarning && !poolWarningDismissed && (
+            <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500/15 border-b border-yellow-500/40 px-4 py-2 flex items-center justify-between text-sm text-yellow-200">
+              <span>{testData.poolWarning}</span>
+              <button
+                onClick={() => setPoolWarningDismissed(true)}
+                className="ml-4 px-2 py-0.5 rounded hover:bg-yellow-500/20"
+                aria-label="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          <SATTestInterface
+            questions={currentModule.questions}
+            section={flowState.currentSection}
+            moduleNumber={flowState.currentModule}
+            timeLimitSeconds={moduleConfig.timeSeconds}
+            answers={currentModule.answers}
+            flaggedQuestions={currentModule.flaggedQuestions}
+            onAnswerChange={updateCurrentModuleAnswers}
+            onToggleFlag={toggleCurrentModuleFlag}
+            onTimeUp={handleTimeUp}
+            onReview={handleShowReview}
+          />
+        </>
       );
 
     case "review":
