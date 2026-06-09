@@ -53,6 +53,7 @@ export default function TakeSATTest() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testSession, setTestSession] = useState<TestSessionData | null>(null);
   const [startTime, setStartTime] = useState<number>(Date.now());
+  const [poolWarningDismissed, setPoolWarningDismissed] = useState(false);
 
   // Get test data from navigation state
   const testData = location.state?.test as GeneratedTest | undefined;
