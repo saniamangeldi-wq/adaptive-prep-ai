@@ -25,6 +25,7 @@ import Progress from "./pages/Progress";
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
 import FreeAiSatPrep from "./pages/blog/FreeAiSatPrep";
+import NortheasternAcceptanceRate from "./pages/blog/NortheasternAcceptanceRate";
 import Settings from "./pages/Settings";
 import Billing from "./pages/Billing";
 import TutorBilling from "./pages/TutorBilling";
@@ -130,6 +131,7 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/blog/free-ai-sat-prep" element={<FreeAiSatPrep />} />
+      <Route path="/blog/northeastern-acceptance-rate" element={<NortheasternAcceptanceRate />} />
       
       {/* Protected routes */}
       <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
