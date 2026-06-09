@@ -41,9 +41,9 @@ export function Footer() {
               AI-powered SAT preparation that adapts to your learning style and helps you achieve your best score.
             </p>
             <div className="flex items-center gap-3">
-              <SocialLink icon={Twitter} href="#" />
-              <SocialLink icon={Github} href="#" />
-              <SocialLink icon={Linkedin} href="#" />
+              <SocialLink icon={Twitter} href="#" label="Twitter profile" />
+              <SocialLink icon={Github} href="#" label="GitHub repository" />
+              <SocialLink icon={Linkedin} href="#" label="LinkedIn profile" />
             </div>
           </div>
 
