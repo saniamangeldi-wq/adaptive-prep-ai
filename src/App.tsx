@@ -30,6 +30,7 @@ import Settings from "./pages/Settings";
 import Billing from "./pages/Billing";
 import TutorBilling from "./pages/TutorBilling";
 import UniversityMatch from "./pages/UniversityMatch";
+import PricingPage from "./pages/Pricing";
 
 // School admin pages
 import CreateSchool from "./pages/school/CreateSchool";
@@ -132,6 +133,7 @@ function AppRoutes() {
       <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/blog/free-ai-sat-prep" element={<FreeAiSatPrep />} />
       <Route path="/blog/northeastern-acceptance-rate" element={<NortheasternAcceptanceRate />} />
+      <Route path="/pricing" element={<PricingPage />} />
       
       {/* Protected routes */}
       <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />

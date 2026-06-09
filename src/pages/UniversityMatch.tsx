@@ -23,6 +23,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { UpgradeModal } from "@/components/upgrade/UpgradeModal";
+import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import {
   Loader2,
   RefreshCw,
@@ -113,6 +115,20 @@ export default function UniversityMatch() {
 
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [selectedUniversity, setSelectedUniversity] = useState<string | null>(null);
+  const universitiesUpgrade = useUpgradeModal("universities");
+  const [universityViewCount, setUniversityViewCount] = useState(0);
+
+  useEffect(() => {
+    if (!selectedUniversity) return;
+    setUniversityViewCount((n) => {
+      const next = n + 1;
+      if (next >= 3) {
+        universitiesUpgrade.trigger();
+        return 0;
+      }
+      return next;
+    });
+  }, [selectedUniversity, universitiesUpgrade]);
 
   const [editingProfile, setEditingProfile] = useState(false);
   const [editStep, setEditStep] = useState<"portfolio" | "preferences">("portfolio");
@@ -699,6 +715,7 @@ export default function UniversityMatch() {
           <span className="text-sm font-medium">Ask Advisor</span>
         </button>
       )}
+      <UpgradeModal open={universitiesUpgrade.isOpen} onClose={universitiesUpgrade.close} variant="universities" />
     </DashboardLayout>
   </>
   );

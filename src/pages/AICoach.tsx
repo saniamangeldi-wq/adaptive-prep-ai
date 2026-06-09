@@ -18,6 +18,10 @@ import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { ModelSelector, type EliteModel } from "@/components/ai/ModelSelector";
 import type { Reference } from "@/hooks/useReferences";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { UpgradeModal } from "@/components/upgrade/UpgradeModal";
+import { useUpgradeModal } from "@/hooks/useUpgradeModal";
+import { useRef } from "react";
+
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
@@ -28,6 +32,21 @@ export default function AICoach() {
   const { profile } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const coachUpgrade = useUpgradeModal("coach");
+  const coachMsgCountRef = useRef(0);
+
+  useEffect(() => {
+    const onSent = () => {
+      coachMsgCountRef.current += 1;
+      if (coachMsgCountRef.current >= 5) {
+        coachUpgrade.trigger();
+        coachMsgCountRef.current = 0;
+      }
+    };
+    window.addEventListener("adaptiveprep:coach-message-sent", onSent);
+    return () => window.removeEventListener("adaptiveprep:coach-message-sent", onSent);
+  }, [coachUpgrade]);
+
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
@@ -293,6 +312,7 @@ export default function AICoach() {
           {renderAICoach()}
         </div>
       </div>
+      <UpgradeModal open={coachUpgrade.isOpen} onClose={coachUpgrade.close} variant="coach" />
     </DashboardLayout>
     </>
   );
