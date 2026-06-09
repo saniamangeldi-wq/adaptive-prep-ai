@@ -1198,6 +1198,27 @@ export type Database = {
           },
         ]
       }
+      paywall_dismissals: {
+        Row: {
+          dismissed_at: string
+          id: string
+          user_id: string
+          variant: string
+        }
+        Insert: {
+          dismissed_at?: string
+          id?: string
+          user_id: string
+          variant: string
+        }
+        Update: {
+          dismissed_at?: string
+          id?: string
+          user_id?: string
+          variant?: string
+        }
+        Relationships: []
+      }
       performance_checkpoints: {
         Row: {
           created_at: string
@@ -1247,6 +1268,7 @@ export type Database = {
           email: string
           flashcards_created_today: number
           flashcards_reset_at: string | null
+          founding_member: boolean
           full_name: string | null
           grade_level: string | null
           id: string
@@ -1287,6 +1309,7 @@ export type Database = {
           email: string
           flashcards_created_today?: number
           flashcards_reset_at?: string | null
+          founding_member?: boolean
           full_name?: string | null
           grade_level?: string | null
           id?: string
@@ -1327,6 +1350,7 @@ export type Database = {
           email?: string
           flashcards_created_today?: number
           flashcards_reset_at?: string | null
+          founding_member?: boolean
           full_name?: string | null
           grade_level?: string | null
           id?: string
@@ -2627,6 +2651,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_founding_member_count: { Args: never; Returns: number }
       get_school_invite_code: { Args: { _school_id: string }; Returns: string }
       has_role: {
         Args: {
