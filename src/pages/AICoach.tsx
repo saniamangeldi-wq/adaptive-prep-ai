@@ -32,6 +32,21 @@ export default function AICoach() {
   const { profile } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const coachUpgrade = useUpgradeModal("coach");
+  const coachMsgCountRef = useRef(0);
+
+  useEffect(() => {
+    const onSent = () => {
+      coachMsgCountRef.current += 1;
+      if (coachMsgCountRef.current >= 5) {
+        coachUpgrade.trigger();
+        coachMsgCountRef.current = 0;
+      }
+    };
+    window.addEventListener("adaptiveprep:coach-message-sent", onSent);
+    return () => window.removeEventListener("adaptiveprep:coach-message-sent", onSent);
+  }, [coachUpgrade]);
+
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
@@ -297,6 +312,7 @@ export default function AICoach() {
           {renderAICoach()}
         </div>
       </div>
+      <UpgradeModal open={coachUpgrade.isOpen} onClose={coachUpgrade.close} variant="coach" />
     </DashboardLayout>
     </>
   );
