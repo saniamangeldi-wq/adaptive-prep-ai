@@ -15,7 +15,6 @@ import { calculateVAKResult, type VAKResult } from "@/lib/vak-scoring";
 import { type VAKStyle } from "@/lib/vak-questions";
 import type { CognitiveScores } from "@/lib/cognitive-baseline";
 import { PageSeo } from "@/components/seo/PageSeo";
-import { PageSeo } from "@/components/seo/PageSeo";
 
 type OnboardingPhase = "grade" | "subjects" | "vak" | "results" | "cognitive";
 
