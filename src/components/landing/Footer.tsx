@@ -102,10 +102,11 @@ export function Footer() {
   );
 }
 
-function SocialLink({ icon: Icon, href }: { icon: React.ElementType; href: string }) {
+function SocialLink({ icon: Icon, href, label }: { icon: React.ElementType; href: string; label: string }) {
   return (
     <a
       href={href}
+      aria-label={label}
       className="w-9 h-9 rounded-lg bg-secondary/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
     >
       <Icon className="w-4 h-4" />
