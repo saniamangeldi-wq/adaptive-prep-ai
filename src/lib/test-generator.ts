@@ -28,6 +28,18 @@ export interface GeneratedTest {
   repeatedCount: number;
   /** Total unique questions available in the matching bank. */
   poolSize: number;
+  /** User-facing warning when the bank is too small to deliver a full test. */
+  poolWarning?: string;
+}
+
+// Unbiased Fisher-Yates shuffle (replaces the biased `.sort(() => Math.random() - 0.5)` pattern).
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 function getTargetQuestions(config: TestConfig): number {
@@ -61,7 +73,7 @@ async function getAdaptiveDifficulty(userId: string, baseDifficulty: DifficultyL
     .limit(10);
 
   if (!recentAttempts || recentAttempts.length < 3) {
-    return baseDifficulty; // Not enough data, use selected difficulty
+    return baseDifficulty;
   }
 
   const accuracy = recentAttempts.reduce((sum, a) => {
@@ -74,186 +86,187 @@ async function getAdaptiveDifficulty(userId: string, baseDifficulty: DifficultyL
     return sum + (time / qs);
   }, 0) / recentAttempts.length;
 
-  // Progressive difficulty calibration algorithm
   if (accuracy > 0.8 && avgTimePerQuestion < 90) {
-    // Student mastering current level - increase difficulty
     if (baseDifficulty === "easy") return "normal";
     if (baseDifficulty === "normal") return "hard";
     return "hard";
   } else if (accuracy < 0.5) {
-    // Student struggling - decrease difficulty
     if (baseDifficulty === "hard") return "normal";
     if (baseDifficulty === "normal") return "easy";
     return "easy";
   }
 
-  return baseDifficulty; // Maintain current level
+  return baseDifficulty;
+}
+
+/**
+ * Top up `candidates` to `target` by pulling from `overflow` (which should be
+ * sorted least-recently-seen first). Does NOT clone questions — if the bank
+ * is genuinely too small, returns a shorter list and logs a warning.
+ */
+function fillToTarget(
+  candidates: Question[],
+  target: number,
+  overflow: Question[]
+): Question[] {
+  if (candidates.length >= target) {
+    return candidates.slice(0, target);
+  }
+  const needed = target - candidates.length;
+  const usedIds = new Set(candidates.map((q) => q.id));
+  const recycled = overflow
+    .filter((q) => !usedIds.has(q.id))
+    .slice(0, needed);
+  const result = [...candidates, ...recycled];
+  if (result.length < target) {
+    console.warn(
+      `[generateTest] Question bank too small: need ${target}, ` +
+      `have ${result.length}. Returning shorter test.`
+    );
+  }
+  return result;
 }
 
 export async function generateTest(config: TestConfig, userId: string): Promise<GeneratedTest | null> {
   const targetQuestions = getTargetQuestions(config);
-  
-  // Apply adaptive difficulty calibration
+
   const adaptedDifficulty = await getAdaptiveDifficulty(userId, config.difficulty);
-  
-  // Determine which test types to fetch
+
   let testTypes: string[] = [];
   if (config.testType === "combined") {
     testTypes = ["math", "reading_writing"];
   } else {
     testTypes = [config.testType];
   }
-  
-  // For the official Digital SAT (combined + full) we MUST hit 54 R&W + 44 Math.
-  // The DB doesn't always have enough questions at a single difficulty, so for
-  // that mode we pull across all difficulties to maximize the available pool.
-  const isOfficialFull = config.testType === "combined" && config.length === "full";
 
-  // Always pull across all difficulties so we have the largest possible pool.
-  // Difficulty becomes a *preference* used for ranking, not a hard filter — this
-  // is critical because some difficulty buckets only have ~10 questions and would
-  // otherwise repeat constantly.
-  const { data: tests, error } = await supabase
+  const { data: rawTests, error } = await supabase
     .from("sat_tests")
     .select("id, questions, difficulty, test_type")
     .in("test_type", testTypes)
     .eq("is_official", true);
 
-  if (error || !tests || tests.length === 0) {
+  if (error || !rawTests || rawTests.length === 0) {
     console.error("Error fetching tests:", error);
     return null;
   }
 
-  // Collect all questions from matching tests, tagging each with its source difficulty
-  // so we can rank by closeness to the requested difficulty.
-  const difficultyRank: Record<string, number> = { easy: 0, normal: 1, hard: 2 };
-  const preferredRank = difficultyRank[adaptedDifficulty] ?? 1;
-  let allQuestions: Question[] = [];
-  for (const test of tests) {
-    const questions = test.questions as unknown as Question[];
-    // Override per-question difficulty with the parent test's difficulty when missing
-    for (const q of questions) {
-      allQuestions.push({ ...q, difficulty: q.difficulty || (test.difficulty as DifficultyLevel) });
-    }
-  }
+  // CHANGE 1: Dedup by question id when flattening across sat_tests rows.
+  const seenIds = new Set<string>();
+  const allQuestions: Question[] = rawTests
+    .flatMap((t) => {
+      const qs = t.questions as unknown as Question[];
+      return qs.map((q) => ({
+        ...q,
+        difficulty: q.difficulty || (t.difficulty as DifficultyLevel),
+      }));
+    })
+    .filter((q) => {
+      if (seenIds.has(q.id)) return false;
+      seenIds.add(q.id);
+      return true;
+    });
 
-  // Fetch previously seen question IDs across a wide attempt window so users
-  // genuinely cycle through the bank before any repeats appear.
+  // Build the "already seen" set across recent attempts (kept as-is — strips __repN
+  // so legacy padded ids still map back to their base id for cross-session tracking).
   const { data: recentAttempts } = await supabase
     .from("test_attempts")
-    .select("answers")
+    .select("answers, created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(500);
 
   const seenQuestionIds = new Set<string>();
+  // Track most-recent-seen timestamp per question id so we can sort least-recently-seen first.
+  const lastSeenAt = new Map<string, number>();
   if (recentAttempts) {
     for (const attempt of recentAttempts) {
       const answers = attempt.answers as Record<string, string> | unknown[] | null;
+      const ts = attempt.created_at ? new Date(attempt.created_at).getTime() : 0;
       if (answers && typeof answers === "object" && !Array.isArray(answers)) {
-        // Strip any __repN suffix added by the padding logic so a padded repeat
-        // still counts as "seen" for its base id.
-        Object.keys(answers).forEach(id => seenQuestionIds.add(id.replace(/__rep\d+$/, "")));
+        Object.keys(answers).forEach((id) => {
+          const base = id.replace(/__rep\d+$/, "");
+          seenQuestionIds.add(base);
+          // Keep the most recent timestamp (recentAttempts is ordered desc, so first write wins).
+          if (!lastSeenAt.has(base)) lastSeenAt.set(base, ts);
+        });
       }
     }
   }
 
-  // Rank questions: unseen first, then by closeness to preferred difficulty, then random.
+  const difficultyRank: Record<string, number> = { easy: 0, normal: 1, hard: 2 };
+  const preferredRank = difficultyRank[adaptedDifficulty] ?? 1;
   const rankQuestion = (q: Question) => {
     const seenPenalty = seenQuestionIds.has(q.id) ? 1000 : 0;
     const diffDistance = Math.abs((difficultyRank[q.difficulty] ?? 1) - preferredRank);
     return seenPenalty + diffDistance;
   };
 
-  // Prioritize unseen questions, fall back to seen ones if pool is exhausted
-  const unseenQuestions = allQuestions
-    .filter(q => !seenQuestionIds.has(q.id))
-    .sort((a, b) => rankQuestion(a) - rankQuestion(b) || Math.random() - 0.5);
-  const seenQuestions = allQuestions
-    .filter(q => seenQuestionIds.has(q.id))
-    .sort((a, b) => rankQuestion(a) - rankQuestion(b) || Math.random() - 0.5);
+  // CHANGE 3: Fisher-Yates instead of biased Math.random()-0.5 sort.
+  const unseenQuestions = shuffle(
+    allQuestions.filter((q) => !seenQuestionIds.has(q.id))
+  ).sort((a, b) => rankQuestion(a) - rankQuestion(b));
 
-  // If combined, balance math and reading/writing with dedup awareness
+  // Seen pool sorted least-recently-seen first (oldest timestamp = highest priority for recycling).
+  const seenQuestions = allQuestions
+    .filter((q) => seenQuestionIds.has(q.id))
+    .sort((a, b) => (lastSeenAt.get(a.id) ?? 0) - (lastSeenAt.get(b.id) ?? 0));
+
   let selectedQuestions: Question[];
   if (config.testType === "combined") {
-    // Official Digital SAT structure: 54 R&W + 44 Math = 98 questions.
-    // For "full" length we MUST hit those exact counts so the test renders
-    // 27 + 27 R&W and 22 + 22 Math modules. Other lengths use a 50/50 split.
     const isFullOfficial = config.length === "full";
     const rwTarget = isFullOfficial ? 54 : Math.floor(targetQuestions / 2);
     const mathTarget = isFullOfficial ? 44 : targetQuestions - rwTarget;
 
-    const unseenMath = unseenQuestions.filter(q => q.section === "math").sort(() => Math.random() - 0.5);
-    const unseenRW = unseenQuestions.filter(q => q.section === "reading_writing").sort(() => Math.random() - 0.5);
-    const seenMath = seenQuestions.filter(q => q.section === "math").sort(() => Math.random() - 0.5);
-    const seenRW = seenQuestions.filter(q => q.section === "reading_writing").sort(() => Math.random() - 0.5);
-
-    const mathPool = [...unseenMath, ...seenMath];
-    const rwPool = [...unseenRW, ...seenRW];
-
-    // For official mode, GUARANTEE the exact module counts. If the bank is
-    // smaller than the target, repeat questions (with fresh ids per repeat)
-    // so the modules always render the correct number of slots.
-    const fillToTarget = (pool: Question[], target: number, sectionLabel: string): Question[] => {
-      if (pool.length === 0) return [];
-      if (pool.length >= target) return pool.slice(0, target);
-      const out: Question[] = [...pool];
-      let i = 0;
-      let repeatRound = 1;
-      while (out.length < target) {
-        const original = pool[i % pool.length];
-        // Clone with a unique id so React keys + answer tracking stay stable.
-        out.push({ ...original, id: `${original.id}__rep${repeatRound}` });
-        i++;
-        if (i % pool.length === 0) repeatRound++;
-      }
-      console.warn(`[SAT] ${sectionLabel} pool short (${pool.length}/${target}) — padded with repeats.`);
-      return out;
-    };
+    const unseenMath = shuffle(unseenQuestions.filter((q) => q.section === "math"));
+    const unseenRW = shuffle(unseenQuestions.filter((q) => q.section === "reading_writing"));
+    // Overflow (seen) pools stay in least-recently-seen order.
+    const seenMath = seenQuestions.filter((q) => q.section === "math");
+    const seenRW = seenQuestions.filter((q) => q.section === "reading_writing");
 
     if (isFullOfficial) {
+      // CHANGE 2: fillToTarget now recycles least-recently-seen instead of cloning.
       selectedQuestions = [
-        ...fillToTarget(rwPool, rwTarget, "Reading & Writing"),
-        ...fillToTarget(mathPool, mathTarget, "Math"),
+        ...fillToTarget(unseenRW, rwTarget, seenRW),
+        ...fillToTarget(unseenMath, mathTarget, seenMath),
       ];
     } else {
       selectedQuestions = [
-        ...rwPool.slice(0, rwTarget),
-        ...mathPool.slice(0, mathTarget),
+        ...[...unseenRW, ...seenRW].slice(0, rwTarget),
+        ...[...unseenMath, ...seenMath].slice(0, mathTarget),
       ];
     }
-    // NOTE: do NOT shuffle here — TakeSATTest splits by section/module.
   } else {
-    const prioritized = [
-      ...unseenQuestions.sort(() => Math.random() - 0.5),
-      ...seenQuestions.sort(() => Math.random() - 0.5),
-    ];
-    // For "full" single-section runs, pad with repeats so the user always
-    // gets the official module count (44 Math / 54 R&W) even when the bank
-    // is short. Otherwise just take what we have.
-    if (config.length === "full" && prioritized.length > 0 && prioritized.length < targetQuestions) {
-      const out: Question[] = [...prioritized];
-      let i = 0;
-      let repeatRound = 1;
-      while (out.length < targetQuestions) {
-        const original = prioritized[i % prioritized.length];
-        out.push({ ...original, id: `${original.id}__rep${repeatRound}` });
-        i++;
-        if (i % prioritized.length === 0) repeatRound++;
-      }
-      console.warn(`[SAT] ${config.testType} pool short (${prioritized.length}/${targetQuestions}) — padded with repeats.`);
-      selectedQuestions = out;
+    const prioritized = [...shuffle(unseenQuestions), ...seenQuestions];
+    if (config.length === "full") {
+      // CHANGE 2: single-section full uses the same recycle-not-clone strategy.
+      selectedQuestions = fillToTarget(
+        shuffle(unseenQuestions),
+        targetQuestions,
+        seenQuestions
+      );
     } else {
       selectedQuestions = prioritized.slice(0, Math.min(targetQuestions, prioritized.length));
     }
   }
 
-  // Create test attempt in database
+  // CHANGE 4: surface a warning when the bank couldn't fill the target.
+  let poolWarning: string | undefined;
+  if (selectedQuestions.length < targetQuestions) {
+    poolWarning =
+      "Some sections have fewer questions than a full SAT because the question bank is still being expanded.";
+  }
+
+  // Temporary duplicate-detection log (per the user's request).
+  const finalIds = selectedQuestions.map((q) => q.id);
+  const dupes = finalIds.filter((id, i) => finalIds.indexOf(id) !== i);
+  if (dupes.length) console.error("DUPLICATE QUESTIONS:", dupes);
+  else console.log("No duplicates — question count:", finalIds.length);
+
   const { data: attempt, error: attemptError } = await supabase
     .from("test_attempts")
     .insert({
       user_id: userId,
-      test_id: tests[0].id,
+      test_id: rawTests[0].id,
       answers: [],
       total_questions: selectedQuestions.length,
       started_at: new Date().toISOString(),
@@ -266,8 +279,7 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     return null;
   }
 
-  // Count how many of the selected questions the user has already seen.
-  const repeatedCount = selectedQuestions.filter(q =>
+  const repeatedCount = selectedQuestions.filter((q) =>
     seenQuestionIds.has(q.id.replace(/__rep\d+$/, ""))
   ).length;
 
@@ -278,6 +290,7 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     config,
     repeatedCount,
     poolSize: allQuestions.length,
+    poolWarning,
   };
 }
 
@@ -295,17 +308,15 @@ export function calculateScore(questions: Question[], answers: Record<string, st
   for (const question of questions) {
     const userAnswer = answers[question.id];
     const isCorrect = userAnswer?.toLowerCase().trim() === question.correct_answer.toLowerCase().trim();
-    
+
     if (isCorrect) correct++;
 
-    // Track by topic
     if (!byTopic[question.topic]) {
       byTopic[question.topic] = { correct: 0, total: 0 };
     }
     byTopic[question.topic].total++;
     if (isCorrect) byTopic[question.topic].correct++;
 
-    // Track by section
     if (!bySection[question.section]) {
       bySection[question.section] = { correct: 0, total: 0 };
     }
