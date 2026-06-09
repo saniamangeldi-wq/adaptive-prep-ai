@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 type UserRole = "student" | "tutor" | "teacher" | "school_admin";
 
@@ -89,6 +90,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex dark text-foreground">
+      <PageSeo
+        title="Sign in to AdaptivePrep — AI SAT Prep"
+        description="Log in to AdaptivePrep to continue your personalized SAT prep, access your AI coach, practice tests, and progress dashboard."
+        path="/login"
+      />
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-background overflow-y-auto">
         <div className="w-full max-w-md space-y-8">
