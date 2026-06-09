@@ -299,6 +299,8 @@ export default function TestResults() {
           </Button>
         </div>
       </div>
+      <UpgradeModal open={testsUpgrade.isOpen} onClose={testsUpgrade.close} variant="tests" />
     </DashboardLayout>
   );
 }
+
