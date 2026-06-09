@@ -18,6 +18,10 @@ import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { ModelSelector, type EliteModel } from "@/components/ai/ModelSelector";
 import type { Reference } from "@/hooks/useReferences";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { UpgradeModal } from "@/components/upgrade/UpgradeModal";
+import { useUpgradeModal } from "@/hooks/useUpgradeModal";
+import { useRef } from "react";
+
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
