@@ -5,6 +5,7 @@ import { TutorDashboard } from "@/components/dashboard/TutorDashboard";
 import { TeacherDashboard } from "@/components/dashboard/TeacherDashboard";
 import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 export default function Dashboard() {
   const { profile } = useAuth();

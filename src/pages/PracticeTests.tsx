@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getTierLimits, PricingTier } from "@/lib/tier-limits";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 type TestMode = "practice" | "official";
 type TestType = "math" | "reading_writing" | "combined";
