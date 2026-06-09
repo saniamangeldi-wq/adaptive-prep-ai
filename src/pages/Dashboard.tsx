@@ -4,6 +4,7 @@ import { StudentDashboard } from "@/components/dashboard/StudentDashboard";
 import { TutorDashboard } from "@/components/dashboard/TutorDashboard";
 import { TeacherDashboard } from "@/components/dashboard/TeacherDashboard";
 import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 export default function Dashboard() {
   const { profile } = useAuth();
@@ -23,8 +24,15 @@ export default function Dashboard() {
   };
 
   return (
-    <DashboardLayout>
-      {renderDashboard()}
-    </DashboardLayout>
+    <>
+      <PageSeo
+        title="Dashboard | AdaptivePrep"
+        description="Your AdaptivePrep dashboard with personalized SAT prep insights, practice tests, and AI coaching."
+        path="/dashboard"
+      />
+      <DashboardLayout>
+        {renderDashboard()}
+      </DashboardLayout>
+    </>
   );
 }

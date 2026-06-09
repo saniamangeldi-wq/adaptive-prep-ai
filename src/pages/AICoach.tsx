@@ -17,6 +17,7 @@ import { CreditsInfoPopover } from "@/components/ai/CreditsInfoPopover";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { ModelSelector, type EliteModel } from "@/components/ai/ModelSelector";
 import type { Reference } from "@/hooks/useReferences";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
@@ -143,41 +144,61 @@ export default function AICoach() {
     // No conversation selected → show Space dashboard
     if (!currentConversation) {
       return (
-        <DashboardLayout>
-          <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
-            <SpaceDashboard
-              space={activeSpace}
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              onBack={handleBackToSpaces}
-              coachType={coachType}
-            />
-          </div>
-        </DashboardLayout>
+        <>
+          <PageSeo
+            title="AI SAT Coach | AdaptivePrep"
+            description="Get personalized SAT tutoring from our AI coach. Socratic guidance, essay feedback, and study planning."
+            path="/dashboard/coach"
+          />
+          <DashboardLayout>
+            <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
+              <SpaceDashboard
+                space={activeSpace}
+                onSelectConversation={handleSelectConversation}
+                onNewConversation={handleNewConversation}
+                onBack={handleBackToSpaces}
+                coachType={coachType}
+              />
+            </div>
+          </DashboardLayout>
+        </>
       );
     }
 
     // Conversation selected → show chat interior
     return (
-      <DashboardLayout>
-        <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
-          <SpaceInterior
-            space={activeSpace}
-            currentConversationId={currentConversation?.id}
-            onSelectConversation={handleSelectConversation}
-            onNewConversation={handleNewConversation}
-            onBack={() => setCurrentConversation(null)}
-            coachType={coachType}
-          >
-            {renderAICoach()}
-          </SpaceInterior>
-        </div>
-      </DashboardLayout>
+      <>
+        <PageSeo
+          title="AI SAT Coach | AdaptivePrep"
+          description="Get personalized SAT tutoring from our AI coach. Socratic guidance, essay feedback, and study planning."
+          path="/dashboard/coach"
+        />
+        <DashboardLayout>
+          <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
+            <SpaceInterior
+              space={activeSpace}
+              currentConversationId={currentConversation?.id}
+              onSelectConversation={handleSelectConversation}
+              onNewConversation={handleNewConversation}
+              onBack={() => setCurrentConversation(null)}
+              coachType={coachType}
+            >
+              {renderAICoach()}
+            </SpaceInterior>
+          </div>
+        </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
+      <PageSeo
+        title="AI SAT Coach | AdaptivePrep"
+        description="Get personalized SAT tutoring from our AI coach. Socratic guidance, essay feedback, and study planning."
+        path="/dashboard/coach"
+      />
+      <DashboardLayout>
       <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
         {/* Top header bar */}
         {showConversationSidebar && (
@@ -273,5 +294,6 @@ export default function AICoach() {
         </div>
       </div>
     </DashboardLayout>
+    </>
   );
 }
