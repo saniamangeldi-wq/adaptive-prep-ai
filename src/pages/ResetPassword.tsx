@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -62,6 +63,12 @@ export default function ResetPassword() {
   };
 
   return (
+    <>
+    <PageSeo
+      title="Reset password — AdaptivePrep"
+      description="Set a new password for your AdaptivePrep account and get back to your SAT prep in seconds."
+      path="/reset-password"
+    />
     <div className="min-h-screen flex items-center justify-center p-8 bg-background dark text-foreground">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
@@ -136,5 +143,6 @@ export default function ResetPassword() {
         </div>
       </div>
     </div>
+    </>
   );
 }

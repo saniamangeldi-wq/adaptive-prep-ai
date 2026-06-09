@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 type Status = "loading" | "valid" | "already_unsubscribed" | "invalid" | "success" | "error";
 
@@ -66,6 +67,12 @@ const Unsubscribe = () => {
   };
 
   return (
+    <>
+    <PageSeo
+      title="Unsubscribe — AdaptivePrep"
+      description="Manage your AdaptivePrep email preferences and unsubscribe from notifications."
+      path="/unsubscribe"
+    />
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-card rounded-xl border border-border p-8 text-center space-y-4">
         {status === "loading" && (
@@ -132,6 +139,7 @@ const Unsubscribe = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
