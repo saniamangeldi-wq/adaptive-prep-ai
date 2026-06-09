@@ -129,6 +129,7 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
+      <Route path="/blog/free-ai-sat-prep" element={<FreeAiSatPrep />} />
       
       {/* Protected routes */}
       <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
