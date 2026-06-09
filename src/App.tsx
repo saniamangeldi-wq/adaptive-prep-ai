@@ -24,6 +24,7 @@ import Spaces from "./pages/Spaces";
 import Progress from "./pages/Progress";
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
+import FreeAiSatPrep from "./pages/blog/FreeAiSatPrep";
 import Settings from "./pages/Settings";
 import Billing from "./pages/Billing";
 import TutorBilling from "./pages/TutorBilling";
@@ -128,6 +129,7 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
+      <Route path="/blog/free-ai-sat-prep" element={<FreeAiSatPrep />} />
       
       {/* Protected routes */}
       <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
