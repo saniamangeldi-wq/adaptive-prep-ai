@@ -261,6 +261,11 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     const text = overrideInput ?? input;
     if (!text.trim() || isLoading) return;
     if ((profile?.credits_remaining || 0) <= 0) return;
+
+    if (!options?.hidden) {
+      window.dispatchEvent(new CustomEvent("adaptiveprep:coach-message-sent"));
+    }
+
     
     if (!activeConvId && onEnsureConversation) {
       const newId = await onEnsureConversation();
