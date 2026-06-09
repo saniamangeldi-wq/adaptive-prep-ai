@@ -38,7 +38,6 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { PageSeo } from "@/components/seo/PageSeo";
 import { toast } from "sonner";
-import { PageSeo } from "@/components/seo/PageSeo";
 
 // Convert raw accuracy (0-100%) to SAT scaled score (200-800)
 function toSATScore(accuracy: number): number {
@@ -571,6 +570,7 @@ export default function Progress() {
         {!hasProgress && <EmptyProgressState />}
       </div>
     </DashboardLayout>
+    </>
   );
 }
 
@@ -693,7 +693,6 @@ function RecommendationsSection({
         ))}
       </div>
     </div>
-  </>
   );
 }
 
