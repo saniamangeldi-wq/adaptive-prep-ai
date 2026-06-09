@@ -77,7 +77,11 @@ export function AIChatPreview() {
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             disabled
           />
-          <button className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+          <button
+            type="button"
+            aria-label="Send message"
+            className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground"
+          >
             <Send className="w-4 h-4" />
           </button>
         </div>

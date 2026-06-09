@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>AdaptivePrep - AI-Powered Learning</title>
-    <meta name="description" content="Your AI-powered study companion for SAT prep, flashcards, and personalized learning." />
+    <title>AdaptivePrep — Your AI SAT Study Partner</title>
+    <meta name="description" content="AdaptivePrep is an AI-powered SAT prep platform with adaptive practice tests, an AI coach, flashcards, and university match — built for ambitious students." />
     <meta name="author" content="AdaptivePrep" />
 
     <!-- PWA Meta Tags -->
@@ -22,17 +22,38 @@
     <link rel="apple-touch-startup-image" href="/apple-splash-1170x2532.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
     <link rel="apple-touch-startup-image" href="/apple-splash-1170x2532.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="AdaptivePrep - AI-Powered Learning" />
-    <meta property="og:description" content="Your AI-powered study companion for SAT prep, flashcards, and personalized learning." />
+    <!-- Open Graph (sitewide fallback; per-route Helmet overrides for JS crawlers) -->
+    <meta property="og:title" content="AdaptivePrep — Your AI SAT Study Partner" />
+    <meta property="og:description" content="AI-powered SAT prep with adaptive practice tests, AI coaching, flashcards, and university match." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://adaptive-prep-ai.lovable.app/og-image.png" />
+    <meta property="og:url" content="https://adaptiveprep.org/" />
+    <meta property="og:image" content="https://adaptiveprep.org/og-image.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@AdaptivePrep" />
-    <meta name="twitter:image" content="https://adaptive-prep-ai.lovable.app/og-image.png" />
+    <meta name="twitter:image" content="https://adaptiveprep.org/og-image.png" />
 
     <link rel="icon" href="/favicon.png" type="image/png" />
+
+    <!-- Structured data: Organization + WebSite -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "AdaptivePrep",
+        "url": "https://adaptiveprep.org",
+        "logo": "https://adaptiveprep.org/pwa-icon-512.png",
+        "sameAs": []
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "AdaptivePrep",
+        "url": "https://adaptiveprep.org"
+      }
+    </script>
   </head>
 
   <body>

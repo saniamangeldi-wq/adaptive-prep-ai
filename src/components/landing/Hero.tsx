@@ -27,8 +27,10 @@ export function Hero() {
             {/* Heading */}
             <div className="space-y-4">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-                Meet{" "}
                 <span className="gradient-text">AdaptivePrep</span>
+                <span className="block text-2xl sm:text-3xl lg:text-4xl font-semibold text-foreground/90 mt-2">
+                  Your AI SAT Study Partner
+                </span>
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground max-w-lg">
                 Your personalized SAT preparation assistant that adapts to your learning style — master Math and Reading/Writing, all in one place.

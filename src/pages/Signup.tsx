@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 type UserRole = "student" | "tutor" | "teacher" | "school_admin";
 
@@ -106,6 +107,11 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen flex dark text-foreground">
+      <PageSeo
+        title="Create your AdaptivePrep account — Free AI SAT Prep"
+        description="Sign up free for AdaptivePrep. Get an AI SAT coach, adaptive practice tests, flashcards, and a personalized study plan in minutes."
+        path="/signup"
+      />
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-background overflow-y-auto">
         <div className="w-full max-w-md space-y-8">
@@ -248,6 +254,7 @@ export default function Signup() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
