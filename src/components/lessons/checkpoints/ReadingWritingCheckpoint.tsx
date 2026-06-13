@@ -37,7 +37,7 @@ export function ReadingWritingCheckpoint({ checkpoint, onAnswer }: ReadingWritin
 
   return (
     <div className="space-y-4">
-      <p className="text-foreground font-medium">{checkpoint.question}</p>
+      <MathRenderer as="p" className="text-foreground font-medium" text={checkpoint.question} />
 
       {/* Text excerpt */}
       {checkpoint.text_excerpt && (
