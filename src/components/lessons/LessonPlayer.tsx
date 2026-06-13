@@ -10,6 +10,7 @@ import { VisualCheckpoint } from "./checkpoints/VisualCheckpoint";
 import { KinestheticCheckpoint } from "./checkpoints/KinestheticCheckpoint";
 import { ReadingWritingCheckpoint } from "./checkpoints/ReadingWritingCheckpoint";
 import { AuditoryCheckpoint } from "./checkpoints/AuditoryCheckpoint";
+import { MathRenderer } from "@/components/MathRenderer";
 import {
   Play,
   Pause,
