@@ -11,6 +11,7 @@ import { Calculator, TrendingUp, Building2, GraduationCap, Receipt } from "lucid
 import { useAuth } from "@/contexts/AuthContext";
 import { canAccessCalculator } from "@/lib/calculator-access";
 import SchoolQuoteBuilder from "@/components/calculator/SchoolQuoteBuilder";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 // KZ tax rates
 const VAT_RATE = 0.12; // 12% NDS
@@ -168,6 +169,7 @@ export default function RevenueCalculator() {
 
   return (
     <DashboardLayout>
+      <PageSeo title="Tutor Revenue Calculator | AdaptivePrep" description="Estimate your tutoring revenue, student capacity and ROI with the AdaptivePrep calculator." path="/dashboard/revenue-calculator" />
       <div className="space-y-6 max-w-7xl">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">

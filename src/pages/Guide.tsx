@@ -4,6 +4,7 @@ import { StudentGuide } from "@/components/guide/StudentGuide";
 import { TutorGuide } from "@/components/guide/TutorGuide";
 import { TeacherGuide } from "@/components/guide/TeacherGuide";
 import { AdminGuide } from "@/components/guide/AdminGuide";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 export default function Guide() {
   const { profile } = useAuth();
@@ -22,5 +23,6 @@ export default function Guide() {
     }
   };
 
-  return <DashboardLayout>{renderGuide()}</DashboardLayout>;
+  return <DashboardLayout>
+      <PageSeo title="Platform Guide | AdaptivePrep" description="Role-specific guide explaining how to get the most out of AdaptivePrep as a student, tutor or admin." path="/dashboard/guide" />{renderGuide()}</DashboardLayout>;
 }

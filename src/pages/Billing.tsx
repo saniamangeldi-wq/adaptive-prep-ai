@@ -22,6 +22,7 @@ import {
    Users
 } from "lucide-react";
 import { getStripeLink } from "@/lib/stripe-links";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 // Tutor plan definitions
 const tutorPlans = [
@@ -93,6 +94,7 @@ function TutorBillingView() {
 
   return (
     <DashboardLayout>
+      <PageSeo title="Billing & Plans | AdaptivePrep" description="Manage your AdaptivePrep subscription, switch tiers, view usage and update payment details." path="/dashboard/billing" />
       <div className="space-y-8 max-w-5xl">
         {/* Header */}
         <div>

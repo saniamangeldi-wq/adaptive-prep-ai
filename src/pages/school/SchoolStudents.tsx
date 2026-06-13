@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 interface Student {
   id: string;
@@ -171,6 +172,7 @@ export default function SchoolStudents() {
   if (loading) {
     return (
       <DashboardLayout>
+      <PageSeo title="School Students | AdaptivePrep" description="Manage your school's students, monitor progress and assign teachers." path="/dashboard/school/students" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
         </div>

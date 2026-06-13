@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { TeacherAssignmentDialog } from "@/components/school/TeacherAssignmentDialog";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 interface TeacherAssignment {
   subjects: string[];
@@ -245,6 +246,7 @@ export default function SchoolTeachers() {
   if (loading) {
     return (
       <DashboardLayout>
+      <PageSeo title="School Teachers | AdaptivePrep" description="Add, assign and manage teachers within your school on AdaptivePrep." path="/dashboard/school/teachers" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
         </div>

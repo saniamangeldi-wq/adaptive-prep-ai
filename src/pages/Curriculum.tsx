@@ -6,6 +6,7 @@ import { useStudentAffiliation } from "@/hooks/useStudentAffiliation";
 import { BookOpen, Target, FileText, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 interface CurriculumItem {
   id: string;
@@ -77,6 +78,7 @@ export default function Curriculum() {
   if (loading || affiliationLoading) {
     return (
       <DashboardLayout>
+      <PageSeo title="Curriculum Library | AdaptivePrep" description="Browse curriculum units, learning objectives and resources curated for your subjects and grade." path="/dashboard/curriculum" />
         <div className="space-y-6">
           <Skeleton className="h-10 w-48" />
           <div className="flex gap-2">

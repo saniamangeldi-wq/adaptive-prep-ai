@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
  import { PendingRequests } from "@/components/invite/PendingRequests";
 
 export default function SchoolInvite() {
@@ -96,6 +97,7 @@ export default function SchoolInvite() {
   if (loading) {
     return (
       <DashboardLayout>
+      <PageSeo title="Invite to School | AdaptivePrep" description="Generate invite codes and links to onboard teachers and students into your school." path="/dashboard/school/invite" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
         </div>

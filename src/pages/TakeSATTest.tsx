@@ -7,6 +7,7 @@ import { useXPLevel } from "@/hooks/useXPLevel";
 import { XP_REWARDS } from "@/lib/gamification-config";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-generator";
+import { PageSeo } from "@/components/seo/PageSeo";
 import { 
   TestStartScreen, 
   ModuleDirections, 
@@ -304,6 +305,7 @@ export default function TakeSATTest() {
   if (!testSession) {
     return (
       <DashboardLayout>
+      <PageSeo title="Official Digital SAT | AdaptivePrep" description="Take a full-length adaptive Digital SAT practice test with realistic timing and modules." path="/dashboard/sat-test" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
         </div>

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BILLING_MULTIPLIERS, type BillingCycle } from "@/lib/pricing-config";
 import { getStripeLink } from "@/lib/stripe-links";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 const plans = [
   {
@@ -67,6 +68,7 @@ export default function TutorBilling() {
 
   return (
     <DashboardLayout>
+      <PageSeo title="Tutor Billing | AdaptivePrep" description="Manage your AdaptivePrep tutor plan, seat count, invoices and payment methods." path="/dashboard/tutor-billing" />
       <div className="space-y-8 max-w-5xl">
         {/* Header */}
         <div>

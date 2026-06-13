@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { PageSeo } from "@/components/seo/PageSeo";
 import { 
   Building2, 
   Users, 
@@ -95,6 +96,7 @@ export default function SchoolOverview() {
   if (loading) {
     return (
       <DashboardLayout>
+      <PageSeo title="School Overview | AdaptivePrep" description="High-level dashboard of your school's activity, members and recent milestones." path="/dashboard/school" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
         </div>

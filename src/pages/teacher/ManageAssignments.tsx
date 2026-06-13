@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 interface Assignment {
   id: string;
@@ -229,6 +230,7 @@ export default function ManageAssignments() {
   if (loading) {
     return (
       <DashboardLayout>
+      <PageSeo title="Manage Assignments | AdaptivePrep" description="Create, grade and track classroom assignments for your students on AdaptivePrep." path="/dashboard/manage-assignments" />
         <div className="space-y-6">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-64" />
