@@ -55,7 +55,7 @@ export function KinestheticCheckpoint({ checkpoint, onAnswer }: KinestheticCheck
             >
               <div className="flex items-start gap-3">
                 <span className="text-lg">{ICONS[idx % ICONS.length]}</span>
-                <span className="text-sm text-foreground">{opt}</span>
+                <MathRenderer className="text-sm text-foreground" text={opt} />
               </div>
             </button>
           );
