@@ -82,10 +82,10 @@ export function ReadingWritingCheckpoint({ checkpoint, onAnswer }: ReadingWritin
             <button
               key={idx}
               onClick={() => handleOptionSelect(idx)}
-              className="w-full text-left p-2.5 rounded-lg border border-border text-sm hover:border-primary/50 transition-colors"
+              className="w-full text-left p-2.5 rounded-lg border border-border text-sm hover:border-primary/50 transition-colors flex items-start gap-2"
             >
-              <span className="text-muted-foreground mr-2">{String.fromCharCode(65 + idx)}.</span>
-              {opt}
+              <span className="text-muted-foreground">{String.fromCharCode(65 + idx)}.</span>
+              <MathRenderer className="flex-1" text={opt} />
             </button>
           ))}
         </div>
