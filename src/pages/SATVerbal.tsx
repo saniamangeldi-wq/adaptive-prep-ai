@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ArrowLeft, BookOpen, Play, CheckCircle2, Sparkles, Calculator, Loader2, Wand2, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 type Style = "visual" | "auditory" | "kinesthetic" | "reading_writing";
 type Track = "verbal" | "math";
@@ -136,6 +137,7 @@ export default function SATVerbal() {
 
     return (
       <DashboardLayout>
+      <PageSeo title="SAT Verbal Lessons | AdaptivePrep" description="Master SAT reading and writing with adaptive verbal lessons tailored to your learning style." path="/dashboard/sat-verbal" />
         <div className="max-w-3xl mx-auto space-y-4">
           <Button variant="ghost" className="gap-2" onClick={() => setActiveLesson(null)}>
             <ArrowLeft className="h-4 w-4" />

@@ -6,6 +6,7 @@ import { useStudentAffiliation } from "@/hooks/useStudentAffiliation";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 interface CalendarEvent {
   id: string;
@@ -106,6 +107,7 @@ export default function Calendar() {
   if (loading || affiliationLoading) {
     return (
       <DashboardLayout>
+      <PageSeo title="Calendar & Schedule | AdaptivePrep" description="Your unified academic calendar for exams, lessons, assignments and meetings on AdaptivePrep." path="/dashboard/calendar" />
         <div className="space-y-6">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-96" />

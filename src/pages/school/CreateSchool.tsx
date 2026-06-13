@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 export default function CreateSchool() {
   const { profile, refreshProfile } = useAuth();
@@ -59,6 +60,7 @@ export default function CreateSchool() {
 
   return (
     <DashboardLayout>
+      <PageSeo title="Create Your School | AdaptivePrep" description="Set up your institution on AdaptivePrep and start managing teachers and students." path="/dashboard/school/create" />
       <div className="max-w-xl mx-auto">
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mx-auto mb-4">

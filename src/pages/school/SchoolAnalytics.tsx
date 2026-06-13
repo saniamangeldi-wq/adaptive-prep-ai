@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 interface UserActivity {
   user_id: string;
@@ -157,6 +158,7 @@ export default function SchoolAnalytics() {
 
   return (
     <DashboardLayout>
+      <PageSeo title="School Analytics | AdaptivePrep" description="Aggregate performance, engagement and progress analytics for your school's students." path="/dashboard/school/analytics" />
       <div className="space-y-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Analytics</h1>

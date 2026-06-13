@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 interface Assignment {
   id: string;
@@ -106,6 +107,7 @@ export default function Assignments() {
   if (loading || affiliationLoading) {
     return (
       <DashboardLayout>
+      <PageSeo title="My Assignments | AdaptivePrep" description="View, submit and track classroom assignments from your teachers and tutors inside AdaptivePrep." path="/dashboard/assignments" />
         <div className="space-y-6">
           <Skeleton className="h-10 w-48" />
           <div className="flex gap-2">

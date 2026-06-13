@@ -25,6 +25,7 @@ import { GenerateWithAIDialog } from "@/components/flashcards/GenerateWithAIDial
 import { premadeDecks, FlashcardDeck, Flashcard } from "@/lib/flashcard-data";
 import { useFlashcardDecks } from "@/hooks/useFlashcardDecks";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,6 +107,7 @@ export default function Flashcards() {
 
     return (
       <DashboardLayout>
+      <PageSeo title="Smart Flashcards | AdaptivePrep" description="Create AI-generated flashcard decks and review spaced-repetition cards across SAT subjects." path="/dashboard/flashcards" />
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">

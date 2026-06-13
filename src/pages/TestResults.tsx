@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import type { Question, GeneratedTest } from "@/lib/test-generator";
 import { UpgradeModal } from "@/components/upgrade/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 
 interface ResultData {
@@ -52,6 +53,7 @@ export default function TestResults() {
   if (!test || !result) {
     return (
       <DashboardLayout>
+      <PageSeo title="Test Results | AdaptivePrep" description="Detailed breakdown of your SAT practice test score, weaknesses and AI-driven next steps." path="/dashboard/tests/results" />
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <p className="text-muted-foreground">No test results found.</p>
           <Button asChild>

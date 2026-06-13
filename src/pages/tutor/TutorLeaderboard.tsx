@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 interface StudentGroup {
   id: string;
@@ -246,6 +247,7 @@ export default function TutorLeaderboard() {
   if (loading) {
     return (
       <DashboardLayout>
+      <PageSeo title="Tutor Leaderboard | AdaptivePrep" description="Compare your students' XP, progress and engagement on the tutor leaderboard." path="/dashboard/leaderboard" />
         <div className="space-y-6">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-64" />

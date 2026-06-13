@@ -12,6 +12,7 @@ import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-ge
 import { useToast } from "@/hooks/use-toast";
 import { useXPLevel } from "@/hooks/useXPLevel";
 import { XP_REWARDS } from "@/lib/gamification-config";
+import { PageSeo } from "@/components/seo/PageSeo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -165,6 +166,7 @@ export default function TakeTest() {
   if (!test) {
     return (
       <DashboardLayout>
+      <PageSeo title="Practice Test | AdaptivePrep" description="Take an adaptive AdaptivePrep practice test with instant scoring and AI explanations." path="/dashboard/tests/take" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
         </div>

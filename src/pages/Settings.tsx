@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getTierLimits, PricingTier } from "@/lib/tier-limits";
 import { SchoolSettingsSection } from "@/components/settings/SchoolSettingsSection";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 export default function Settings() {
   const { user, profile, signOut, updateProfile } = useAuth();
@@ -137,6 +138,7 @@ export default function Settings() {
 
   return (
     <DashboardLayout>
+      <PageSeo title="Account Settings | AdaptivePrep" description="Update your profile, language, theme, AI model and notification preferences on AdaptivePrep." path="/dashboard/settings" />
       <div className="max-w-4xl space-y-8">
         {/* Header */}
         <div>

@@ -18,6 +18,7 @@ import {
   BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 interface UploadedFile {
   file: File;
@@ -172,6 +173,7 @@ export default function UploadTests() {
   if (!isAdmin) {
     return (
       <DashboardLayout>
+      <PageSeo title="Upload SAT Tests | AdaptivePrep Admin" description="Admin tool to ingest official SAT PDFs and seed practice tests into AdaptivePrep." path="/admin/upload-tests" />
         <div className="max-w-2xl mx-auto text-center py-12">
           <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>

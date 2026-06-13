@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { PageSeo } from "@/components/seo/PageSeo";
 import {
   Plus,
   Loader2,
@@ -284,6 +285,7 @@ export default function VideoLessons() {
     const content = JSON.parse(selectedLesson.script_content);
     return (
       <DashboardLayout>
+      <PageSeo title="Video Lessons | AdaptivePrep" description="Watch AI-generated video lessons aligned with your VAK style and SAT goals." path="/dashboard/video-lessons" />
         <div className="max-w-3xl mx-auto space-y-4">
           <Button variant="ghost" className="gap-2" onClick={() => setSelectedLesson(null)}>
             <ArrowLeft className="h-4 w-4" />

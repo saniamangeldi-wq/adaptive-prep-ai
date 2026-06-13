@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CreditCard, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 const tierInfo = [
   {
@@ -80,6 +81,7 @@ export default function SchoolBilling() {
   if (loading) {
     return (
       <DashboardLayout>
+      <PageSeo title="School Billing | AdaptivePrep" description="Manage your school's AdaptivePrep plan, seats and invoices in one place." path="/dashboard/school/billing" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
         </div>

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStudentAffiliation } from "@/hooks/useStudentAffiliation";
 import { Trophy, TrendingUp, BookOpen } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 interface Grade {
   id: string;
@@ -82,6 +83,7 @@ export default function Grades() {
   if (loading || affiliationLoading) {
     return (
       <DashboardLayout>
+      <PageSeo title="Grades & GPA | AdaptivePrep" description="See your subject averages, GPA and term grade history in a clean academic portal." path="/dashboard/grades" />
         <div className="space-y-6">
           <Skeleton className="h-10 w-48" />
           <div className="grid sm:grid-cols-3 gap-4">

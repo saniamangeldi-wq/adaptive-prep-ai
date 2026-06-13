@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Zap, Star, Crown } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { PageSeo } from "@/components/seo/PageSeo";
 
 export default function Achievements() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export default function Achievements() {
 
   return (
     <DashboardLayout>
+      <PageSeo title="Achievements & Leaderboard | AdaptivePrep" description="Track XP, badges, levels and your leaderboard rank on AdaptivePrep's gamified SAT prep journey." path="/dashboard/achievements" />
       <div className="space-y-8 max-w-4xl mx-auto">
         {/* Hero Level Card */}
         <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
