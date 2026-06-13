@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { MathRenderer } from "@/components/MathRenderer";
 import type { Question } from "@/lib/test-generator";
 
 interface SATQuestionCardProps {
@@ -28,16 +29,20 @@ export function SATQuestionCard({
       <div className="space-y-4">
         {question.text && question.text.length > 300 && (
           <div className="p-6 rounded-xl bg-muted/50 border border-border/50">
-            <p className="text-foreground leading-relaxed whitespace-pre-line">
-              {question.text}
-            </p>
+            <MathRenderer
+              as="div"
+              className="text-foreground leading-relaxed whitespace-pre-line"
+              text={question.text}
+            />
           </div>
         )}
 
         {question.text && question.text.length <= 300 && (
-          <p className="text-lg text-foreground leading-relaxed">
-            {question.text}
-          </p>
+          <MathRenderer
+            as="div"
+            className="text-lg text-foreground leading-relaxed"
+            text={question.text}
+          />
         )}
       </div>
 
@@ -72,7 +77,7 @@ export function SATQuestionCard({
                 </div>
 
                 {/* Option Text */}
-                <span className="text-foreground">{option}</span>
+                <MathRenderer className="text-foreground" text={option} />
 
                 {/* Selection Indicator */}
                 <div className="flex justify-end">
