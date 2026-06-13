@@ -67,7 +67,7 @@ function splitIntoSegments(text: string): Segment[] {
     }
 
     // Keep prose before labels such as "Formula:" as text, then render the math tail.
-    const labelMatch = chunk.match(/^([\s\S]*?:\s*)([\s\S]*${LATEX_INDICATOR_SOURCE}[\s\S]*)$/);
+    const labelMatch = chunk.match(new RegExp(String.raw`^([\s\S]*?:\s*)([\s\S]*${LATEX_INDICATOR_SOURCE}[\s\S]*)$`));
     if (labelMatch) {
       result.push({ type: "text", content: labelMatch[1] });
       pushTextLike(labelMatch[2]);
