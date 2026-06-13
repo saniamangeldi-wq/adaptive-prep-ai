@@ -2,7 +2,9 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Check, X, PenLine, Eye, RotateCcw, ArrowRight, Copy } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { MathRenderer } from "@/components/MathRenderer";
 import { toast } from "sonner";
+
 
 function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -78,7 +80,7 @@ function MCQWidget({ data, onNextQuestion }: { data: QuizData; onNextQuestion?: 
 
   return (
     <div className="my-4 rounded-xl border border-border/40 bg-muted/20 p-5">
-      <p className="text-sm font-semibold text-foreground mb-4">{data.question}</p>
+      <MathRenderer as="p" className="text-sm font-semibold text-foreground mb-4" text={data.question} />
 
       {data.input_type === "radio" && data.options ? (
         <div className="space-y-2 mb-4">
@@ -102,7 +104,7 @@ function MCQWidget({ data, onNextQuestion }: { data: QuizData; onNextQuestion?: 
                 )}
               >
                 <span className="font-medium w-5 shrink-0">{opt.id}.</span>
-                <span className="flex-1">{opt.text}</span>
+                <MathRenderer className="flex-1" text={opt.text} />
                 {showResult && thisCorrect && <Check className="w-4 h-4 text-green-500 shrink-0" />}
                 {showResult && isThis && !thisCorrect && <X className="w-4 h-4 text-destructive shrink-0" />}
               </button>
@@ -140,7 +142,7 @@ function MCQWidget({ data, onNextQuestion }: { data: QuizData; onNextQuestion?: 
             <p className="font-medium mb-1">
               {isCorrect ? "✓ Correct!" : `✗ The answer is ${data.correct_answer}`}
             </p>
-            <p className="text-muted-foreground">{data.explanation}</p>
+            <MathRenderer as="p" className="text-muted-foreground" text={data.explanation || ""} />
           </div>
           
           {onNextQuestion && (
@@ -191,7 +193,7 @@ function FreeWriteWidget({ data, onSubmit, onNextQuestion }: { data: QuizData; o
         <span className="text-xs font-semibold text-primary uppercase tracking-wide">Free Response</span>
       </div>
 
-      <p className="text-sm font-semibold text-foreground mb-4">{data.question}</p>
+      <MathRenderer as="p" className="text-sm font-semibold text-foreground mb-4" text={data.question} />
 
       <Textarea
         value={answer}
