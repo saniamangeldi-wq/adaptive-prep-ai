@@ -31,7 +31,7 @@ export function KinestheticCheckpoint({ checkpoint, onAnswer }: KinestheticCheck
     <div className="space-y-4">
       {/* Scenario setup */}
       <div className="border-l-4 border-primary bg-primary/10 p-4 rounded-r-lg">
-        <p className="text-foreground font-medium">{checkpoint.question}</p>
+        <MathRenderer as="p" className="text-foreground font-medium" text={checkpoint.question} />
       </div>
 
       {/* Decision cards */}
@@ -55,7 +55,7 @@ export function KinestheticCheckpoint({ checkpoint, onAnswer }: KinestheticCheck
             >
               <div className="flex items-start gap-3">
                 <span className="text-lg">{ICONS[idx % ICONS.length]}</span>
-                <span className="text-sm text-foreground">{opt}</span>
+                <MathRenderer className="text-sm text-foreground" text={opt} />
               </div>
             </button>
           );
