@@ -13,6 +13,8 @@ type Segment =
   | { type: "inline"; content: string }
   | { type: "block"; content: string };
 
+const BARE_LATEX_RE = /\\[a-zA-Z]+/;
+
 /**
  * Splits text into math + plain-text segments. Recognises:
  *   $$...$$    block math
@@ -21,6 +23,8 @@ type Segment =
  *   \(...\)    inline math
  *   (...)      inline math IF content has a LaTeX command (\foo) or sub/superscript (x_1, x^2)
  *   [...]      inline math IF content has a LaTeX command (\foo)
+ * Plus: bare LaTeX (e.g. "x = \dfrac{1}{2}") without delimiters is detected
+ * and rendered, splitting on English connectors like " and ", " or ", commas.
  */
 function splitIntoSegments(text: string): Segment[] {
   const result: Segment[] = [];
@@ -33,9 +37,31 @@ function splitIntoSegments(text: string): Segment[] {
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
+  const pushTextLike = (chunk: string) => {
+    if (!chunk) return;
+    // If chunk contains bare LaTeX (e.g. \dfrac, \sqrt) outside any delimiter,
+    // split on connector words/punctuation and render math sub-chunks inline.
+    if (BARE_LATEX_RE.test(chunk)) {
+      // Split keeping separators: " and ", " or ", ", "
+      const parts = chunk.split(/(\s+(?:and|or)\s+|,\s+)/i);
+      for (const part of parts) {
+        if (!part) continue;
+        if (/^(\s+(?:and|or)\s+|,\s+)$/i.test(part)) {
+          result.push({ type: "text", content: part });
+        } else if (BARE_LATEX_RE.test(part)) {
+          result.push({ type: "inline", content: part.trim() });
+        } else {
+          result.push({ type: "text", content: part });
+        }
+      }
+    } else {
+      result.push({ type: "text", content: chunk });
+    }
+  };
+
   while ((match = RE.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      result.push({ type: "text", content: text.slice(lastIndex, match.index) });
+      pushTextLike(text.slice(lastIndex, match.index));
     }
 
     const raw = match[0];
@@ -62,7 +88,7 @@ function splitIntoSegments(text: string): Segment[] {
   }
 
   if (lastIndex < text.length) {
-    result.push({ type: "text", content: text.slice(lastIndex) });
+    pushTextLike(text.slice(lastIndex));
   }
 
   return result;
