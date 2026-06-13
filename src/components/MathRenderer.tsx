@@ -17,6 +17,19 @@ const LATEX_INDICATORS = /\\[a-zA-Z]+|[a-zA-Z0-9][_^][a-zA-Z0-9{(]/;
 const LATEX_INDICATOR_SOURCE = String.raw`(?:\\[a-zA-Z]+|[a-zA-Z0-9][_^][a-zA-Z0-9{(])`;
 const CONNECTOR_RE = /(\s+(?:and|or)\s+|,\s+)/i;
 const CONNECTOR_ONLY_RE = /^(\s+(?:and|or)\s+|,\s+)$/i;
+const PROSE_WORD_RE = /(^|[^\\])\b[a-zA-Z]{3,}\b/;
+const CONNECTOR_WORD_RE = /\b(?:and|or)\b/i;
+
+function isStandaloneMathExpression(value: string) {
+  const trimmed = value.trim();
+  return (
+    LATEX_INDICATORS.test(trimmed) &&
+    !trimmed.includes("$") &&
+    !trimmed.includes(":") &&
+    !CONNECTOR_WORD_RE.test(trimmed) &&
+    !PROSE_WORD_RE.test(trimmed)
+  );
+}
 
 /**
  * Splits text into math + plain-text segments. Recognises:
