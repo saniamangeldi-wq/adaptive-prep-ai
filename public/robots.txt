@@ -1,3 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /dashboard
+Disallow: /onboarding
+Disallow: /settings
+Disallow: /billing
+
 User-agent: Googlebot
 Allow: /
 Disallow: /dashboard/
@@ -19,13 +27,5 @@ Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
-
-User-agent: *
-Allow: /
-Disallow: /dashboard/
-Disallow: /dashboard
-Disallow: /onboarding
-Disallow: /settings
-Disallow: /billing
 
 Sitemap: https://adaptiveprep.org/sitemap.xml
