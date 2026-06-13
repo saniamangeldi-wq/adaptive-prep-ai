@@ -403,19 +403,19 @@ export function LessonPlayer({
         <CardContent className="space-y-4">
           {vakCheckpoint || (
             <>
-              <p className="text-foreground font-medium">{showCheckpoint.question}</p>
+              <MathRenderer as="p" className="text-foreground font-medium" text={showCheckpoint.question} />
               <div className="space-y-2">
                 {showCheckpoint.options.map((opt, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedAnswer(idx)}
                     className={cn(
-                      "w-full text-left p-3 rounded-lg border transition-colors",
+                      "w-full text-left p-3 rounded-lg border transition-colors flex items-start gap-2",
                       selectedAnswer === idx ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground/30"
                     )}
                   >
-                    <span className="text-sm font-medium text-muted-foreground mr-2">{String.fromCharCode(65 + idx)}.</span>
-                    {opt}
+                    <span className="text-sm font-medium text-muted-foreground">{String.fromCharCode(65 + idx)}.</span>
+                    <MathRenderer className="text-sm flex-1" text={opt} />
                   </button>
                 ))}
               </div>
