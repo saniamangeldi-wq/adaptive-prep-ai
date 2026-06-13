@@ -67,8 +67,12 @@ export default function FreeAiSatPrep() {
     <main className="min-h-screen bg-background text-foreground">
       <PageSeo
         title="Free AI SAT Prep Tool: The 2026 Guide to Studying Smarter"
-        description="A step-by-step guide to using AdaptivePrep — a free AI SAT prep tool with an AI Coach, adaptive practice, and full-length Digital SAT tests. A smarter alternative to Khan Academy."
+        description="Free AI SAT prep tool with an adaptive AI Coach and full-length Digital SAT tests. A smarter alternative to Khan Academy. Start free today."
         path="/blog/free-ai-sat-prep"
+        type="article"
+        publishedTime="2026-06-09"
+        author="AdaptivePrep"
+        section="SAT Preparation"
       />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(articleJsonLd)}</script>
