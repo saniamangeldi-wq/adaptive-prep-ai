@@ -50,7 +50,7 @@ export function AuditoryCheckpoint({ checkpoint, onAnswer }: AuditoryCheckpointP
                 answered && !isSelected && "opacity-40"
               )}
             >
-              <span className="text-sm text-foreground">{opt}</span>
+              <MathRenderer className="text-sm text-foreground" text={opt} />
             </button>
           );
         })}
