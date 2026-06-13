@@ -1,3 +1,4 @@
+import { MathRenderer } from "@/components/MathRenderer";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
