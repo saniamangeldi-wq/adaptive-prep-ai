@@ -96,7 +96,7 @@ export function ReadingWritingCheckpoint({ checkpoint, onAnswer }: ReadingWritin
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 animate-in fade-in slide-in-from-bottom-2">
           <div className="space-y-2">
             <p className="text-xs font-semibold text-primary uppercase tracking-wide">Model Answer</p>
-            <p className="text-sm text-foreground leading-relaxed">{checkpoint.explanation}</p>
+            <MathRenderer as="p" className="text-sm text-foreground leading-relaxed" text={checkpoint.explanation} />
           </div>
         </div>
       )}

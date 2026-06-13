@@ -65,7 +65,7 @@ export function VisualCheckpoint({ checkpoint, onAnswer }: VisualCheckpointProps
 
       {answered && (
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm text-foreground animate-in fade-in slide-in-from-bottom-2">
-          {checkpoint.explanation}
+          <MathRenderer text={checkpoint.explanation} />
         </div>
       )}
     </div>
