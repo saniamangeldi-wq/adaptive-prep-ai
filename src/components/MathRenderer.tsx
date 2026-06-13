@@ -4,23 +4,14 @@ import { InlineMath, BlockMath } from "react-katex";
 interface MathRendererProps {
   text: string;
   className?: string;
-  /** Render inline (no wrapper span). Defaults to false (span wrapper). */
+  /** Render wrapper element. Defaults to span. */
   as?: "span" | "div" | "p";
 }
 
 type Segment =
-  | { kind: "text"; value: string }
-  | { kind: "inline"; value: string }
-  | { kind: "block"; value: string };
-
-// Heuristic: a bracketed segment is treated as math only if it
-// contains a LaTeX command or typical math typography.
-const LATEX_HINT =
-  /\\(?:boxed|frac|sqrt|sum|int|prod|lim|vec|hat|bar|overline|underline|left|right|cdot|times|div|pm|neq|leq|geq|approx|infty|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|phi|omega|quad|qquad|displaystyle|text|mathbb|mathrm|mathcal)\b|[\^_]\{|\\\\/;
-
-function looksLikeMath(inner: string): boolean {
-  return LATEX_HINT.test(inner);
-}
+  | { type: "text"; content: string }
+  | { type: "inline"; content: string }
+  | { type: "block"; content: string };
 
 /**
  * Splits text into math + plain-text segments. Recognises:
@@ -28,51 +19,53 @@ function looksLikeMath(inner: string): boolean {
  *   $...$      inline math
  *   \[...\]    block math
  *   \(...\)    inline math
- *   [...]      block math, only when content contains LaTeX commands
- *   (...)      inline math, only when content contains LaTeX commands
+ *   (...)      inline math IF content has a LaTeX command (\foo) or sub/superscript (x_1, x^2)
+ *   [...]      inline math IF content has a LaTeX command (\foo)
  */
-function parseSegments(input: string): Segment[] {
-  const out: Segment[] = [];
-  if (!input) return out;
+function splitIntoSegments(text: string): Segment[] {
+  const result: Segment[] = [];
+  if (!text) return result;
 
-  // Master regex: order matters — $$ before $, \[ before \(, then bracket fallbacks.
-  const re =
-    /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$([^\$\n]+?)\$|\[([^\[\]\n]{2,400}?)\]|\(([^()\n]{2,400}?)\)/g;
+  // Order matters: explicit delimiters first, then heuristic paren/bracket matches.
+  const RE =
+    /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\([^()\n]*\\[a-zA-Z]+[^()\n]*\)|\[[^\[\]\n]*\\[a-zA-Z]+[^\[\]\n]*\]|\([^()\n]*[a-zA-Z0-9][_^][a-zA-Z0-9{][^()\n]*\))/g;
 
   let lastIndex = 0;
-  let m: RegExpExecArray | null;
+  let match: RegExpExecArray | null;
 
-  while ((m = re.exec(input)) !== null) {
-    if (m.index > lastIndex) {
-      out.push({ kind: "text", value: input.slice(lastIndex, m.index) });
+  while ((match = RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      result.push({ type: "text", content: text.slice(lastIndex, match.index) });
     }
 
-    const [full, dd, br, pr, dl, sq, pa] = m;
-    if (dd !== undefined) {
-      out.push({ kind: "block", value: dd.trim() });
-    } else if (br !== undefined) {
-      out.push({ kind: "block", value: br.trim() });
-    } else if (pr !== undefined) {
-      out.push({ kind: "inline", value: pr.trim() });
-    } else if (dl !== undefined) {
-      out.push({ kind: "inline", value: dl.trim() });
-    } else if (sq !== undefined && looksLikeMath(sq)) {
-      out.push({ kind: "block", value: sq.trim() });
-    } else if (pa !== undefined && looksLikeMath(pa)) {
-      out.push({ kind: "inline", value: pa.trim() });
-    } else {
-      // Bracketed but not math — keep the literal text.
-      out.push({ kind: "text", value: full });
+    const raw = match[0];
+    let content = raw;
+    let type: "inline" | "block" = "inline";
+
+    if (raw.startsWith("$$")) {
+      content = raw.slice(2, -2);
+      type = "block";
+    } else if (raw.startsWith("$")) {
+      content = raw.slice(1, -1);
+    } else if (raw.startsWith("\\[")) {
+      content = raw.slice(2, -2);
+      type = "block";
+    } else if (raw.startsWith("\\(")) {
+      content = raw.slice(2, -2);
+    } else if (raw.startsWith("(") || raw.startsWith("[")) {
+      content = raw.slice(1, -1);
+      type = "inline";
     }
 
-    lastIndex = m.index + full.length;
+    result.push({ type, content: content.trim() });
+    lastIndex = RE.lastIndex;
   }
 
-  if (lastIndex < input.length) {
-    out.push({ kind: "text", value: input.slice(lastIndex) });
+  if (lastIndex < text.length) {
+    result.push({ type: "text", content: text.slice(lastIndex) });
   }
 
-  return out;
+  return result;
 }
 
 function SafeInline({ value }: { value: string }) {
@@ -96,16 +89,16 @@ function SafeBlock({ value }: { value: string }) {
  * Plain (non-math) substrings preserve their original whitespace.
  */
 export function MathRenderer({ text, className, as = "span" }: MathRendererProps) {
-  const segments = useMemo(() => parseSegments(text ?? ""), [text]);
+  const segments = useMemo(() => splitIntoSegments(text ?? ""), [text]);
 
   const content = segments.map((seg, i) => {
-    if (seg.kind === "text") {
-      return <Fragment key={i}>{seg.value}</Fragment>;
+    if (seg.type === "text") {
+      return <Fragment key={i}>{seg.content}</Fragment>;
     }
-    if (seg.kind === "block") {
-      return <SafeBlock key={i} value={seg.value} />;
+    if (seg.type === "block") {
+      return <SafeBlock key={i} value={seg.content} />;
     }
-    return <SafeInline key={i} value={seg.value} />;
+    return <SafeInline key={i} value={seg.content} />;
   });
 
   if (as === "div") return <div className={className}>{content}</div>;
