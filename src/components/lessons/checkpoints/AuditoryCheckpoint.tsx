@@ -29,9 +29,7 @@ export function AuditoryCheckpoint({ checkpoint, onAnswer }: AuditoryCheckpointP
   return (
     <div className="space-y-4">
       {/* Conversational question - no rigid label */}
-      <p className="text-lg text-foreground font-medium leading-relaxed">
-        {checkpoint.question}
-      </p>
+      <MathRenderer as="p" className="text-lg text-foreground font-medium leading-relaxed" text={checkpoint.question} />
 
       {/* Options as rounded pills */}
       <div className="space-y-2">
