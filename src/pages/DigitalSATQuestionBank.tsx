@@ -31,7 +31,7 @@ export default function DigitalSATQuestionBank() {
   return (
     <div className="min-h-screen bg-background dark text-foreground">
       <PageSeo
-        title="Digital SAT Question Bank — 1000+ Practice Questions | Adaptive Prep"
+        title="Digital SAT Question Bank — 1000+ Free Questions"
         description="Free Digital SAT question bank: 1000+ adaptive Math & Reading/Writing questions plus full-length Bluebook-style practice tests. Start free today."
         path={PATH}
       />
