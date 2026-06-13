@@ -21,9 +21,16 @@ const billingOptions: { key: BillingCycle; label: string; discount?: string }[] 
   { key: "yearly", label: "Yearly", discount: "−20%" },
 ];
 
-export function Pricing() {
+interface PricingProps {
+  /** Use h1 when this section is the page's primary heading (e.g. /pricing). Defaults to h2. */
+  headingLevel?: "h1" | "h2";
+  headingText?: React.ReactNode;
+}
+
+export function Pricing({ headingLevel = "h2", headingText }: PricingProps = {}) {
   const [selectedRole, setSelectedRole] = useState<PricingRole>("student");
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  const Heading = headingLevel;
 
   return (
     <section className="py-24 bg-card/50 relative overflow-hidden">
@@ -32,10 +39,13 @@ export function Pricing() {
       <div className="container relative z-10 mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8 max-w-3xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Simple, transparent{" "}
-            <span className="gradient-text">pricing</span>
-          </h2>
+          <Heading className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+            {headingText ?? (
+              <>
+                Simple, transparent <span className="gradient-text">pricing</span>
+              </>
+            )}
+          </Heading>
           <p className="text-lg text-muted-foreground">
             Choose the plan that fits your needs. Upgrade or downgrade anytime.
           </p>

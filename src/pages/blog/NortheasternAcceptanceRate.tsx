@@ -66,6 +66,10 @@ export default function NortheasternAcceptanceRate() {
         title="Northeastern Acceptance Rate 2026: SAT Scores & Chances"
         description="Northeastern University's 2026 acceptance rate, SAT score ranges, and how to boost your admission chances with adaptive AI-powered SAT prep."
         path={PATH}
+        type="article"
+        publishedTime="2026-06-09"
+        author="AdaptivePrep"
+        section="SAT Preparation"
       />
       <Helmet>
         <script type="application/ld+json">{JSON.stringify(articleJsonLd)}</script>

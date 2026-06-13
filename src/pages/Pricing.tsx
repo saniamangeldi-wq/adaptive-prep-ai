@@ -17,7 +17,10 @@ export default function PricingPage() {
         <div className="container mx-auto px-4 max-w-5xl">
           <FoundingMemberBanner />
         </div>
-        <PricingSection />
+        <PricingSection
+          headingLevel="h1"
+          headingText={<>Adaptive Prep Pricing — SAT Test Prep Plans</>}
+        />
       </main>
       <Footer />
     </div>

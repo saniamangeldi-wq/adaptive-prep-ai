@@ -1,5 +1,14 @@
 User-agent: *
 Allow: /
+Allow: /pricing
+Allow: /blog
+Allow: /blog/*
+Allow: /digital-sat-question-bank
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /unsubscribe
 Disallow: /dashboard/
 Disallow: /dashboard
 Disallow: /onboarding
@@ -8,6 +17,11 @@ Disallow: /billing
 
 User-agent: Googlebot
 Allow: /
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /unsubscribe
 Disallow: /dashboard/
 Disallow: /dashboard
 Disallow: /onboarding
@@ -16,6 +30,11 @@ Disallow: /billing
 
 User-agent: Bingbot
 Allow: /
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /unsubscribe
 Disallow: /dashboard/
 Disallow: /dashboard
 Disallow: /onboarding
