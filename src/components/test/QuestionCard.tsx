@@ -3,6 +3,7 @@ import { Flag, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MathRenderer } from "@/components/MathRenderer";
 import type { Question } from "@/lib/test-generator";
 
 interface QuestionCardProps {
@@ -84,7 +85,7 @@ export function QuestionCard({
 
       {/* Question */}
       <div className="p-6 space-y-6">
-        <p className="text-lg text-foreground leading-relaxed">{question.text}</p>
+        <MathRenderer as="div" className="text-lg text-foreground leading-relaxed" text={question.text} />
 
         {/* Answer Options */}
         {question.type === "multiple_choice" ? (
@@ -130,7 +131,7 @@ export function QuestionCard({
                     "flex-1",
                     isCorrect ? "text-green-600 font-medium" : isWrong ? "text-red-600" : "text-foreground"
                   )}>
-                    {option}
+                    <MathRenderer text={option} />
                   </span>
                 </button>
               );
@@ -165,7 +166,7 @@ export function QuestionCard({
         {showCorrectAnswer && question.explanation && (
           <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-border/50">
             <p className="text-sm font-medium text-muted-foreground mb-1">Explanation:</p>
-            <p className="text-foreground">{question.explanation}</p>
+            <MathRenderer as="div" className="text-foreground" text={question.explanation} />
           </div>
         )}
       </div>

@@ -26,7 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { useAIChat, type Message } from "@/hooks/useAIChat";
-import ReactMarkdown from "react-markdown";
+import { MarkdownMath as ReactMarkdown } from "@/components/ai/MarkdownMath";
 import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useBrowserSTT } from "@/hooks/useBrowserSTT";

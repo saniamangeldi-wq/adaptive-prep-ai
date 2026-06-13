@@ -1,3 +1,4 @@
+import { MathRenderer } from "@/components/MathRenderer";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -72,7 +73,7 @@ export function KinestheticCheckpoint({ checkpoint, onAnswer }: KinestheticCheck
           <p className="font-medium mb-1">
             {selected === checkpoint.correct_index ? "Smart move! Here's why:" : "That could work, but here's the better approach:"}
           </p>
-          <p>{checkpoint.explanation}</p>
+          <p><MathRenderer text={checkpoint.explanation} /></p>
         </div>
       )}
     </div>
