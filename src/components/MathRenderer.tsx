@@ -46,6 +46,10 @@ function splitIntoSegments(text: string): Segment[] {
   const result: Segment[] = [];
   if (!text) return result;
 
+  if (isStandaloneMathExpression(text)) {
+    return [{ type: "inline", content: text.trim() }];
+  }
+
   // Order matters: explicit delimiters first, then heuristic paren/bracket matches.
   const RE = new RegExp(
     String.raw`(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\([^()\n]*${LATEX_INDICATOR_SOURCE}[^()\n]*\)|\[[^\[\]\n]*${LATEX_INDICATOR_SOURCE}[^\[\]\n]*\])`,
