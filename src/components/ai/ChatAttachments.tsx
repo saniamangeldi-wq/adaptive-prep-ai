@@ -136,7 +136,7 @@
                {att.type === "image" && att.file_url && !att.isUploading && (
                  <img
                    src={att.file_url}
-                   alt={att.file_name || "Uploaded image"}
+                   alt="User uploaded attachment preview"
                    className="w-8 h-8 rounded object-cover"
                  />
                )}
