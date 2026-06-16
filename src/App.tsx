@@ -32,6 +32,7 @@ import TutorBilling from "./pages/TutorBilling";
 import UniversityMatch from "./pages/UniversityMatch";
 import PricingPage from "./pages/Pricing";
 import DigitalSATQuestionBank from "./pages/DigitalSATQuestionBank";
+import DigitalSATScoreCalculator from "./pages/DigitalSATScoreCalculator";
 
 // School admin pages
 import CreateSchool from "./pages/school/CreateSchool";
@@ -136,6 +137,7 @@ function AppRoutes() {
       <Route path="/blog/northeastern-acceptance-rate" element={<NortheasternAcceptanceRate />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/digital-sat-question-bank" element={<DigitalSATQuestionBank />} />
+      <Route path="/digital-sat-score-calculator" element={<DigitalSATScoreCalculator />} />
       
       {/* Protected routes */}
       <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
