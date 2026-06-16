@@ -311,7 +311,7 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
                 {index < 3 ? (
                   <Trophy className={`w-5 h-5 ${
                     index === 0 ? "text-yellow-500" : 
-                    index === 1 ? "text-gray-400" : 
+                    index === 1 ? "text-muted-foreground" : 
                     "text-amber-600"
                   }`} />
                 ) : (
