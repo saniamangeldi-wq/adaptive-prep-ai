@@ -2681,6 +2681,7 @@ export type Database = {
         Args: { _student_id: string; _tutor_id: string }
         Returns: boolean
       }
+      join_school_with_code: { Args: { _code: string }; Returns: string }
       lookup_tutor_by_invite_code: { Args: { _code: string }; Returns: string }
       move_to_dlq: {
         Args: {
@@ -2702,6 +2703,10 @@ export type Database = {
       upgrade_student_to_tutor_tier: {
         Args: { _student_id: string; _tutor_id: string }
         Returns: undefined
+      }
+      validate_school_invite_code: {
+        Args: { _code: string; _school_id: string }
+        Returns: boolean
       }
     }
     Enums: {
