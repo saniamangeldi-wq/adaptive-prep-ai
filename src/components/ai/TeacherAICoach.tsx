@@ -561,7 +561,7 @@ function TutorPerplexityMessage({ message, isTier3, isLast, onRetry }: {
       <div className="pt-8 first:pt-0">
         {message.attachmentMeta?.map((att, i) => (
           att.type === 'image' && att.preview ? (
-            <img key={i} src={att.preview} alt="User uploaded image attachment" className="max-w-[200px] rounded-lg mb-2 border border-border/20" />
+            <img key={i} src={att.preview} alt="User uploaded image attachment" width="200" height="200" loading="lazy" className="max-w-[200px] rounded-lg mb-2 border border-border/20" />
           ) : (
             <div key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-2 mr-2 rounded-lg border border-border/30 bg-muted/30 text-xs text-muted-foreground">
               📄 {att.name}

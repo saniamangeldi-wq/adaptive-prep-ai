@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Auth routes (/login /signup /forgot-password /reset-password /unsubscribe)
+  are intentionally excluded from this sitemap and blocked in robots.txt.
+  These pages should not be indexed by search engines.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://adaptiveprep.org/</loc>
