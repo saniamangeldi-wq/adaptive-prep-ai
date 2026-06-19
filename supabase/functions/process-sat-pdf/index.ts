@@ -81,13 +81,68 @@ Deno.serve(async (req) => {
 
     // Decode base64 to get PDF content
     const pdfBytes = Uint8Array.from(atob(fileBase64), c => c.charCodeAt(0));
-    
-    // Extract text from PDF (simplified - in production use pdf-parse)
-    // For now, we'll use AI to parse the PDF content directly
     const pdfText = await extractPdfText(pdfBytes);
 
     // Use Lovable AI Gateway to parse the questions
-    const parsedTest = await parseWithAI(pdfText, fileName);
+    const parseResult = await parseWithAI(pdfText, fileName);
+
+    // FIX 5: AI returned an error object instead of questions
+    if ("error" in parseResult) {
+      return new Response(
+        JSON.stringify({
+          error: "AI could not parse the PDF: " + parseResult.error,
+          suggestion: "Please ensure the PDF contains readable SAT question content.",
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const parsed = parseResult;
+
+    // FIX 3: Validate every question before saving
+    const validQuestions: Question[] = [];
+    const rejectedQuestions: { question: unknown; errors: string[] }[] = [];
+    for (let i = 0; i < parsed.questions.length; i++) {
+      const q = parsed.questions[i];
+      const { valid, errors } = validateQuestion(q, i);
+      if (valid) {
+        validQuestions.push(q);
+      } else {
+        console.warn(
+          `[validate] Rejected question ${i + 1}:`,
+          errors,
+          q.text?.slice(0, 80)
+        );
+        rejectedQuestions.push({ question: q, errors });
+      }
+    }
+
+    if (validQuestions.length < 5) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Too many invalid questions generated. Only " +
+            validQuestions.length +
+            " of " +
+            parsed.questions.length +
+            " passed validation.",
+          rejected: rejectedQuestions,
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    parsed.questions = validQuestions;
+
+    // FIX 4: Ensure no duplicate ids
+    const ids = new Set<string>();
+    parsed.questions = parsed.questions.map((q, i) => {
+      if (ids.has(q.id)) {
+        q.id = `${q.id}_${i}`;
+      }
+      ids.add(q.id);
+      return q;
+    });
 
     // Store in database using service role for inserting official tests
     const supabaseAdmin = createClient(
@@ -95,25 +150,20 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Determine test_type from parsed data
     let testType = "combined";
-    if (parsedTest.testType === "math") {
-      testType = "math";
-    } else if (parsedTest.testType === "reading_writing") {
-      testType = "reading_writing";
-    }
+    if (parsed.testType === "math") testType = "math";
+    else if (parsed.testType === "reading_writing") testType = "reading_writing";
 
-    // Insert the test
     const { data: test, error: insertError } = await supabaseAdmin
       .from("sat_tests")
       .insert({
-        title: parsedTest.testName,
+        title: parsed.testName,
         description: `Uploaded from ${fileName}`,
         test_type: testType,
-        difficulty: parsedTest.difficulty,
-        length: categorizeLength(parsedTest.questions.length),
-        questions: parsedTest.questions,
-        time_limit_minutes: parsedTest.timeLimit,
+        difficulty: parsed.difficulty,
+        length: categorizeLength(parsed.questions.length),
+        questions: parsed.questions,
+        time_limit_minutes: parsed.timeLimit,
         is_official: true,
         created_by: user.id,
       })
@@ -131,8 +181,9 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         testId: test.id,
-        testName: parsedTest.testName,
-        questionsCount: parsedTest.questions.length,
+        testName: parsed.testName,
+        questionsCount: parsed.questions.length,
+        rejectedCount: rejectedQuestions.length,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -147,75 +198,82 @@ Deno.serve(async (req) => {
 });
 
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
-  // Simple text extraction - look for text content in PDF
-  // In production, use a proper PDF parsing library
   const decoder = new TextDecoder("utf-8", { fatal: false });
   const rawText = decoder.decode(pdfBytes);
-  
-  // Extract readable text between stream markers (simplified)
+
   const textContent: string[] = [];
   const streamRegex = /stream\s*([\s\S]*?)\s*endstream/g;
   let match;
-  
   while ((match = streamRegex.exec(rawText)) !== null) {
     const content = match[1];
-    // Filter for printable ASCII characters
     const filtered = content.replace(/[^\x20-\x7E\n\r]/g, " ").trim();
-    if (filtered.length > 10) {
-      textContent.push(filtered);
-    }
+    if (filtered.length > 10) textContent.push(filtered);
   }
-  
-  // Also look for direct text in the PDF
+
   const textMatches = rawText.match(/\(([^)]+)\)/g);
   if (textMatches) {
-    for (const match of textMatches) {
-      const text = match.slice(1, -1).trim();
-      if (text.length > 2 && /[a-zA-Z]/.test(text)) {
-        textContent.push(text);
-      }
+    for (const m of textMatches) {
+      const text = m.slice(1, -1).trim();
+      if (text.length > 2 && /[a-zA-Z]/.test(text)) textContent.push(text);
     }
   }
-  
-  return textContent.join("\n").slice(0, 50000); // Limit to 50k chars
+
+  return textContent.join("\n").slice(0, 50000);
 }
 
-async function parseWithAI(pdfText: string, fileName: string): Promise<ParsedTest> {
+async function parseWithAI(
+  pdfText: string,
+  fileName: string
+): Promise<ParsedTest | { error: string }> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  
-  if (!LOVABLE_API_KEY) {
-    throw new Error("LOVABLE_API_KEY not configured");
-  }
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-  const systemPrompt = `You are an expert at parsing SAT practice test content. Extract structured question data from the provided text.
+  // FIX 1: Strict new system prompt
+  const systemPrompt = `You are an expert SAT question validator and parser.
+Extract SAT questions from the provided PDF text.
+Return ONLY a valid JSON object — no markdown, no backticks, no explanation outside the JSON.
 
-Return a valid JSON object with this exact structure:
+JSON structure:
 {
-  "testName": "SAT Practice Test #X",
+  "testName": "string",
   "testType": "math" | "reading_writing" | "combined",
   "difficulty": "easy" | "normal" | "hard",
-  "timeLimit": 75,
+  "timeLimit": number,
   "questions": [
     {
-      "id": "q1",
+      "id": "unique string e.g. q1",
       "type": "multiple_choice" | "grid_in",
       "section": "math" | "reading_writing",
       "difficulty": "easy" | "normal" | "hard",
       "topic": "algebra" | "geometry" | "data_analysis" | "reading_comprehension" | "grammar" | "vocabulary",
-      "text": "Question text here",
-      "options": ["A) Option A", "B) Option B", "C) Option C", "D) Option D"],
-      "correct_answer": "A",
-      "explanation": "Explanation of why this answer is correct"
+      "text": "Full question text",
+      "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
+      "correct_answer": "A" | "B" | "C" | "D",
+      "explanation": "Step by step solution"
     }
   ]
 }
 
-IMPORTANT:
-- Generate unique IDs for each question (q1, q2, etc.)
-- For grid-in questions, options should be empty array and correct_answer is the numeric value
-- Estimate difficulty based on question complexity
-- If answer explanations aren't provided, create helpful ones
-- If you can't extract questions, create sample SAT-style questions based on the file name`;
+STRICT RULES YOU MUST FOLLOW:
+1. For every multiple_choice question, you MUST:
+   a. Solve the question mathematically yourself
+   b. Identify which option (A/B/C/D) contains your computed answer
+   c. Set correct_answer to that letter
+   d. Write an explanation that matches that letter
+   e. Never set correct_answer to a letter whose option text does not match your solution
+
+2. For ratio/proportion questions, ONLY use numbers that produce clean integer answers.
+   Test: if answer = given_value × (b/a) and the result is not an integer, change the given value before writing the question.
+
+3. options must always have exactly 4 entries for multiple_choice questions.
+
+4. All 4 options must be different from each other.
+
+5. correct_answer must be exactly one of: "A", "B", "C", or "D"
+
+6. If the PDF text is unreadable, corrupted, or clearly not SAT content, return:
+   { "error": "Unable to parse PDF content" }
+   Do NOT invent questions. Do NOT guess. Return the error object only.`;
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -227,13 +285,13 @@ IMPORTANT:
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: systemPrompt },
-        { 
-          role: "user", 
-          content: `Parse this SAT practice test content from file "${fileName}":\n\n${pdfText.slice(0, 30000)}\n\nExtract all questions with their answer choices, correct answers, and explanations. If the text is corrupted or incomplete, generate 10 sample SAT-style questions appropriate for the test type suggested by the filename.` 
-        }
+        {
+          role: "user",
+          content: `Parse this SAT practice test content from file "${fileName}":\n\n${pdfText.slice(0, 30000)}\n\nExtract all questions with their answer choices, correct answers, and explanations. If the text is unreadable or clearly not SAT content, return the error object as instructed.`,
+        },
       ],
       max_tokens: 8000,
-      temperature: 0.3,
+      temperature: 0.2,
     }),
   });
 
@@ -245,37 +303,35 @@ IMPORTANT:
 
   const data = await response.json();
   const content = data.choices[0]?.message?.content;
+  if (!content) throw new Error("No response from AI");
 
-  if (!content) {
-    throw new Error("No response from AI");
-  }
-
-  // Extract JSON from response (handle markdown code blocks)
+  // Extract JSON (handle accidental code fences)
   let jsonStr = content;
   const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  if (jsonMatch) {
-    jsonStr = jsonMatch[1];
-  }
+  if (jsonMatch) jsonStr = jsonMatch[1];
 
   try {
     const parsed = JSON.parse(jsonStr);
-    
-    // Validate and ensure proper structure
-    if (!parsed.questions || !Array.isArray(parsed.questions)) {
-      throw new Error("Invalid parsed structure");
+
+    // AI signaled it could not parse
+    if (parsed && typeof parsed === "object" && typeof parsed.error === "string" && !parsed.questions) {
+      return { error: parsed.error };
     }
 
-    // Ensure all questions have required fields
-    parsed.questions = parsed.questions.map((q: any, i: number) => ({
+    if (!parsed.questions || !Array.isArray(parsed.questions)) {
+      throw new Error("Invalid parsed structure: missing questions array");
+    }
+
+    parsed.questions = parsed.questions.map((q: Partial<Question>, i: number) => ({
       id: q.id || `q${i + 1}`,
       type: q.type || "multiple_choice",
       section: q.section || "math",
       difficulty: q.difficulty || "normal",
       topic: q.topic || "general",
-      text: q.text || `Question ${i + 1}`,
+      text: q.text || "",
       options: q.options || [],
-      correct_answer: q.correct_answer || "A",
-      explanation: q.explanation || "No explanation provided.",
+      correct_answer: q.correct_answer || "",
+      explanation: q.explanation || "",
     }));
 
     return {
@@ -286,67 +342,88 @@ IMPORTANT:
       questions: parsed.questions,
     };
   } catch (parseError) {
-    console.error("JSON parse error:", parseError);
-    // Return a fallback with sample questions
-    return generateFallbackTest(fileName);
+    // FIX 2: NO fallback dummy questions — surface the failure
+    console.error("[process-sat-pdf] Failed to parse AI response:", parseError);
+    const message = parseError instanceof Error ? parseError.message : String(parseError);
+    throw new Response(
+      JSON.stringify({
+        error: "Failed to parse questions from PDF. Please check the PDF format and try again.",
+        details: message,
+      }),
+      { status: 422, headers: { "Content-Type": "application/json" } }
+    );
   }
 }
 
-function generateFallbackTest(fileName: string): ParsedTest {
-  // Determine test type from filename
-  const isRW = fileName.toLowerCase().includes("reading") || fileName.toLowerCase().includes("writing");
-  const isMath = fileName.toLowerCase().includes("math");
-  
-  const testType = isRW ? "reading_writing" : isMath ? "math" : "combined";
-  
-  // Generate sample questions based on type
-  const questions: Question[] = [];
-  const questionCount = 10;
+// FIX 3: Real per-question validation
+function validateQuestion(q: Question, index: number): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const validLetters = ["A", "B", "C", "D"];
+  const validDifficulties = ["easy", "normal", "hard"];
+  const validSections = ["math", "reading_writing"];
+  const validTypes = ["multiple_choice", "grid_in"];
 
-  if (testType === "math" || testType === "combined") {
-    for (let i = 1; i <= (testType === "combined" ? 5 : questionCount); i++) {
-      questions.push({
-        id: `math_q${i}`,
-        type: "multiple_choice",
-        section: "math",
-        difficulty: i <= 3 ? "easy" : i <= 7 ? "normal" : "hard",
-        topic: i % 3 === 0 ? "geometry" : i % 2 === 0 ? "data_analysis" : "algebra",
-        text: `Math Question ${i}: If 3x + 7 = 22, what is the value of x?`,
-        options: ["A) 3", "B) 5", "C) 7", "D) 15"],
-        correct_answer: "B",
-        explanation: "To solve 3x + 7 = 22, subtract 7 from both sides to get 3x = 15, then divide by 3 to get x = 5.",
-      });
+  if (q.type === "multiple_choice") {
+    if (!validLetters.includes(q.correct_answer)) {
+      errors.push(`correct_answer "${q.correct_answer}" is not A/B/C/D`);
+    }
+
+    if (!q.options || q.options.length !== 4) {
+      errors.push(`Must have exactly 4 options, got ${q.options?.length}`);
+    }
+
+    if (q.options && validLetters.includes(q.correct_answer)) {
+      const correctIndex = validLetters.indexOf(q.correct_answer);
+      const correctOption = q.options[correctIndex];
+      if (!correctOption || correctOption.trim() === "") {
+        errors.push(`Option ${q.correct_answer} is empty or missing`);
+      }
+    }
+
+    if (q.options) {
+      const normalized = q.options.map((o: string) => o.trim().toLowerCase());
+      if (new Set(normalized).size !== normalized.length) {
+        errors.push("Duplicate options detected");
+      }
     }
   }
 
-  if (testType === "reading_writing" || testType === "combined") {
-    for (let i = 1; i <= (testType === "combined" ? 5 : questionCount); i++) {
-      questions.push({
-        id: `rw_q${i}`,
-        type: "multiple_choice",
-        section: "reading_writing",
-        difficulty: i <= 3 ? "easy" : i <= 7 ? "normal" : "hard",
-        topic: i % 2 === 0 ? "grammar" : "reading_comprehension",
-        text: `Reading/Writing Question ${i}: Which choice best describes the author's main purpose?`,
-        options: [
-          "A) To inform readers about a historical event",
-          "B) To persuade readers to take action",
-          "C) To entertain readers with a story",
-          "D) To compare two different viewpoints"
-        ],
-        correct_answer: "A",
-        explanation: "The passage primarily provides factual information about a historical event, making the author's main purpose informative.",
-      });
+  if (!q.text || q.text.trim() === "" || q.text === `Question ${index + 1}`) {
+    errors.push("Question text is empty or generic");
+  }
+
+  if (!validDifficulties.includes(q.difficulty)) {
+    errors.push(`Invalid difficulty: "${q.difficulty}"`);
+  }
+
+  if (!validSections.includes(q.section)) {
+    errors.push(`Invalid section: "${q.section}"`);
+  }
+
+  if (!validTypes.includes(q.type)) {
+    errors.push(`Invalid type: "${q.type}"`);
+  }
+
+  if (q.explanation && q.correct_answer) {
+    const contradictionPhrases = [
+      "should be updated",
+      "front-end should",
+      "not an integer",
+      "not realistic",
+      "intended correct",
+      "instead of",
+      "option should be",
+      "correct option is",
+    ];
+    const hasContradiction = contradictionPhrases.some((phrase) =>
+      q.explanation.toLowerCase().includes(phrase)
+    );
+    if (hasContradiction) {
+      errors.push("Explanation contains contradiction phrases");
     }
   }
 
-  return {
-    testName: fileName.replace(".pdf", "").replace(/_/g, " "),
-    testType,
-    difficulty: "normal",
-    timeLimit: 60,
-    questions,
-  };
+  return { valid: errors.length === 0, errors };
 }
 
 function categorizeLength(questionCount: number): "quick" | "short" | "medium" | "long" | "full" {
