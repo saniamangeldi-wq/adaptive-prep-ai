@@ -109,7 +109,7 @@ export function Pricing({ headingLevel = "h2", headingText }: PricingProps = {})
           <div
             className={cn(
               "grid gap-8 max-w-6xl mx-auto",
-              selectedRole === "student" ? "md:grid-cols-4" : "md:grid-cols-2"
+              selectedRole === "student" ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3"
             )}
           >
             {(selectedRole === "student"
