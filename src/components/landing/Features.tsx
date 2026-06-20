@@ -1,92 +1,59 @@
-import { 
-  Brain, 
-  Target, 
-  LineChart, 
-  Layers, 
-  MessageSquare, 
+import {
+  Brain,
+  Target,
+  LineChart,
+  Layers,
+  MessageSquare,
   Zap,
   GraduationCap,
-  Clock
+  Clock,
 } from "lucide-react";
-
-const features = [
-  {
-    icon: Brain,
-    title: "Adaptive Learning",
-    description: "Our AI analyzes your performance and adjusts difficulty in real-time to maximize learning efficiency.",
-    color: "from-primary to-teal-400",
-  },
-  {
-    icon: Target,
-    title: "Learning Style Detection",
-    description: "Take a quick quiz to discover if you're a visual, auditory, reading/writing, or kinesthetic learner.",
-    color: "from-accent to-orange-400",
-  },
-  {
-    icon: LineChart,
-    title: "Progress Tracking",
-    description: "Visualize your strengths and weaknesses with detailed analytics and personalized recommendations.",
-    color: "from-info to-blue-400",
-  },
-  {
-    icon: Layers,
-    title: "Flexible Test Lengths",
-    description: "Practice with 10, 25, 50, 75, or full 154-question tests — fit studying into any schedule.",
-    color: "from-success to-emerald-400",
-  },
-  {
-    icon: MessageSquare,
-    title: "AI Study Coach",
-    description: "Get hints and explanations without spoilers — our AI guides you to the answer, never gives it away.",
-    color: "from-purple-500 to-pink-400",
-  },
-  {
-    icon: Zap,
-    title: "Smart Flashcards",
-    description: "Generate flashcards automatically from your study materials or let AI create them from any topic.",
-    color: "from-warning to-yellow-400",
-  },
-  {
-    icon: GraduationCap,
-    title: "Full SAT Coverage",
-    description: "Complete Math and Reading/Writing practice with official-style questions and detailed feedback.",
-    color: "from-rose-500 to-red-400",
-  },
-  {
-    icon: Clock,
-    title: "Timed Practice",
-    description: "Toggle timer on or off — build test-taking stamina or focus on understanding without pressure.",
-    color: "from-cyan-500 to-teal-400",
-  },
-];
+import { useTranslation } from "react-i18next";
 
 export function Features() {
+  const { t } = useTranslation();
+
+  const features = [
+    { icon: Brain, titleKey: "features.adaptive_title", descKey: "features.adaptive_desc", color: "from-primary to-teal-400" },
+    { icon: Target, titleKey: "features.style_title", descKey: "features.style_desc", color: "from-accent to-orange-400" },
+    { icon: LineChart, titleKey: "features.progress_title", descKey: "features.progress_desc", color: "from-info to-blue-400" },
+    { icon: Layers, titleKey: "features.flexible_title", descKey: "features.flexible_desc", color: "from-success to-emerald-400" },
+    { icon: MessageSquare, titleKey: "features.coach_title", descKey: "features.coach_desc", color: "from-purple-500 to-pink-400" },
+    { icon: Zap, titleKey: "features.flashcards_title", descKey: "features.flashcards_desc", color: "from-warning to-yellow-400" },
+    { icon: GraduationCap, titleKey: "features.coverage_title", descKey: "features.coverage_desc", color: "from-rose-500 to-red-400" },
+    { icon: Clock, titleKey: "features.timed_title", descKey: "features.timed_desc", color: "from-cyan-500 to-teal-400" },
+  ];
+
   return (
     <section className="py-24 bg-background relative overflow-hidden">
-      {/* Background pattern */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
-          backgroundSize: '40px 40px'
-        }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+            backgroundSize: "40px 40px",
+          }}
+        />
       </div>
 
       <div className="container relative z-10 mx-auto px-4">
-        {/* Header */}
         <div className="text-center mb-16 max-w-3xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Everything you need to{" "}
-            <span className="gradient-text">ace the SAT</span>
+            {t("features.heading")}
           </h2>
-          <p className="text-lg text-muted-foreground">
-            Powerful features designed to personalize your study experience and maximize your score improvement.
-          </p>
+          <p className="text-lg text-muted-foreground">{t("features.subheading")}</p>
         </div>
 
-        {/* Features grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => (
-            <FeatureCard key={feature.title} {...feature} delay={index * 0.1} />
+            <FeatureCard
+              key={feature.titleKey}
+              icon={feature.icon}
+              title={t(feature.titleKey)}
+              description={t(feature.descKey)}
+              color={feature.color}
+              delay={index * 0.1}
+            />
           ))}
         </div>
       </div>
@@ -94,21 +61,21 @@ export function Features() {
   );
 }
 
-function FeatureCard({ 
-  icon: Icon, 
-  title, 
-  description, 
+function FeatureCard({
+  icon: Icon,
+  title,
+  description,
   color,
-  delay 
-}: { 
-  icon: React.ElementType; 
-  title: string; 
-  description: string; 
+  delay,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
   color: string;
   delay: number;
 }) {
   return (
-    <div 
+    <div
       className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
       style={{ animationDelay: `${delay}s` }}
     >

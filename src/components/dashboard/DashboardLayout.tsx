@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { useSchoolStudent } from "@/hooks/useSchoolStudent";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 import { SIDEBAR } from "@/lib/design-system";
 import { canAccessCalculator } from "@/lib/calculator-access";
@@ -263,7 +264,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="border-t border-sidebar-border p-1.5 space-y-0.5">
-          
+          <div className="flex flex-col items-center py-1">
+            <LanguageSwitcher className="flex-col gap-0.5" />
+          </div>
           <ThemeSwitcher collapsed={!sidebarExpanded} />
 
           {showInstallButton && (

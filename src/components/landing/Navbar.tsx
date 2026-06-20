@@ -1,26 +1,29 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Menu, X, GraduationCap, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const navLinks = [
-  { href: "#features", label: "Features" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "#tutors", label: "For Tutors" },
-  { href: "#schools", label: "For Schools" },
-];
-
 export function Navbar() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+
+  const navLinks = [
+    { href: "#features", label: t("nav.features") },
+    { href: "/pricing", label: t("nav.pricing") },
+    { href: "#tutors", label: t("nav.for_tutors") },
+    { href: "#schools", label: t("nav.for_schools") },
+  ];
 
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
@@ -54,7 +57,7 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
       <div className="absolute inset-0 bg-background/80 backdrop-blur-lg border-b border-border/50" />
-      
+
       <div className="container relative mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -78,6 +81,20 @@ export function Navbar() {
             ))}
           </div>
 
+          {/* Right cluster: language + install + sign-in (desktop) */}
+          <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher />
+            {showInstallButton && (
+              <Button variant="outline" size="sm" className="items-center gap-1.5" onClick={handleInstall}>
+                <Download className="w-4 h-4" />
+                <span className="text-xs">{t("common.install", "Install App")}</span>
+              </Button>
+            )}
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/login">{t("nav.sign_in")}</Link>
+            </Button>
+          </div>
+
           {/* Install App button - tablet/phone only */}
           {showInstallButton && (
             <Button
@@ -87,12 +104,9 @@ export function Navbar() {
               onClick={handleInstall}
             >
               <Download className="w-4 h-4" />
-              <span className="text-xs">Get App</span>
+              <span className="text-xs">{t("common.install", "Install App")}</span>
             </Button>
           )}
-
-          {/* Spacer to balance layout */}
-          <div className="hidden md:block w-32" />
 
           {/* Mobile menu button */}
           <button
@@ -123,18 +137,21 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
-            <div className="pt-4 border-t border-border/50 space-y-2">
+            <div className="pt-4 border-t border-border/50 space-y-3">
+              <div className="flex items-center justify-center">
+                <LanguageSwitcher />
+              </div>
               {showInstallButton && (
                 <Button variant="secondary" className="w-full gap-2" onClick={handleInstall}>
                   <Download className="w-4 h-4" />
-                  Get the App
+                  {t("common.install", "Install App")}
                 </Button>
               )}
               <Button variant="outline" className="w-full" asChild>
-                <Link to="/login">Sign In</Link>
+                <Link to="/login">{t("nav.sign_in")}</Link>
               </Button>
               <Button variant="hero" className="w-full" asChild>
-                <Link to="/signup">Get Started</Link>
+                <Link to="/signup">{t("nav.get_started")}</Link>
               </Button>
             </div>
           </div>
