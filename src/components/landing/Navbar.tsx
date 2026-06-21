@@ -90,9 +90,6 @@ export function Navbar() {
                 <span className="text-xs">{t("common.install", "Install App")}</span>
               </Button>
             )}
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/login">{t("nav.sign_in")}</Link>
-            </Button>
           </div>
 
           {/* Install App button - tablet/phone only */}
