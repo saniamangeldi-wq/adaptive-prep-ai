@@ -90,9 +90,6 @@ export function Navbar() {
                 <span className="text-xs">{t("common.install", "Install App")}</span>
               </Button>
             )}
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/login">{t("nav.sign_in")}</Link>
-            </Button>
           </div>
 
           {/* Install App button - tablet/phone only */}
@@ -147,9 +144,6 @@ export function Navbar() {
                   {t("common.install", "Install App")}
                 </Button>
               )}
-              <Button variant="outline" className="w-full" asChild>
-                <Link to="/login">{t("nav.sign_in")}</Link>
-              </Button>
               <Button variant="hero" className="w-full" asChild>
                 <Link to="/signup">{t("nav.get_started")}</Link>
               </Button>
