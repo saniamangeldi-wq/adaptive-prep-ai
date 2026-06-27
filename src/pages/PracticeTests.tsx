@@ -381,6 +381,30 @@ export default function PracticeTests() {
           </>
         )}
 
+        {/* Question Order — available in both modes */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">Question Order</h2>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {sortOrders.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => setSortOrder(option.id)}
+                className={cn(
+                  "p-4 rounded-xl border-2 text-left transition-all duration-200",
+                  sortOrder === option.id
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/50"
+                )}
+              >
+                <div className="font-semibold text-foreground">{option.label}</div>
+                <div className="text-xs text-muted-foreground mt-1">{option.description}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+
+
         {/* Start Button */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
           <div>
