@@ -263,6 +263,22 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
       "Some sections have fewer questions than a full SAT because the question bank is still being expanded.";
   }
 
+  // Apply sort order — defaults to mixed (preserves existing shuffled / section-grouped order).
+  // For combined tests, sort within each section so R&W stays before Math.
+  const sortOrder: SortOrder = config.sortOrder ?? "mixed";
+  if (sortOrder !== "mixed") {
+    const dirMul = sortOrder === "hard_to_easy" ? -1 : 1;
+    const byDiff = (a: Question, b: Question) =>
+      dirMul * ((difficultyRank[a.difficulty] ?? 1) - (difficultyRank[b.difficulty] ?? 1));
+    if (config.testType === "combined") {
+      const rw = selectedQuestions.filter((q) => q.section === "reading_writing").sort(byDiff);
+      const math = selectedQuestions.filter((q) => q.section === "math").sort(byDiff);
+      selectedQuestions = [...rw, ...math];
+    } else {
+      selectedQuestions = [...selectedQuestions].sort(byDiff);
+    }
+  }
+
   // Temporary duplicate-detection log (per the user's request).
   const finalIds = selectedQuestions.map((q) => q.id);
   const dupes = finalIds.filter((id, i) => finalIds.indexOf(id) !== i);
