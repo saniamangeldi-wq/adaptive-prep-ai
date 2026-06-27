@@ -727,6 +727,89 @@ serve(async (req) => {
       console.error("Could not load cognitive profile:", e);
     }
 
+    // Append SAT performance context (recent scores + weak topics + recent mistakes)
+    try {
+      const { data: attempts } = await supabase
+        .from("test_attempts")
+        .select("score, total_questions, correct_answers, completed_at, feedback, answers, test_id, sat_tests(title, test_type)")
+        .eq("user_id", userId)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(10);
+
+      if (attempts && attempts.length > 0) {
+        const perfLines: string[] = ["\n\nSTUDENT SAT PERFORMANCE (use this to target weak areas — reference specific scores and topics when relevant):"];
+
+        // Recent test scores
+        const recent = attempts.slice(0, 5).map((a: any) => {
+          const title = a.sat_tests?.title || "Practice test";
+          const acc = a.total_questions ? Math.round((a.correct_answers / a.total_questions) * 100) : null;
+          const date = a.completed_at ? new Date(a.completed_at).toISOString().slice(0, 10) : "";
+          return `- ${date} • ${title}: ${a.correct_answers ?? 0}/${a.total_questions ?? 0}${acc !== null ? ` (${acc}%)` : ""}${a.score ? ` • scaled ${a.score}` : ""}`;
+        });
+        perfLines.push("Recent attempts:");
+        perfLines.push(...recent);
+
+        // Aggregate weak topics across all attempts
+        const topicAgg: Record<string, { correct: number; total: number }> = {};
+        const sectionAgg: Record<string, { correct: number; total: number }> = {};
+        for (const a of attempts as any[]) {
+          const fb = a.feedback || {};
+          for (const [topic, stats] of Object.entries(fb.byTopic || {})) {
+            const s = stats as { correct: number; total: number };
+            topicAgg[topic] = topicAgg[topic] || { correct: 0, total: 0 };
+            topicAgg[topic].correct += s.correct || 0;
+            topicAgg[topic].total += s.total || 0;
+          }
+          for (const [sec, stats] of Object.entries(fb.bySection || {})) {
+            const s = stats as { correct: number; total: number };
+            sectionAgg[sec] = sectionAgg[sec] || { correct: 0, total: 0 };
+            sectionAgg[sec].correct += s.correct || 0;
+            sectionAgg[sec].total += s.total || 0;
+          }
+        }
+
+        const sectionLines = Object.entries(sectionAgg).map(
+          ([sec, s]) => `- ${sec.replace("_", " & ")}: ${s.correct}/${s.total} (${Math.round((s.correct / Math.max(s.total, 1)) * 100)}%)`
+        );
+        if (sectionLines.length > 0) {
+          perfLines.push("Section accuracy (cumulative):");
+          perfLines.push(...sectionLines);
+        }
+
+        const weakest = Object.entries(topicAgg)
+          .filter(([, s]) => s.total >= 2)
+          .map(([t, s]) => ({ topic: t, acc: s.correct / s.total, total: s.total }))
+          .sort((a, b) => a.acc - b.acc)
+          .slice(0, 5);
+        if (weakest.length > 0) {
+          perfLines.push("Weakest topics (lowest accuracy first — prioritize these):");
+          for (const w of weakest) {
+            perfLines.push(`- ${w.topic}: ${Math.round(w.acc * 100)}% over ${w.total} questions`);
+          }
+        }
+
+        // Recent mistakes from the latest attempt
+        const latest = attempts[0] as any;
+        const latestAnswers = Array.isArray(latest.answers) ? latest.answers : [];
+        const wrongs = latestAnswers.filter((a: any) => a && a.is_correct === false).slice(0, 5);
+        if (wrongs.length > 0) {
+          perfLines.push(`Mistakes from most recent test (${latest.sat_tests?.title || "test"}):`);
+          for (const w of wrongs) {
+            const qText = (w.question_text || w.text || "").toString().slice(0, 140);
+            const chose = w.selected_answer ?? w.answer ?? "—";
+            const correct = w.correct_answer ?? "—";
+            perfLines.push(`- Q: "${qText}" • picked: ${chose} • correct: ${correct}`);
+          }
+        }
+
+        perfLines.push("Use this context proactively — when the student asks for practice, lean toward their weakest topics. When they ask 'how am I doing', cite the actual numbers above.");
+        systemPrompt += perfLines.join("\n") + "\n";
+      }
+    } catch (e) {
+      console.error("Could not load SAT performance:", e);
+    }
+
     let response: Response;
 
     // Route based on provider from model config
