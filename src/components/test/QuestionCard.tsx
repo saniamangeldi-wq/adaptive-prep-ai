@@ -85,6 +85,16 @@ export function QuestionCard({
 
       {/* Question */}
       <div className="p-6 space-y-6">
+        {question.image_url && (
+          <div className="flex justify-center p-4 rounded-xl bg-white border border-border/50">
+            <img
+              src={question.image_url}
+              alt={question.image_alt || "Question figure"}
+              className="max-w-full max-h-[420px] object-contain"
+              loading="lazy"
+            />
+          </div>
+        )}
         <MathRenderer as="div" className="text-lg text-foreground leading-relaxed" text={question.text} />
 
         {/* Answer Options */}
