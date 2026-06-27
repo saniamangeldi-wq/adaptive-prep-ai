@@ -64,6 +64,7 @@ export default function PracticeTests() {
   const [testType, setTestType] = useState<TestType>("combined");
   const [length, setLength] = useState<TestLength>("short");
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("mixed");
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const { user, profile } = useAuth();
