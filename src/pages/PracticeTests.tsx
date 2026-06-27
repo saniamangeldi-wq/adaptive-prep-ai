@@ -27,6 +27,7 @@ type TestMode = "practice" | "official";
 type TestType = "math" | "reading_writing" | "combined";
 type TestLength = "quick" | "short" | "full";
 type Difficulty = "easy" | "normal" | "hard";
+type SortOrder = "mixed" | "hard_to_easy" | "easy_to_hard";
 
 // `full` is section-aware: 44 Math, 54 R&W, 98 Combined (resolved at render time).
 const baseTestLengths: { id: TestLength; label: string }[] = [
@@ -50,6 +51,12 @@ const difficulties: { id: Difficulty; label: string; description: string }[] = [
   { id: "hard", label: "Hard", description: "Challenging questions" },
 ];
 
+const sortOrders: { id: SortOrder; label: string; description: string }[] = [
+  { id: "mixed", label: "Mixed", description: "Random order (default)" },
+  { id: "hard_to_easy", label: "Hardest → Easiest", description: "Toughest questions first" },
+  { id: "easy_to_hard", label: "Easiest → Hardest", description: "Warm up gradually" },
+];
+
 export default function PracticeTests() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -57,6 +64,7 @@ export default function PracticeTests() {
   const [testType, setTestType] = useState<TestType>("combined");
   const [length, setLength] = useState<TestLength>("short");
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("mixed");
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const { user, profile } = useAuth();
@@ -93,8 +101,8 @@ export default function PracticeTests() {
     // Official SAT mode must always use the full Digital SAT structure:
     // 54 Reading & Writing + 44 Math = 98 questions, combined, full length.
     const effectiveConfig = testMode === "official"
-      ? { testType: "combined" as TestType, length: "full" as TestLength, difficulty, timerEnabled }
-      : { testType, length, difficulty, timerEnabled };
+      ? { testType: "combined" as TestType, length: "full" as TestLength, difficulty, timerEnabled, sortOrder }
+      : { testType, length, difficulty, timerEnabled, sortOrder };
 
     try {
       const test = await generateTest(
@@ -372,6 +380,30 @@ export default function PracticeTests() {
             </div>
           </>
         )}
+
+        {/* Question Order — available in both modes */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">Question Order</h2>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {sortOrders.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => setSortOrder(option.id)}
+                className={cn(
+                  "p-4 rounded-xl border-2 text-left transition-all duration-200",
+                  sortOrder === option.id
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/50"
+                )}
+              >
+                <div className="font-semibold text-foreground">{option.label}</div>
+                <div className="text-xs text-muted-foreground mt-1">{option.description}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+
 
         {/* Start Button */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
