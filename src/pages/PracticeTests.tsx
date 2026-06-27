@@ -27,6 +27,7 @@ type TestMode = "practice" | "official";
 type TestType = "math" | "reading_writing" | "combined";
 type TestLength = "quick" | "short" | "full";
 type Difficulty = "easy" | "normal" | "hard";
+type SortOrder = "mixed" | "hard_to_easy" | "easy_to_hard";
 
 // `full` is section-aware: 44 Math, 54 R&W, 98 Combined (resolved at render time).
 const baseTestLengths: { id: TestLength; label: string }[] = [
@@ -48,6 +49,12 @@ const difficulties: { id: Difficulty; label: string; description: string }[] = [
   { id: "easy", label: "Easy", description: "Beginner-friendly questions" },
   { id: "normal", label: "Normal", description: "Standard difficulty" },
   { id: "hard", label: "Hard", description: "Challenging questions" },
+];
+
+const sortOrders: { id: SortOrder; label: string; description: string }[] = [
+  { id: "mixed", label: "Mixed", description: "Random order (default)" },
+  { id: "hard_to_easy", label: "Hardest → Easiest", description: "Toughest questions first" },
+  { id: "easy_to_hard", label: "Easiest → Hardest", description: "Warm up gradually" },
 ];
 
 export default function PracticeTests() {
