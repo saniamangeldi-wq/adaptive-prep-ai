@@ -101,8 +101,8 @@ export default function PracticeTests() {
     // Official SAT mode must always use the full Digital SAT structure:
     // 54 Reading & Writing + 44 Math = 98 questions, combined, full length.
     const effectiveConfig = testMode === "official"
-      ? { testType: "combined" as TestType, length: "full" as TestLength, difficulty, timerEnabled }
-      : { testType, length, difficulty, timerEnabled };
+      ? { testType: "combined" as TestType, length: "full" as TestLength, difficulty, timerEnabled, sortOrder }
+      : { testType, length, difficulty, timerEnabled, sortOrder };
 
     try {
       const test = await generateTest(
