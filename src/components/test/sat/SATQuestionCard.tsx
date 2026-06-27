@@ -25,6 +25,18 @@ export function SATQuestionCard({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      {/* Figure / Diagram */}
+      {question.image_url && (
+        <div className="flex justify-center p-4 rounded-xl bg-white border border-border/50">
+          <img
+            src={question.image_url}
+            alt={question.image_alt || "Question figure"}
+            className="max-w-full max-h-[420px] object-contain"
+            loading="lazy"
+          />
+        </div>
+      )}
+
       {/* Question Text / Passage */}
       <div className="space-y-4">
         {question.text && question.text.length > 300 && (
@@ -45,6 +57,7 @@ export function SATQuestionCard({
           />
         )}
       </div>
+
 
       {/* Answer Choices */}
       {question.type === "multiple_choice" ? (
