@@ -10,13 +10,20 @@ export interface Question {
   options: string[];
   correct_answer: string;
   explanation: string;
+  /** Optional figure/diagram URL (https or data:image/...). Rendered above the question text. */
+  image_url?: string;
+  /** Optional alt text for the figure. */
+  image_alt?: string;
 }
+
+export type SortOrder = "mixed" | "hard_to_easy" | "easy_to_hard";
 
 export interface TestConfig {
   testType: "math" | "reading_writing" | "combined";
   length: "quick" | "short" | "full";
   difficulty: "easy" | "normal" | "hard";
   timerEnabled: boolean;
+  sortOrder?: SortOrder;
 }
 
 export interface GeneratedTest {
