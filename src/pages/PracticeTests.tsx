@@ -51,9 +51,10 @@ const difficulties: { id: Difficulty; label: string; description: string }[] = [
   { id: "hard", label: "Hard", description: "Challenging questions" },
 ];
 
+// Question order is only shown for Official SAT mode. Real Digital SAT modules
+// run hardest → easiest within each section, so that's the default.
 const sortOrders: { id: SortOrder; label: string; description: string }[] = [
-  { id: "mixed", label: "Mixed", description: "Random order (default)" },
-  { id: "hard_to_easy", label: "Hardest → Easiest", description: "Toughest questions first" },
+  { id: "hard_to_easy", label: "Hardest → Easiest", description: "Standard real-SAT order" },
   { id: "easy_to_hard", label: "Easiest → Hardest", description: "Warm up gradually" },
 ];
 
@@ -64,7 +65,7 @@ export default function PracticeTests() {
   const [testType, setTestType] = useState<TestType>("combined");
   const [length, setLength] = useState<TestLength>("short");
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("mixed");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("hard_to_easy");
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const { user, profile } = useAuth();
@@ -100,9 +101,12 @@ export default function PracticeTests() {
 
     // Official SAT mode must always use the full Digital SAT structure:
     // 54 Reading & Writing + 44 Math = 98 questions, combined, full length.
+    // Official SAT mode uses the user-chosen sort order (defaults to real-SAT
+    // hardest→easiest). Practice mode always uses "mixed" so the difficulty
+    // selector isn't undermined by an ordering pass.
     const effectiveConfig = testMode === "official"
       ? { testType: "combined" as TestType, length: "full" as TestLength, difficulty, timerEnabled, sortOrder }
-      : { testType, length, difficulty, timerEnabled, sortOrder };
+      : { testType, length, difficulty, timerEnabled, sortOrder: "mixed" as SortOrder };
 
     try {
       const test = await generateTest(
@@ -381,27 +385,29 @@ export default function PracticeTests() {
           </>
         )}
 
-        {/* Question Order — available in both modes */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Question Order</h2>
-          <div className="grid sm:grid-cols-3 gap-3">
-            {sortOrders.map((option) => (
-              <button
-                key={option.id}
-                onClick={() => setSortOrder(option.id)}
-                className={cn(
-                  "p-4 rounded-xl border-2 text-left transition-all duration-200",
-                  sortOrder === option.id
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
-                )}
-              >
-                <div className="font-semibold text-foreground">{option.label}</div>
-                <div className="text-xs text-muted-foreground mt-1">{option.description}</div>
-              </button>
-            ))}
+        {/* Question Order — Official SAT mode only */}
+        {testMode === "official" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Question Order</h2>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {sortOrders.map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => setSortOrder(option.id)}
+                  className={cn(
+                    "p-4 rounded-xl border-2 text-left transition-all duration-200",
+                    sortOrder === option.id
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <div className="font-semibold text-foreground">{option.label}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{option.description}</div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
 
 
