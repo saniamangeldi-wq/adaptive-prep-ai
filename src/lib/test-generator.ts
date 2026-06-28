@@ -204,21 +204,46 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
 
   const difficultyRank: Record<string, number> = { easy: 0, normal: 1, hard: 2 };
   const preferredRank = difficultyRank[adaptedDifficulty] ?? 1;
+
+  // STRICT difficulty matching: questions of the chosen difficulty come first,
+  // then unseen-vs-seen, then distance from preferred difficulty as a last-resort fallback.
   const rankQuestion = (q: Question) => {
-    const seenPenalty = seenQuestionIds.has(q.id) ? 1000 : 0;
-    const diffDistance = Math.abs((difficultyRank[q.difficulty] ?? 1) - preferredRank);
-    return seenPenalty + diffDistance;
+    const qRank = difficultyRank[q.difficulty] ?? 1;
+    const mismatchPenalty = qRank === preferredRank ? 0 : 10_000;
+    const seenPenalty = seenQuestionIds.has(q.id) ? 1_000 : 0;
+    const diffDistance = Math.abs(qRank - preferredRank);
+    return mismatchPenalty + seenPenalty + diffDistance;
+  };
+
+  // Helper: split a list into (matching difficulty, other) preserving each group's order.
+  const splitByDifficulty = (qs: Question[]) => {
+    const match: Question[] = [];
+    const other: Question[] = [];
+    for (const q of qs) {
+      if ((difficultyRank[q.difficulty] ?? 1) === preferredRank) match.push(q);
+      else other.push(q);
+    }
+    return { match, other };
   };
 
   // CHANGE 3: Fisher-Yates instead of biased Math.random()-0.5 sort.
-  const unseenQuestions = shuffle(
-    allQuestions.filter((q) => !seenQuestionIds.has(q.id))
-  ).sort((a, b) => rankQuestion(a) - rankQuestion(b));
-
-  // Seen pool sorted least-recently-seen first (oldest timestamp = highest priority for recycling).
-  const seenQuestions = allQuestions
+  const unseenAll = shuffle(allQuestions.filter((q) => !seenQuestionIds.has(q.id)));
+  const seenAll = allQuestions
     .filter((q) => seenQuestionIds.has(q.id))
     .sort((a, b) => (lastSeenAt.get(a.id) ?? 0) - (lastSeenAt.get(b.id) ?? 0));
+
+  // Strict priority order: matching+unseen → matching+seen → other+unseen → other+seen.
+  const { match: unseenMatch, other: unseenOther } = splitByDifficulty(unseenAll);
+  const { match: seenMatch, other: seenOther } = splitByDifficulty(seenAll);
+  // Sort the "other" buckets by distance so we drift toward the chosen difficulty.
+  const distSort = (a: Question, b: Question) =>
+    Math.abs((difficultyRank[a.difficulty] ?? 1) - preferredRank) -
+    Math.abs((difficultyRank[b.difficulty] ?? 1) - preferredRank);
+  unseenOther.sort(distSort);
+  seenOther.sort(distSort);
+
+  const unseenQuestions = [...unseenMatch, ...unseenOther];
+  const seenQuestions = [...seenMatch, ...seenOther];
 
   let selectedQuestions: Question[];
   if (config.testType === "combined") {
@@ -226,14 +251,12 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     const rwTarget = isFullOfficial ? 54 : Math.floor(targetQuestions / 2);
     const mathTarget = isFullOfficial ? 44 : targetQuestions - rwTarget;
 
-    const unseenMath = shuffle(unseenQuestions.filter((q) => q.section === "math"));
-    const unseenRW = shuffle(unseenQuestions.filter((q) => q.section === "reading_writing"));
-    // Overflow (seen) pools stay in least-recently-seen order.
+    const unseenMath = unseenQuestions.filter((q) => q.section === "math");
+    const unseenRW = unseenQuestions.filter((q) => q.section === "reading_writing");
     const seenMath = seenQuestions.filter((q) => q.section === "math");
     const seenRW = seenQuestions.filter((q) => q.section === "reading_writing");
 
     if (isFullOfficial) {
-      // CHANGE 2: fillToTarget now recycles least-recently-seen instead of cloning.
       selectedQuestions = [
         ...fillToTarget(unseenRW, rwTarget, seenRW),
         ...fillToTarget(unseenMath, mathTarget, seenMath),
@@ -245,18 +268,14 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
       ];
     }
   } else {
-    const prioritized = [...shuffle(unseenQuestions), ...seenQuestions];
+    const prioritized = [...unseenQuestions, ...seenQuestions];
     if (config.length === "full") {
-      // CHANGE 2: single-section full uses the same recycle-not-clone strategy.
-      selectedQuestions = fillToTarget(
-        shuffle(unseenQuestions),
-        targetQuestions,
-        seenQuestions
-      );
+      selectedQuestions = fillToTarget(unseenQuestions, targetQuestions, seenQuestions);
     } else {
       selectedQuestions = prioritized.slice(0, Math.min(targetQuestions, prioritized.length));
     }
   }
+
 
   // CHANGE 4: surface a warning when the bank couldn't fill the target.
   let poolWarning: string | undefined;
