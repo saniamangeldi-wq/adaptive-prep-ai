@@ -137,7 +137,9 @@ function fillToTarget(
 export async function generateTest(config: TestConfig, userId: string): Promise<GeneratedTest | null> {
   const targetQuestions = getTargetQuestions(config);
 
-  const adaptedDifficulty = await getAdaptiveDifficulty(userId, config.difficulty);
+  // Respect the user's explicit difficulty choice. Adaptive override is disabled
+  // because users expect the difficulty they picked.
+  const adaptedDifficulty = config.difficulty;
 
   let testTypes: string[] = [];
   if (config.testType === "combined") {
