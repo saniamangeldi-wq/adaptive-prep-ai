@@ -51,9 +51,10 @@ const difficulties: { id: Difficulty; label: string; description: string }[] = [
   { id: "hard", label: "Hard", description: "Challenging questions" },
 ];
 
+// Question order is only shown for Official SAT mode. Real Digital SAT modules
+// run hardest → easiest within each section, so that's the default.
 const sortOrders: { id: SortOrder; label: string; description: string }[] = [
-  { id: "mixed", label: "Mixed", description: "Random order (default)" },
-  { id: "hard_to_easy", label: "Hardest → Easiest", description: "Toughest questions first" },
+  { id: "hard_to_easy", label: "Hardest → Easiest", description: "Standard real-SAT order" },
   { id: "easy_to_hard", label: "Easiest → Hardest", description: "Warm up gradually" },
 ];
 
