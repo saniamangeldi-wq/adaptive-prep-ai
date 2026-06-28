@@ -277,12 +277,22 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   }
 
 
-  // CHANGE 4: surface a warning when the bank couldn't fill the target.
+  // CHANGE 4: surface a warning when the bank couldn't fill the target or the
+  // chosen difficulty pool was too small and we had to fall back to other levels.
   let poolWarning: string | undefined;
+  const mismatchedCount = selectedQuestions.filter(
+    (q) => (difficultyRank[q.difficulty] ?? 1) !== preferredRank
+  ).length;
   if (selectedQuestions.length < targetQuestions) {
     poolWarning =
       "Some sections have fewer questions than a full SAT because the question bank is still being expanded.";
+  } else if (mismatchedCount > 0) {
+    poolWarning =
+      `Only ${selectedQuestions.length - mismatchedCount} of ${selectedQuestions.length} questions ` +
+      `match the "${adaptedDifficulty}" difficulty you picked — the rest were filled in from other ` +
+      `levels because the bank doesn't have enough ${adaptedDifficulty} questions yet.`;
   }
+
 
   // Apply sort order — defaults to mixed (preserves existing shuffled / section-grouped order).
   // For combined tests, sort within each section so R&W stays before Math.
