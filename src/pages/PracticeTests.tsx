@@ -101,9 +101,12 @@ export default function PracticeTests() {
 
     // Official SAT mode must always use the full Digital SAT structure:
     // 54 Reading & Writing + 44 Math = 98 questions, combined, full length.
+    // Official SAT mode uses the user-chosen sort order (defaults to real-SAT
+    // hardest→easiest). Practice mode always uses "mixed" so the difficulty
+    // selector isn't undermined by an ordering pass.
     const effectiveConfig = testMode === "official"
       ? { testType: "combined" as TestType, length: "full" as TestLength, difficulty, timerEnabled, sortOrder }
-      : { testType, length, difficulty, timerEnabled, sortOrder };
+      : { testType, length, difficulty, timerEnabled, sortOrder: "mixed" as SortOrder };
 
     try {
       const test = await generateTest(
