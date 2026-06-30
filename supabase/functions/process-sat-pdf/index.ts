@@ -411,9 +411,7 @@ function validateQuestion(q: Question, index: number): { valid: boolean; errors:
       "not an integer",
       "not realistic",
       "intended correct",
-      "instead of",
       "option should be",
-      "correct option is",
     ];
     const hasContradiction = contradictionPhrases.some((phrase) =>
       q.explanation.toLowerCase().includes(phrase)
