@@ -1,6 +1,10 @@
 // Tier limits configuration
 export type PricingTier = "tier_0" | "tier_1" | "tier_2" | "tier_3";
 
+// Global feature flag — voice chat (ElevenLabs Conversational AI) temporarily
+// disabled while we sort out ElevenLabs billing. Flip to true to re-enable.
+export const VOICE_CHAT_ENABLED = false;
+
 export interface TierLimits {
   name: string;
   displayName: string;
