@@ -14,7 +14,7 @@ import { History, X, Zap, Mic, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditsInfoPopover } from "@/components/ai/CreditsInfoPopover";
-import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
+import { getTierLimits, TRIAL_LIMITS, VOICE_CHAT_ENABLED } from "@/lib/tier-limits";
 import { ModelSelector, type EliteModel } from "@/components/ai/ModelSelector";
 import type { Reference } from "@/hooks/useReferences";
 import { PageSeo } from "@/components/seo/PageSeo";
