@@ -92,7 +92,7 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     questionsPerDay: -1,
     questionsPerMonth: 1000,
     flashcardsPerDay: -1, // Unlimited
-    hasVoiceChat: true,
+    hasVoiceChat: VOICE_CHAT_ENABLED,
     hasUniversityMatch: true,
     aiModel: "gpt-5-all",
     aiProvider: "perplexity",
@@ -102,7 +102,6 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
       "Everything in Pro",
       "All Perplexity Pro models",
       "Deep Research + Reasoning Pro",
-      "Premium AI with voice chat",
       "Unlimited flashcards",
       "1-on-1 coaching session",
     ],
