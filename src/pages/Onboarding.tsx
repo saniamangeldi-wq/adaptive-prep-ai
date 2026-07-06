@@ -172,11 +172,7 @@ export default function Onboarding() {
         return;
       }
 
-      if (goToCognitive && !(profile as any)?.cognitive_baseline_completed) {
-        setPhase("cognitive");
-      } else {
-        await finalizeOnboarding();
-      }
+      await finalizeOnboarding();
     } catch (error: any) {
       toast.error(error.message || "Failed to save preferences");
     } finally {
