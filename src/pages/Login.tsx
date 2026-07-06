@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GraduationCap, Mail, Lock, Eye, EyeOff, Loader2, User, Users, School, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Validate `next` as a same-origin relative path before honoring it.
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,12 +65,16 @@ export default function Login() {
           });
 
         // Navigate immediately based on role - don't wait for DB
-        switch (selectedRole) {
-          case "school_admin":
-            navigate("/dashboard/school/billing");
-            break;
-          default:
-            navigate("/dashboard");
+        if (nextPath) {
+          navigate(nextPath);
+        } else {
+          switch (selectedRole) {
+            case "school_admin":
+              navigate("/dashboard/school/billing");
+              break;
+            default:
+              navigate("/dashboard");
+          }
         }
       }
     } catch (error: any) {
@@ -79,7 +87,7 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/dashboard",
+        redirect_uri: window.location.origin + (nextPath ?? "/dashboard"),
       });
 
       if (result?.error) throw result.error;

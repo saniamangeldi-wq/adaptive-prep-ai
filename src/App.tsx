@@ -63,6 +63,7 @@ import VideoLessons from "./pages/VideoLessons";
 import LessonsComingSoon from "./pages/LessonsComingSoon";
 import SATVerbal from "./pages/SATVerbal";
 import RevenueCalculator from "./pages/RevenueCalculator";
+import OAuthConsent from "./pages/OAuthConsent";
 
 const queryClient = new QueryClient();
 
@@ -135,6 +136,7 @@ function AppRoutes() {
       <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/blog/free-ai-sat-prep" element={<FreeAiSatPrep />} />
       <Route path="/blog/northeastern-acceptance-rate" element={<NortheasternAcceptanceRate />} />
+      <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/digital-sat-question-bank" element={<DigitalSATQuestionBank />} />
       <Route path="/digital-sat-score-calculator" element={<DigitalSATScoreCalculator />} />
