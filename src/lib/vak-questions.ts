@@ -12,9 +12,9 @@ export interface VAKQuestion {
 
 // Tier thresholds
 export const VAK_TIER_QUESTIONS = {
-  free: 15,    // tier_0 and tier_1
-  pro: 30,     // tier_2
-  elite: 50,   // tier_3
+  free: 10,    // tier_0 and tier_1
+  pro: 10,     // tier_2
+  elite: 10,   // tier_3
 } as const;
 
 export function getQuestionCountForTier(tier: string): number {
