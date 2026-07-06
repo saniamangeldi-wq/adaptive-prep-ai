@@ -1282,6 +1282,7 @@ export type Database = {
           questions_used_today: number
           role: Database["public"]["Enums"]["user_role"]
           study_subjects: Json | null
+          subscription_ends_at: string | null
           target_sat_score: number | null
           tests_remaining: number
           tests_reset_at: string | null
@@ -1323,6 +1324,7 @@ export type Database = {
           questions_used_today?: number
           role?: Database["public"]["Enums"]["user_role"]
           study_subjects?: Json | null
+          subscription_ends_at?: string | null
           target_sat_score?: number | null
           tests_remaining?: number
           tests_reset_at?: string | null
@@ -1364,6 +1366,7 @@ export type Database = {
           questions_used_today?: number
           role?: Database["public"]["Enums"]["user_role"]
           study_subjects?: Json | null
+          subscription_ends_at?: string | null
           target_sat_score?: number | null
           tests_remaining?: number
           tests_reset_at?: string | null
