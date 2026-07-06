@@ -241,8 +241,8 @@ export default function AICoach() {
                 <ModelSelector value={eliteModel} onChange={handleModelChange} />
               )}
 
-              {/* Text / Voice toggle — only show voice if user has tier_3 */}
-              {isElite ? (
+              {/* Text / Voice toggle — Elite only, and only when voice chat is globally enabled */}
+              {isElite && VOICE_CHAT_ENABLED ? (
                 <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
                   <button
                     onClick={() => setChatMode("text")}
