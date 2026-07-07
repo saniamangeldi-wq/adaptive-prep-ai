@@ -15,7 +15,8 @@ import {
   GraduationCap,
   Timer,
   LineChart as LineChartIcon,
-  Layers
+  Layers,
+  HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -456,32 +457,42 @@ export default function PracticeTests() {
         {/* Study Tools */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Study Tools</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-3 gap-4">
             <Link
               to="/dashboard/flashcards"
-              className="flex items-center gap-4 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
+              className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
             >
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Layers className="w-6 h-6 text-primary" />
               </div>
-              <div className="flex-1">
+              <div>
                 <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Flashcards</div>
-                <div className="text-xs text-muted-foreground">Review key concepts with smart cards</div>
+                <div className="text-xs text-muted-foreground mt-1">Review key concepts with smart cards</div>
               </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
             </Link>
             <Link
               to="/dashboard/lessons"
-              className="flex items-center gap-4 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
+              className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
             >
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <BookOpen className="w-6 h-6 text-primary" />
               </div>
-              <div className="flex-1">
+              <div>
                 <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Video Lessons</div>
-                <div className="text-xs text-muted-foreground">VAK-adapted lessons for every topic</div>
+                <div className="text-xs text-muted-foreground mt-1">VAK-adapted lessons for every topic</div>
               </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </Link>
+            <Link
+              to="/digital-sat-question-bank"
+              className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <HelpCircle className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Question Bank</div>
+                <div className="text-xs text-muted-foreground mt-1">Browse official-style SAT questions</div>
+              </div>
             </Link>
           </div>
         </div>
