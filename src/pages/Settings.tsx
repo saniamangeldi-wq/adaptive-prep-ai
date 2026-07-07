@@ -163,8 +163,6 @@ export default function Settings() {
               {[
                 { to: "/dashboard/achievements", icon: Trophy, label: "Achievements" },
                 { to: "/dashboard/billing", icon: CreditCard, label: "Billing & Plans" },
-                { to: "/dashboard/flashcards", icon: Layers, label: "Flashcards" },
-                { to: "/dashboard/lessons", icon: BookOpen, label: "Video Lessons" },
               ].map(({ to, icon: Icon, label }) => (
                 <Link
                   key={to}
