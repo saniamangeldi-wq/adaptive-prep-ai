@@ -6,10 +6,10 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 
 type AppTheme = "dark" | "midnight" | "sepia";
 
-const themes: { id: AppTheme; label: string; color: string; preview: string }[] = [
-  { id: "dark", label: "Dark", color: "bg-[#0f0f0f]", preview: "border-emerald-500" },
-  { id: "midnight", label: "Midnight", color: "bg-[#0a0f1e]", preview: "border-indigo-500" },
-  { id: "sepia", label: "Sepia", color: "bg-[#1c1713]", preview: "border-amber-500" },
+const themes: { id: AppTheme; label: string; swatch: string; ring: string }[] = [
+  { id: "dark", label: "Dark", swatch: "bg-gradient-to-br from-slate-700 to-slate-950", ring: "ring-emerald-400" },
+  { id: "midnight", label: "Midnight", swatch: "bg-gradient-to-br from-indigo-500 to-indigo-950", ring: "ring-indigo-300" },
+  { id: "sepia", label: "Sepia", swatch: "bg-gradient-to-br from-amber-400 to-amber-900", ring: "ring-amber-300" },
 ];
 
 function applyTheme(theme: AppTheme) {
