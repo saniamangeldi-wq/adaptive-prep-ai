@@ -245,6 +245,67 @@ export default function PracticeTests() {
               </div>
             )}
 
+            {/* Test Mode Selection */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground">Test Mode</h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <button
+                  onClick={() => setTestMode("official")}
+                  className={cn(
+                    "p-5 rounded-xl border-2 text-left transition-all duration-200 relative overflow-hidden",
+                    testMode === "official"
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <div className="absolute top-3 right-3">
+                    <span className="px-2 py-1 rounded-full bg-gradient-to-r from-primary to-teal-400 text-[10px] font-bold text-white">
+                      RECOMMENDED
+                    </span>
+                  </div>
+                  <GraduationCap className={cn(
+                    "w-8 h-8 mb-3",
+                    testMode === "official" ? "text-primary" : "text-muted-foreground"
+                  )} />
+                  <div className="font-semibold text-foreground">Official SAT Format</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    4 modules with sections, breaks, directions & review screens
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">98 Questions</span>
+                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">~2h 14m</span>
+                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">Adaptive</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setTestMode("practice")}
+                  className={cn(
+                    "p-5 rounded-xl border-2 text-left transition-all duration-200",
+                    testMode === "practice"
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <Timer className={cn(
+                    "w-8 h-8 mb-3",
+                    testMode === "practice" ? "text-primary" : "text-muted-foreground"
+                  )} />
+                  <div className="font-semibold text-foreground">Practice Questions</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Custom question count & difficulty for focused practice
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">10-154 Qs</span>
+                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">Custom Time</span>
+                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">Flexible</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+
+
 
         {/* Quick Practice Options - Only show if practice mode selected */}
         {testMode === "practice" && (
@@ -446,7 +507,6 @@ export default function PracticeTests() {
               <button
                 type="button"
                 onClick={() => {
-                  setTestMode("official");
                   setView("config");
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
@@ -456,25 +516,8 @@ export default function PracticeTests() {
                   <GraduationCap className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Practice Tests</div>
-                  <div className="text-xs text-muted-foreground mt-1">Full official Digital SAT format — 98 questions, 4 modules</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setTestMode("practice");
-                  setView("config");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group text-left"
-              >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Practice Questions</div>
-                  <div className="text-xs text-muted-foreground mt-1">Configure a custom quick practice session</div>
+                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Practice</div>
+                  <div className="text-xs text-muted-foreground mt-1">Take an official Digital SAT test or a custom quick practice session</div>
                 </div>
               </button>
             </div>
