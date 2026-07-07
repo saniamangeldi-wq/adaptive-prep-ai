@@ -96,13 +96,13 @@ serve(async (req) => {
       });
     }
 
-    // Non-elite: Grant 10 minutes of university access
+    // Non-elite: Grant 30 minutes of university access
     await supabaseAdmin
       .from("university_access_grants")
       .insert({
         user_id: user.id,
         stripe_session_id: session_id,
-        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       });
 
     return new Response(JSON.stringify({ granted: true, type: "access" }), {

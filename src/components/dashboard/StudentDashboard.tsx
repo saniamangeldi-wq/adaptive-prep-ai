@@ -27,7 +27,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
 import { StudentAffiliationBanner } from "./StudentAffiliationBanner";
 
-import { DonationBanner } from "@/components/landing/DonationBanner";
+
 import { GamificationWidget } from "./GamificationWidget";
 
 // Subject icons map
@@ -203,8 +203,6 @@ export function StudentDashboard() {
       <GamificationWidget />
 
 
-      {/* Unlock / Credits Purchase */}
-      <DonationBanner />
 
       {/* Achievement Badges */}
       <div className="space-y-3">

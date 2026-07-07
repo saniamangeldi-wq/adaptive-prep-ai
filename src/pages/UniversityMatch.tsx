@@ -429,14 +429,14 @@ export default function UniversityMatch() {
             <div>
               <h2 className="text-xl font-bold text-foreground mb-2">University Match</h2>
               <p className="text-sm text-muted-foreground">
-                Get personalized university recommendations powered by AI. Pay just $1 for 10 minutes of full access.
+                Get personalized university recommendations powered by AI. Pay just $1 for 30 minutes of full access.
               </p>
             </div>
             
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
               <div className="flex items-center justify-center gap-2 text-primary font-semibold">
                 <DollarSign className="w-5 h-5" />
-                <span>$1 / ₸500 for 10 minutes</span>
+                <span>$1 / ₸500 for 30 minutes</span>
               </div>
               <p className="text-xs text-muted-foreground">
                 Explore matches, compare universities, get AI advice, and save your shortlist.
