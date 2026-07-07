@@ -174,11 +174,19 @@ export default function PracticeTests() {
       <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Practice Tests</h1>
-          <p className="text-muted-foreground mt-1">
-            Configure your practice session and start learning
-          </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Practice</h1>
+            <p className="text-muted-foreground mt-1">
+              Configure your practice session and start learning
+            </p>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard/progress">
+              <LineChartIcon className="w-4 h-4" />
+              View Progress
+            </Link>
+          </Button>
         </div>
 
         {/* Tier 0 Upgrade Prompt */}
