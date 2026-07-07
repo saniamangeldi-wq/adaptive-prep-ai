@@ -139,7 +139,7 @@ export default function Settings() {
   return (
     <DashboardLayout>
       <PageSeo title="Account Settings | AdaptivePrep" description="Update your profile, language, theme, AI model and notification preferences on AdaptivePrep." path="/dashboard/settings" />
-      <div className="max-w-4xl space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t("settings.title")}</h1>
