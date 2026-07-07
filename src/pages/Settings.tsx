@@ -17,8 +17,6 @@ import {
   Brain,
   Trophy,
   CreditCard,
-  Layers,
-  BookOpen,
   ChevronRight
 } from "lucide-react";
 import { Link } from "react-router-dom";
