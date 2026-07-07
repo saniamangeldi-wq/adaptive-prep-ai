@@ -95,7 +95,7 @@ function TutorBillingView() {
   return (
     <DashboardLayout>
       <PageSeo title="Billing & Plans | AdaptivePrep" description="Manage your AdaptivePrep subscription, switch tiers, view usage and update payment details." path="/dashboard/billing" />
-      <div className="space-y-8 max-w-5xl">
+      <div className="space-y-8 max-w-5xl mx-auto">
         {/* Header */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Billing & Plans</h1>
@@ -336,7 +336,7 @@ function StudentBillingView() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Billing & Plans</h1>
