@@ -13,7 +13,8 @@ import {
   Loader2,
   Lock,
   GraduationCap,
-  Timer
+  Timer,
+  LineChart as LineChartIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
