@@ -15,7 +15,8 @@ import {
   GraduationCap,
   Timer,
   LineChart as LineChartIcon,
-  Layers
+  Layers,
+  HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
