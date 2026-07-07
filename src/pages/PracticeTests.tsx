@@ -72,6 +72,7 @@ export default function PracticeTests() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("hard_to_easy");
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
+  const [view, setView] = useState<"menu" | "config">("menu");
   const { user, profile } = useAuth();
 
   const selectedLength = { id: length, label: baseTestLengths.find(l => l.id === length)?.label || "", ...getLengthMeta(length, testType) };
