@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { DonationBanner } from "@/components/landing/DonationBanner";
+
 
 import { useTranslation } from "react-i18next";
 import {
@@ -269,23 +269,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
           <ThemeSwitcher collapsed={!sidebarExpanded} />
 
-          {showInstallButton && (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleInstall}
-                  className={cn(
-                    "flex items-center gap-3 w-full rounded-lg text-sm font-medium text-[hsl(var(--sidebar-icon-muted))] hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors",
-                    sidebarExpanded ? "px-3 h-10" : "h-10 w-10 mx-auto justify-center"
-                  )}
-                >
-                  <Download style={iconStyle} className="flex-shrink-0" />
-                  {sidebarExpanded && <span>Install App</span>}
-                </button>
-              </TooltipTrigger>
-              {!sidebarExpanded && <TooltipContent side="right" className="text-xs">Install App</TooltipContent>}
-            </Tooltip>
-          )}
 
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
@@ -409,7 +392,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="p-4 lg:p-6 pb-16 md:pb-4 lg:pb-6">{children}</main>
-        <DonationBanner />
       </div>
     </div>
   );
