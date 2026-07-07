@@ -2,7 +2,7 @@ export default {
   // Navigation
   nav: {
     dashboard: "Dashboard",
-    practiceTests: "Practice Tests",
+    practiceTests: "Practice",
     aiCoach: "AI Coach",
     spaces: "Spaces",
     assignments: "Assignments",
