@@ -61,11 +61,6 @@ const studentNav: NavItem[] = [
   { nameKey: "nav.calendar", href: "/dashboard/calendar", icon: Calendar, schoolOnly: true },
   { nameKey: "nav.curriculum", href: "/dashboard/curriculum", icon: BookOpen, schoolOnly: true },
   { nameKey: "nav.universityMatch", href: "/dashboard/university-match", icon: GraduationCap },
-  { nameKey: "nav.progress", href: "/dashboard/progress", icon: LineChart },
-  { nameKey: "nav.flashcards", href: "/dashboard/flashcards", icon: Layers },
-  { nameKey: "nav.videoLessons", href: "/dashboard/lessons", icon: BookOpen },
-  { nameKey: "nav.achievements", href: "/dashboard/achievements", icon: Trophy },
-  { nameKey: "nav.billing", href: "/dashboard/billing", icon: CreditCard },
   { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ];
 

@@ -14,8 +14,14 @@ import {
   Moon,
   Globe,
   Languages,
-  Brain
+  Brain,
+  Trophy,
+  CreditCard,
+  Layers,
+  BookOpen,
+  ChevronRight
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -150,6 +156,33 @@ export default function Settings() {
 
         {/* School Settings - Only for School Admins */}
         {profile?.role === "school_admin" && <SchoolSettingsSection />}
+
+        {/* Quick Links - moved from sidebar (students only) */}
+        {profile?.role === "student" && (
+          <div className="p-6 rounded-2xl bg-card border border-border/50">
+            <h3 className="font-semibold text-foreground mb-4">More</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { to: "/dashboard/achievements", icon: Trophy, label: "Achievements" },
+                { to: "/dashboard/billing", icon: CreditCard, label: "Billing & Plans" },
+                { to: "/dashboard/flashcards", icon: Layers, label: "Flashcards" },
+                { to: "/dashboard/lessons", icon: BookOpen, label: "Video Lessons" },
+              ].map(({ to, icon: Icon, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="flex items-center justify-between p-4 rounded-xl bg-muted/40 border border-border/50 hover:border-primary/40 hover:bg-muted/60 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-5 h-5 text-primary" />
+                    <span className="text-foreground font-medium">{label}</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Profile Section */}
         <div className="p-6 rounded-2xl bg-card border border-border/50">
