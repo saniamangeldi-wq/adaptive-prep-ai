@@ -199,8 +199,6 @@ export function StudentDashboard() {
         />
       </div>
 
-      {/* XP Level & Daily Challenges */}
-      <GamificationWidget />
 
 
 
