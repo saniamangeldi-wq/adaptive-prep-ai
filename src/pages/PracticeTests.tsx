@@ -180,11 +180,34 @@ export default function PracticeTests() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Practice</h1>
-            <p className="text-muted-foreground mt-1">
-              Configure your practice session and start learning
-            </p>
+          <div className="flex items-start gap-3">
+            {view === "config" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setView("menu")}
+                className="mt-1"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+            )}
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                {view === "menu"
+                  ? "Practice"
+                  : testMode === "official"
+                  ? "Practice Tests"
+                  : "Practice Questions"}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {view === "menu"
+                  ? "Choose how you want to study today"
+                  : testMode === "official"
+                  ? "Full official Digital SAT format"
+                  : "Configure a custom quick practice session"}
+              </p>
+            </div>
           </div>
           <Button variant="outline" size="sm" asChild>
             <Link to="/dashboard/progress">
@@ -193,6 +216,7 @@ export default function PracticeTests() {
             </Link>
           </Button>
         </div>
+
 
         {/* Tier 0 Upgrade Prompt */}
         {isTier0 && (
