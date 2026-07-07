@@ -65,6 +65,9 @@ export function StudentAffiliationBanner() {
     );
   }
 
+  // Hide the tutor affiliation card (only show school affiliation)
+  if (affiliation.type !== "school") return null;
+
   return (
     <div className={`p-4 rounded-xl border ${
       affiliation.type === "school" 
