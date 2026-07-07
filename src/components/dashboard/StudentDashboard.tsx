@@ -28,7 +28,7 @@ import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
 import { StudentAffiliationBanner } from "./StudentAffiliationBanner";
 
 
-import { GamificationWidget } from "./GamificationWidget";
+
 
 // Subject icons map
 const subjectIcons: Record<string, string> = {
@@ -199,8 +199,6 @@ export function StudentDashboard() {
         />
       </div>
 
-      {/* XP Level & Daily Challenges */}
-      <GamificationWidget />
 
 
 
