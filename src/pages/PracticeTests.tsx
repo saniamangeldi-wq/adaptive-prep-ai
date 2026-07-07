@@ -17,8 +17,7 @@ import {
   LineChart as LineChartIcon,
   Layers,
   HelpCircle,
-  ArrowLeft,
-  GraduationCap as GradCapIcon
+  ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
