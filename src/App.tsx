@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+
 import { useTranslation } from "react-i18next";
 
 import Index from "./pages/Index";
@@ -206,7 +206,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <InstallPrompt />
+            
             <LanguageSync />
             <AppRoutes />
           </TooltipProvider>

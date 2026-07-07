@@ -107,7 +107,7 @@ export function useUniversityAccess() {
           await checkAccess();
           toast({
             title: "Access granted!",
-            description: "You have 10 minutes of University Match access.",
+            description: "You have 30 minutes of University Match access.",
           });
         }
         return true;
