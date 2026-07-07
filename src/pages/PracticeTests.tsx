@@ -483,7 +483,7 @@ export default function PracticeTests() {
               </div>
             </Link>
             <Link
-              to="/dashboard/question-bank"
+              to="/digital-sat-question-bank"
               className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
             >
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
