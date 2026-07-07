@@ -457,7 +457,7 @@ export default function PracticeTests() {
         {/* Study Tools */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Study Tools</h2>
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <Link
               to="/dashboard/flashcards"
               className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
@@ -483,15 +483,15 @@ export default function PracticeTests() {
               </div>
             </Link>
             <Link
-              to="/digital-sat-question-bank"
+              to="/dashboard/question-bank"
               className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
             >
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <HelpCircle className="w-6 h-6 text-primary" />
+                <FileText className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Question Bank</div>
-                <div className="text-xs text-muted-foreground mt-1">Browse official-style SAT questions</div>
+                <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Practice Questions</div>
+                <div className="text-xs text-muted-foreground mt-1">Browse and drill individual SAT questions</div>
               </div>
             </Link>
           </div>
