@@ -14,7 +14,8 @@ import {
   Lock,
   GraduationCap,
   Timer,
-  LineChart as LineChartIcon
+  LineChart as LineChartIcon,
+  Layers
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
