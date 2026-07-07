@@ -16,7 +16,8 @@ import {
   Timer,
   LineChart as LineChartIcon,
   Layers,
-  HelpCircle
+  HelpCircle,
+  ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -71,6 +72,7 @@ export default function PracticeTests() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("hard_to_easy");
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
+  const [view, setView] = useState<"menu" | "config">("menu");
   const { user, profile } = useAuth();
 
   const selectedLength = { id: length, label: baseTestLengths.find(l => l.id === length)?.label || "", ...getLengthMeta(length, testType) };
@@ -178,11 +180,34 @@ export default function PracticeTests() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Practice</h1>
-            <p className="text-muted-foreground mt-1">
-              Configure your practice session and start learning
-            </p>
+          <div className="flex items-start gap-3">
+            {view === "config" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setView("menu")}
+                className="mt-1"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+            )}
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                {view === "menu"
+                  ? "Practice"
+                  : testMode === "official"
+                  ? "Practice Tests"
+                  : "Practice Questions"}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {view === "menu"
+                  ? "Choose how you want to study today"
+                  : testMode === "official"
+                  ? "Full official Digital SAT format"
+                  : "Configure a custom quick practice session"}
+              </p>
+            </div>
           </div>
           <Button variant="outline" size="sm" asChild>
             <Link to="/dashboard/progress">
@@ -192,101 +217,34 @@ export default function PracticeTests() {
           </Button>
         </div>
 
-        {/* Tier 0 Upgrade Prompt */}
-        {isTier0 && (
-          <UpgradePrompt type="tests" />
-        )}
 
-        {/* Questions remaining notice */}
-        {!isTier0 && (
-          <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-primary" />
-              <span className="text-foreground">
-                You have <strong>{profile?.tests_remaining || 0}</strong> practice questions remaining this month
-              </span>
-            </div>
-            {profile?.tier !== "tier_3" && (
-              <Button variant="hero" size="sm" asChild>
-                <Link to="/dashboard/settings">
-                  <Zap className="w-4 h-4" />
-                  Get More
-                </Link>
-              </Button>
+        {view === "config" && (
+          <>
+            {/* Tier 0 Upgrade Prompt */}
+            {isTier0 && (
+              <UpgradePrompt type="tests" />
             )}
-          </div>
-        )}
 
-        {/* Test Mode Selection */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Test Mode</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <button
-              onClick={() => setTestMode("official")}
-              className={cn(
-                "p-5 rounded-xl border-2 text-left transition-all duration-200 relative overflow-hidden",
-                testMode === "official"
-                  ? "border-primary bg-primary/10"
-                  : "border-border hover:border-primary/50"
-              )}
-            >
-              <div className="absolute top-3 right-3">
-                <span className="px-2 py-1 rounded-full bg-gradient-to-r from-primary to-teal-400 text-[10px] font-bold text-white">
-                  RECOMMENDED
-                </span>
+            {/* Questions remaining notice */}
+            {!isTier0 && (
+              <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-primary" />
+                  <span className="text-foreground">
+                    You have <strong>{profile?.tests_remaining || 0}</strong> practice questions remaining this month
+                  </span>
+                </div>
+                {profile?.tier !== "tier_3" && (
+                  <Button variant="hero" size="sm" asChild>
+                    <Link to="/dashboard/settings">
+                      <Zap className="w-4 h-4" />
+                      Get More
+                    </Link>
+                  </Button>
+                )}
               </div>
-              <GraduationCap className={cn(
-                "w-8 h-8 mb-3",
-                testMode === "official" ? "text-primary" : "text-muted-foreground"
-              )} />
-              <div className="font-semibold text-foreground">Official SAT Format</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                4 modules with sections, breaks, directions & review screens
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
-                  98 Questions
-                </span>
-                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
-                  ~2h 14m
-                </span>
-                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
-                  Adaptive
-                </span>
-              </div>
-            </button>
-            
-            <button
-              onClick={() => setTestMode("practice")}
-              className={cn(
-                "p-5 rounded-xl border-2 text-left transition-all duration-200",
-                testMode === "practice"
-                  ? "border-primary bg-primary/10"
-                  : "border-border hover:border-primary/50"
-              )}
-            >
-              <Timer className={cn(
-                "w-8 h-8 mb-3",
-                testMode === "practice" ? "text-primary" : "text-muted-foreground"
-              )} />
-              <div className="font-semibold text-foreground">Quick Practice</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Custom question count & difficulty for focused practice
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
-                  10-154 Qs
-                </span>
-                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
-                  Custom Time
-                </span>
-                <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">
-                  Flexible
-                </span>
-              </div>
-            </button>
-          </div>
-        </div>
+            )}
+
 
         {/* Quick Practice Options - Only show if practice mode selected */}
         {testMode === "practice" && (
@@ -453,53 +411,76 @@ export default function PracticeTests() {
             )}
           </Button>
         </div>
+          </>
+        )}
 
-        {/* Study Tools */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Study Tools</h2>
-          <div className="grid grid-cols-1 gap-4">
-            <Link
-              to="/dashboard/flashcards"
-              className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Layers className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Flashcards</div>
-                <div className="text-xs text-muted-foreground mt-1">Review key concepts with smart cards</div>
-              </div>
-            </Link>
-            <Link
-              to="/dashboard/lessons"
-              className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Video Lessons</div>
-                <div className="text-xs text-muted-foreground mt-1">VAK-adapted lessons for every topic</div>
-              </div>
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setTestMode("practice");
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group text-left"
-            >
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Practice Questions</div>
-                <div className="text-xs text-muted-foreground mt-1">Configure a custom quick practice session</div>
-              </div>
-            </button>
+        {/* Study Tools menu */}
+        {view === "menu" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Study Tools</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <Link
+                to="/dashboard/flashcards"
+                className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Layers className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Flashcards</div>
+                  <div className="text-xs text-muted-foreground mt-1">Review key concepts with smart cards</div>
+                </div>
+              </Link>
+              <Link
+                to="/dashboard/lessons"
+                className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Video Lessons</div>
+                  <div className="text-xs text-muted-foreground mt-1">VAK-adapted lessons for every topic</div>
+                </div>
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setTestMode("official");
+                  setView("config");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group text-left"
+              >
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Practice Tests</div>
+                  <div className="text-xs text-muted-foreground mt-1">Full official Digital SAT format — 98 questions, 4 modules</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTestMode("practice");
+                  setView("config");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group text-left"
+              >
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Practice Questions</div>
+                  <div className="text-xs text-muted-foreground mt-1">Configure a custom quick practice session</div>
+                </div>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+
       </div>
     </DashboardLayout>
     </>
