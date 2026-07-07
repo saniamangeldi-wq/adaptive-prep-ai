@@ -482,18 +482,22 @@ export default function PracticeTests() {
                 <div className="text-xs text-muted-foreground mt-1">VAK-adapted lessons for every topic</div>
               </div>
             </Link>
-            <Link
-              to="/dashboard/question-bank"
-              className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
+            <button
+              type="button"
+              onClick={() => {
+                setTestMode("practice");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group text-left"
             >
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <FileText className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Practice Questions</div>
-                <div className="text-xs text-muted-foreground mt-1">Browse and drill individual SAT questions</div>
+                <div className="text-xs text-muted-foreground mt-1">Configure a custom quick practice session</div>
               </div>
-            </Link>
+            </button>
           </div>
         </div>
       </div>
