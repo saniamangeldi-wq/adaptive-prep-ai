@@ -21,11 +21,13 @@ import {
   BookOpen,
   Maximize2,
   Settings,
+  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { Loader2, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LessonAskOverlay } from "./LessonAskOverlay";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SlideData {
@@ -105,6 +107,7 @@ export function LessonPlayer({
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showNarration, setShowNarration] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
 
   // Buffer state
   const [isBuffering, setIsBuffering] = useState(false);
@@ -482,6 +485,15 @@ export function LessonPlayer({
             </button>
           </div>
         )}
+
+        <LessonAskOverlay
+          open={askOpen}
+          onClose={() => setAskOpen(false)}
+          lessonTitle={content.title}
+          currentSection={section}
+          allSections={content.sections}
+          vakStyle={vakStyle}
+        />
       </div>
 
       {showNarration && section && (
@@ -594,6 +606,19 @@ export function LessonPlayer({
               </div>
             </PopoverContent>
           </Popover>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              if (isPlaying) setIsPlaying(false);
+              if (audioRef.current) audioRef.current.pause();
+              if (ttsPlaying) ttsStop();
+              setAskOpen(true);
+            }}
+            title="Ask about this slide"
+          >
+            <Sparkles className="h-4 w-4 text-primary" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
             <Maximize2 className="h-4 w-4" />
           </Button>
