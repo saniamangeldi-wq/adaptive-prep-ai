@@ -485,6 +485,15 @@ export function LessonPlayer({
             </button>
           </div>
         )}
+
+        <LessonAskOverlay
+          open={askOpen}
+          onClose={() => setAskOpen(false)}
+          lessonTitle={content.title}
+          currentSection={section}
+          allSections={content.sections}
+          vakStyle={vakStyle}
+        />
       </div>
 
       {showNarration && section && (
