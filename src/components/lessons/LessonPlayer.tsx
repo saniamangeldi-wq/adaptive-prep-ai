@@ -107,6 +107,7 @@ export function LessonPlayer({
   const [completedSections, setCompletedSections] = useState<Set<number>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showNarration, setShowNarration] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
 
   // Buffer state
   const [isBuffering, setIsBuffering] = useState(false);
