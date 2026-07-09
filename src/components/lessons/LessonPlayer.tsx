@@ -21,11 +21,13 @@ import {
   BookOpen,
   Maximize2,
   Settings,
+  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { Loader2, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LessonAskOverlay } from "./LessonAskOverlay";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SlideData {
