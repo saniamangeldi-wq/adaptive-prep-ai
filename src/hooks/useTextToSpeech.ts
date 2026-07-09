@@ -2,12 +2,15 @@ import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+/**
+ * Text-to-speech via Lovable AI Gateway (openai/gpt-4o-mini-tts).
+ * Fetches an mp3 blob from the `voice-speak` edge function and plays it.
+ */
 export function useTextToSpeech() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentUrlRef = useRef<string | null>(null);
-  const playStartRef = useRef<number | null>(null);
 
   const stop = useCallback(() => {
     if (audioRef.current) {
@@ -23,19 +26,16 @@ export function useTextToSpeech() {
 
   const speak = useCallback(async (text: string) => {
     if (isLoading) return;
-    
-    // Stop any current playback
     stop();
 
-    // Clean up citation brackets and markdown for better TTS
     const cleanText = text
-      .replace(/\[\d+\]/g, '') // Remove citations
-      .replace(/```[\s\S]*?```/g, 'code block') // Replace code blocks
-      .replace(/`([^`]+)`/g, '$1') // Remove inline code backticks
-      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold
-      .replace(/\*([^*]+)\*/g, '$1') // Remove italic
-      .replace(/#{1,6}\s*/g, '') // Remove headers
-      .replace(/\n+/g, '. ') // Replace newlines with pauses
+      .replace(/\[\d+\]/g, "")
+      .replace(/```[\s\S]*?```/g, "code block")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*]+)\*/g, "$1")
+      .replace(/#{1,6}\s*/g, "")
+      .replace(/\n+/g, ". ")
       .trim();
 
     if (!cleanText) {
@@ -44,16 +44,14 @@ export function useTextToSpeech() {
     }
 
     setIsLoading(true);
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
         toast.error("You must be logged in to use text-to-speech");
         return;
       }
-
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-speak`,
         {
           method: "POST",
           headers: {
@@ -65,12 +63,8 @@ export function useTextToSpeech() {
       );
 
       if (!response.ok) {
-        const error = await response.json();
-        if (response.status === 403) {
-          toast.error("Voice minutes exhausted for this month");
-        } else {
-          toast.error(error.error || "Failed to generate speech");
-        }
+        const err = await response.json().catch(() => ({}));
+        toast.error(err.error || "Failed to generate speech");
         return;
       }
 
@@ -80,7 +74,6 @@ export function useTextToSpeech() {
 
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
-
       audio.onended = () => {
         setIsPlaying(false);
         if (currentUrlRef.current) {
@@ -88,12 +81,10 @@ export function useTextToSpeech() {
           currentUrlRef.current = null;
         }
       };
-
       audio.onerror = () => {
         setIsPlaying(false);
         toast.error("Failed to play audio");
       };
-
       await audio.play();
       setIsPlaying(true);
     } catch (error) {
@@ -104,10 +95,5 @@ export function useTextToSpeech() {
     }
   }, [isLoading, stop]);
 
-  return {
-    speak,
-    stop,
-    isPlaying,
-    isLoading,
-  };
+  return { speak, stop, isPlaying, isLoading };
 }
