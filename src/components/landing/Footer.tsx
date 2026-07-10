@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { GraduationCap, Twitter, Github, Linkedin } from "lucide-react";
+import { GraduationCap, Twitter, Github, Linkedin, Mail } from "lucide-react";
 
 const footerLinks = {
   product: [
@@ -45,6 +45,13 @@ export function Footer() {
               <SocialLink icon={Github} href="#" label="GitHub repository" />
               <SocialLink icon={Linkedin} href="#" label="LinkedIn profile" />
             </div>
+            <a
+              href="mailto:hello@adaptiveprep.org"
+              className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Mail className="w-4 h-4" />
+              hello@adaptiveprep.org
+            </a>
           </div>
 
           {/* Links */}

@@ -371,6 +371,24 @@ export default function Settings() {
           </div>
         )}
 
+        {/* Contact / Support */}
+        <div className="p-6 rounded-2xl bg-card border border-border/50">
+          <div className="flex items-center gap-3 mb-4">
+            <Mail className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-foreground">Contact & Support</h3>
+          </div>
+          <p className="text-muted-foreground mb-4">
+            If you would like to contact us or report any issues, email us here.
+          </p>
+          <a
+            href="mailto:hello@adaptiveprep.org"
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            <Mail className="w-4 h-4" />
+            hello@adaptiveprep.org
+          </a>
+        </div>
+
         {/* Logout */}
         <div className="p-6 rounded-2xl bg-card border border-destructive/30">
           <div className="flex items-center gap-3 mb-4">
