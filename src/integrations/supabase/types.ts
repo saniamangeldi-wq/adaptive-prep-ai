@@ -1258,6 +1258,106 @@ export type Database = {
         }
         Relationships: []
       }
+      prebuilt_lesson_quizzes: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string
+          questions: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id: string
+          questions: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          questions?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prebuilt_lesson_quizzes_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
+            referencedRelation: "prebuilt_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prebuilt_lesson_variants: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          lesson_id: string
+          vak_style: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          id?: string
+          lesson_id: string
+          vak_style: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          vak_style?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prebuilt_lesson_variants_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "prebuilt_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prebuilt_lessons: {
+        Row: {
+          created_at: string
+          difficulty: string
+          id: string
+          objective: string
+          order_index: number
+          section: string
+          subject: string
+          title: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string
+          id?: string
+          objective: string
+          order_index?: number
+          section: string
+          subject: string
+          title: string
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string
+          id?: string
+          objective?: string
+          order_index?: number
+          section?: string
+          subject?: string
+          title?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1577,6 +1677,82 @@ export type Database = {
           tutor_id?: string
         }
         Relationships: []
+      }
+      student_lesson_bookmarks: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_lesson_bookmarks_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "prebuilt_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_lesson_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          last_slide_index: number
+          lesson_id: string
+          quiz_score: number | null
+          quiz_total: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_slide_index?: number
+          lesson_id: string
+          quiz_score?: number | null
+          quiz_total?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_slide_index?: number
+          lesson_id?: string
+          quiz_score?: number | null
+          quiz_total?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "prebuilt_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_levels: {
         Row: {
