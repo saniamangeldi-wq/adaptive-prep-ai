@@ -1,492 +1,381 @@
-import { useState, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { LessonPlayer } from "@/components/lessons/LessonPlayer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { PageSeo } from "@/components/seo/PageSeo";
-import {
-  Plus,
-  Loader2,
-  BookOpen,
-  Play,
-  Sparkles,
-  ArrowLeft,
-  Film,
-} from "lucide-react";
+import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-interface LessonRow {
+type Vak = "visual" | "auditory" | "reading_writing" | "kinesthetic";
+
+interface PrebuiltLesson {
   id: string;
+  subject: "math" | "verbal";
+  section: string;
+  topic: string;
   title: string;
-  subject: string | null;
-  topic: string | null;
-  difficulty_level: string | null;
-  status: string;
-  vak_style: string | null;
-  duration_seconds: number | null;
-  script_content: string | null;
-  created_at: string;
-  audio_url: string | null;
+  objective: string;
+  difficulty: "easy" | "medium" | "hard";
+  order_index: number;
 }
 
-interface GenerationProgress {
-  lessonId: string;
-  currentSlide: number;
-  totalSlides: number;
-  currentTitle: string;
-  startTime: number;
-  avgTimePerSlide: number;
+interface Slide {
+  heading: string;
+  bullets?: string[];
+  narration?: string;
+  example?: string | null;
 }
 
-export default function VideoLessons() {
+interface Quiz {
+  questions: { stem: string; choices: string[]; answer: number; explanation: string }[];
+}
+
+interface Progress {
+  lesson_id: string;
+  status: "not_started" | "in_progress" | "completed";
+  last_slide_index: number;
+  quiz_score: number | null;
+  quiz_total: number | null;
+}
+
+const supa = supabase as any;
+
+function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; onBack: () => void; defaultVak: Vak }) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const _navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
+  const [vak, setVak] = useState<Vak>(defaultVak);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [submitted, setSubmitted] = useState(false);
 
-  const [selectedLesson, setSelectedLesson] = useState<LessonRow | null>(null);
-  const [narratedSections, setNarratedSections] = useState<any[]>([]);
-  const [showCreate, setShowCreate] = useState(false);
-  const [newTopic, setNewTopic] = useState("");
-  const [newSubject, setNewSubject] = useState("Math");
-  const [newDifficulty, setNewDifficulty] = useState("medium");
-  const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null);
-  const abortRef = useRef(false);
-  const isGeneratingRef = useRef(false);
-
-  const { data: lessons = [], isLoading } = useQuery({
-    queryKey: ["video-lessons", user?.id],
+  const { data: variant, isLoading: loadingVariant } = useQuery({
+    queryKey: ["variant", lesson.id, vak],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("video_lessons")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("created_at", { ascending: false });
+      const { data, error } = await supa
+        .from("prebuilt_lesson_variants")
+        .select("content")
+        .eq("lesson_id", lesson.id)
+        .eq("vak_style", vak)
+        .maybeSingle();
       if (error) throw error;
-      return data as LessonRow[];
-    },
-    enabled: !!user,
-  });
-
-  const generateLesson = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("generate-lesson-content", {
-        body: { topic: newTopic, subject: newSubject, difficulty: newDifficulty },
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      toast({ title: "Lesson generated! 🎉", description: `"${data.content.title}" is ready.` });
-      setShowCreate(false);
-      setNewTopic("");
-      queryClient.invalidateQueries({ queryKey: ["video-lessons"] });
-    },
-    onError: (error: any) => {
-      toast({ title: "Generation failed", description: error.message, variant: "destructive" });
+      return data?.content as { slides: Slide[] } | null;
     },
   });
 
-  const getSectionAudioStatus = useCallback((lesson: LessonRow): { total: number; completed: number; sections: any[] } => {
-    if (!lesson.script_content) return { total: 0, completed: 0, sections: [] };
-    try {
-      const content = JSON.parse(lesson.script_content);
-      const sections = content.sections || [];
-      const narrated = content.narrated_sections || [];
-      const completed = narrated.filter((n: any) => n.status === "completed" && n.audio_url).length;
-      return { total: sections.length, completed, sections: narrated };
-    } catch {
-      return { total: 0, completed: 0, sections: [] };
-    }
-  }, []);
+  const { data: quiz } = useQuery({
+    queryKey: ["quiz", lesson.id],
+    queryFn: async () => {
+      const { data, error } = await supa
+        .from("prebuilt_lesson_quizzes")
+        .select("questions")
+        .eq("lesson_id", lesson.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.questions as Quiz["questions"] | null;
+    },
+  });
 
-  const isFullyNarrated = useCallback((lesson: LessonRow) => {
-    const { total, completed } = getSectionAudioStatus(lesson);
-    return total > 0 && completed >= total;
-  }, [getSectionAudioStatus]);
+  const saveProgress = useMutation({
+    mutationFn: async (updates: Partial<Progress>) => {
+      if (!user) return;
+      const row = { user_id: user.id, lesson_id: lesson.id, ...updates };
+      await supa.from("student_lesson_progress").upsert(row, { onConflict: "user_id,lesson_id" });
+      qc.invalidateQueries({ queryKey: ["lesson-progress", user.id] });
+    },
+  });
 
-  const cancelGeneration = useCallback(() => {
-    abortRef.current = true;
-    isGeneratingRef.current = false;
-    setGenerationProgress(null);
-    toast({ title: "Generation cancelled", description: "Progress has been saved. You can resume later." });
-  }, [toast]);
+  useEffect(() => {
+    saveProgress.mutate({ status: "in_progress", last_slide_index: slideIdx });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slideIdx]);
 
-  const generateVideo = useCallback(async (lesson: LessonRow) => {
-    if (isGeneratingRef.current) return; // prevent double-trigger
-    if (!lesson.script_content) return;
-    const content = JSON.parse(lesson.script_content);
-    const sections = content.sections || [];
-    const existingNarrated: any[] = content.narrated_sections || [];
+  const slides = variant?.slides ?? [];
+  const total = slides.length;
+  const slide = slides[slideIdx];
 
-    // Find which sections still need audio — strict guard
-    const needsGeneration: number[] = [];
-    for (let i = 0; i < sections.length; i++) {
-      const existing = existingNarrated.find(
-        (n: any) => n.section_index === i && n.status === "completed" && n.audio_url && n.audio_url.trim() !== ""
-      );
-      if (!existing) needsGeneration.push(i);
-    }
-
-    if (needsGeneration.length === 0) {
-      // All audio exists — open player directly, zero ElevenLabs calls
-      setNarratedSections(existingNarrated);
-      setSelectedLesson(lesson);
-      return;
-    }
-
-    // Confirm before starting (costs ElevenLabs credits)
-    const proceed = window.confirm(
-      `This will generate audio for ${needsGeneration.length} slide(s). This uses ElevenLabs credits. Continue?`
-    );
-    if (!proceed) return;
-
-    isGeneratingRef.current = true;
-    abortRef.current = false;
-    const startTime = Date.now();
-    setGenerationProgress({
-      lessonId: lesson.id,
-      currentSlide: 0,
-      totalSlides: sections.length,
-      currentTitle: sections[needsGeneration[0]]?.section_title || "",
-      startTime,
-      avgTimePerSlide: 0,
-    });
-
-    const allNarrated = [...existingNarrated];
-    let completedCount = existingNarrated.filter((n: any) => n.status === "completed" && n.audio_url).length;
-
-    for (let i = 0; i < needsGeneration.length; i++) {
-      if (abortRef.current) break;
-      const sectionIdx = needsGeneration[i];
-      const elapsed = (Date.now() - startTime) / 1000;
-      const avgTime = i > 0 ? elapsed / i : 8;
-
-      setGenerationProgress({
-        lessonId: lesson.id,
-        currentSlide: completedCount + 1,
-        totalSlides: sections.length,
-        currentTitle: sections[sectionIdx]?.section_title || `Slide ${sectionIdx + 1}`,
-        startTime,
-        avgTimePerSlide: avgTime,
-      });
-
-      try {
-        const session = await supabase.auth.getSession();
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/narrate-lesson`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.data.session?.access_token}`,
-              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            },
-            body: JSON.stringify({ lesson_id: lesson.id, section_index: sectionIdx }),
-          }
-        );
-
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.error || "Narration failed");
-        }
-
-        const data = await response.json();
-        const resultSection = data.sections?.[0];
-        if (resultSection) {
-          // Remove old entry for this index if any
-          const existingIdx = allNarrated.findIndex((n: any) => n.section_index === sectionIdx);
-          if (existingIdx >= 0) allNarrated[existingIdx] = resultSection;
-          else allNarrated.push(resultSection);
-          completedCount++;
-
-          // Save progress to Supabase immediately (resumable)
-          const updatedContent = { ...content, narrated_sections: allNarrated };
-          await supabase
-            .from("video_lessons")
-            .update({ script_content: JSON.stringify(updatedContent) })
-            .eq("id", lesson.id);
-        }
-      } catch (err: any) {
-        console.error(`Failed to narrate section ${sectionIdx}:`, err);
-        toast({
-          title: `Slide ${sectionIdx + 1} failed`,
-          description: err.message,
-          variant: "destructive",
-        });
-      }
-    }
-
-    // Finalize
-    isGeneratingRef.current = false;
-    setGenerationProgress(null);
-
-    if (!abortRef.current) {
-      // Update lesson status
-      await supabase
-        .from("video_lessons")
-        .update({ status: "narrated", audio_url: allNarrated.find((n: any) => n.audio_url)?.audio_url || null })
-        .eq("id", lesson.id);
-
-      queryClient.invalidateQueries({ queryKey: ["video-lessons"] });
-
-      // Refetch fresh lesson data then auto-open player
-      const { data: freshLesson } = await supabase
-        .from("video_lessons")
-        .select("*")
-        .eq("id", lesson.id)
-        .single();
-
-      if (freshLesson) {
-        const freshContent = JSON.parse(freshLesson.script_content as string);
-        setNarratedSections(freshContent.narrated_sections || allNarrated);
-        setTimeout(() => setSelectedLesson(freshLesson as LessonRow), 800);
-      }
-    }
-  }, [toast, queryClient]);
-
-  const openLesson = (lesson: LessonRow) => {
-    if (isFullyNarrated(lesson)) {
-      const content = JSON.parse(lesson.script_content!);
-      setNarratedSections(content.narrated_sections || []);
-      setSelectedLesson(lesson);
-    } else {
-      generateVideo(lesson);
-    }
-  };
-
-  const statusColor = (status: string) => {
-    switch (status) {
-      case "draft": return "secondary";
-      case "narrated": return "default";
-      case "ready": return "default";
-      default: return "secondary";
-    }
-  };
-
-  const getEstimatedRemaining = () => {
-    if (!generationProgress || generationProgress.avgTimePerSlide === 0) return null;
-    const remaining = generationProgress.totalSlides - generationProgress.currentSlide;
-    const seconds = Math.ceil(remaining * generationProgress.avgTimePerSlide);
-    if (seconds < 60) return `~${seconds}s remaining`;
-    return `~${Math.ceil(seconds / 60)}m remaining`;
-  };
-
-  // Lesson player view
-  if (selectedLesson && selectedLesson.script_content) {
-    const content = JSON.parse(selectedLesson.script_content);
+  if (loadingVariant) {
     return (
       <DashboardLayout>
-      <PageSeo title="Video Lessons | AdaptivePrep" description="Watch AI-generated video lessons aligned with your VAK style and SAT goals." path="/dashboard/video-lessons" />
+        <div className="flex justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      </DashboardLayout>
+    );
+  }
+
+  if (showQuiz && quiz) {
+    const correct = quiz.filter((q, i) => answers[i] === q.answer).length;
+    return (
+      <DashboardLayout>
         <div className="max-w-3xl mx-auto space-y-4">
-          <Button variant="ghost" className="gap-2" onClick={() => setSelectedLesson(null)}>
-            <ArrowLeft className="h-4 w-4" />
-            Back to Lessons
+          <Button variant="ghost" className="gap-2" onClick={() => setShowQuiz(false)}>
+            <ArrowLeft className="h-4 w-4" /> Back to lesson
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{content.title}</h1>
-            <div className="flex gap-2 mt-1">
-              {selectedLesson.subject && <Badge variant="outline">{selectedLesson.subject}</Badge>}
-              {selectedLesson.topic && <Badge variant="outline">{selectedLesson.topic}</Badge>}
-              {selectedLesson.vak_style && <Badge variant="secondary">{selectedLesson.vak_style} learner</Badge>}
+          <h1 className="text-2xl font-bold text-foreground">{lesson.title} — Quiz</h1>
+          {quiz.map((q, i) => (
+            <Card key={i}>
+              <CardContent className="p-4 space-y-3">
+                <p className="font-medium text-foreground">{i + 1}. {q.stem}</p>
+                <div className="space-y-2">
+                  {q.choices.map((c, ci) => {
+                    const chosen = answers[i] === ci;
+                    const isRight = submitted && ci === q.answer;
+                    const isWrong = submitted && chosen && ci !== q.answer;
+                    return (
+                      <button
+                        key={ci}
+                        disabled={submitted}
+                        onClick={() => setAnswers(prev => ({ ...prev, [i]: ci }))}
+                        className={cn(
+                          "w-full text-left p-3 rounded-lg border transition-colors flex items-start gap-2",
+                          isRight ? "border-primary bg-primary/10" :
+                          isWrong ? "border-destructive bg-destructive/10" :
+                          chosen ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
+                        )}
+                      >
+                        <span className="text-sm font-medium text-muted-foreground">{String.fromCharCode(65 + ci)}.</span>
+                        <span className="text-sm flex-1">{c}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {submitted && (
+                  <p className="text-sm text-muted-foreground border-l-2 border-primary/40 pl-3">{q.explanation}</p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+          {!submitted ? (
+            <Button
+              className="w-full"
+              disabled={Object.keys(answers).length < quiz.length}
+              onClick={() => {
+                setSubmitted(true);
+                const c = quiz.filter((q, i) => answers[i] === q.answer).length;
+                saveProgress.mutate({ status: "completed", quiz_score: c, quiz_total: quiz.length, completed_at: new Date().toISOString() as any } as any);
+                toast({ title: `${c} / ${quiz.length} correct`, description: c === quiz.length ? "Perfect!" : "Review the explanations below." });
+              }}
+            >
+              Submit Quiz
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={onBack}>Back to Lessons</Button>
+              <Button className="flex-1" onClick={() => { setAnswers({}); setSubmitted(false); }}>Retake</Button>
             </div>
-          </div>
-          <LessonPlayer
-            lessonId={selectedLesson.id}
-            content={content}
-            narratedSections={narratedSections}
-            vakStyle={selectedLesson.vak_style || undefined}
-            onComplete={() => {
-              toast({ title: "Lesson complete! 🏆", description: "Great job finishing this lesson." });
-            }}
-          />
+          )}
+          {submitted && <p className="text-center text-sm text-muted-foreground">Score: {correct} / {quiz.length}</p>}
         </div>
       </DashboardLayout>
     );
   }
 
-  // Lessons list view
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-3xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <BookOpen className="h-6 w-6 text-primary" />
-              Lessons
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              AI-generated slide lessons with narration, personalized to your learning style
-            </p>
-          </div>
-          <Button onClick={() => setShowCreate(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Lesson
+          <Button variant="ghost" className="gap-2" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" /> Back to Lessons
           </Button>
+          <Select value={vak} onValueChange={(v) => { setVak(v as Vak); setSlideIdx(0); }}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="visual">Visual</SelectItem>
+              <SelectItem value="auditory">Auditory</SelectItem>
+              <SelectItem value="reading_writing">Reading/Writing</SelectItem>
+              <SelectItem value="kinesthetic">Kinesthetic</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {showCreate && (
-          <Card className="border-primary/30">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                Generate a New Lesson
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Input
-                placeholder="What topic do you want to learn? (e.g., Quadratic Equations)"
-                value={newTopic}
-                onChange={(e) => setNewTopic(e.target.value)}
-              />
-              <div className="flex gap-3">
-                <Select value={newSubject} onValueChange={setNewSubject}>
-                  <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Math">Math</SelectItem>
-                    <SelectItem value="Reading">Reading</SelectItem>
-                    <SelectItem value="Writing">Writing</SelectItem>
-                    <SelectItem value="Science">Science</SelectItem>
-                    <SelectItem value="History">History</SelectItem>
-                    <SelectItem value="English">English</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={newDifficulty} onValueChange={setNewDifficulty}>
-                  <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="easy">Easy</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="hard">Hard</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button onClick={() => generateLesson.mutate()} disabled={!newTopic.trim() || generateLesson.isPending} className="gap-2">
-                  {generateLesson.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  Generate
-                </Button>
-                <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
+          <div className="flex flex-wrap gap-2 mt-1">
+            <Badge variant="outline" className="capitalize">SAT {lesson.subject}</Badge>
+            <Badge variant="outline">{lesson.section}</Badge>
+            <Badge variant="outline">{lesson.topic}</Badge>
+            <Badge variant="secondary" className="capitalize">{lesson.difficulty}</Badge>
           </div>
-        ) : lessons.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-1">No lessons yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">Generate your first AI-powered lesson to get started</p>
-              <Button onClick={() => setShowCreate(true)} className="gap-2">
-                <Sparkles className="h-4 w-4" />
-                Create Your First Lesson
+        </div>
+
+        {total > 0 && (
+          <>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Slide {slideIdx + 1} of {total}</span>
+                <span>{Math.round(((slideIdx + 1) / total) * 100)}%</span>
+              </div>
+              <Progress value={((slideIdx + 1) / total) * 100} className="h-1.5" />
+            </div>
+
+            <Card>
+              <CardContent className="p-6 space-y-4 min-h-[280px]">
+                <h2 className="text-xl font-semibold text-foreground">{slide.heading}</h2>
+                {slide.bullets && slide.bullets.length > 0 && (
+                  <ul className="space-y-2 list-disc pl-5">
+                    {slide.bullets.map((b, i) => (
+                      <li key={i} className="text-foreground">{b}</li>
+                    ))}
+                  </ul>
+                )}
+                {slide.narration && (
+                  <p className="text-muted-foreground italic border-l-2 border-primary/40 pl-3">{slide.narration}</p>
+                )}
+                {slide.example && (
+                  <div className="bg-muted/30 rounded-lg p-3 text-sm">
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">Example</span>
+                    <p className="mt-1 text-foreground whitespace-pre-wrap">{slide.example}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center justify-between gap-2">
+              <Button variant="outline" disabled={slideIdx === 0} onClick={() => setSlideIdx(i => i - 1)} className="gap-2">
+                <ChevronLeft className="h-4 w-4" /> Previous
               </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {lessons.map((lesson) => {
-              const isGenerating = generationProgress?.lessonId === lesson.id;
-              const ready = isFullyNarrated(lesson);
-              const { total, completed } = getSectionAudioStatus(lesson);
+              {slideIdx < total - 1 ? (
+                <Button onClick={() => setSlideIdx(i => i + 1)} className="gap-2">
+                  Next <ChevronRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button onClick={() => setShowQuiz(true)} className="gap-2">
+                  Take Quiz <ChevronRight className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}
 
-              return (
-                <Card
-                  key={lesson.id}
-                  className={`transition-colors ${isGenerating ? "border-primary/50" : "hover:border-primary/40 cursor-pointer"}`}
-                  onClick={() => !isGenerating && openLesson(lesson)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground truncate">{lesson.title}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          {lesson.subject && <span className="text-xs text-muted-foreground">{lesson.subject}</span>}
-                          {lesson.topic && (
-                            <>
-                              <span className="text-xs text-muted-foreground">·</span>
-                              <span className="text-xs text-muted-foreground">{lesson.topic}</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant={statusColor(lesson.status)} className="text-xs">{lesson.status}</Badge>
-                          {lesson.duration_seconds && (
-                            <span className="text-xs text-muted-foreground">~{Math.ceil(lesson.duration_seconds / 60)} min</span>
-                          )}
-                          {lesson.vak_style && (
-                            <span className="text-xs text-muted-foreground capitalize">{lesson.vak_style}</span>
-                          )}
-                        </div>
+export default function VideoLessons() {
+  const { user, profile } = useAuth();
+  const [selected, setSelected] = useState<PrebuiltLesson | null>(null);
+  const [sectionFilter, setSectionFilter] = useState<string>("all");
 
-                        {/* Generation progress inline */}
-                        {isGenerating && generationProgress && (
-                          <div className="mt-3 space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                              <span className="text-xs text-primary font-medium">
-                                Generating slide {generationProgress.currentSlide} of {generationProgress.totalSlides}
-                              </span>
-                            </div>
-                            <Progress
-                              value={(generationProgress.currentSlide / generationProgress.totalSlides) * 100}
-                              className="h-2"
-                            />
-                            <p className="text-xs text-muted-foreground truncate">
-                              {generationProgress.currentTitle}
-                            </p>
-                            {getEstimatedRemaining() && (
-                              <p className="text-xs text-muted-foreground">{getEstimatedRemaining()}</p>
-                            )}
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              className="mt-1 h-7 text-xs"
-                              onClick={(e) => { e.stopPropagation(); cancelGeneration(); }}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        )}
+  const vak: Vak = useMemo(() => {
+    const s = (profile as any)?.learning_style;
+    if (s === "visual" || s === "auditory" || s === "reading_writing" || s === "kinesthetic") return s;
+    return "visual";
+  }, [profile]);
 
-                        {/* Resumable hint */}
-                        {!isGenerating && completed > 0 && !ready && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {completed}/{total} slides ready — click to resume
-                          </p>
+  const { data: lessons = [], isLoading } = useQuery({
+    queryKey: ["prebuilt-lessons"],
+    queryFn: async () => {
+      const { data, error } = await supa
+        .from("prebuilt_lessons")
+        .select("*")
+        .order("subject").order("order_index");
+      if (error) throw error;
+      return data as PrebuiltLesson[];
+    },
+  });
+
+  const { data: progress = [] } = useQuery({
+    queryKey: ["lesson-progress", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supa
+        .from("student_lesson_progress")
+        .select("lesson_id, status, last_slide_index, quiz_score, quiz_total")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return (data ?? []) as Progress[];
+    },
+    enabled: !!user,
+  });
+
+  const progressMap = useMemo(() => {
+    const m = new Map<string, Progress>();
+    progress.forEach(p => m.set(p.lesson_id, p));
+    return m;
+  }, [progress]);
+
+  if (selected) {
+    return <LessonDetail lesson={selected} onBack={() => setSelected(null)} defaultVak={vak} />;
+  }
+
+  const renderList = (subj: "math" | "verbal") => {
+    const filtered = lessons.filter(l => l.subject === subj && (sectionFilter === "all" || l.section === sectionFilter));
+    const sections = Array.from(new Set(lessons.filter(l => l.subject === subj).map(l => l.section)));
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant={sectionFilter === "all" ? "default" : "outline"} onClick={() => setSectionFilter("all")}>All</Button>
+          {sections.map(s => (
+            <Button key={s} size="sm" variant={sectionFilter === s ? "default" : "outline"} onClick={() => setSectionFilter(s)}>{s}</Button>
+          ))}
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {filtered.map((l) => {
+            const p = progressMap.get(l.id);
+            const completed = p?.status === "completed";
+            return (
+              <Card key={l.id} className="hover:border-primary/40 cursor-pointer transition-colors" onClick={() => setSelected(l)}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        {completed
+                          ? <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          : <Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
+                        <h3 className="font-medium text-foreground truncate">{l.title}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{l.section} · {l.topic}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="secondary" className="text-xs capitalize">{l.difficulty}</Badge>
+                        {p?.quiz_score != null && (
+                          <span className="text-xs text-muted-foreground">Quiz: {p.quiz_score}/{p.quiz_total}</span>
                         )}
                       </div>
-
-                      {!isGenerating && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="shrink-0"
-                          onClick={(e) => { e.stopPropagation(); openLesson(lesson); }}
-                        >
-                          {ready ? (
-                            <Play className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Film className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    <PlayCircle className="h-5 w-5 text-primary shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <DashboardLayout>
+      <PageSeo title="Lessons | AdaptivePrep" description="100 SAT lessons personalized to your learning style — saved to your account." path="/dashboard/lessons" />
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <BookOpen className="h-6 w-6 text-primary" />
+            Lessons
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            100 SAT lessons adapted to your learning style ({vak.replace("_", "/")}). Progress saves automatically.
+          </p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        ) : (
+          <Tabs defaultValue="math" onValueChange={() => setSectionFilter("all")}>
+            <TabsList>
+              <TabsTrigger value="math">SAT Math (50)</TabsTrigger>
+              <TabsTrigger value="verbal">SAT Verbal (50)</TabsTrigger>
+            </TabsList>
+            <TabsContent value="math" className="mt-4">{renderList("math")}</TabsContent>
+            <TabsContent value="verbal" className="mt-4">{renderList("verbal")}</TabsContent>
+          </Tabs>
         )}
       </div>
     </DashboardLayout>
