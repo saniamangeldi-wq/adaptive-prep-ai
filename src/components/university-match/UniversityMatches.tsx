@@ -404,28 +404,28 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
                   </p>
                 )}
 
-                {/* Acceptance Chance */}
+                {/* Admit outlook */}
                 <div className="mt-3 p-3 bg-muted/30 rounded-lg border border-border">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Your Acceptance Chance</span>
+                      <span className="text-sm text-muted-foreground">Admit outlook</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-semibold ${getChanceColor(calculateAcceptanceChance(match.university))}`}>
-                        {calculateAcceptanceChance(match.university)}%
-                      </span>
-                      <Badge variant="outline" className={getChanceColor(calculateAcceptanceChance(match.university))}>
-                        {getChanceLabel(calculateAcceptanceChance(match.university))}
+                    {match.admit_bucket ? (
+                      <Badge variant="outline" className={BUCKET_META[match.admit_bucket].cls}>
+                        {BUCKET_META[match.admit_bucket].label}
+                        {match.admit_probability != null && match.admit_bucket !== "unknown" &&
+                          ` · ~${Math.round(match.admit_probability * 100)}%`}
                       </Badge>
-                    </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">data unavailable</span>
+                    )}
                   </div>
-                  <Progress 
-                    value={calculateAcceptanceChance(match.university)} 
-                    className="h-2"
-                  />
+                  {match.admit_probability != null && (
+                    <Progress value={Math.round(match.admit_probability * 100)} className="h-2" />
+                  )}
                   <p className="text-xs text-muted-foreground mt-2">
-                    Based on your profile. Click "Get My Plan" to improve your chances!
+                    Estimated from acceptance rate and SAT benchmarks vs. your profile.
                   </p>
                 </div>
 
