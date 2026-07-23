@@ -119,9 +119,13 @@ interface StudentAICoachProps {
   spaceReferences?: Reference[];
   activeSpace?: SpaceInfo | null;
   modelOverride?: string;
+  subject?: string;
+  onSubjectChange?: (subject: string) => void;
 }
 
-export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [], activeSpace = null, modelOverride }: StudentAICoachProps) {
+const SUBJECTS = ["SAT", "Math", "English", "Science", "History", "General"];
+
+export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [], activeSpace = null, modelOverride, subject = "SAT", onSubjectChange }: StudentAICoachProps) {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
