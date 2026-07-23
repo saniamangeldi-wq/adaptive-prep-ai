@@ -120,6 +120,9 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
         .select(`
           id,
           match_score,
+          fit_score,
+          admit_probability,
+          admit_bucket,
           match_reason,
           financial_estimate,
           saved,
