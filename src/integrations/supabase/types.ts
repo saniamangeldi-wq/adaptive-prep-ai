@@ -2301,6 +2301,7 @@ export type Database = {
           created_at: string
           data_source: string | null
           description: string | null
+          gpa_avg: number | null
           id: string
           ielts_min: number | null
           international_student_pct: number | null
@@ -2317,6 +2318,8 @@ export type Database = {
           programs: string[] | null
           qs_rank: number | null
           ranking_global: number | null
+          sat_p25: number | null
+          sat_p75: number | null
           sat_range: string | null
           scholarship_coverage: string | null
           scholarship_deadline: string | null
@@ -2325,6 +2328,7 @@ export type Database = {
           scholarship_types: Json | null
           scholarship_url: string | null
           student_population: number | null
+          test_optional: boolean
           times_rank: number | null
           toefl_min: number | null
           tuition_usd: number | null
@@ -2345,6 +2349,7 @@ export type Database = {
           created_at?: string
           data_source?: string | null
           description?: string | null
+          gpa_avg?: number | null
           id?: string
           ielts_min?: number | null
           international_student_pct?: number | null
@@ -2361,6 +2366,8 @@ export type Database = {
           programs?: string[] | null
           qs_rank?: number | null
           ranking_global?: number | null
+          sat_p25?: number | null
+          sat_p75?: number | null
           sat_range?: string | null
           scholarship_coverage?: string | null
           scholarship_deadline?: string | null
@@ -2369,6 +2376,7 @@ export type Database = {
           scholarship_types?: Json | null
           scholarship_url?: string | null
           student_population?: number | null
+          test_optional?: boolean
           times_rank?: number | null
           toefl_min?: number | null
           tuition_usd?: number | null
@@ -2389,6 +2397,7 @@ export type Database = {
           created_at?: string
           data_source?: string | null
           description?: string | null
+          gpa_avg?: number | null
           id?: string
           ielts_min?: number | null
           international_student_pct?: number | null
@@ -2405,6 +2414,8 @@ export type Database = {
           programs?: string[] | null
           qs_rank?: number | null
           ranking_global?: number | null
+          sat_p25?: number | null
+          sat_p75?: number | null
           sat_range?: string | null
           scholarship_coverage?: string | null
           scholarship_deadline?: string | null
@@ -2413,6 +2424,7 @@ export type Database = {
           scholarship_types?: Json | null
           scholarship_url?: string | null
           student_population?: number | null
+          test_optional?: boolean
           times_rank?: number | null
           toefl_min?: number | null
           tuition_usd?: number | null
