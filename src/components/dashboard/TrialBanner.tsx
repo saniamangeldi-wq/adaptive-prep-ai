@@ -38,7 +38,7 @@ export function TrialBanner() {
               : `Your trial expires in ${daysRemaining} days!`}
         </span>
         <Link 
-          to="/dashboard/settings" 
+          to="/dashboard/billing" 
           className="underline font-semibold hover:no-underline"
         >
           {daysRemaining === 0 ? "Subscribe now" : "Keep your Pro access"}
