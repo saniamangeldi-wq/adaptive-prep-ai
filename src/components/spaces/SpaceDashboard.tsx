@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ConversationSpace, Conversation, useConversations } from "@/hooks/useConversations";
 import { SpaceSettingsDrawer } from "./SpaceSettingsDrawer";
+import { SpaceIconDisplay } from "./IconPicker";
 import type { Reference } from "@/hooks/useReferences";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow, format } from "date-fns";
