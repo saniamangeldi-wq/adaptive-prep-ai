@@ -75,7 +75,7 @@ export function VAKResults({
           </div>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary">
             <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">Your Learning Style</span>
+            <span className="text-sm font-medium">Your Learning Preferences</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">
             {STYLE_EMOJI[result.primaryStyle]} {result.label}
@@ -83,6 +83,10 @@ export function VAKResults({
           <p className="text-muted-foreground text-sm md:text-base">
             {result.description}
           </p>
+          <p className="text-xs text-muted-foreground/80 italic max-w-md mx-auto">
+            Note: everyone learns better with a mix of formats. We use this only to pick smart defaults — you can switch between visual, audio, and interactive versions on any lesson.
+          </p>
+
         </div>
 
         {/* Bar Chart */}
@@ -123,7 +127,7 @@ export function VAKResults({
         {/* Adaptations */}
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground">
-            Your platform is now set up for you:
+            We'll set these as your defaults:
           </h3>
           <ul className="space-y-2">
             {result.adaptations.map((item, i) => (
@@ -136,7 +140,11 @@ export function VAKResults({
               </li>
             ))}
           </ul>
+          <p className="text-xs text-muted-foreground/80 pt-1">
+            Every lesson gives you access to all formats — visual, audio, and interactive — via the format switcher. Change your defaults anytime in Settings.
+          </p>
         </div>
+
 
         {/* Subjects */}
         {selectedSubjects.length > 0 && (
@@ -164,8 +172,7 @@ export function VAKResults({
                 <MessageSquare className="w-4 h-4 text-primary" />
               </h3>
               <p className="text-sm text-muted-foreground">
-                As a {result.primaryStyle} learner, I'll adapt my explanations
-                to match your style.{" "}
+                I'll lean into {result.primaryStyle}-friendly explanations by default, and switch formats whenever you ask.{" "}
                 {selectedSubjects.length > 0 &&
                   `Let's tackle ${selectedSubjects.slice(0, 2).join(", ")}${
                     selectedSubjects.length > 2
@@ -173,6 +180,7 @@ export function VAKResults({
                       : ""
                   }!`}
               </p>
+
             </div>
           </div>
         </div>

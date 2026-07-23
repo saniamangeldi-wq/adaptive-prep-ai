@@ -114,36 +114,42 @@ function eliteSubType(
 }
 
 // ─── Descriptions ──────────────────────────────────────────
+// Framed as PREFERENCES (formats you tend to engage with most), not as
+// claims about faster/better learning. Research shows everyone benefits
+// from multiple formats — we use this to personalize defaults only.
 const DESCRIPTIONS: Record<VAKStyle, string> = {
   visual:
-    "You learn best through images, diagrams, and visual representations. Your brain processes information most effectively when you can see it laid out in front of you.",
+    "You tend to reach for images, diagrams, and visual layouts first. We'll lead with those formats — but audio and interactive versions stay one tap away.",
   auditory:
-    "You absorb information best through listening and verbal communication. Hearing explanations and discussing concepts helps you understand and retain knowledge.",
+    "You tend to engage most with spoken explanations and discussion. We'll surface read-aloud and verbal walkthroughs by default — visuals and hands-on activities are always available too.",
   kinesthetic:
-    "You learn by doing — hands-on practice and physical engagement are your strongest tools. Movement and tactile experiences make concepts stick for you.",
+    "You tend to prefer trying things out and learning by doing. We'll lead with interactive practice — you can still switch to diagrams or audio anytime.",
 };
 
 const MULTIMODAL_DESC =
-  "You have a balanced learning profile, drawing on multiple styles equally. This flexibility means you can adapt to different learning situations with ease.";
+  "You engage comfortably across multiple formats. We'll mix visuals, audio, and interactive content by default — and you can adjust any time.";
 
 // ─── Adaptations ───────────────────────────────────────────
+// Framed as defaults ("we'll emphasize"), not exclusions. Every format
+// remains accessible from the content controls regardless of result.
 const ADAPTATIONS: Record<VAKStyle, string[]> = {
   visual: [
-    "Diagrams and charts are prioritized in all AI explanations",
-    "Flashcards default to image + word format with color coding",
-    "Visual progress bars and mind maps are enabled throughout",
+    "We'll emphasize diagrams and charts in AI explanations — audio and interactive versions stay available",
+    "Flashcards default to image + word with color coding — you can switch to audio flip anytime",
+    "Visual progress bars and mind maps are enabled by default",
   ],
   auditory: [
-    "Text-to-speech is enabled by default on all content",
+    "Text-to-speech is on by default — you can mute it or switch to visual layouts anytime",
     "Read-aloud buttons appear prominently on study materials",
-    "Verbal step-by-step walkthroughs are prioritized",
+    "Verbal step-by-step walkthroughs are surfaced first, with written and visual versions one tap away",
   ],
   kinesthetic: [
-    "Interactive drag-and-drop exercises are prioritized",
-    "Study sessions are broken into shorter chunks with active breaks",
-    "'Try it yourself' prompts appear before explanations",
+    "Interactive drag-and-drop and 'try it yourself' prompts are surfaced first",
+    "Study sessions default to shorter chunks with active breaks — adjust in Settings",
+    "Diagrams, audio, and written explanations remain available on every activity",
   ],
 };
+
 
 // ─── Main scoring function ─────────────────────────────────
 export function calculateVAKResult(

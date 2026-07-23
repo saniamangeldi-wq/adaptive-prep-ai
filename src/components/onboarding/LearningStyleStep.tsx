@@ -81,8 +81,9 @@ export function LearningStyleStep({
     <div className="space-y-8">
       <div className="text-center">
         <span className="text-sm text-muted-foreground">
-          Learning Style Question {questionIndex + 1} of {questions.length}
+          Learning Preferences Question {questionIndex + 1} of {questions.length}
         </span>
+
         <h2 className="text-2xl font-bold text-foreground mt-2">
           {question.question}
         </h2>
