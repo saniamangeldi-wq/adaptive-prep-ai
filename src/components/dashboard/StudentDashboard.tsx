@@ -203,8 +203,59 @@ export function StudentDashboard() {
         />
       </div>
 
-
-
+      {/* Your Progress summary */}
+      <Link
+        to="/dashboard/progress"
+        className="block group p-5 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-teal-400 p-0.5 shrink-0">
+              <div className="w-full h-full rounded-[10px] bg-card flex items-center justify-center">
+                <LineChart className="w-6 h-6 text-foreground" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                  {t("dashboard.your_progress")}
+                </h3>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                  {hasProgress ? `${avgAccuracy}%` : t("dashboard.start_practicing")}
+                </span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{t("dashboard.overall_progress")}</span>
+                  <span>{hasProgress ? `${avgAccuracy}%` : "0%"}</span>
+                </div>
+                <Progress value={hasProgress ? avgAccuracy : 0} className="h-2" />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 sm:gap-6 shrink-0 text-sm">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-yellow-400" />
+              <span className="text-muted-foreground">{t("dashboard.sat_score")}:</span>
+              <span className="font-semibold text-foreground">{hasProgress ? totalSATScore : "—"}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary" />
+              <span className="text-muted-foreground">{t("dashboard.tests_completed")}:</span>
+              <span className="font-semibold text-foreground">{testsTaken}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Flame className="w-4 h-4 text-accent" />
+              <span className="font-semibold text-foreground">{streakData.streakDays > 0 ? `${streakData.streakDays}d` : "—"}</span>
+            </div>
+          </div>
+          <div className="shrink-0 hidden sm:block">
+            <span className="text-sm font-medium text-primary group-hover:underline">
+              {t("dashboard.view_full_progress")}
+            </span>
+          </div>
+        </div>
+      </Link>
 
       {/* Achievement Badges */}
       <div className="space-y-3">
