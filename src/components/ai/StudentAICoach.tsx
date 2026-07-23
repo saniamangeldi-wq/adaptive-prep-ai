@@ -375,18 +375,28 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                 <p className="text-sm text-muted-foreground mb-8">
                   Your SAT study coach — math, reading, writing, and beyond
                 </p>
-                <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
-                  {DEFAULT_CHIPS.map((chip) => (
+                <div className="flex flex-wrap justify-center gap-2 mb-6 w-full max-w-lg">
+                  {SUBJECTS.map((s) => (
                     <button
-                      key={chip}
-                      onClick={() => handleChipClick(chip)}
+                      key={s}
+                      onClick={() => onSubjectChange?.(s)}
                       disabled={noCredits || isLoading}
-                      className="px-4 py-2.5 text-[13px] text-left rounded-xl border border-border/30 text-muted-foreground hover:text-foreground hover:border-primary/50 hover:shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)] transition-all duration-200 disabled:opacity-40"
+                      className={cn(
+                        "px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200 disabled:opacity-40",
+                        subject === s
+                          ? "bg-primary text-primary-foreground border-primary shadow-[0_0_12px_-3px_hsl(var(--primary)/0.4)]"
+                          : "bg-secondary/50 text-muted-foreground border-border/50 hover:text-foreground hover:border-primary/30 hover:bg-secondary"
+                      )}
                     >
-                      {chip}
+                      {s}
                     </button>
                   ))}
                 </div>
+                <AISuggestions
+                  subject={subject}
+                  onSelectSuggestion={handleChipClick}
+                  className="w-full max-w-lg"
+                />
               </div>
             )
           ) : (
