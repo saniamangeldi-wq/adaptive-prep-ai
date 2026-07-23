@@ -78,6 +78,7 @@ export function SpaceInterior({
     }
   }, [space]);
 
+  const { loadSpaces } = useConversations(coachType);
   const handleSaveSettings = async (spaceId: string, updates: { name: string; description: string; icon: string; ai_instructions?: string; references?: Reference[] }) => {
     const { error } = await supabase
       .from("conversation_spaces")
@@ -94,8 +95,10 @@ export function SpaceInterior({
       toast.error("Failed to update space");
       return;
     }
+    await loadSpaces();
     toast.success("Space updated");
   };
+
 
   return (
     <div className="flex h-full relative">
