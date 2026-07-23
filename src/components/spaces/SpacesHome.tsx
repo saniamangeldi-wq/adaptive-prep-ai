@@ -18,9 +18,20 @@ export function SpacesHome({ onOpenSpace, coachType = "student" }: SpacesHomePro
   const [showCreate, setShowCreate] = useState(false);
   const [settingsSpace, setSettingsSpace] = useState<ConversationSpace | null>(null);
 
-  const handleCreateSpace = async (name: string, description: string, icon: string, _instructions: string) => {
-    await createSpace(name, description, icon);
+  const handleCreateSpace = async (name: string, description: string, icon: string, instructions: string, references: any[]) => {
+    const created = await createSpace(name, description, icon);
+    if (created && (instructions || (references && references.length))) {
+      await supabase
+        .from("conversation_spaces")
+        .update({
+          ai_instructions: instructions || null,
+          references: (references || []) as any,
+        })
+        .eq("id", created.id);
+      await loadSpaces();
+    }
   };
+
 
   const handleDeleteSpace = async (spaceId: string) => {
     await deleteSpace(spaceId);
