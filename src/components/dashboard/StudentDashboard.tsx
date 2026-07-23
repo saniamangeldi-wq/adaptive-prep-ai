@@ -109,19 +109,19 @@ export function StudentDashboard() {
           <div className="flex items-center gap-3">
             <Clock className="w-5 h-5 text-yellow-400" />
             <span className="text-foreground">
-              <strong>Pro Trial:</strong> {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining • {TRIAL_LIMITS.creditsPerDay} credits/day • {TRIAL_LIMITS.questionsTotal} questions total
+              <strong>{t("dashboard.trial_prefix")}</strong> {daysRemaining} {daysRemaining === 1 ? t("dashboard.days_remaining_one") : t("dashboard.days_remaining_other")} • {TRIAL_LIMITS.creditsPerDay} {t("dashboard.credits_per_day")} • {TRIAL_LIMITS.questionsTotal} {t("dashboard.questions_total")}
             </span>
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="hero" size="sm" asChild>
                 <Link to="/dashboard/billing">
-                  Subscribe Now
+                  {t("dashboard.subscribe_now")}
                 </Link>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Upgrade to unlock unlimited features and remove trial limits</p>
+              <p>{t("dashboard.trial_tooltip")}</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -131,12 +131,12 @@ export function StudentDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Welcome back, {profile?.full_name?.split(" ")[0] || "Student"}! 👋
+            {t("dashboard.welcome_back")}, {profile?.full_name?.split(" ")[0] || t("dashboard.student_fallback")}! 👋
           </h1>
           <p className="text-muted-foreground mt-1">
             {profile?.learning_style 
-              ? `Your learning style: ${learningStyleLabel[profile.learning_style]}`
-              : "Let's continue your SAT prep journey"}
+              ? `${t("dashboard.learning_style_prefix")} ${learningStyleLabel[profile.learning_style]}`
+              : t("dashboard.continue_journey")}
           </p>
         </div>
          <div className="flex items-center gap-2">
@@ -145,13 +145,13 @@ export function StudentDashboard() {
              <TooltipTrigger asChild>
                <Button variant="hero" asChild>
                  <Link to="/dashboard/tests">
-                   {isTier0 ? "Practice Questions" : "Start Practice Test"}
+                   {isTier0 ? t("dashboard.practice_questions_btn") : t("dashboard.start_practice_test")}
                    <ArrowRight className="w-4 h-4" />
                  </Link>
                </Button>
              </TooltipTrigger>
              <TooltipContent>
-               <p>{isTier0 ? "Practice individual SAT questions to sharpen your skills" : "Take a timed SAT practice test to measure your progress"}</p>
+               <p>{isTier0 ? t("dashboard.tooltip_practice_questions") : t("dashboard.tooltip_practice_test")}</p>
              </TooltipContent>
            </Tooltip>
          </div>
@@ -161,43 +161,43 @@ export function StudentDashboard() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           icon={FileText}
-          label={isTier0 ? "Questions Today" : "Questions Remaining"}
+          label={isTier0 ? t("dashboard.questions_today") : t("dashboard.questions_remaining")}
           value={isTier0 ? `${profile?.questions_used_today || 0}/${tierLimits.questionsPerDay}` : `${profile?.tests_remaining || 0}/${tierLimits.questionsPerMonth}`}
-          subtext={isTier0 ? "daily limit" : "monthly quota"}
+          subtext={isTier0 ? t("dashboard.daily_limit") : t("dashboard.monthly_quota")}
           color="from-primary to-teal-400"
-          tooltip={isTier0 ? "Number of practice questions you've used today" : "Practice questions remaining this month"}
+          tooltip={isTier0 ? t("dashboard.tooltip_questions_today") : t("dashboard.tooltip_questions_remaining")}
         />
         <StatCard
           icon={Trophy}
-          label="SAT Score"
+          label={t("dashboard.sat_score")}
           value={hasProgress ? totalSATScore.toString() : "--"}
-          subtext={hasProgress ? "400-1600 scale" : "no tests yet"}
+          subtext={hasProgress ? t("dashboard.scale_400_1600") : t("dashboard.no_tests_yet")}
           color="from-yellow-500 to-amber-400"
-          tooltip="Your estimated SAT total score based on practice tests"
+          tooltip={t("dashboard.tooltip_sat_score")}
         />
         <StatCard
           icon={Calculator}
-          label="Math"
+          label={t("dashboard.math")}
           value={hasProgress ? mathScore.toString() : "--"}
-          subtext={hasProgress ? "200-800" : "start practicing"}
+          subtext={hasProgress ? t("dashboard.range_200_800") : t("dashboard.start_practicing")}
           color="from-primary to-teal-400"
-          tooltip="Your estimated SAT Math section score"
+          tooltip={t("dashboard.tooltip_math")}
         />
         <StatCard
           icon={PenLine}
-          label="Reading & Writing"
+          label={t("dashboard.reading_writing")}
           value={hasProgress ? rwScore.toString() : "--"}
-          subtext={hasProgress ? "200-800" : "start practicing"}
+          subtext={hasProgress ? t("dashboard.range_200_800") : t("dashboard.start_practicing")}
           color="from-purple-500 to-pink-400"
-          tooltip="Your estimated SAT Reading & Writing section score"
+          tooltip={t("dashboard.tooltip_rw")}
         />
         <StatCard
           icon={Flame}
-          label="Streak"
+          label={t("dashboard.streak")}
           value={streakData.streakDays > 0 ? `${streakData.streakDays}d` : "--"}
-          subtext={streakData.points > 0 ? `${streakData.points} pts` : "start studying"}
+          subtext={streakData.points > 0 ? `${streakData.points} pts` : t("dashboard.start_studying")}
           color="from-orange-500 to-red-400"
-          tooltip="Your daily study streak and total points earned"
+          tooltip={t("dashboard.tooltip_streak")}
         />
       </div>
 
