@@ -24,6 +24,7 @@ import { CreateDeckDialog } from "@/components/flashcards/CreateDeckDialog";
 import { GenerateWithAIDialog } from "@/components/flashcards/GenerateWithAIDialog";
 import { premadeDecks, FlashcardDeck, Flashcard } from "@/lib/flashcard-data";
 import { useFlashcardDecks } from "@/hooks/useFlashcardDecks";
+import { useCardSchedule, type Rating } from "@/hooks/useCardSchedule";
 import { toast } from "sonner";
 import { PageSeo } from "@/components/seo/PageSeo";
 import {
