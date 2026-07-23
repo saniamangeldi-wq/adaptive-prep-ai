@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { ConversationSpace, Conversation, useConversations } from "@/hooks/useConversations";
 import { SpaceSettingsDrawer } from "./SpaceSettingsDrawer";
+import { SpaceIconDisplay } from "./IconPicker";
 import { ReferencesBadge } from "@/components/ai/ReferencesBadge";
 import type { Reference } from "@/hooks/useReferences";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,6 +78,7 @@ export function SpaceInterior({
     }
   }, [space]);
 
+  const { loadSpaces } = useConversations(coachType);
   const handleSaveSettings = async (spaceId: string, updates: { name: string; description: string; icon: string; ai_instructions?: string; references?: Reference[] }) => {
     const { error } = await supabase
       .from("conversation_spaces")
@@ -93,8 +95,10 @@ export function SpaceInterior({
       toast.error("Failed to update space");
       return;
     }
+    await loadSpaces();
     toast.success("Space updated");
   };
+
 
   return (
     <div className="flex h-full relative">
@@ -186,7 +190,7 @@ export function SpaceInterior({
             <button onClick={onBack} className="md:hidden p-1 text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <span className="text-lg">{space.icon}</span>
+            <span className="w-6 h-6 flex items-center justify-center text-lg overflow-hidden rounded"><SpaceIconDisplay icon={space.icon} /></span>
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-foreground truncate">{space.name}</h2>
               {space.description && (

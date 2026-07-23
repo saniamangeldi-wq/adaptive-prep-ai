@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Trash2, FileText, Link2, ClipboardPaste, Loader2 } from "lucide-react";
+import { X, Trash2, FileText, Link2, ClipboardPaste } from "lucide-react";
 import { ConversationSpace } from "@/hooks/useConversations";
 import type { Reference } from "@/hooks/useReferences";
 import { toast } from "sonner";
+import { IconPicker } from "./IconPicker";
 
-const ICON_OPTIONS = ["🎓", "📐", "📖", "🧪", "✍️", "🌍", "🚀", "💡", "📚", "📊", "🎨", "🔬", "💼", "🎯"];
 
 interface SpaceSettingsDrawerProps {
   space: ConversationSpace | null;
@@ -155,23 +154,9 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
           {/* Icon */}
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">Icon</label>
-            <div className="flex gap-2 flex-wrap">
-              {ICON_OPTIONS.map((ico) => (
-                <button
-                  key={ico}
-                  onClick={() => setIcon(ico)}
-                  className={cn(
-                    "w-10 h-10 rounded-full text-lg flex items-center justify-center transition-all",
-                    icon === ico
-                      ? "ring-2 ring-primary ring-offset-2 ring-offset-card bg-muted/50 scale-110"
-                      : "bg-muted/30 hover:bg-muted/50"
-                  )}
-                >
-                  {ico}
-                </button>
-              ))}
-            </div>
+            <IconPicker value={icon} onChange={setIcon} />
           </div>
+
 
           {/* AI Instructions */}
           <div>

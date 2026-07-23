@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,8 +9,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { IconPicker } from "./IconPicker";
 
-const ICON_OPTIONS = ["🎓", "📐", "📖", "🧪", "✍️", "🌍", "🚀", "💡", "📚", "📊", "🎨", "🔬", "💼", "🎯"];
 
 interface CreateSpaceModalProps {
   open: boolean;
@@ -66,27 +65,12 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
               className="bg-muted/30 border-border/30"
             />
           </div>
-
           {/* Icon Picker */}
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">Icon</label>
-            <div className="flex gap-2 flex-wrap">
-              {ICON_OPTIONS.map((ico) => (
-                <button
-                  key={ico}
-                  onClick={() => setIcon(ico)}
-                  className={cn(
-                    "w-10 h-10 rounded-full text-lg flex items-center justify-center transition-all",
-                    icon === ico
-                      ? "ring-2 ring-primary ring-offset-2 ring-offset-card bg-muted/50 scale-110"
-                      : "bg-muted/30 hover:bg-muted/50"
-                  )}
-                >
-                  {ico}
-                </button>
-              ))}
-            </div>
+            <IconPicker value={icon} onChange={setIcon} />
           </div>
+
 
           {/* AI Instructions */}
           <div>
