@@ -182,19 +182,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const iconStyle = { width: SIDEBAR.icon_size, height: SIDEBAR.icon_size };
 
   const getTierShort = () => {
-    if (profile?.is_trial) return "Trial";
+    if (profile?.is_trial) return t("dashboard.trial");
     if (profile?.role === "tutor") {
-      return profile?.tier === "tier_3" ? "Tutor Business" : profile?.tier === "tier_2" ? "Professional" : "Solo Tutor";
+      return profile?.tier === "tier_3" ? t("dashboard.tier_business") : profile?.tier === "tier_2" ? t("dashboard.tier_professional") : t("dashboard.tier_solo");
     }
     switch (profile?.tier) {
       case "tier_3":
-        return "Elite";
+        return t("dashboard.tier_elite");
       case "tier_2":
-        return "Pro";
+        return t("dashboard.tier_pro");
       case "tier_1":
-        return "Basic";
+        return t("dashboard.tier_basic");
       default:
-        return "Free";
+        return t("dashboard.tier_free");
     }
   };
 
@@ -279,7 +279,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 {sidebarExpanded && (
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-xs font-medium text-sidebar-foreground truncate">{profile?.full_name || "User"}</p>
+                    <p className="text-xs font-medium text-sidebar-foreground truncate">{profile?.full_name || t("dashboard.user")}</p>
                     <p className="text-[10px] text-[hsl(var(--sidebar-icon-muted))]">{getTierShort()}</p>
                   </div>
                 )}
@@ -288,7 +288,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </TooltipTrigger>
             {!sidebarExpanded && (
               <TooltipContent side="right" className="text-xs">
-                {profile?.full_name || "User"} · {getTierShort()} · Sign out
+                {profile?.full_name || t("dashboard.user")} · {getTierShort()} · {t("dashboard.sign_out")}
               </TooltipContent>
             )}
           </Tooltip>
@@ -307,7 +307,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         >
           <button onClick={() => setBottomSheetOpen(!bottomSheetOpen)} className="w-full flex items-center justify-center gap-2 py-3 px-4 min-h-[56px]">
             <Zap className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-sidebar-foreground">Menu</span>
+            <span className="text-sm font-medium text-sidebar-foreground">{t("dashboard.menu")}</span>
             <div className="w-8 h-1 bg-sidebar-foreground/30 rounded-full ml-2" />
           </button>
 
@@ -341,7 +341,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     {profile?.full_name?.[0] || profile?.email?.[0]?.toUpperCase() || "?"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || "User"}</p>
+                    <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || t("dashboard.user")}</p>
                     <p className="text-xs text-sidebar-foreground/50 truncate">{getTierShort()}</p>
                   </div>
                   <button
@@ -374,7 +374,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <Button variant="hero" size="sm" asChild className="text-xs md:text-sm">
               <Link to="/dashboard/billing">
                 <Sparkles className="w-4 h-4" />
-                <span className="hidden sm:inline">Upgrade</span>
+                <span className="hidden sm:inline">{t("dashboard.upgrade")}</span>
               </Link>
             </Button>
           )}

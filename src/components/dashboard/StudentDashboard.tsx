@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useBadges, BADGE_DEFINITIONS } from "@/hooks/useBadges";
@@ -54,6 +55,7 @@ function hasSATorACT(profile: { study_subjects?: string[] | null } | null): bool
 }
 
 export function StudentDashboard() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const { totalSATScore, mathScore, rwScore, testsTaken, hasProgress } = useDashboardStats();
   const { earnedBadges, checkAndAwardBadges, allBadges } = useBadges();
@@ -83,11 +85,11 @@ export function StudentDashboard() {
     setShowTutorial(false);
   };
 
-  const learningStyleLabel = {
-    visual: "Visual",
-    auditory: "Auditory",
-    reading_writing: "Reading/Writing",
-    kinesthetic: "Kinesthetic",
+  const learningStyleLabel: Record<string, string> = {
+    visual: t("dashboard.style_visual"),
+    auditory: t("dashboard.style_auditory"),
+    reading_writing: t("dashboard.style_reading_writing"),
+    kinesthetic: t("dashboard.style_kinesthetic"),
   };
 
   return (
@@ -107,19 +109,19 @@ export function StudentDashboard() {
           <div className="flex items-center gap-3">
             <Clock className="w-5 h-5 text-yellow-400" />
             <span className="text-foreground">
-              <strong>Pro Trial:</strong> {daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining • {TRIAL_LIMITS.creditsPerDay} credits/day • {TRIAL_LIMITS.questionsTotal} questions total
+              <strong>{t("dashboard.trial_prefix")}</strong> {daysRemaining} {daysRemaining === 1 ? t("dashboard.days_remaining_one") : t("dashboard.days_remaining_other")} • {TRIAL_LIMITS.creditsPerDay} {t("dashboard.credits_per_day")} • {TRIAL_LIMITS.questionsTotal} {t("dashboard.questions_total")}
             </span>
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="hero" size="sm" asChild>
                 <Link to="/dashboard/billing">
-                  Subscribe Now
+                  {t("dashboard.subscribe_now")}
                 </Link>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Upgrade to unlock unlimited features and remove trial limits</p>
+              <p>{t("dashboard.trial_tooltip")}</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -129,12 +131,12 @@ export function StudentDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Welcome back, {profile?.full_name?.split(" ")[0] || "Student"}! 👋
+            {t("dashboard.welcome_back")}, {profile?.full_name?.split(" ")[0] || t("dashboard.student_fallback")}! 👋
           </h1>
           <p className="text-muted-foreground mt-1">
             {profile?.learning_style 
-              ? `Your learning style: ${learningStyleLabel[profile.learning_style]}`
-              : "Let's continue your SAT prep journey"}
+              ? `${t("dashboard.learning_style_prefix")} ${learningStyleLabel[profile.learning_style]}`
+              : t("dashboard.continue_journey")}
           </p>
         </div>
          <div className="flex items-center gap-2">
@@ -143,13 +145,13 @@ export function StudentDashboard() {
              <TooltipTrigger asChild>
                <Button variant="hero" asChild>
                  <Link to="/dashboard/tests">
-                   {isTier0 ? "Practice Questions" : "Start Practice Test"}
+                   {isTier0 ? t("dashboard.practice_questions_btn") : t("dashboard.start_practice_test")}
                    <ArrowRight className="w-4 h-4" />
                  </Link>
                </Button>
              </TooltipTrigger>
              <TooltipContent>
-               <p>{isTier0 ? "Practice individual SAT questions to sharpen your skills" : "Take a timed SAT practice test to measure your progress"}</p>
+               <p>{isTier0 ? t("dashboard.tooltip_practice_questions") : t("dashboard.tooltip_practice_test")}</p>
              </TooltipContent>
            </Tooltip>
          </div>
@@ -159,43 +161,43 @@ export function StudentDashboard() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           icon={FileText}
-          label={isTier0 ? "Questions Today" : "Questions Remaining"}
+          label={isTier0 ? t("dashboard.questions_today") : t("dashboard.questions_remaining")}
           value={isTier0 ? `${profile?.questions_used_today || 0}/${tierLimits.questionsPerDay}` : `${profile?.tests_remaining || 0}/${tierLimits.questionsPerMonth}`}
-          subtext={isTier0 ? "daily limit" : "monthly quota"}
+          subtext={isTier0 ? t("dashboard.daily_limit") : t("dashboard.monthly_quota")}
           color="from-primary to-teal-400"
-          tooltip={isTier0 ? "Number of practice questions you've used today" : "Practice questions remaining this month"}
+          tooltip={isTier0 ? t("dashboard.tooltip_questions_today") : t("dashboard.tooltip_questions_remaining")}
         />
         <StatCard
           icon={Trophy}
-          label="SAT Score"
+          label={t("dashboard.sat_score")}
           value={hasProgress ? totalSATScore.toString() : "--"}
-          subtext={hasProgress ? "400-1600 scale" : "no tests yet"}
+          subtext={hasProgress ? t("dashboard.scale_400_1600") : t("dashboard.no_tests_yet")}
           color="from-yellow-500 to-amber-400"
-          tooltip="Your estimated SAT total score based on practice tests"
+          tooltip={t("dashboard.tooltip_sat_score")}
         />
         <StatCard
           icon={Calculator}
-          label="Math"
+          label={t("dashboard.math")}
           value={hasProgress ? mathScore.toString() : "--"}
-          subtext={hasProgress ? "200-800" : "start practicing"}
+          subtext={hasProgress ? t("dashboard.range_200_800") : t("dashboard.start_practicing")}
           color="from-primary to-teal-400"
-          tooltip="Your estimated SAT Math section score"
+          tooltip={t("dashboard.tooltip_math")}
         />
         <StatCard
           icon={PenLine}
-          label="Reading & Writing"
+          label={t("dashboard.reading_writing")}
           value={hasProgress ? rwScore.toString() : "--"}
-          subtext={hasProgress ? "200-800" : "start practicing"}
+          subtext={hasProgress ? t("dashboard.range_200_800") : t("dashboard.start_practicing")}
           color="from-purple-500 to-pink-400"
-          tooltip="Your estimated SAT Reading & Writing section score"
+          tooltip={t("dashboard.tooltip_rw")}
         />
         <StatCard
           icon={Flame}
-          label="Streak"
+          label={t("dashboard.streak")}
           value={streakData.streakDays > 0 ? `${streakData.streakDays}d` : "--"}
-          subtext={streakData.points > 0 ? `${streakData.points} pts` : "start studying"}
+          subtext={streakData.points > 0 ? `${streakData.points} pts` : t("dashboard.start_studying")}
           color="from-orange-500 to-red-400"
-          tooltip="Your daily study streak and total points earned"
+          tooltip={t("dashboard.tooltip_streak")}
         />
       </div>
 
@@ -206,10 +208,10 @@ export function StudentDashboard() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Star className="w-4 h-4" /> Achievement Badges
+            <Star className="w-4 h-4" /> {t("dashboard.achievement_badges")}
           </h3>
           <span className="text-xs text-muted-foreground">
-            {earnedBadges.length}/{allBadges.length} earned
+            {earnedBadges.length}/{allBadges.length} {t("dashboard.earned")}
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -231,7 +233,7 @@ export function StudentDashboard() {
                 <TooltipContent>
                   <p className="font-medium">{badge.name}</p>
                   <p className="text-xs text-muted-foreground">{badge.description}</p>
-                  {!isEarned && <p className="text-xs text-muted-foreground italic mt-1">Not yet earned</p>}
+                  {!isEarned && <p className="text-xs text-muted-foreground italic mt-1">{t("dashboard.not_yet_earned")}</p>}
                 </TooltipContent>
               </Tooltip>
             );
@@ -242,7 +244,7 @@ export function StudentDashboard() {
       {/* Subject Quick Actions */}
       {profile?.study_subjects && (profile.study_subjects as string[]).length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">Quick Help by Subject</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">{t("dashboard.quick_help_by_subject")}</h3>
           <div className="flex flex-wrap gap-2">
             {(profile.study_subjects as string[]).slice(0, 6).map((subject: string) => (
               <Tooltip key={subject}>
@@ -255,7 +257,7 @@ export function StudentDashboard() {
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Get AI help with {subject}</p>
+                  <p>{t("dashboard.get_ai_help_with")} {subject}</p>
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -267,27 +269,27 @@ export function StudentDashboard() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <QuickAction
           icon={BookOpen}
-          title="Practice Tests"
-          description={hasSATorACT(profile) ? "Take a full practice test or quick quiz" : "Practice questions across subjects"}
+          title={t("dashboard.quick_practice_tests_title")}
+          description={hasSATorACT(profile) ? t("dashboard.quick_practice_tests_desc_sat") : t("dashboard.quick_practice_tests_desc_other")}
           href="/dashboard/tests"
           color="from-primary to-teal-400"
-          tooltip="Access timed practice tests and question drills"
+          tooltip={t("dashboard.quick_practice_tests_tooltip")}
         />
         <QuickAction
           icon={MessageSquare}
-          title="AI Study Coach"
-          description="Get help with any subject"
+          title={t("dashboard.quick_ai_coach_title")}
+          description={t("dashboard.quick_ai_coach_desc")}
           href="/dashboard/coach"
           color="from-purple-500 to-pink-400"
-          tooltip="Chat with your AI tutor for personalized help"
+          tooltip={t("dashboard.quick_ai_coach_tooltip")}
         />
         <QuickAction
           icon={Layers}
-          title="Flashcards"
-          description="Review key concepts with smart flashcards"
+          title={t("dashboard.quick_flashcards_title")}
+          description={t("dashboard.quick_flashcards_desc")}
           href="/dashboard/flashcards"
           color="from-accent to-orange-400"
-          tooltip="Study vocabulary, formulas, and more"
+          tooltip={t("dashboard.quick_flashcards_tooltip")}
         />
       </div>
 
@@ -298,13 +300,13 @@ export function StudentDashboard() {
             <Brain className="w-6 h-6 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-foreground mb-1">Today's Study Tip</h3>
+            <h3 className="font-semibold text-foreground mb-1">{t("dashboard.todays_tip")}</h3>
             <p className="text-muted-foreground text-sm">
-              {profile?.learning_style === "visual" && "Try creating mind maps for complex concepts. Visual learners retain information better when they can see relationships between ideas."}
-              {profile?.learning_style === "auditory" && "Read your notes out loud or explain concepts to someone else. Hearing information helps auditory learners remember it better."}
-              {profile?.learning_style === "reading_writing" && "Rewrite your notes in your own words. Writing helps reinforce learning for reading/writing learners."}
-              {profile?.learning_style === "kinesthetic" && "Take short breaks every 25 minutes to move around. Kinesthetic learners focus better when they incorporate movement."}
-              {!profile?.learning_style && "Complete your learning style quiz to get personalized study tips tailored to how you learn best!"}
+              {profile?.learning_style === "visual" && t("dashboard.tip_visual")}
+              {profile?.learning_style === "auditory" && t("dashboard.tip_auditory")}
+              {profile?.learning_style === "reading_writing" && t("dashboard.tip_reading_writing")}
+              {profile?.learning_style === "kinesthetic" && t("dashboard.tip_kinesthetic")}
+              {!profile?.learning_style && t("dashboard.tip_no_style")}
             </p>
           </div>
         </div>
