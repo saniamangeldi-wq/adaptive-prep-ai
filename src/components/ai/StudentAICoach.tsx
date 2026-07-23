@@ -43,6 +43,7 @@ import { toast } from "sonner";
 import { sanitizeAIResponse } from "@/utils/sanitizeAIResponse";
 import { QuestionWidget } from "./QuestionWidget";
 import { DocumentWidget } from "./DocumentWidget";
+import { AISuggestions } from "./AISuggestions";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
