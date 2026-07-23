@@ -152,7 +152,7 @@ export function VAKAssessment({
       <div className="space-y-3">
         {question.options.map((option, idx) => {
           const letter = ["A", "B", "C"][idx];
-          const isSelected = answers[currentIndex] === option.style;
+          const isSelected = currentQId !== undefined && answers[currentQId] === option.style;
           return (
             <button
               key={option.style}
