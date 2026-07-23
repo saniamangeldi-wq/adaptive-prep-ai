@@ -205,6 +205,31 @@ export function StudentDashboard() {
         />
       </div>
 
+      {/* Evidence-based study engine: spaced repetition due today */}
+      <Link
+        to="/dashboard/flashcards"
+        className="flex items-center justify-between gap-4 p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/5 hover:border-primary/40 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+            <Layers className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-foreground">
+              {reviewsDue > 0
+                ? `${reviewsDue} card${reviewsDue === 1 ? "" : "s"} due for review today`
+                : "No cards due for review — you're caught up"}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Spaced repetition · part of your evidence-based study engine
+            </div>
+          </div>
+        </div>
+        <span className="text-xs font-medium text-primary hidden sm:inline">
+          {reviewsDue > 0 ? "Start review →" : "Study more →"}
+        </span>
+      </Link>
+
       {/* Your Progress summary */}
       <Link
         to="/dashboard/progress"
