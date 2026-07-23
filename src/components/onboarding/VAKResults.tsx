@@ -172,8 +172,7 @@ export function VAKResults({
                 <MessageSquare className="w-4 h-4 text-primary" />
               </h3>
               <p className="text-sm text-muted-foreground">
-                As a {result.primaryStyle} learner, I'll adapt my explanations
-                to match your style.{" "}
+                I'll lean into {result.primaryStyle}-friendly explanations by default, and switch formats whenever you ask.{" "}
                 {selectedSubjects.length > 0 &&
                   `Let's tackle ${selectedSubjects.slice(0, 2).join(", ")}${
                     selectedSubjects.length > 2
@@ -181,6 +180,7 @@ export function VAKResults({
                       : ""
                   }!`}
               </p>
+
             </div>
           </div>
         </div>
