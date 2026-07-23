@@ -79,7 +79,7 @@ export function UpgradePrompt({ type, featureName, className }: UpgradePromptPro
           )}
           
           <Button variant="hero" size="sm" asChild>
-            <Link to="/dashboard/settings">
+            <Link to="/dashboard/billing">
               <Sparkles className="w-4 h-4" />
               {getUpgradeText()}
             </Link>

@@ -236,7 +236,7 @@ export default function PracticeTests() {
                 </div>
                 {profile?.tier !== "tier_3" && (
                   <Button variant="hero" size="sm" asChild>
-                    <Link to="/dashboard/settings">
+                    <Link to="/dashboard/billing">
                       <Zap className="w-4 h-4" />
                       Get More
                     </Link>

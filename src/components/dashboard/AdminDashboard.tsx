@@ -240,7 +240,7 @@ export function AdminDashboard() {
             </div>
           </div>
           <Button variant="hero" className="w-full mt-4" asChild>
-            <Link to="/dashboard/settings">
+            <Link to="/dashboard/billing">
               <CreditCard className="w-4 h-4" />
               Manage Subscription
             </Link>

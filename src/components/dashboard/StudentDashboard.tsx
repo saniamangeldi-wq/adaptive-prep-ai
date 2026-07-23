@@ -113,7 +113,7 @@ export function StudentDashboard() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="hero" size="sm" asChild>
-                <Link to="/dashboard/settings">
+                <Link to="/dashboard/billing">
                   Subscribe Now
                 </Link>
               </Button>
