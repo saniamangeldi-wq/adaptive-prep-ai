@@ -83,7 +83,7 @@ export function useCardSchedule(deckId: string | undefined) {
     }));
     const { error } = await supabase
       .from("flashcard_card_state" as never)
-      .upsert(row, { onConflict: "user_id,deck_id,card_index" });
+      .upsert(row as never, { onConflict: "user_id,deck_id,card_index" } as never);
     if (error) console.error("useCardSchedule upsert failed", error);
     return next;
   }, [user, deckId, states]);
