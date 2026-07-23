@@ -63,6 +63,7 @@ export function StudentDashboard() {
   const { totalSATScore, mathScore, rwScore, testsTaken, hasProgress, avgAccuracy } = useDashboardStats();
   const { earnedBadges, checkAndAwardBadges, allBadges } = useBadges();
   const { streakData } = useStreakTracker();
+  const { dueCount: reviewsDue } = useDueReviews();
   const [showTutorial, setShowTutorial] = useState(false);
 
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
