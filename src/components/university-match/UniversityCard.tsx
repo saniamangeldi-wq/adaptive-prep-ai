@@ -85,6 +85,85 @@ function getMatchReasons(reason: string | null): string[] {
   return parts.slice(0, 3);
 }
 
+type Verdict = "Safety" | "Target" | "Reach";
+
+interface OverviewInsights {
+  verdict: Verdict | null;
+  chancePct: number | null;
+  yourSat: number | null;
+  benchLow: number | null;
+  benchHigh: number | null;
+  noSatBenchmarks: boolean;
+  chips: string[];
+}
+
+function parseOverviewInsights(reason: string | null): OverviewInsights {
+  const out: OverviewInsights = {
+    verdict: null,
+    chancePct: null,
+    yourSat: null,
+    benchLow: null,
+    benchHigh: null,
+    noSatBenchmarks: false,
+    chips: [],
+  };
+  if (!reason) return out;
+
+  const verdictMatch = reason.match(/\b(Safety|Target|Reach)\b/i);
+  if (verdictMatch) {
+    const v = verdictMatch[1].toLowerCase();
+    out.verdict = (v[0].toUpperCase() + v.slice(1)) as Verdict;
+  }
+
+  const chanceMatch = reason.match(/~?\s*(\d{1,3})\s*%\s*(?:estimated\s*)?chance/i);
+  if (chanceMatch) out.chancePct = Math.min(100, parseInt(chanceMatch[1], 10));
+
+  const yourSatMatch = reason.match(/your\s*SAT[:\s]*([0-9]{3,4})/i);
+  if (yourSatMatch) out.yourSat = parseInt(yourSatMatch[1], 10);
+
+  const benchMatch = reason.match(
+    /(?:middle\s*50%?|SAT\s*range|their\s*(?:middle\s*50%?|range))[^\d]*([0-9]{3,4})\s*[-–]\s*([0-9]{3,4})/i,
+  );
+  if (benchMatch) {
+    out.benchLow = parseInt(benchMatch[1], 10);
+    out.benchHigh = parseInt(benchMatch[2], 10);
+  }
+
+  if (/no\s+SAT\s+benchmarks?/i.test(reason)) out.noSatBenchmarks = true;
+
+  // Chips: short clauses that aren't the verdict/chance/sat lines
+  const chips = reason
+    .split(/[.;]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 3 && s.length < 80)
+    .filter(
+      (s) =>
+        !/estimated\s*chance/i.test(s) &&
+        !/^\s*(Safety|Target|Reach)\b/i.test(s) &&
+        !/your\s*SAT/i.test(s) &&
+        !/middle\s*50%?/i.test(s) &&
+        !/no\s+SAT\s+benchmarks?/i.test(s) &&
+        !/acceptance\s*rate/i.test(s),
+    );
+  // Dedupe & cap
+  out.chips = Array.from(new Set(chips)).slice(0, 6);
+  return out;
+}
+
+function verdictClasses(verdict: Verdict | null) {
+  switch (verdict) {
+    case "Safety":
+      return "bg-primary/15 text-primary border-primary/30";
+    case "Target":
+      return "bg-amber-500/15 text-amber-400 border-amber-500/30";
+    case "Reach":
+      return "bg-muted/60 text-muted-foreground border-border";
+    default:
+      return "bg-muted/60 text-muted-foreground border-border";
+  }
+}
+
+
 export function UniversityCard({
   university,
   matchScore,
