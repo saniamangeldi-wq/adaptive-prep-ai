@@ -8,7 +8,7 @@ import {
   LayoutDashboard,
   FileText,
   MessageSquare,
-  LineChart,
+  
   Layers,
   FolderOpen,
   Settings,
