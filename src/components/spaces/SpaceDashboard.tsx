@@ -106,23 +106,19 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
 
   const handleAddUrl = async () => {
     if (!urlValue.trim()) return;
+    const { fetchUrlAsReference } = await import("@/lib/spaceReferences");
     try {
-      const domain = new URL(urlValue.trim()).hostname;
-      const newRef: Reference = {
-        id: `space-ref-${Date.now()}`,
-        type: "url",
-        name: domain,
-        content: `[URL to be fetched: ${urlValue.trim()}]`,
-      };
+      const newRef = await fetchUrlAsReference(urlValue.trim());
       setRefs(prev => [...prev, newRef]);
       await saveRefs([...refs, newRef]);
       setUrlValue("");
       setAddRefMode("none");
       toast.success("URL added");
-    } catch {
-      toast.error("Invalid URL");
+    } catch (err: any) {
+      toast.error(err?.message === "Failed to fetch URL" ? "Couldn't fetch that URL" : "Invalid URL");
     }
   };
+
 
   const handleAddText = async () => {
     if (!textValue.trim()) return;
