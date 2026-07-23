@@ -127,7 +127,7 @@ export function VAKResults({
         {/* Adaptations */}
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground">
-            Your platform is now set up for you:
+            We'll set these as your defaults:
           </h3>
           <ul className="space-y-2">
             {result.adaptations.map((item, i) => (
@@ -140,7 +140,11 @@ export function VAKResults({
               </li>
             ))}
           </ul>
+          <p className="text-xs text-muted-foreground/80 pt-1">
+            Every lesson gives you access to all formats — visual, audio, and interactive — via the format switcher. Change your defaults anytime in Settings.
+          </p>
         </div>
+
 
         {/* Subjects */}
         {selectedSubjects.length > 0 && (
