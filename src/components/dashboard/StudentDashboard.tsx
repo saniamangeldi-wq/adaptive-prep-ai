@@ -59,7 +59,7 @@ function hasSATorACT(profile: { study_subjects?: string[] | null } | null): bool
 export function StudentDashboard() {
   const { t } = useTranslation();
   const { profile } = useAuth();
-  const { totalSATScore, mathScore, rwScore, testsTaken, hasProgress } = useDashboardStats();
+  const { totalSATScore, mathScore, rwScore, testsTaken, hasProgress, avgAccuracy } = useDashboardStats();
   const { earnedBadges, checkAndAwardBadges, allBadges } = useBadges();
   const { streakData } = useStreakTracker();
   const [showTutorial, setShowTutorial] = useState(false);
