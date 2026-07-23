@@ -53,7 +53,6 @@ interface BeforeInstallPromptEvent extends Event {
 
 const studentNav: NavItem[] = [
   { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { nameKey: "nav.progress", href: "/dashboard/progress", icon: LineChart },
   { nameKey: "nav.practiceTests", href: "/dashboard/tests", icon: FileText },
   { nameKey: "nav.aiCoach", href: "/dashboard/coach", icon: MessageSquare },
   { nameKey: "nav.spaces", href: "/dashboard/spaces", icon: FolderOpen },
