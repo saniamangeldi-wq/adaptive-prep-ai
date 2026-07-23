@@ -18,10 +18,12 @@ import {
   Calculator,
   PenLine,
   Flame,
-  Star
+  Star,
+  LineChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { Progress } from "@/components/ui/progress";
 import { getTierLimits, getDaysRemaining, PricingTier, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { DashboardTutorial } from "./DashboardTutorial";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
