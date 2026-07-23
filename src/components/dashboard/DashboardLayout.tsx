@@ -279,7 +279,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 {sidebarExpanded && (
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-xs font-medium text-sidebar-foreground truncate">{profile?.full_name || "User"}</p>
+                    <p className="text-xs font-medium text-sidebar-foreground truncate">{profile?.full_name || t("dashboard.user")}</p>
                     <p className="text-[10px] text-[hsl(var(--sidebar-icon-muted))]">{getTierShort()}</p>
                   </div>
                 )}
