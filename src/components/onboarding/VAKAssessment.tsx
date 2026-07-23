@@ -71,12 +71,12 @@ export function VAKAssessment({
       <div className="space-y-8 text-center">
         <div className="space-y-3">
           <h2 className="text-2xl font-bold text-foreground">
-            Learning Style Assessment
+            Learning Preferences Check-In
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Discover how you learn best. Your results will personalize your
-            entire platform experience.
+            A quick way to tell us which content formats you tend to engage with most. We'll use it to pick smart defaults — you can switch formats on any lesson.
           </p>
+
         </div>
 
         <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
