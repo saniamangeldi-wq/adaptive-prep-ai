@@ -27,7 +27,7 @@ export function GamificationWidget() {
           <div className="flex items-center gap-2">
             <span className="text-2xl">{currentLevel.icon}</span>
             <div>
-              <h3 className="font-semibold text-foreground text-sm">Level {currentLevel.level}</h3>
+              <h3 className="font-semibold text-foreground text-sm">{t("dashboard.level")} {currentLevel.level}</h3>
               <p className="text-xs text-muted-foreground">{currentLevel.title}</p>
             </div>
           </div>
@@ -38,10 +38,10 @@ export function GamificationWidget() {
                 className="text-xs text-primary hover:underline flex items-center gap-1"
               >
                 <Trophy className="w-3 h-3" />
-                View All
+                {t("dashboard.view_all")}
               </Link>
             </TooltipTrigger>
-            <TooltipContent>View achievements, milestones & leaderboard</TooltipContent>
+            <TooltipContent>{t("dashboard.view_all_tooltip")}</TooltipContent>
           </Tooltip>
         </div>
 
