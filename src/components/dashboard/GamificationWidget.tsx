@@ -97,7 +97,7 @@ export function GamificationWidget() {
           ))}
           {allCompleted && (
             <div className="text-xs text-center text-primary font-medium mt-1">
-              🎉 All done! +50 bonus XP
+              {t("dashboard.all_done_bonus")}
             </div>
           )}
         </div>
