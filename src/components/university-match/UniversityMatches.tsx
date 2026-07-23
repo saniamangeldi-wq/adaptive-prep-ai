@@ -150,6 +150,7 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
       if (data && data.length > 0) {
         setMatches(data.map(m => ({
           ...m,
+          admit_bucket: (m.admit_bucket ?? null) as UniversityMatch["admit_bucket"],
           university: m.university as any,
           financial_estimate: m.financial_estimate as any
         })));
