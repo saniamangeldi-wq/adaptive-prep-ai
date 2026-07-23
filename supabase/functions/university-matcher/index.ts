@@ -53,13 +53,15 @@ function estimateAdmit(
   const effectiveP25 = numericP25 ?? parsed.p25;
   const effectiveP75 = numericP75 ?? parsed.p75;
 
-  const { p25, p75 } = parseSatRange(uni.sat_range);
-  const effectiveP25 = p25;
-  const effectiveP75 = p75;
   const avg = typeof uni.avg_sat_score === "number" ? uni.avg_sat_score : null;
+  const testOptional = uni.test_optional === true;
 
   let adjusted = baseline;
   let satNote = "";
+
+  if (!studentSat && testOptional) {
+    satNote = "school is test-optional and you have no SAT on file — using base acceptance rate only";
+  } else
 
   if (studentSat && (effectiveP25 || effectiveP75 || avg)) {
     if (effectiveP25 && effectiveP75) {
