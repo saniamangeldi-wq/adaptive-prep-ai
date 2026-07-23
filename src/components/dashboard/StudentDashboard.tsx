@@ -55,6 +55,7 @@ function hasSATorACT(profile: { study_subjects?: string[] | null } | null): bool
 }
 
 export function StudentDashboard() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const { totalSATScore, mathScore, rwScore, testsTaken, hasProgress } = useDashboardStats();
   const { earnedBadges, checkAndAwardBadges, allBadges } = useBadges();
@@ -84,11 +85,11 @@ export function StudentDashboard() {
     setShowTutorial(false);
   };
 
-  const learningStyleLabel = {
-    visual: "Visual",
-    auditory: "Auditory",
-    reading_writing: "Reading/Writing",
-    kinesthetic: "Kinesthetic",
+  const learningStyleLabel: Record<string, string> = {
+    visual: t("dashboard.style_visual"),
+    auditory: t("dashboard.style_auditory"),
+    reading_writing: t("dashboard.style_reading_writing"),
+    kinesthetic: t("dashboard.style_kinesthetic"),
   };
 
   return (
