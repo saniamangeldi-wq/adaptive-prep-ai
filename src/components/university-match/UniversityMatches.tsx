@@ -39,6 +39,9 @@ interface UniversityMatch {
     ranking_global: number | null;
   };
   match_score: number;
+  fit_score: number | null;
+  admit_probability: number | null;
+  admit_bucket: "safety" | "target" | "reach" | "unknown" | null;
   match_reason: string | null;
   financial_estimate: {
     scholarship_estimate?: number;
@@ -47,6 +50,13 @@ interface UniversityMatch {
   } | null;
   saved: boolean;
 }
+
+const BUCKET_META = {
+  safety: { label: "Safety", cls: "bg-green-500/15 text-green-500 border-green-500/30" },
+  target: { label: "Target", cls: "bg-blue-500/15 text-blue-500 border-blue-500/30" },
+  reach: { label: "Reach", cls: "bg-orange-500/15 text-orange-500 border-orange-500/30" },
+  unknown: { label: "Data unavailable", cls: "bg-muted text-muted-foreground border-border" },
+} as const;
 
 interface UniversityMatchesProps {
   onRestart: () => void;
