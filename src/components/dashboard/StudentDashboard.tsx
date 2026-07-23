@@ -208,10 +208,10 @@ export function StudentDashboard() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Star className="w-4 h-4" /> Achievement Badges
+            <Star className="w-4 h-4" /> {t("dashboard.achievement_badges")}
           </h3>
           <span className="text-xs text-muted-foreground">
-            {earnedBadges.length}/{allBadges.length} earned
+            {earnedBadges.length}/{allBadges.length} {t("dashboard.earned")}
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -233,7 +233,7 @@ export function StudentDashboard() {
                 <TooltipContent>
                   <p className="font-medium">{badge.name}</p>
                   <p className="text-xs text-muted-foreground">{badge.description}</p>
-                  {!isEarned && <p className="text-xs text-muted-foreground italic mt-1">Not yet earned</p>}
+                  {!isEarned && <p className="text-xs text-muted-foreground italic mt-1">{t("dashboard.not_yet_earned")}</p>}
                 </TooltipContent>
               </Tooltip>
             );
@@ -244,7 +244,7 @@ export function StudentDashboard() {
       {/* Subject Quick Actions */}
       {profile?.study_subjects && (profile.study_subjects as string[]).length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">Quick Help by Subject</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">{t("dashboard.quick_help_by_subject")}</h3>
           <div className="flex flex-wrap gap-2">
             {(profile.study_subjects as string[]).slice(0, 6).map((subject: string) => (
               <Tooltip key={subject}>
@@ -257,7 +257,7 @@ export function StudentDashboard() {
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Get AI help with {subject}</p>
+                  <p>{t("dashboard.get_ai_help_with")} {subject}</p>
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -269,27 +269,27 @@ export function StudentDashboard() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <QuickAction
           icon={BookOpen}
-          title="Practice Tests"
-          description={hasSATorACT(profile) ? "Take a full practice test or quick quiz" : "Practice questions across subjects"}
+          title={t("dashboard.quick_practice_tests_title")}
+          description={hasSATorACT(profile) ? t("dashboard.quick_practice_tests_desc_sat") : t("dashboard.quick_practice_tests_desc_other")}
           href="/dashboard/tests"
           color="from-primary to-teal-400"
-          tooltip="Access timed practice tests and question drills"
+          tooltip={t("dashboard.quick_practice_tests_tooltip")}
         />
         <QuickAction
           icon={MessageSquare}
-          title="AI Study Coach"
-          description="Get help with any subject"
+          title={t("dashboard.quick_ai_coach_title")}
+          description={t("dashboard.quick_ai_coach_desc")}
           href="/dashboard/coach"
           color="from-purple-500 to-pink-400"
-          tooltip="Chat with your AI tutor for personalized help"
+          tooltip={t("dashboard.quick_ai_coach_tooltip")}
         />
         <QuickAction
           icon={Layers}
-          title="Flashcards"
-          description="Review key concepts with smart flashcards"
+          title={t("dashboard.quick_flashcards_title")}
+          description={t("dashboard.quick_flashcards_desc")}
           href="/dashboard/flashcards"
           color="from-accent to-orange-400"
-          tooltip="Study vocabulary, formulas, and more"
+          tooltip={t("dashboard.quick_flashcards_tooltip")}
         />
       </div>
 
@@ -300,16 +300,17 @@ export function StudentDashboard() {
             <Brain className="w-6 h-6 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-foreground mb-1">Today's Study Tip</h3>
+            <h3 className="font-semibold text-foreground mb-1">{t("dashboard.todays_tip")}</h3>
             <p className="text-muted-foreground text-sm">
-              {profile?.learning_style === "visual" && "Try creating mind maps for complex concepts. Visual learners retain information better when they can see relationships between ideas."}
-              {profile?.learning_style === "auditory" && "Read your notes out loud or explain concepts to someone else. Hearing information helps auditory learners remember it better."}
-              {profile?.learning_style === "reading_writing" && "Rewrite your notes in your own words. Writing helps reinforce learning for reading/writing learners."}
-              {profile?.learning_style === "kinesthetic" && "Take short breaks every 25 minutes to move around. Kinesthetic learners focus better when they incorporate movement."}
-              {!profile?.learning_style && "Complete your learning style quiz to get personalized study tips tailored to how you learn best!"}
+              {profile?.learning_style === "visual" && t("dashboard.tip_visual")}
+              {profile?.learning_style === "auditory" && t("dashboard.tip_auditory")}
+              {profile?.learning_style === "reading_writing" && t("dashboard.tip_reading_writing")}
+              {profile?.learning_style === "kinesthetic" && t("dashboard.tip_kinesthetic")}
+              {!profile?.learning_style && t("dashboard.tip_no_style")}
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
     </>
