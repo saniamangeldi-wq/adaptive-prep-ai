@@ -65,6 +65,8 @@ function proLabel(scores: VAKScores, primary: VAKStyle): string {
 }
 
 // ─── ELITE tier sub-type ───────────────────────────────────
+// `answers` is keyed by question id (1-based) — same keys used by
+// VAKAssessment when recording each answer.
 function eliteSubType(
   answers: Record<number, VAKStyle>,
   scores: VAKScores,
@@ -83,80 +85,29 @@ function eliteSubType(
     return { label: "Multimodal Learner", subType: "multimodal" };
   }
 
+  const ratioMatches = (indicatorIds: number[], style: VAKStyle): boolean => {
+    const answered = indicatorIds.filter((qId) => answers[qId] !== undefined);
+    if (answered.length === 0) return false;
+    const hits = answered.filter((qId) => answers[qId] === style).length;
+    return hits / answered.length > 0.5;
+  };
+
   if (primary === "visual") {
-    const spatialCount = SPATIAL_VISUAL_QS.filter(
-      (q) => answers[q - 1] === "visual" // answers are 0-indexed by question index
-    ).length;
-    // Check using question IDs
-    const spatialCountById = SPATIAL_VISUAL_QS.filter(
-      (qId) => {
-        // Find the answer for this question ID
-        const entry = Object.entries(answers).find(([, ]) => {
-          return false; // We'll use a different approach
-        });
-        return false;
-      }
-    ).length;
-    
-    // Actually, answers are keyed by question index (0-based), questions have IDs (1-based)
-    // So answer at index i corresponds to question ID i+1
-    const spatialHits = SPATIAL_VISUAL_QS.filter(
-      (qId) => answers[qId - 1] === "visual"
-    ).length;
-    const totalSpatialAnswered = SPATIAL_VISUAL_QS.filter(
-      (qId) => answers[qId - 1] !== undefined
-    ).length;
-    
-    if (totalSpatialAnswered > 0 && spatialHits / totalSpatialAnswered > 0.5) {
-      return {
-        label: "Spatial Visual Learner",
-        subType: "spatial_visual",
-      };
-    }
-    return {
-      label: "Verbal Visual Learner",
-      subType: "verbal_visual",
-    };
+    return ratioMatches(SPATIAL_VISUAL_QS, "visual")
+      ? { label: "Spatial Visual Learner", subType: "spatial_visual" }
+      : { label: "Verbal Visual Learner", subType: "verbal_visual" };
   }
 
   if (primary === "auditory") {
-    const expressiveHits = EXPRESSIVE_AUDITORY_QS.filter(
-      (qId) => answers[qId - 1] === "auditory"
-    ).length;
-    const totalExpressiveAnswered = EXPRESSIVE_AUDITORY_QS.filter(
-      (qId) => answers[qId - 1] !== undefined
-    ).length;
-    
-    if (totalExpressiveAnswered > 0 && expressiveHits / totalExpressiveAnswered > 0.5) {
-      return {
-        label: "Expressive Auditory Learner",
-        subType: "expressive_auditory",
-      };
-    }
-    return {
-      label: "Receptive Auditory Learner",
-      subType: "receptive_auditory",
-    };
+    return ratioMatches(EXPRESSIVE_AUDITORY_QS, "auditory")
+      ? { label: "Expressive Auditory Learner", subType: "expressive_auditory" }
+      : { label: "Receptive Auditory Learner", subType: "receptive_auditory" };
   }
 
   if (primary === "kinesthetic") {
-    const physicalHits = PHYSICAL_KINESTHETIC_QS.filter(
-      (qId) => answers[qId - 1] === "kinesthetic"
-    ).length;
-    const totalPhysicalAnswered = PHYSICAL_KINESTHETIC_QS.filter(
-      (qId) => answers[qId - 1] !== undefined
-    ).length;
-    
-    if (totalPhysicalAnswered > 0 && physicalHits / totalPhysicalAnswered > 0.5) {
-      return {
-        label: "Physical Kinesthetic Learner",
-        subType: "physical_kinesthetic",
-      };
-    }
-    return {
-      label: "Tactile Kinesthetic Learner",
-      subType: "tactile_kinesthetic",
-    };
+    return ratioMatches(PHYSICAL_KINESTHETIC_QS, "kinesthetic")
+      ? { label: "Physical Kinesthetic Learner", subType: "physical_kinesthetic" }
+      : { label: "Tactile Kinesthetic Learner", subType: "tactile_kinesthetic" };
   }
 
   return { label: `${STYLE_NAMES[primary]} Learner`, subType: primary };

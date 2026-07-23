@@ -41,7 +41,9 @@ export function VAKAssessment({
 
   const handleAnswer = useCallback(
     (style: VAKStyle) => {
-      const updated = { ...answers, [currentIndex]: style };
+      const qId = questions[currentIndex]?.id;
+      if (qId === undefined) return;
+      const updated = { ...answers, [qId]: style };
       setAnswers(updated);
 
       // Auto-advance after short delay
@@ -53,14 +55,15 @@ export function VAKAssessment({
         }
       }, 300);
     },
-    [answers, currentIndex, totalQuestions, onComplete]
+    [answers, currentIndex, questions, totalQuestions, onComplete]
   );
 
   const handleBack = () => {
     if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
   };
 
-  const progress = ((currentIndex + (answers[currentIndex] !== undefined ? 1 : 0)) / totalQuestions) * 100;
+  const currentQId = questions[currentIndex]?.id;
+  const progress = ((currentIndex + (currentQId !== undefined && answers[currentQId] !== undefined ? 1 : 0)) / totalQuestions) * 100;
 
   // ─── Start Screen ────────────────────────────────────────
   if (!started) {
@@ -149,7 +152,7 @@ export function VAKAssessment({
       <div className="space-y-3">
         {question.options.map((option, idx) => {
           const letter = ["A", "B", "C"][idx];
-          const isSelected = answers[currentIndex] === option.style;
+          const isSelected = currentQId !== undefined && answers[currentQId] === option.style;
           return (
             <button
               key={option.style}
