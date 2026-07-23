@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,8 +9,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { IconPicker } from "./IconPicker";
 
-const ICON_OPTIONS = ["🎓", "📐", "📖", "🧪", "✍️", "🌍", "🚀", "💡", "📚", "📊", "🎨", "🔬", "💼", "🎯"];
 
 interface CreateSpaceModalProps {
   open: boolean;
