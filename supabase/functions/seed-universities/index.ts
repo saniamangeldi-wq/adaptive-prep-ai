@@ -237,32 +237,87 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+    // Admissions data (SAT middle-50% and test-optional) for well-known US universities.
+    // Missing entries are intentionally left null — the matcher treats null as "data unavailable"
+    // and refuses to guess. Only add rows here when you have a publicly known figure.
+    const ADMISSIONS: Record<string, { sat_p25?: number|null; sat_p75?: number|null; test_optional?: boolean; gpa_avg?: number|null }> = {
+      "Massachusetts Institute of Technology": { sat_p25: 1520, sat_p75: 1580, test_optional: false },
+      "Harvard University":                    { sat_p25: 1490, sat_p75: 1580, test_optional: false },
+      "Stanford University":                   { sat_p25: 1500, sat_p75: 1580, test_optional: true },
+      "Yale University":                       { sat_p25: 1480, sat_p75: 1580, test_optional: false },
+      "Princeton University":                  { sat_p25: 1500, sat_p75: 1580, test_optional: true },
+      "Columbia University":                   { sat_p25: 1470, sat_p75: 1570, test_optional: true },
+      "University of Pennsylvania":            { sat_p25: 1490, sat_p75: 1560, test_optional: true },
+      "Cornell University":                    { sat_p25: 1470, sat_p75: 1550, test_optional: true },
+      "California Institute of Technology":    { sat_p25: 1530, sat_p75: 1580, test_optional: false },
+      "Duke University":                       { sat_p25: 1490, sat_p75: 1560, test_optional: true },
+      "Northwestern University":               { sat_p25: 1490, sat_p75: 1570, test_optional: true },
+      "University of Chicago":                 { sat_p25: 1500, sat_p75: 1570, test_optional: true },
+      "Johns Hopkins University":              { sat_p25: 1500, sat_p75: 1560, test_optional: true },
+      "University of Michigan":                { sat_p25: 1370, sat_p75: 1530, test_optional: true },
+      "New York University":                   { sat_p25: 1440, sat_p75: 1550, test_optional: true },
+      "Brown University":                      { sat_p25: 1470, sat_p75: 1570, test_optional: false },
+      "Dartmouth College":                     { sat_p25: 1440, sat_p75: 1560, test_optional: false },
+      "Vanderbilt University":                 { sat_p25: 1470, sat_p75: 1560, test_optional: true },
+      "Rice University":                       { sat_p25: 1490, sat_p75: 1560, test_optional: true },
+      "Emory University":                      { sat_p25: 1450, sat_p75: 1540, test_optional: true },
+      "University of Notre Dame":              { sat_p25: 1450, sat_p75: 1550, test_optional: true },
+      "Georgetown University":                 { sat_p25: 1400, sat_p75: 1550, test_optional: true },
+      "University of Southern California":     { sat_p25: 1400, sat_p75: 1530, test_optional: true },
+      "University of California, Los Angeles": { sat_p25: null, sat_p75: null, test_optional: true },
+      "University of California, Berkeley":    { sat_p25: null, sat_p75: null, test_optional: true },
+      "Carnegie Mellon University":            { sat_p25: 1490, sat_p75: 1560, test_optional: true },
+      "Washington University in St. Louis":    { sat_p25: 1500, sat_p75: 1570, test_optional: true },
+      "Boston University":                     { sat_p25: 1380, sat_p75: 1500, test_optional: true },
+      "Boston College":                        { sat_p25: 1420, sat_p75: 1520, test_optional: true },
+      "Tufts University":                      { sat_p25: 1420, sat_p75: 1540, test_optional: true },
+      "Georgia Institute of Technology":       { sat_p25: 1370, sat_p75: 1530, test_optional: false },
+      "University of Texas at Austin":         { sat_p25: 1230, sat_p75: 1480, test_optional: false },
+      "University of North Carolina at Chapel Hill": { sat_p25: 1310, sat_p75: 1490, test_optional: true },
+      "University of Virginia":                { sat_p25: 1370, sat_p75: 1510, test_optional: true },
+      "University of Wisconsin-Madison":       { sat_p25: 1300, sat_p75: 1470, test_optional: true },
+      "University of Illinois Urbana-Champaign": { sat_p25: 1280, sat_p75: 1500, test_optional: true },
+      "Purdue University":                     { sat_p25: 1200, sat_p75: 1440, test_optional: true },
+      "The Ohio State University":             { sat_p25: 1250, sat_p75: 1440, test_optional: true },
+      "Pennsylvania State University":         { sat_p25: 1160, sat_p75: 1370, test_optional: true },
+      "Rutgers University":                    { sat_p25: 1210, sat_p75: 1440, test_optional: true },
+      "University of Minnesota":               { sat_p25: 1290, sat_p75: 1470, test_optional: true },
+      "University of Maryland":                { sat_p25: 1330, sat_p75: 1490, test_optional: true },
+      "University of Washington":              { sat_p25: 1250, sat_p75: 1460, test_optional: true },
+    };
 
-    const rows = UNIVERSITIES.map(u => ({
-      name: u.name,
-      country: u.country,
-      city: u.city,
-      qs_rank: u.qs_rank,
-      acceptance_rate: u.acceptance_rate,
-      acceptance_rate_label: u.acceptance_rate
-        ? u.acceptance_rate < 10 ? 'Very Selective'
-          : u.acceptance_rate < 30 ? 'Selective'
-          : 'Accessible'
-        : null,
-      tuition_usd: u.tuition_usd,
-      offers_full_scholarship: u.offers_full_scholarship || false,
-      scholarship_name: u.scholarship_name || null,
-      scholarship_coverage: u.scholarship_coverage || null,
-      popular_majors: u.popular_majors || null,
-      programs: u.popular_majors || null,
-      student_population: u.student_population || null,
-      international_student_pct: u.international_student_pct || null,
-      campus_setting: u.campus_setting || null,
-      location_type: u.campus_setting || null,
-      ranking_global: u.qs_rank,
-      data_source: 'seeded',
-      last_refreshed_at: new Date().toISOString(),
-    }));
+    const rows = UNIVERSITIES.map(u => {
+      const adm = ADMISSIONS[u.name] || {};
+      return {
+        name: u.name,
+        country: u.country,
+        city: u.city,
+        qs_rank: u.qs_rank,
+        acceptance_rate: u.acceptance_rate,
+        acceptance_rate_label: u.acceptance_rate
+          ? u.acceptance_rate < 10 ? 'Very Selective'
+            : u.acceptance_rate < 30 ? 'Selective'
+            : 'Accessible'
+          : null,
+        tuition_usd: u.tuition_usd,
+        offers_full_scholarship: u.offers_full_scholarship || false,
+        scholarship_name: u.scholarship_name || null,
+        scholarship_coverage: u.scholarship_coverage || null,
+        popular_majors: u.popular_majors || null,
+        programs: u.popular_majors || null,
+        student_population: u.student_population || null,
+        international_student_pct: u.international_student_pct || null,
+        campus_setting: u.campus_setting || null,
+        location_type: u.campus_setting || null,
+        ranking_global: u.qs_rank,
+        sat_p25: adm.sat_p25 ?? null,
+        sat_p75: adm.sat_p75 ?? null,
+        gpa_avg: adm.gpa_avg ?? null,
+        test_optional: adm.test_optional ?? false,
+        data_source: 'seeded',
+        last_refreshed_at: new Date().toISOString(),
+      };
+    });
 
     let inserted = 0;
     let errors = 0;
