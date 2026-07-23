@@ -1,14 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, AlertCircle } from "lucide-react";
 import { ConversationSpace } from "@/hooks/useConversations";
 import type { Reference } from "@/hooks/useReferences";
 import { IconPicker } from "./IconPicker";
 import { SpaceReferencesEditor } from "./SpaceReferencesEditor";
-
-
+import { toast } from "sonner";
 
 interface SpaceSettingsDrawerProps {
   space: ConversationSpace | null;
@@ -26,21 +25,41 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
   const [aiInstructions, setAiInstructions] = useState("");
   const [refs, setRefs] = useState<Reference[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+
+  const initial = useMemo(() => ({
+    name: space?.name ?? "",
+    description: space?.description || "",
+    icon: space?.icon ?? "🎓",
+    ai_instructions: (space as any)?.ai_instructions || "",
+    references: spaceReferences,
+  }), [space, spaceReferences]);
 
   useEffect(() => {
     if (space) {
-      setName(space.name);
-      setDescription(space.description || "");
-      setIcon(space.icon);
-      setAiInstructions((space as any).ai_instructions || "");
-      setRefs(spaceReferences);
+      setName(initial.name);
+      setDescription(initial.description);
+      setIcon(initial.icon);
+      setAiInstructions(initial.ai_instructions);
+      setRefs(initial.references);
       setConfirmDelete(false);
+      setShowUnsavedPrompt(false);
     }
-  }, [space, spaceReferences]);
+  }, [space, initial]);
+
+  const isDirty = useMemo(() => {
+    if (!space) return false;
+    if (name !== initial.name) return true;
+    if (description !== initial.description) return true;
+    if (icon !== initial.icon) return true;
+    if (aiInstructions !== initial.ai_instructions) return true;
+    if (JSON.stringify(refs) !== JSON.stringify(initial.references)) return true;
+    return false;
+  }, [name, description, icon, aiInstructions, refs, initial, space]);
 
   if (!open || !space) return null;
 
-  const handleSave = () => {
+  const doSave = () => {
     onSave(space.id, {
       name: name.trim(),
       description: description.trim(),
@@ -48,6 +67,16 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
       ai_instructions: aiInstructions.trim() || undefined,
       references: refs,
     });
+    toast.success("Space updated");
+    setShowUnsavedPrompt(false);
+    onClose();
+  };
+
+  const attemptClose = () => {
+    if (isDirty) {
+      setShowUnsavedPrompt(true);
+      return;
+    }
     onClose();
   };
 
@@ -63,14 +92,21 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={attemptClose} />
 
       {/* Drawer */}
       <div className="fixed top-0 right-0 z-50 h-full w-[360px] max-w-[90vw] bg-card border-l border-border/30 flex flex-col animate-in slide-in-from-right duration-200">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/30">
-          <h2 className="text-base font-semibold text-foreground">Space Settings</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+            Space Settings
+            {isDirty && (
+              <span className="text-[10px] font-medium uppercase tracking-wider text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                Unsaved
+              </span>
+            )}
+          </h2>
+          <button onClick={attemptClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -96,7 +132,7 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
             <label className="text-sm font-medium text-foreground mb-1.5 block">AI Instructions</label>
             <Textarea
               placeholder="Custom instructions for conversations in this space..."
-              rows={4}
+              rows={6}
               value={aiInstructions}
               onChange={(e) => setAiInstructions(e.target.value)}
               className="bg-muted/30 border-border/30 resize-none"
@@ -136,11 +172,46 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
 
         {/* Footer */}
         <div className="p-4 border-t border-border/30 flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" onClick={handleSave} disabled={!name.trim()}>Save Changes</Button>
+          <Button variant="outline" className="flex-1" onClick={attemptClose}>Cancel</Button>
+          <Button className="flex-1" onClick={doSave} disabled={!name.trim() || !isDirty}>
+            Save Changes
+          </Button>
         </div>
       </div>
+
+      {/* Unsaved changes prompt */}
+      {showUnsavedPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-card border border-border/30 rounded-xl p-5 shadow-xl">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-9 h-9 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Save changes before leaving?</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  You have unsaved changes to this Space.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button onClick={doSave} disabled={!name.trim()}>Save changes</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowUnsavedPrompt(false);
+                  onClose();
+                }}
+              >
+                Discard
+              </Button>
+              <Button variant="ghost" onClick={() => setShowUnsavedPrompt(false)}>
+                Keep editing
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
-
