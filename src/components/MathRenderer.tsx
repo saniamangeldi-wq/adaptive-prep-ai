@@ -174,13 +174,14 @@ function useKatexHtml(value: string, displayMode: boolean) {
         displayMode,
         output: "html",
         strict: false,
-        throwOnError: true,
+        throwOnError: false,
       });
     } catch {
       return null;
     }
   }, [displayMode, value]);
 }
+
 
 function SafeInline({ value }: { value: string }) {
   const html = useKatexHtml(value, false);
