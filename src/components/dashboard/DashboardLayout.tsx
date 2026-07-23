@@ -374,7 +374,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <Button variant="hero" size="sm" asChild className="text-xs md:text-sm">
               <Link to="/dashboard/billing">
                 <Sparkles className="w-4 h-4" />
-                <span className="hidden sm:inline">Upgrade</span>
+                <span className="hidden sm:inline">{t("dashboard.upgrade")}</span>
               </Link>
             </Button>
           )}
