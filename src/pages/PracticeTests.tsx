@@ -293,12 +293,12 @@ export default function PracticeTests() {
                   )} />
                   <div className="font-semibold text-foreground">Practice Questions</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    Custom question count & difficulty for focused practice
+                    Interleaved set — topics are mixed rather than blocked, which strengthens recall.
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">10-154 Qs</span>
                     <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">Custom Time</span>
-                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">Flexible</span>
+                    <span className="px-2 py-1 rounded-md bg-primary/20 text-[10px] text-primary font-semibold">Interleaved</span>
                   </div>
                 </button>
               </div>

@@ -769,6 +769,51 @@ export type Database = {
         }
         Relationships: []
       }
+      flashcard_card_state: {
+        Row: {
+          card_index: number
+          created_at: string
+          deck_id: string
+          ease: number
+          id: string
+          interval_days: number
+          last_quality: number | null
+          last_reviewed_at: string | null
+          next_review_at: string
+          repetitions: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_index: number
+          created_at?: string
+          deck_id: string
+          ease?: number
+          id?: string
+          interval_days?: number
+          last_quality?: number | null
+          last_reviewed_at?: string | null
+          next_review_at?: string
+          repetitions?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_index?: number
+          created_at?: string
+          deck_id?: string
+          ease?: number
+          id?: string
+          interval_days?: number
+          last_quality?: number | null
+          last_reviewed_at?: string | null
+          next_review_at?: string
+          repetitions?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       flashcard_decks: {
         Row: {
           card_count: number | null

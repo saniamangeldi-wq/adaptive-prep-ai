@@ -24,6 +24,7 @@ import { CreateDeckDialog } from "@/components/flashcards/CreateDeckDialog";
 import { GenerateWithAIDialog } from "@/components/flashcards/GenerateWithAIDialog";
 import { premadeDecks, FlashcardDeck, Flashcard } from "@/lib/flashcard-data";
 import { useFlashcardDecks } from "@/hooks/useFlashcardDecks";
+import { useCardSchedule, type Rating } from "@/hooks/useCardSchedule";
 import { toast } from "sonner";
 import { PageSeo } from "@/components/seo/PageSeo";
 import {
@@ -100,120 +101,23 @@ export default function Flashcards() {
     }
   };
 
-  // Study mode view
   if (selectedDeck) {
-    const currentCard = selectedDeck.cards[currentCardIndex];
-    const progress = ((currentCardIndex + 1) / selectedDeck.cards.length) * 100;
-
     return (
-      <DashboardLayout>
-      <PageSeo title="Smart Flashcards | AdaptivePrep" description="Create AI-generated flashcard decks and review spaced-repetition cards across SAT subjects." path="/dashboard/flashcards" />
-        <div className="max-w-2xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => {
-                setSelectedDeck(null);
-                setCurrentCardIndex(0);
-                setIsFlipped(false);
-              }}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Back to decks
-            </button>
-            <span className="text-sm text-muted-foreground">
-              {currentCardIndex + 1} of {selectedDeck.cards.length}
-            </span>
-          </div>
-
-          {/* Deck Title */}
-          <div className="text-center">
-            <h2 className="text-lg font-semibold text-foreground">{selectedDeck.title}</h2>
-            <p className="text-sm text-muted-foreground">{selectedDeck.description}</p>
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1 bg-secondary rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          {/* Flashcard */}
-          <div 
-            className="aspect-[4/3] perspective-1000 cursor-pointer"
-            onClick={() => setIsFlipped(!isFlipped)}
-          >
-            <div className={cn(
-              "relative w-full h-full transition-transform duration-500 transform-style-3d",
-              isFlipped && "rotate-y-180"
-            )}>
-              {/* Front */}
-              <div className="absolute inset-0 backface-hidden">
-                <div className="w-full h-full p-8 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/30 flex flex-col items-center justify-center text-center">
-                  <span className="text-xs text-primary mb-4">QUESTION</span>
-                  <h2 className="text-2xl font-bold text-foreground">{currentCard.front}</h2>
-                  <p className="text-sm text-muted-foreground mt-4">Click to reveal answer</p>
-                </div>
-              </div>
-              
-              {/* Back */}
-              <div className="absolute inset-0 backface-hidden rotate-y-180">
-                <div className="w-full h-full p-8 rounded-2xl bg-card border border-border flex flex-col items-center justify-center text-center overflow-y-auto">
-                  <span className="text-xs text-green-400 mb-4">ANSWER</span>
-                  <p className="text-lg text-foreground whitespace-pre-line">{currentCard.back}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="flex items-center justify-center gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentCardIndex(Math.max(0, currentCardIndex - 1));
-                setIsFlipped(false);
-              }}
-              disabled={currentCardIndex === 0}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentCardIndex(0);
-                setIsFlipped(false);
-                toast.success("Deck restarted!");
-              }}
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Restart
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentCardIndex(Math.min(selectedDeck.cards.length - 1, currentCardIndex + 1));
-                setIsFlipped(false);
-              }}
-              disabled={currentCardIndex === selectedDeck.cards.length - 1}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      </DashboardLayout>
+      <StudyDeckView
+        deck={selectedDeck}
+        currentCardIndex={currentCardIndex}
+        setCurrentCardIndex={setCurrentCardIndex}
+        isFlipped={isFlipped}
+        setIsFlipped={setIsFlipped}
+        onExit={() => {
+          setSelectedDeck(null);
+          setCurrentCardIndex(0);
+          setIsFlipped(false);
+        }}
+      />
     );
   }
+
 
   // Deck selection view
   return (
@@ -453,3 +357,202 @@ export default function Flashcards() {
     </DashboardLayout>
   );
 }
+
+// ─────────────────────────────────────────────────────────────
+// Study view — retrieval practice ("try to answer first") + SM-2
+// spaced repetition. Rating a card schedules its next review; a
+// small "Due today" strip surfaces the evidence-based framing.
+// ─────────────────────────────────────────────────────────────
+interface StudyDeckViewProps {
+  deck: FlashcardDeck;
+  currentCardIndex: number;
+  setCurrentCardIndex: (n: number) => void;
+  isFlipped: boolean;
+  setIsFlipped: (b: boolean) => void;
+  onExit: () => void;
+}
+
+function StudyDeckView({
+  deck,
+  currentCardIndex,
+  setCurrentCardIndex,
+  isFlipped,
+  setIsFlipped,
+  onExit,
+}: StudyDeckViewProps) {
+  const currentCard = deck.cards[currentCardIndex];
+  const progress = ((currentCardIndex + 1) / deck.cards.length) * 100;
+  // Premade decks live in local data (no UUID), so scheduling is only
+  // persisted for real decks the user owns.
+  const scheduleDeckId = deck.source === "premade" ? undefined : deck.id;
+  const { rateCard, dueCount } = useCardSchedule(scheduleDeckId);
+
+  const nextCard = () => {
+    setCurrentCardIndex(Math.min(deck.cards.length - 1, currentCardIndex + 1));
+    setIsFlipped(false);
+  };
+
+  const handleRate = async (rating: Rating) => {
+    if (scheduleDeckId) {
+      const next = await rateCard(currentCardIndex, rating);
+      if (next) {
+        const days = next.intervalDays;
+        toast.success(
+          rating === "again"
+            ? "We'll bring this card back tomorrow"
+            : `Next review in ${days} day${days === 1 ? "" : "s"}`,
+        );
+      }
+    }
+    if (currentCardIndex < deck.cards.length - 1) nextCard();
+    else toast.success("Deck complete!");
+  };
+
+  return (
+    <DashboardLayout>
+      <PageSeo
+        title="Smart Flashcards | AdaptivePrep"
+        description="Spaced-repetition flashcards with retrieval practice — part of AdaptivePrep's evidence-based study engine."
+        path="/dashboard/flashcards"
+      />
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onExit}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            Back to decks
+          </button>
+          <span className="text-sm text-muted-foreground">
+            {currentCardIndex + 1} of {deck.cards.length}
+          </span>
+        </div>
+
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-foreground">{deck.title}</h2>
+          <p className="text-sm text-muted-foreground">{deck.description}</p>
+        </div>
+
+        {/* Evidence-based framing */}
+        {scheduleDeckId && (
+          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 text-xs">
+            <div className="flex items-center gap-2 text-primary">
+              <Brain className="w-4 h-4" />
+              <span className="font-medium">
+                {isFlipped ? "Rate how well you recalled it" : "Try to answer first — then reveal"}
+              </span>
+            </div>
+            <span className="text-muted-foreground">
+              {dueCount} due today
+            </span>
+          </div>
+        )}
+
+        <div className="h-1 bg-secondary rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        <div
+          className="aspect-[4/3] perspective-1000 cursor-pointer"
+          onClick={() => setIsFlipped(!isFlipped)}
+        >
+          <div
+            className={cn(
+              "relative w-full h-full transition-transform duration-500 transform-style-3d",
+              isFlipped && "rotate-y-180",
+            )}
+          >
+            <div className="absolute inset-0 backface-hidden">
+              <div className="w-full h-full p-8 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/30 flex flex-col items-center justify-center text-center">
+                <span className="text-xs text-primary mb-4">QUESTION</span>
+                <h2 className="text-2xl font-bold text-foreground">{currentCard.front}</h2>
+                <p className="text-sm text-muted-foreground mt-4">
+                  Recall the answer in your head, then click to reveal
+                </p>
+              </div>
+            </div>
+            <div className="absolute inset-0 backface-hidden rotate-y-180">
+              <div className="w-full h-full p-8 rounded-2xl bg-card border border-border flex flex-col items-center justify-center text-center overflow-y-auto">
+                <span className="text-xs text-green-400 mb-4">ANSWER</span>
+                <p className="text-lg text-foreground whitespace-pre-line">{currentCard.back}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SM-2 rating buttons — only after reveal, only for owned decks */}
+        {isFlipped && scheduleDeckId ? (
+          <div className="grid grid-cols-4 gap-2">
+            <Button variant="outline" onClick={(e) => { e.stopPropagation(); handleRate("again"); }} className="border-red-500/40 hover:bg-red-500/10">
+              <span className="flex flex-col items-center leading-tight py-1">
+                <span className="text-sm font-semibold">Again</span>
+                <span className="text-[10px] text-muted-foreground">&lt; 1 day</span>
+              </span>
+            </Button>
+            <Button variant="outline" onClick={(e) => { e.stopPropagation(); handleRate("hard"); }} className="border-orange-500/40 hover:bg-orange-500/10">
+              <span className="flex flex-col items-center leading-tight py-1">
+                <span className="text-sm font-semibold">Hard</span>
+                <span className="text-[10px] text-muted-foreground">Shorter</span>
+              </span>
+            </Button>
+            <Button variant="outline" onClick={(e) => { e.stopPropagation(); handleRate("good"); }} className="border-primary/40 hover:bg-primary/10">
+              <span className="flex flex-col items-center leading-tight py-1">
+                <span className="text-sm font-semibold">Good</span>
+                <span className="text-[10px] text-muted-foreground">Standard</span>
+              </span>
+            </Button>
+            <Button variant="outline" onClick={(e) => { e.stopPropagation(); handleRate("easy"); }} className="border-green-500/40 hover:bg-green-500/10">
+              <span className="flex flex-col items-center leading-tight py-1">
+                <span className="text-sm font-semibold">Easy</span>
+                <span className="text-[10px] text-muted-foreground">Longer</span>
+              </span>
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentCardIndex(Math.max(0, currentCardIndex - 1));
+                setIsFlipped(false);
+              }}
+              disabled={currentCardIndex === 0}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentCardIndex(0);
+                setIsFlipped(false);
+                toast.success("Deck restarted!");
+              }}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Restart
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                nextCard();
+              }}
+              disabled={currentCardIndex === deck.cards.length - 1}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}
+
