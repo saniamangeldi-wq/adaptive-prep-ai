@@ -186,7 +186,7 @@ export function SpaceInterior({
             <button onClick={onBack} className="md:hidden p-1 text-muted-foreground hover:text-foreground">
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <span className="text-lg">{space.icon}</span>
+            <span className="w-6 h-6 flex items-center justify-center text-lg overflow-hidden rounded"><SpaceIconDisplay icon={space.icon} /></span>
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-foreground truncate">{space.name}</h2>
               {space.description && (
