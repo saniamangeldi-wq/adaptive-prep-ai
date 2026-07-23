@@ -85,6 +85,85 @@ function getMatchReasons(reason: string | null): string[] {
   return parts.slice(0, 3);
 }
 
+type Verdict = "Safety" | "Target" | "Reach";
+
+interface OverviewInsights {
+  verdict: Verdict | null;
+  chancePct: number | null;
+  yourSat: number | null;
+  benchLow: number | null;
+  benchHigh: number | null;
+  noSatBenchmarks: boolean;
+  chips: string[];
+}
+
+function parseOverviewInsights(reason: string | null): OverviewInsights {
+  const out: OverviewInsights = {
+    verdict: null,
+    chancePct: null,
+    yourSat: null,
+    benchLow: null,
+    benchHigh: null,
+    noSatBenchmarks: false,
+    chips: [],
+  };
+  if (!reason) return out;
+
+  const verdictMatch = reason.match(/\b(Safety|Target|Reach)\b/i);
+  if (verdictMatch) {
+    const v = verdictMatch[1].toLowerCase();
+    out.verdict = (v[0].toUpperCase() + v.slice(1)) as Verdict;
+  }
+
+  const chanceMatch = reason.match(/~?\s*(\d{1,3})\s*%\s*(?:estimated\s*)?chance/i);
+  if (chanceMatch) out.chancePct = Math.min(100, parseInt(chanceMatch[1], 10));
+
+  const yourSatMatch = reason.match(/your\s*SAT[:\s]*([0-9]{3,4})/i);
+  if (yourSatMatch) out.yourSat = parseInt(yourSatMatch[1], 10);
+
+  const benchMatch = reason.match(
+    /(?:middle\s*50%?|SAT\s*range|their\s*(?:middle\s*50%?|range))[^\d]*([0-9]{3,4})\s*[-–]\s*([0-9]{3,4})/i,
+  );
+  if (benchMatch) {
+    out.benchLow = parseInt(benchMatch[1], 10);
+    out.benchHigh = parseInt(benchMatch[2], 10);
+  }
+
+  if (/no\s+SAT\s+benchmarks?/i.test(reason)) out.noSatBenchmarks = true;
+
+  // Chips: short clauses that aren't the verdict/chance/sat lines
+  const chips = reason
+    .split(/[.;]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 3 && s.length < 80)
+    .filter(
+      (s) =>
+        !/estimated\s*chance/i.test(s) &&
+        !/^\s*(Safety|Target|Reach)\b/i.test(s) &&
+        !/your\s*SAT/i.test(s) &&
+        !/middle\s*50%?/i.test(s) &&
+        !/no\s+SAT\s+benchmarks?/i.test(s) &&
+        !/acceptance\s*rate/i.test(s),
+    );
+  // Dedupe & cap
+  out.chips = Array.from(new Set(chips)).slice(0, 6);
+  return out;
+}
+
+function verdictClasses(verdict: Verdict | null) {
+  switch (verdict) {
+    case "Safety":
+      return "bg-primary/15 text-primary border-primary/30";
+    case "Target":
+      return "bg-amber-500/15 text-amber-400 border-amber-500/30";
+    case "Reach":
+      return "bg-muted/60 text-muted-foreground border-border";
+    default:
+      return "bg-muted/60 text-muted-foreground border-border";
+  }
+}
+
+
 export function UniversityCard({
   university,
   matchScore,
@@ -329,54 +408,200 @@ export function UniversityCard({
             </TabsList>
 
             <TabsContent value="overview" className="p-5 space-y-4">
-              {matchReason && (
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {matchReason}
-                </p>
-              )}
-              {university.programs && university.programs.length > 0 && (
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                    Programs Offered
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {university.programs.slice(0, 8).map((p) => (
-                      <Badge
-                        key={p}
-                        variant="secondary"
-                        className="text-[11px]"
+              {(() => {
+                const insights = parseOverviewInsights(matchReason);
+                const showVerdict =
+                  insights.verdict || insights.chancePct !== null;
+                const hasSatData =
+                  insights.yourSat !== null &&
+                  insights.benchLow !== null &&
+                  insights.benchHigh !== null;
+                const acceptancePct =
+                  university.acceptance_rate ?? null;
+                const showYourChances =
+                  hasSatData ||
+                  acceptancePct !== null ||
+                  insights.noSatBenchmarks;
+
+                const tuition = university.tuition_usd;
+                const living = university.living_cost_monthly
+                  ? university.living_cost_monthly * 12
+                  : null;
+                const scholarship =
+                  financialEstimate?.scholarship_estimate ?? null;
+                const total4 = financialEstimate?.total_4_year ?? null;
+                const financialCells: { label: string; value: string }[] = [];
+                if (tuition)
+                  financialCells.push({
+                    label: "Tuition / yr",
+                    value: formatCurrency(tuition),
+                  });
+                if (living)
+                  financialCells.push({
+                    label: "Living / yr",
+                    value: formatCurrency(living),
+                  });
+                if (scholarship)
+                  financialCells.push({
+                    label: "Est. Scholarship",
+                    value: formatCurrency(scholarship),
+                  });
+                if (total4 && financialCells.length < 3)
+                  financialCells.push({
+                    label: "4-Year Total",
+                    value: formatCurrency(total4),
+                  });
+
+                return (
+                  <>
+                    {/* 1. Verdict banner */}
+                    {showVerdict && (
+                      <div
+                        className={cn(
+                          "flex items-center gap-2 rounded-xl border px-3 py-2 text-sm",
+                          verdictClasses(insights.verdict),
+                        )}
                       >
-                        {p}
-                      </Badge>
-                    ))}
-                    {university.programs.length > 8 && (
-                      <Badge variant="outline" className="text-[11px]">
-                        +{university.programs.length - 8} more
-                      </Badge>
+                        {insights.verdict && (
+                          <span className="font-semibold">
+                            {insights.verdict}
+                          </span>
+                        )}
+                        {insights.verdict && insights.chancePct !== null && (
+                          <span className="opacity-60">·</span>
+                        )}
+                        {insights.chancePct !== null && (
+                          <span>
+                            ~{insights.chancePct}% estimated chance
+                          </span>
+                        )}
+                      </div>
                     )}
-                  </div>
-                </div>
-              )}
-              {financialEstimate && (
-                <div className="p-3 rounded-xl bg-muted/50 space-y-1.5">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                    Financial Estimate
-                  </p>
-                  {financialEstimate.scholarship_estimate && (
-                    <p className="text-sm text-foreground">
-                      Est. Scholarship:{" "}
-                      {formatCurrency(financialEstimate.scholarship_estimate)}
-                    </p>
-                  )}
-                  {financialEstimate.total_4_year && (
-                    <p className="text-sm text-foreground">
-                      4-Year Total:{" "}
-                      {formatCurrency(financialEstimate.total_4_year)}
-                    </p>
-                  )}
-                </div>
-              )}
+
+                    {/* 2. Your Chances */}
+                    {showYourChances && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                          Your Chances
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {hasSatData && (
+                            <>
+                              <Badge
+                                variant="secondary"
+                                className="text-[11px]"
+                              >
+                                Your SAT: {insights.yourSat}
+                              </Badge>
+                              <Badge
+                                variant="secondary"
+                                className="text-[11px]"
+                              >
+                                Their middle 50%: {insights.benchLow}–
+                                {insights.benchHigh}
+                              </Badge>
+                            </>
+                          )}
+                          {acceptancePct !== null && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[11px]"
+                            >
+                              Acceptance rate: {acceptancePct}%
+                            </Badge>
+                          )}
+                        </div>
+                        {!hasSatData && insights.noSatBenchmarks && (
+                          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                            No SAT benchmarks available — based on acceptance
+                            rate only.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 3. Why It Fits */}
+                    {insights.chips.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                          Why It Fits
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {insights.chips.map((chip, i) => (
+                            <Badge
+                              key={i}
+                              variant="secondary"
+                              className="text-[11px] gap-1 pl-1.5"
+                            >
+                              <CheckCircle2 className="h-3 w-3 text-primary" />
+                              {chip}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 4. Programs Offered */}
+                    {university.programs &&
+                      university.programs.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                            Programs Offered
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {university.programs.slice(0, 8).map((p) => (
+                              <Badge
+                                key={p}
+                                variant="secondary"
+                                className="text-[11px]"
+                              >
+                                {p}
+                              </Badge>
+                            ))}
+                            {university.programs.length > 8 && (
+                              <Badge
+                                variant="outline"
+                                className="text-[11px]"
+                              >
+                                +{university.programs.length - 8} more
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* 5. Financial Estimate grid */}
+                    {financialCells.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                          Financial Estimate
+                        </p>
+                        <div
+                          className={cn(
+                            "grid gap-2 rounded-xl bg-muted/50 p-3",
+                            financialCells.length === 2
+                              ? "grid-cols-2"
+                              : "grid-cols-3",
+                          )}
+                        >
+                          {financialCells.map((c) => (
+                            <div key={c.label} className="text-center">
+                              <div className="text-sm font-semibold text-foreground">
+                                {c.value}
+                              </div>
+                              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
+                                {c.label}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </TabsContent>
+
 
             <TabsContent value="requirements" className="p-5 space-y-3">
               <div className="space-y-2.5">
