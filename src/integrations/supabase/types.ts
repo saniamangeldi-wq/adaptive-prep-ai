@@ -1866,8 +1866,11 @@ export type Database = {
       }
       student_university_matches: {
         Row: {
+          admit_bucket: string | null
+          admit_probability: number | null
           created_at: string
           financial_estimate: Json | null
+          fit_score: number | null
           id: string
           match_reason: string | null
           match_score: number
@@ -1876,8 +1879,11 @@ export type Database = {
           university_id: string
         }
         Insert: {
+          admit_bucket?: string | null
+          admit_probability?: number | null
           created_at?: string
           financial_estimate?: Json | null
+          fit_score?: number | null
           id?: string
           match_reason?: string | null
           match_score: number
@@ -1886,8 +1892,11 @@ export type Database = {
           university_id: string
         }
         Update: {
+          admit_bucket?: string | null
+          admit_probability?: number | null
           created_at?: string
           financial_estimate?: Json | null
+          fit_score?: number | null
           id?: string
           match_reason?: string | null
           match_score?: number
