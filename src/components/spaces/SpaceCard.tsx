@@ -2,6 +2,8 @@ import { formatDistanceToNow } from "date-fns";
 import { ArrowRight, MoreHorizontal, Settings, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConversationSpace } from "@/hooks/useConversations";
+import { SpaceIconDisplay, isImageIcon } from "./IconPicker";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
