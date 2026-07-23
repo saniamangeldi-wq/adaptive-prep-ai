@@ -53,13 +53,13 @@ export function GamificationWidget() {
             </span>
             {nextLevel && (
               <span className="text-muted-foreground">
-                {nextLevel.xpRequired - levelData.xp} XP to Level {nextLevel.level}
+                {nextLevel.xpRequired - levelData.xp} {t("dashboard.xp_to_level")} {nextLevel.level}
               </span>
             )}
           </div>
           <Progress value={xpProgress.percentage} className="h-2" />
           {!nextLevel && (
-            <p className="text-xs text-primary font-medium">🎉 Max Level Reached!</p>
+            <p className="text-xs text-primary font-medium">{t("dashboard.max_level")}</p>
           )}
         </div>
       </div>
