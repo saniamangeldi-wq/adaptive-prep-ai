@@ -154,23 +154,9 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
           {/* Icon */}
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">Icon</label>
-            <div className="flex gap-2 flex-wrap">
-              {ICON_OPTIONS.map((ico) => (
-                <button
-                  key={ico}
-                  onClick={() => setIcon(ico)}
-                  className={cn(
-                    "w-10 h-10 rounded-full text-lg flex items-center justify-center transition-all",
-                    icon === ico
-                      ? "ring-2 ring-primary ring-offset-2 ring-offset-card bg-muted/50 scale-110"
-                      : "bg-muted/30 hover:bg-muted/50"
-                  )}
-                >
-                  {ico}
-                </button>
-              ))}
-            </div>
+            <IconPicker value={icon} onChange={setIcon} />
           </div>
+
 
           {/* AI Instructions */}
           <div>
