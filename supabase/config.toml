@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.handle-email-suppression]
 verify_jwt = false
+
+[functions.draft-space-instructions]
+verify_jwt = false
