@@ -5,6 +5,7 @@ import { useConversations, ConversationSpace } from "@/hooks/useConversations";
 import { SpaceCard } from "./SpaceCard";
 import { CreateSpaceModal } from "./CreateSpaceModal";
 import { SpaceSettingsDrawer } from "./SpaceSettingsDrawer";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface SpacesHomeProps {
@@ -13,7 +14,7 @@ interface SpacesHomeProps {
 }
 
 export function SpacesHome({ onOpenSpace, coachType = "student" }: SpacesHomeProps) {
-  const { spaces, createSpace, deleteSpace } = useConversations(coachType);
+  const { spaces, createSpace, deleteSpace, loadSpaces } = useConversations(coachType);
   const [showCreate, setShowCreate] = useState(false);
   const [settingsSpace, setSettingsSpace] = useState<ConversationSpace | null>(null);
 
@@ -25,10 +26,28 @@ export function SpacesHome({ onOpenSpace, coachType = "student" }: SpacesHomePro
     await deleteSpace(spaceId);
   };
 
-  const handleSaveSettings = async (_spaceId: string, _updates: { name: string; description: string; icon: string }) => {
-    // Uses existing updateConversation pattern — settings saved via space update
+  const handleSaveSettings = async (
+    spaceId: string,
+    updates: { name: string; description: string; icon: string; ai_instructions?: string }
+  ) => {
+    const { error } = await supabase
+      .from("conversation_spaces")
+      .update({
+        name: updates.name,
+        description: updates.description,
+        icon: updates.icon,
+        ai_instructions: updates.ai_instructions || null,
+      })
+      .eq("id", spaceId);
+
+    if (error) {
+      toast.error("Failed to update space");
+      return;
+    }
+    await loadSpaces();
     toast.success("Space updated");
   };
+
 
   return (
     <div className="max-w-[900px] mx-auto px-4 py-8">
