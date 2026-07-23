@@ -288,7 +288,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </TooltipTrigger>
             {!sidebarExpanded && (
               <TooltipContent side="right" className="text-xs">
-                {profile?.full_name || "User"} · {getTierShort()} · Sign out
+                {profile?.full_name || t("dashboard.user")} · {getTierShort()} · {t("dashboard.sign_out")}
               </TooltipContent>
             )}
           </Tooltip>
