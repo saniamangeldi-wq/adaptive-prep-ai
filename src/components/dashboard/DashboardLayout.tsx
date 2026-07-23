@@ -341,7 +341,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     {profile?.full_name?.[0] || profile?.email?.[0]?.toUpperCase() || "?"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || "User"}</p>
+                    <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || t("dashboard.user")}</p>
                     <p className="text-xs text-sidebar-foreground/50 truncate">{getTierShort()}</p>
                   </div>
                   <button
