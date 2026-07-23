@@ -199,8 +199,8 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
             <div className="mb-8">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-muted/20 flex items-center justify-center text-2xl flex-shrink-0 mt-0.5">
-                    {space.icon}
+                  <div className="w-10 h-10 rounded-lg bg-muted/20 flex items-center justify-center text-2xl flex-shrink-0 mt-0.5 overflow-hidden">
+                    <SpaceIconDisplay icon={space.icon} />
                   </div>
                   <div>
                     <h1 className="text-[32px] font-bold text-foreground leading-tight">{space.name}</h1>
