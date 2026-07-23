@@ -69,7 +69,7 @@ export function GamificationWidget() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-yellow-500" />
-            Daily Challenges
+            {t("dashboard.daily_challenges")}
           </h3>
           <span className="text-xs text-muted-foreground">
             {completedCount}/{totalChallenges}
