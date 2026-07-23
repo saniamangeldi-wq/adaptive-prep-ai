@@ -101,120 +101,23 @@ export default function Flashcards() {
     }
   };
 
-  // Study mode view
   if (selectedDeck) {
-    const currentCard = selectedDeck.cards[currentCardIndex];
-    const progress = ((currentCardIndex + 1) / selectedDeck.cards.length) * 100;
-
     return (
-      <DashboardLayout>
-      <PageSeo title="Smart Flashcards | AdaptivePrep" description="Create AI-generated flashcard decks and review spaced-repetition cards across SAT subjects." path="/dashboard/flashcards" />
-        <div className="max-w-2xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => {
-                setSelectedDeck(null);
-                setCurrentCardIndex(0);
-                setIsFlipped(false);
-              }}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Back to decks
-            </button>
-            <span className="text-sm text-muted-foreground">
-              {currentCardIndex + 1} of {selectedDeck.cards.length}
-            </span>
-          </div>
-
-          {/* Deck Title */}
-          <div className="text-center">
-            <h2 className="text-lg font-semibold text-foreground">{selectedDeck.title}</h2>
-            <p className="text-sm text-muted-foreground">{selectedDeck.description}</p>
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1 bg-secondary rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          {/* Flashcard */}
-          <div 
-            className="aspect-[4/3] perspective-1000 cursor-pointer"
-            onClick={() => setIsFlipped(!isFlipped)}
-          >
-            <div className={cn(
-              "relative w-full h-full transition-transform duration-500 transform-style-3d",
-              isFlipped && "rotate-y-180"
-            )}>
-              {/* Front */}
-              <div className="absolute inset-0 backface-hidden">
-                <div className="w-full h-full p-8 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/30 flex flex-col items-center justify-center text-center">
-                  <span className="text-xs text-primary mb-4">QUESTION</span>
-                  <h2 className="text-2xl font-bold text-foreground">{currentCard.front}</h2>
-                  <p className="text-sm text-muted-foreground mt-4">Click to reveal answer</p>
-                </div>
-              </div>
-              
-              {/* Back */}
-              <div className="absolute inset-0 backface-hidden rotate-y-180">
-                <div className="w-full h-full p-8 rounded-2xl bg-card border border-border flex flex-col items-center justify-center text-center overflow-y-auto">
-                  <span className="text-xs text-green-400 mb-4">ANSWER</span>
-                  <p className="text-lg text-foreground whitespace-pre-line">{currentCard.back}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="flex items-center justify-center gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentCardIndex(Math.max(0, currentCardIndex - 1));
-                setIsFlipped(false);
-              }}
-              disabled={currentCardIndex === 0}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentCardIndex(0);
-                setIsFlipped(false);
-                toast.success("Deck restarted!");
-              }}
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Restart
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentCardIndex(Math.min(selectedDeck.cards.length - 1, currentCardIndex + 1));
-                setIsFlipped(false);
-              }}
-              disabled={currentCardIndex === selectedDeck.cards.length - 1}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      </DashboardLayout>
+      <StudyDeckView
+        deck={selectedDeck}
+        currentCardIndex={currentCardIndex}
+        setCurrentCardIndex={setCurrentCardIndex}
+        isFlipped={isFlipped}
+        setIsFlipped={setIsFlipped}
+        onExit={() => {
+          setSelectedDeck(null);
+          setCurrentCardIndex(0);
+          setIsFlipped(false);
+        }}
+      />
     );
   }
+
 
   // Deck selection view
   return (
