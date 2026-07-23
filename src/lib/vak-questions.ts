@@ -33,12 +33,26 @@ export function getRetakeDays(tier: string): number {
   return 7; // All tiers: 1 week cooldown
 }
 
-// Spatial visual indicator questions (for Elite sub-typing)
-export const SPATIAL_VISUAL_QS = [1, 4, 17, 31, 41, 44, 47];
-// Expressive auditory indicator questions
-export const EXPRESSIVE_AUDITORY_QS = [16, 22, 27, 36, 39, 45];
-// Physical kinesthetic indicator questions
-export const PHYSICAL_KINESTHETIC_QS = [12, 20, 25, 43, 47];
+// ─── Elite sub-type indicator questions ─────────────────────
+// Elite currently serves the first 10 questions (ids 1–10) via
+// VAK_QUESTIONS.slice(0, getQuestionCountForTier("tier_3")).
+// All indicator IDs below MUST be a subset of {1..10} so they are
+// actually answered during the assessment.
+
+// Visual sub-types
+//   Spatial  = mental imagery / spatial reasoning (picture, map, visualize)
+//   Verbal   = text / notes / diagrams-with-words (default when NOT spatial)
+export const SPATIAL_VISUAL_QS = [2, 4, 6];
+
+// Auditory sub-types
+//   Expressive = talking / repeating out loud / verbalizing
+//   Receptive  = listening to others (default when NOT expressive)
+export const EXPRESSIVE_AUDITORY_QS = [2, 10];
+
+// Kinesthetic sub-types
+//   Physical = whole-body movement / walking / exercise
+//   Tactile  = hands-on writing / practicing (default when NOT physical)
+export const PHYSICAL_KINESTHETIC_QS = [4, 10];
 
 export const VAK_QUESTIONS: VAKQuestion[] = [
   // ==================== FREE TIER: Q1–Q15 ====================
