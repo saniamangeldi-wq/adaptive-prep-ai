@@ -4,8 +4,10 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, Circle, Sparkles, Trophy, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 export function GamificationWidget() {
+  const { t } = useTranslation();
   const { levelData, currentLevel, nextLevel, xpProgress, isLoading: levelLoading } = useXPLevel();
   const { challenges, completedCount, totalChallenges, allCompleted, isLoading: challengeLoading } = useDailyChallenges();
 
