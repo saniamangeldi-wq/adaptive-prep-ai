@@ -50,6 +50,7 @@ export default function AICoach() {
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
+  const [selectedSubject, setSelectedSubject] = useState("SAT");
   const [eliteModel, setEliteModel] = useState<EliteModel>(
     (profile?.preferred_ai_model as EliteModel) || "perplexity-pro"
   );
