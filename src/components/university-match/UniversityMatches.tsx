@@ -351,9 +351,21 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
                     </div>
                   </div>
 
-                  {/* Match Score */}
-                  <div className={`px-3 py-1 rounded-full font-semibold ${getMatchColor(match.match_score)}`}>
-                    {Math.round(match.match_score)}% Match
+                  {/* Fit Score + Bucket */}
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className={`px-3 py-1 rounded-full font-semibold ${getMatchColor(match.fit_score ?? match.match_score)}`}>
+                      {Math.round(match.fit_score ?? match.match_score)}% Fit
+                    </div>
+                    {match.admit_bucket && (
+                      <Badge
+                        variant="outline"
+                        className={BUCKET_META[match.admit_bucket].cls}
+                      >
+                        {BUCKET_META[match.admit_bucket].label}
+                        {match.admit_probability != null && match.admit_bucket !== "unknown" &&
+                          ` · ${Math.round(match.admit_probability * 100)}%`}
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
