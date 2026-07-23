@@ -10,12 +10,20 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { IconPicker } from "./IconPicker";
+import { SpaceReferencesEditor } from "./SpaceReferencesEditor";
+import type { Reference } from "@/hooks/useReferences";
 
 
 interface CreateSpaceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateSpace: (name: string, description: string, icon: string, instructions: string) => void;
+  onCreateSpace: (
+    name: string,
+    description: string,
+    icon: string,
+    instructions: string,
+    references: Reference[]
+  ) => void;
 }
 
 export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSpaceModalProps) {
@@ -23,26 +31,27 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("🎓");
   const [instructions, setInstructions] = useState("");
+  const [refs, setRefs] = useState<Reference[]>([]);
 
   const handleCreate = () => {
     if (!name.trim()) return;
-    onCreateSpace(name.trim(), description.trim(), icon, instructions.trim());
+    onCreateSpace(name.trim(), description.trim(), icon, instructions.trim(), refs);
     setName("");
     setDescription("");
     setIcon("🎓");
     setInstructions("");
+    setRefs([]);
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] border-border/30 bg-card">
+      <DialogContent className="sm:max-w-[480px] border-border/30 bg-card max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg">Create a Space</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          {/* Name */}
           <div>
             <label className="text-sm font-medium text-foreground mb-1.5 block">Space Name</label>
             <Input
@@ -53,7 +62,6 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
             />
           </div>
 
-          {/* Description */}
           <div>
             <label className="text-sm font-medium text-foreground mb-1.5 block">
               Description <span className="text-muted-foreground font-normal">(optional)</span>
@@ -65,14 +73,12 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
               className="bg-muted/30 border-border/30"
             />
           </div>
-          {/* Icon Picker */}
+
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">Icon</label>
             <IconPicker value={icon} onChange={setIcon} />
           </div>
 
-
-          {/* AI Instructions */}
           <div>
             <label className="text-sm font-medium text-foreground mb-1.5 block">
               Instructions for AI
@@ -80,13 +86,20 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
             <Textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-              placeholder="What should the AI focus on in this space?\ne.g. Only help me with SAT Math topics"
+              placeholder={"What should the AI focus on in this space?\ne.g. Only help me with SAT Math topics"}
               rows={4}
               className="bg-muted/30 border-border/30 resize-none"
             />
-            <p className="text-xs text-muted-foreground/60 mt-1.5">
-              This scopes all conversations in this space to your instructions.
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              📚 References <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Files, URLs, or pasted text the AI will always use in this Space.
             </p>
+            <SpaceReferencesEditor value={refs} onChange={(next) => setRefs(next)} />
           </div>
         </div>
 
