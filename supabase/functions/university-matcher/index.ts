@@ -46,6 +46,13 @@ function estimateAdmit(
 
   const baseline = clamp(acceptRate / 100, 0.01, 0.99);
 
+  // Prefer numeric columns; fall back to the free-text sat_range.
+  const numericP25 = typeof uni.sat_p25 === "number" ? uni.sat_p25 : null;
+  const numericP75 = typeof uni.sat_p75 === "number" ? uni.sat_p75 : null;
+  const parsed = (numericP25 == null || numericP75 == null) ? parseSatRange(uni.sat_range) : { p25: null, p75: null };
+  const effectiveP25 = numericP25 ?? parsed.p25;
+  const effectiveP75 = numericP75 ?? parsed.p75;
+
   const { p25, p75 } = parseSatRange(uni.sat_range);
   const effectiveP25 = p25;
   const effectiveP75 = p75;
