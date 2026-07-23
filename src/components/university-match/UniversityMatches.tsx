@@ -39,6 +39,9 @@ interface UniversityMatch {
     ranking_global: number | null;
   };
   match_score: number;
+  fit_score: number | null;
+  admit_probability: number | null;
+  admit_bucket: "safety" | "target" | "reach" | "unknown" | null;
   match_reason: string | null;
   financial_estimate: {
     scholarship_estimate?: number;
@@ -47,6 +50,13 @@ interface UniversityMatch {
   } | null;
   saved: boolean;
 }
+
+const BUCKET_META = {
+  safety: { label: "Safety", cls: "bg-green-500/15 text-green-500 border-green-500/30" },
+  target: { label: "Target", cls: "bg-blue-500/15 text-blue-500 border-blue-500/30" },
+  reach: { label: "Reach", cls: "bg-orange-500/15 text-orange-500 border-orange-500/30" },
+  unknown: { label: "Data unavailable", cls: "bg-muted text-muted-foreground border-border" },
+} as const;
 
 interface UniversityMatchesProps {
   onRestart: () => void;
@@ -110,6 +120,9 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
         .select(`
           id,
           match_score,
+          fit_score,
+          admit_probability,
+          admit_bucket,
           match_reason,
           financial_estimate,
           saved,
@@ -137,6 +150,7 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
       if (data && data.length > 0) {
         setMatches(data.map(m => ({
           ...m,
+          admit_bucket: (m.admit_bucket ?? null) as UniversityMatch["admit_bucket"],
           university: m.university as any,
           financial_estimate: m.financial_estimate as any
         })));
@@ -337,9 +351,21 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
                     </div>
                   </div>
 
-                  {/* Match Score */}
-                  <div className={`px-3 py-1 rounded-full font-semibold ${getMatchColor(match.match_score)}`}>
-                    {Math.round(match.match_score)}% Match
+                  {/* Fit Score + Bucket */}
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className={`px-3 py-1 rounded-full font-semibold ${getMatchColor(match.fit_score ?? match.match_score)}`}>
+                      {Math.round(match.fit_score ?? match.match_score)}% Fit
+                    </div>
+                    {match.admit_bucket && (
+                      <Badge
+                        variant="outline"
+                        className={BUCKET_META[match.admit_bucket].cls}
+                      >
+                        {BUCKET_META[match.admit_bucket].label}
+                        {match.admit_probability != null && match.admit_bucket !== "unknown" &&
+                          ` · ${Math.round(match.admit_probability * 100)}%`}
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
@@ -378,28 +404,28 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
                   </p>
                 )}
 
-                {/* Acceptance Chance */}
+                {/* Admit outlook */}
                 <div className="mt-3 p-3 bg-muted/30 rounded-lg border border-border">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Your Acceptance Chance</span>
+                      <span className="text-sm text-muted-foreground">Admit outlook</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-semibold ${getChanceColor(calculateAcceptanceChance(match.university))}`}>
-                        {calculateAcceptanceChance(match.university)}%
-                      </span>
-                      <Badge variant="outline" className={getChanceColor(calculateAcceptanceChance(match.university))}>
-                        {getChanceLabel(calculateAcceptanceChance(match.university))}
+                    {match.admit_bucket ? (
+                      <Badge variant="outline" className={BUCKET_META[match.admit_bucket].cls}>
+                        {BUCKET_META[match.admit_bucket].label}
+                        {match.admit_probability != null && match.admit_bucket !== "unknown" &&
+                          ` · ~${Math.round(match.admit_probability * 100)}%`}
                       </Badge>
-                    </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">data unavailable</span>
+                    )}
                   </div>
-                  <Progress 
-                    value={calculateAcceptanceChance(match.university)} 
-                    className="h-2"
-                  />
+                  {match.admit_probability != null && (
+                    <Progress value={Math.round(match.admit_probability * 100)} className="h-2" />
+                  )}
                   <p className="text-xs text-muted-foreground mt-2">
-                    Based on your profile. Click "Get My Plan" to improve your chances!
+                    Estimated from acceptance rate and SAT benchmarks vs. your profile.
                   </p>
                 </div>
 
