@@ -182,19 +182,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const iconStyle = { width: SIDEBAR.icon_size, height: SIDEBAR.icon_size };
 
   const getTierShort = () => {
-    if (profile?.is_trial) return "Trial";
+    if (profile?.is_trial) return t("dashboard.trial");
     if (profile?.role === "tutor") {
-      return profile?.tier === "tier_3" ? "Tutor Business" : profile?.tier === "tier_2" ? "Professional" : "Solo Tutor";
+      return profile?.tier === "tier_3" ? t("dashboard.tier_business") : profile?.tier === "tier_2" ? t("dashboard.tier_professional") : t("dashboard.tier_solo");
     }
     switch (profile?.tier) {
       case "tier_3":
-        return "Elite";
+        return t("dashboard.tier_elite");
       case "tier_2":
-        return "Pro";
+        return t("dashboard.tier_pro");
       case "tier_1":
-        return "Basic";
+        return t("dashboard.tier_basic");
       default:
-        return "Free";
+        return t("dashboard.tier_free");
     }
   };
 
