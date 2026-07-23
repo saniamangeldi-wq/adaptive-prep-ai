@@ -307,7 +307,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         >
           <button onClick={() => setBottomSheetOpen(!bottomSheetOpen)} className="w-full flex items-center justify-center gap-2 py-3 px-4 min-h-[56px]">
             <Zap className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-sidebar-foreground">Menu</span>
+            <span className="text-sm font-medium text-sidebar-foreground">{t("dashboard.menu")}</span>
             <div className="w-8 h-1 bg-sidebar-foreground/30 rounded-full ml-2" />
           </button>
 
