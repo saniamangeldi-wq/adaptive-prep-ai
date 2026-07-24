@@ -20,6 +20,8 @@ export interface UseSpeechSynthesisResult {
   paused: boolean;
   currentText: string;
   voices: SpeechSynthesisVoice[];
+  rate: number;
+  setRate: (rate: number) => void;
   /** Returns true if speech started, false if fallback/unsupported for that language */
   speak: (text: string, lang?: SpeechLang) => boolean;
   pause: () => void;
@@ -41,6 +43,16 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   // between chunked utterances, so we drive the UI from intent instead.
   const pauseIntentRef = useRef(false);
   const speakIntentRef = useRef(false);
+  const [rate, setRateState] = useState<number>(() => {
+    try {
+      const v = parseFloat(localStorage.getItem("lesson.speechRate") || "1");
+      return Number.isFinite(v) && v > 0 ? v : 1;
+    } catch { return 1; }
+  });
+  const rateRef = useRef(rate);
+  useEffect(() => { rateRef.current = rate; try { localStorage.setItem("lesson.speechRate", String(rate)); } catch {} }, [rate]);
+  const lastTextRef = useRef<string>("");
+  const lastLangRef = useRef<SpeechLang>("en");
 
   useEffect(() => {
     if (!supported) return;
@@ -128,6 +140,8 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
       const synth = window.speechSynthesis;
       const bcp = toBcp47(lang);
       const voice = pickVoice(bcp);
+      lastTextRef.current = text;
+      lastLangRef.current = lang;
 
       // Chunk long text into ~180-char sentence groups — Chrome cuts off
       // utterances after ~15s / ~200 chars, so we queue smaller chunks.
@@ -153,7 +167,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
           const u = new SpeechSynthesisUtterance(chunk);
           u.lang = bcp;
           if (voice) u.voice = voice;
-          u.rate = 1;
+          u.rate = rateRef.current;
           u.pitch = 1;
           u.onstart = () => {
             if (!pauseIntentRef.current) {
@@ -223,5 +237,24 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
     if (supported) window.speechSynthesis.cancel();
   }, [supported]);
 
-  return { supported, speaking, paused, currentText, voices, speak, pause, resume, stop, isLangFallback };
+  
+  const setRate = useCallback((r: number) => {
+    setRateState(r);
+    rateRef.current = r;
+    // If currently speaking, restart the current text at the new rate.
+    if (supported && speakIntentRef.current && lastTextRef.current) {
+      const text = lastTextRef.current;
+      const lang = lastLangRef.current;
+      window.speechSynthesis.cancel();
+      window.setTimeout(() => {
+        // Inline mini-speak using latest rate via ref; reuse `speak` closure.
+        speakRef.current?.(text, lang);
+      }, 120);
+    }
+  }, [supported]);
+
+  const speakRef = useRef(speak);
+  useEffect(() => { speakRef.current = speak; }, [speak]);
+
+  return { supported, speaking, paused, currentText, voices, rate, setRate, speak, pause, resume, stop, isLangFallback };
 }

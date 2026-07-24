@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { PageSeo } from "@/components/seo/PageSeo";
-import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle, Volume2, VolumeX, Pause, Play, Sparkles, Maximize2, Minimize2, SkipForward, SkipBack } from "lucide-react";
+import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle, Volume2, VolumeX, Pause, Play, Sparkles, Maximize2, Minimize2, SkipForward, SkipBack, X, Gauge } from "lucide-react";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
@@ -207,17 +207,55 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
     }
   }, [tts.speaking, tts.paused, autoPlayNarration, slideIdx, total]);
 
-  // Fullscreen state
+  // Fullscreen state — track vendor-prefixed events for cross-browser reliability
   useEffect(() => {
-    const onFs = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onFs);
-    return () => document.removeEventListener("fullscreenchange", onFs);
+    const onFs = () => {
+      const el =
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement ||
+        (document as any).mozFullScreenElement;
+      setIsFullscreen(!!el);
+    };
+    const events = ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"];
+    events.forEach(e => document.addEventListener(e, onFs));
+    return () => events.forEach(e => document.removeEventListener(e, onFs));
   }, []);
-  const toggleFullscreen = () => {
-    if (!videoRef.current) return;
-    if (document.fullscreenElement) document.exitFullscreen();
-    else videoRef.current.requestFullscreen?.();
+  const enterFullscreen = async () => {
+    const node = videoRef.current as any;
+    if (!node) return;
+    try {
+      const req = node.requestFullscreen || node.webkitRequestFullscreen || node.msRequestFullscreen || node.mozRequestFullScreen;
+      if (req) await req.call(node);
+    } catch (e) {
+      console.warn("Fullscreen request failed", e);
+      toast({ title: "Fullscreen unavailable", description: "Your browser blocked fullscreen for this page." });
+    }
   };
+  const exitFullscreen = async () => {
+    const doc = document as any;
+    try {
+      const exit = document.exitFullscreen || doc.webkitExitFullscreen || doc.msExitFullscreen || doc.mozCancelFullScreen;
+      if (exit) await exit.call(document);
+    } catch (e) { console.warn(e); }
+  };
+  const toggleFullscreen = () => {
+    const active =
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).msFullscreenElement ||
+      (document as any).mozFullScreenElement;
+    if (active) exitFullscreen(); else enterFullscreen();
+  };
+
+  // Esc handler as an additional exit path (some browsers don't fire fullscreenchange reliably on secondary monitors)
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") exitFullscreen(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
+
 
 
   if (loadingVariant) {
@@ -442,6 +480,18 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                   </button>
                 )}
 
+                {/* Prominent exit-fullscreen button (only visible in fullscreen) */}
+                {isFullscreen && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); exitFullscreen(); }}
+                    className="absolute top-4 right-4 z-40 flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/70 hover:bg-black/90 text-white text-xs font-medium border border-white/20 backdrop-blur-sm shadow-lg"
+                    aria-label="Exit fullscreen"
+                  >
+                    <X className="h-4 w-4" /> Exit fullscreen
+                    <span className="hidden md:inline text-white/50 ml-1 text-[10px]">Esc</span>
+                  </button>
+                )}
+
                 {/* Player chrome */}
                 <div className="absolute left-0 right-0 bottom-0 z-30 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-10 pb-3 px-4 md:px-6">
                   {/* Chapter scrubber */}
@@ -500,6 +550,25 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                       >
                         CC
                       </button>
+                      {/* Playback speed */}
+                      <div className="flex items-center gap-0.5 rounded border border-white/20 overflow-hidden">
+                        <Gauge className="h-3.5 w-3.5 text-white/60 ml-1.5 mr-0.5" />
+                        {[0.75, 1, 1.25, 1.5].map((r) => (
+                          <button
+                            key={r}
+                            onClick={() => tts.setRate(r)}
+                            className={cn(
+                              "px-1.5 py-1 text-[10px] font-semibold tabular-nums transition-colors",
+                              Math.abs(tts.rate - r) < 0.01
+                                ? "bg-primary text-primary-foreground"
+                                : "text-white/70 hover:bg-white/10"
+                            )}
+                            aria-label={`Playback speed ${r}x`}
+                          >
+                            {r}x
+                          </button>
+                        ))}
+                      </div>
                       <label className="flex items-center gap-1.5 text-[11px] text-white/80 cursor-pointer select-none px-2">
                         <input
                           type="checkbox"
