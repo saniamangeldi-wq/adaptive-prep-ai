@@ -31,6 +31,11 @@ export interface UseSpeechSynthesisResult {
   pause: () => void;
   resume: () => void;
   stop: () => void;
+  /** Jump forward/back within the current narration by seconds. */
+  seekBy: (seconds: number) => void;
+  /** Restart current narration from the beginning. */
+  replay: () => void;
+
   /** true if a voice for the requested lang is unavailable and a fallback will be used */
   isLangFallback: (lang: SpeechLang) => boolean;
 }
