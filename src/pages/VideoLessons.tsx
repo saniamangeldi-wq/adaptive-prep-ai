@@ -122,6 +122,7 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
   const [submitted, setSubmitted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showCaptions, setShowCaptions] = useState(true);
+  const [showChapters, setShowChapters] = useState(false);
   const videoRef = useRef<HTMLDivElement>(null);
   const { i18n } = useTranslation();
   const lang = (i18n.language || "en").slice(0, 2);
