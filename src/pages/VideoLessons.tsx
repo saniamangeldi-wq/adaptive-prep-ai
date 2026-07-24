@@ -425,19 +425,6 @@ export default function VideoLessons() {
             <TabsContent value="verbal" className="mt-4">{renderList("verbal")}</TabsContent>
           </Tabs>
         )}
-
-        {isLoading ? (
-          <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-        ) : (
-          <Tabs defaultValue="math" onValueChange={() => setSectionFilter("all")}>
-            <TabsList>
-              <TabsTrigger value="math">SAT Math (50)</TabsTrigger>
-              <TabsTrigger value="verbal">SAT Verbal (50)</TabsTrigger>
-            </TabsList>
-            <TabsContent value="math" className="mt-4">{renderList("math")}</TabsContent>
-            <TabsContent value="verbal" className="mt-4">{renderList("verbal")}</TabsContent>
-          </Tabs>
-        )}
       </div>
     </DashboardLayout>
   );
