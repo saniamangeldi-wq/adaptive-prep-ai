@@ -1,5 +1,21 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export interface QuestionTable {
+  headers: string[];
+  rows: string[][];
+  caption?: string;
+}
+
+export interface QuestionFigure {
+  type: "image" | "svg";
+  /** Image URL when type is "image". */
+  src?: string;
+  /** Inline SVG markup when type is "svg". Sanitized at render time. */
+  svg?: string;
+  alt: string;
+  caption?: string;
+}
+
 export interface Question {
   id: string;
   type: "multiple_choice" | "grid_in";
@@ -10,9 +26,15 @@ export interface Question {
   options: string[];
   correct_answer: string;
   explanation: string;
-  /** Optional figure/diagram URL (https or data:image/...). Rendered above the question text. */
+  /** Optional passage / intro text shown above the question prompt. */
+  stimulus?: string;
+  /** Optional structured data table rendered above the question text. */
+  table?: QuestionTable;
+  /** Optional figure (image URL or inline SVG). */
+  figure?: QuestionFigure;
+  /** Legacy shorthand: image URL. Mapped to figure at render time. */
   image_url?: string;
-  /** Optional alt text for the figure. */
+  /** Legacy shorthand: alt text for image_url. */
   image_alt?: string;
 }
 
