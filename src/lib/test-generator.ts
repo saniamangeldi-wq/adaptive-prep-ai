@@ -303,9 +303,17 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     return { match, other };
   };
 
+  // Topic filter: narrow the pool BEFORE difficulty/seen ranking runs.
+  const topicFilter = (config.topics ?? []).filter(Boolean);
+  const topicFiltered = topicFilter.length
+    ? allQuestions.filter((q) =>
+        topicFilter.includes(mapToCanonicalTopic(q.topic, q.section))
+      )
+    : allQuestions;
+
   // CHANGE 3: Fisher-Yates instead of biased Math.random()-0.5 sort.
-  const unseenAll = shuffle(allQuestions.filter((q) => !seenQuestionIds.has(q.id)));
-  const seenAll = allQuestions
+  const unseenAll = shuffle(topicFiltered.filter((q) => !seenQuestionIds.has(q.id)));
+  const seenAll = topicFiltered
     .filter((q) => seenQuestionIds.has(q.id))
     .sort((a, b) => (lastSeenAt.get(a.id) ?? 0) - (lastSeenAt.get(b.id) ?? 0));
 
