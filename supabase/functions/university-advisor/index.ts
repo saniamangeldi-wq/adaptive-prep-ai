@@ -217,7 +217,7 @@ serve(async (req) => {
      // Get student profile
      const { data: profile } = await supabase
        .from("profiles")
-       .select("full_name, grade_level, study_subjects, primary_goal")
+       .select("full_name, grade_level, study_subjects, primary_goal, preferred_language")
        .eq("user_id", effectiveStudentId)
        .maybeSingle();
  
@@ -292,7 +292,9 @@ CRITICAL OUTPUT RULES:
  - Use clear structure with headers and bullet points
  - Break down complex tasks into actionable steps
  - Celebrate progress and acknowledge challenges
- - When creating a full 12-month plan, structure it clearly by month`;
+ - When creating a full 12-month plan, structure it clearly by month
+
+LANGUAGE: The student's language is ${((profile as any)?.preferred_language === "ru") ? "Russian (Русский)" : ((profile as any)?.preferred_language === "kk") ? "Kazakh (Қазақша)" : "English"}. Respond ONLY in that language. All explanations, plans, encouragement, and headers must be in that language. Keep proper nouns (university names, SAT, ACT, AP) as-is, but write everything else in the student's language.`;
  
      const aiMessages = [
        { role: "system", content: systemPrompt },
