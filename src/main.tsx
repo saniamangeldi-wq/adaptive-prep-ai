@@ -5,11 +5,18 @@ import App from "./App.tsx";
 import "./i18n";
 import "./index.css";
 import "katex/dist/katex.min.css";
+import { registerAppServiceWorker } from "./lib/pwa";
 
-createRoot(document.getElementById("root")!).render(
-  <HelmetProvider>
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <App />
-    </ThemeProvider>
-  </HelmetProvider>
-);
+const rootElement = document.getElementById("root");
+
+if (rootElement) {
+  createRoot(rootElement).render(
+    <HelmetProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <App />
+      </ThemeProvider>
+    </HelmetProvider>,
+  );
+
+  void registerAppServiceWorker();
+}

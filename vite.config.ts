@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => ({
     mcpPlugin(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: null,
+      filename: "app-sw.js",
       includeAssets: ["favicon.ico", "pwa-icon-192.png", "pwa-icon-512.png"],
       manifest: {
         name: "AdaptivePrep - AI-Powered Learning",
@@ -52,12 +54,40 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,ico,png,svg,woff2}"],
+        navigateFallback: null,
         navigateFallbackDenylist: [/^\/~oauth/],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [
+          {
+            urlPattern: ({ request, url }) =>
+              request.mode === "navigate" && !url.pathname.startsWith("/~oauth"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "app-shell",
+              cacheableResponse: {
+                statuses: [200],
+              },
+            },
+          },
+          {
+            urlPattern: ({ request, url }) =>
+              url.pathname.startsWith("/assets/") &&
+              ["script", "style", "worker"].includes(request.destination),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "hashed-assets",
+              expiration: {
+                maxEntries: 80,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+              },
+              cacheableResponse: {
+                statuses: [200],
+              },
+            },
+          },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: "NetworkFirst",
@@ -70,6 +100,9 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ],
+      },
+      devOptions: {
+        enabled: false,
       },
     }),
   ].filter(Boolean),
