@@ -324,78 +324,217 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
           </div>
         </div>
 
-        {total > 0 && (
-          <>
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Slide {slideIdx + 1} of {total}</span>
-                <span>{Math.round(((slideIdx + 1) / total) * 100)}%</span>
-              </div>
-              <Progress value={((slideIdx + 1) / total) * 100} className="h-1.5" />
-            </div>
+        {total > 0 && (() => {
+          const narrationText = slide.narration || [slide.heading, ...(slide.bullets || []), slide.example || ""].filter(Boolean).join(". ");
+          const isPlaying = tts.speaking && !tts.paused;
+          const handlePlayPause = () => {
+            if (slide.audio_url) return;
+            if (isPlaying) { tts.pause(); return; }
+            if (tts.paused) { tts.resume(); return; }
+            if (narrationText) tts.speak(narrationText, lang);
+          };
+          return (
+            <>
+              <div
+                ref={videoRef}
+                className={cn(
+                  "relative rounded-2xl overflow-hidden border border-border/60 shadow-2xl bg-[#0B0D14] group",
+                  isFullscreen ? "h-screen" : ""
+                )}
+              >
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 opacity-70">
+                  <div className="absolute -inset-20 bg-[radial-gradient(circle_at_20%_30%,hsl(var(--primary)/0.25),transparent_45%),radial-gradient(circle_at_80%_70%,hsl(var(--primary)/0.18),transparent_50%),radial-gradient(circle_at_50%_100%,hsl(var(--primary)/0.12),transparent_60%)] animate-[pulse_8s_ease-in-out_infinite]" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-background/40 to-background/80" />
+                </div>
+                {/* Grain overlay */}
+                <div
+                  className="absolute inset-0 opacity-[0.04] mix-blend-overlay pointer-events-none"
+                  style={{ backgroundImage: "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")" }}
+                />
 
-            <Card className="border-border/60 shadow-xl bg-card">
-              <CardContent className="p-8 md:p-12 space-y-6 min-h-[520px] flex flex-col justify-center">
-                <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">{slide.heading}</h2>
-                {slide.bullets && slide.bullets.length > 0 && (
-                  <ul className="space-y-4 max-w-3xl">
-                    {slide.bullets.map((b, i) => (
-                      <li key={i} className="flex items-start gap-3 text-lg md:text-xl leading-relaxed text-foreground">
-                        <span className="mt-2.5 h-2 w-2 rounded-full bg-primary shrink-0" />
-                        <span>{b}</span>
-                      </li>
+                {/* Scene content */}
+                <div
+                  key={slideIdx}
+                  className={cn(
+                    "relative z-10 flex flex-col justify-center animate-fade-in",
+                    isFullscreen ? "px-16 py-20 min-h-screen" : "px-8 md:px-14 py-14 md:py-20 min-h-[560px]"
+                  )}
+                >
+                  <div className="max-w-4xl mx-auto w-full space-y-8">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary/80 font-semibold animate-fade-in">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                      Scene {slideIdx + 1} · {lesson.topic}
+                    </div>
+                    <h2
+                      className="text-4xl md:text-6xl font-bold text-foreground leading-[1.05] tracking-tight animate-fade-in"
+                      style={{ animationDelay: "80ms", animationFillMode: "backwards" }}
+                    >
+                      {slide.heading}
+                    </h2>
+                    {slide.bullets && slide.bullets.length > 0 && (
+                      <ul className="space-y-4 md:space-y-5">
+                        {slide.bullets.map((b, i) => (
+                          <li
+                            key={`${slideIdx}-${i}`}
+                            className="flex items-start gap-4 text-lg md:text-2xl leading-relaxed text-foreground/95 animate-fade-in"
+                            style={{ animationDelay: `${300 + i * 450}ms`, animationFillMode: "backwards" }}
+                          >
+                            <span className="mt-3 h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary))] shrink-0" />
+                            <span>{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {slide.example && slide.example.trim() && slide.example.trim().toUpperCase() !== "N/A" && (
+                      <div
+                        className="mt-2 rounded-2xl border border-primary/30 bg-primary/5 backdrop-blur-sm p-5 md:p-7 animate-fade-in"
+                        style={{ animationDelay: `${300 + (slide.bullets?.length || 0) * 450 + 100}ms`, animationFillMode: "backwards" }}
+                      >
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-primary font-semibold mb-2">
+                          <Sparkles className="h-3.5 w-3.5" /> Worked Example
+                        </div>
+                        <p className="text-base md:text-lg text-foreground whitespace-pre-wrap leading-relaxed">{slide.example}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Captions band */}
+                {showCaptions && slide.narration && (
+                  <div className="absolute left-0 right-0 bottom-24 px-6 z-20 pointer-events-none">
+                    <div className="mx-auto max-w-3xl text-center">
+                      <span className="inline-block px-4 py-2 rounded-md bg-black/70 backdrop-blur-sm text-white text-sm md:text-base leading-relaxed">
+                        {slide.narration}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Big center play button when paused */}
+                {!isPlaying && !slide.audio_url && (
+                  <button
+                    onClick={handlePlayPause}
+                    className="absolute inset-0 z-20 flex items-center justify-center group/play"
+                    aria-label="Play"
+                  >
+                    <span className="h-20 w-20 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground flex items-center justify-center shadow-2xl transition-transform group-hover/play:scale-110">
+                      <Play className="h-9 w-9 ml-1" fill="currentColor" />
+                    </span>
+                  </button>
+                )}
+
+                {/* Player chrome */}
+                <div className="absolute left-0 right-0 bottom-0 z-30 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-10 pb-3 px-4 md:px-6">
+                  {/* Chapter scrubber */}
+                  <div className="flex items-center gap-1 mb-3">
+                    {slides.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setSlideIdx(i)}
+                        className={cn(
+                          "h-1.5 flex-1 rounded-full transition-all",
+                          i < slideIdx ? "bg-primary" :
+                          i === slideIdx ? "bg-primary shadow-[0_0_8px_hsl(var(--primary))]" :
+                          "bg-white/25 hover:bg-white/40"
+                        )}
+                        aria-label={`Go to scene ${i + 1}`}
+                      />
                     ))}
-                  </ul>
-                )}
-                {slide.narration && (
-                  <p className="text-base md:text-lg text-muted-foreground italic border-l-4 border-primary/50 pl-4 max-w-3xl leading-relaxed">{slide.narration}</p>
-                )}
-                {slide.audio_url ? (
-                  <div className="flex items-center gap-2 bg-muted/20 rounded-lg p-2">
-                    <Volume2 className="h-4 w-4 text-primary shrink-0 ml-1" />
-                    <audio
-                      key={slide.audio_url}
-                      controls
-                      autoPlay
-                      src={slide.audio_url}
-                      className="w-full h-8"
-                    />
                   </div>
-                ) : tts.supported ? (
-                  <NarrationBar
-                    text={slide.narration || [slide.heading, ...(slide.bullets || []), slide.example || ""].filter(Boolean).join(". ")}
-                    lang={lang}
-                    tts={tts}
-                    autoPlay={autoPlayNarration}
-                    onToggleAutoPlay={() => setAutoPlayNarration(v => !v)}
+                  <div className="flex items-center gap-2 text-white">
+                    <button
+                      onClick={() => setSlideIdx(i => Math.max(0, i - 1))}
+                      disabled={slideIdx === 0}
+                      className="p-2 rounded hover:bg-white/10 disabled:opacity-30"
+                      aria-label="Previous scene"
+                    >
+                      <SkipBack className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={handlePlayPause}
+                      className="p-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                      aria-label={isPlaying ? "Pause" : "Play"}
+                    >
+                      {isPlaying ? <Pause className="h-4 w-4" fill="currentColor" /> : <Play className="h-4 w-4 ml-0.5" fill="currentColor" />}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (slideIdx < total - 1) setSlideIdx(i => i + 1);
+                        else setShowQuiz(true);
+                      }}
+                      className="p-2 rounded hover:bg-white/10"
+                      aria-label="Next scene"
+                    >
+                      <SkipForward className="h-4 w-4" />
+                    </button>
+                    <span className="text-xs text-white/80 tabular-nums ml-1">
+                      {slideIdx + 1} / {total}
+                    </span>
+                    <div className="ml-auto flex items-center gap-1">
+                      <button
+                        onClick={() => setShowCaptions(v => !v)}
+                        className={cn(
+                          "px-2 py-1 rounded text-[10px] font-bold border transition-colors",
+                          showCaptions ? "border-white/70 text-white" : "border-white/30 text-white/50"
+                        )}
+                        aria-label="Toggle captions"
+                      >
+                        CC
+                      </button>
+                      <label className="flex items-center gap-1.5 text-[11px] text-white/80 cursor-pointer select-none px-2">
+                        <input
+                          type="checkbox"
+                          checked={autoPlayNarration}
+                          onChange={() => setAutoPlayNarration(v => !v)}
+                          className="h-3 w-3 accent-primary"
+                        />
+                        Autoplay
+                      </label>
+                      <button
+                        onClick={tts.stop}
+                        className="p-2 rounded hover:bg-white/10"
+                        aria-label="Stop"
+                      >
+                        <VolumeX className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={toggleFullscreen}
+                        className="p-2 rounded hover:bg-white/10"
+                        aria-label="Toggle fullscreen"
+                      >
+                        {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hidden native audio player for pre-generated audio */}
+                {slide.audio_url && (
+                  <audio
+                    key={slide.audio_url}
+                    autoPlay
+                    src={slide.audio_url}
+                    className="hidden"
+                    onEnded={() => {
+                      if (autoPlayNarration && slideIdx < total - 1) {
+                        window.setTimeout(() => setSlideIdx(i => i + 1), 900);
+                      }
+                    }}
                   />
-                ) : null}
-                {slide.example && slide.example.trim() && slide.example.trim().toUpperCase() !== "N/A" && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 md:p-6 space-y-2">
-                    <span className="text-xs uppercase tracking-wider text-primary font-semibold">Example</span>
-                    <p className="text-base md:text-lg text-foreground whitespace-pre-wrap leading-relaxed">{slide.example}</p>
-                  </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
 
-
-            <div className="flex items-center justify-between gap-2">
-              <Button variant="outline" disabled={slideIdx === 0} onClick={() => setSlideIdx(i => i - 1)} className="gap-2">
-                <ChevronLeft className="h-4 w-4" /> Previous
-              </Button>
-              {slideIdx < total - 1 ? (
-                <Button onClick={() => setSlideIdx(i => i + 1)} className="gap-2">
-                  Next <ChevronRight className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button onClick={() => setShowQuiz(true)} className="gap-2">
-                  Take Quiz <ChevronRight className="h-4 w-4" />
-                </Button>
+              {slideIdx === total - 1 && (
+                <div className="flex justify-end">
+                  <Button onClick={() => setShowQuiz(true)} className="gap-2">
+                    Take Quiz <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
-            </div>
-          </>
-        )}
+            </>
+          );
+        })()}
       </div>
     </DashboardLayout>
   );
