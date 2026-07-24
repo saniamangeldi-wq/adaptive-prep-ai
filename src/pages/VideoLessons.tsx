@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { PageSeo } from "@/components/seo/PageSeo";
-import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle } from "lucide-react";
+import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle, Volume2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Vak = "visual" | "auditory" | "reading_writing" | "kinesthetic";
@@ -32,6 +32,7 @@ interface Slide {
   bullets?: string[];
   narration?: string;
   example?: string | null;
+  audio_url?: string;
 }
 
 interface Quiz {
@@ -229,6 +230,18 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                 {slide.narration && (
                   <p className="text-muted-foreground italic border-l-2 border-primary/40 pl-3">{slide.narration}</p>
                 )}
+                {slide.audio_url && (
+                  <div className="flex items-center gap-2 bg-muted/20 rounded-lg p-2">
+                    <Volume2 className="h-4 w-4 text-primary shrink-0 ml-1" />
+                    <audio
+                      key={slide.audio_url}
+                      controls
+                      autoPlay
+                      src={slide.audio_url}
+                      className="w-full h-8"
+                    />
+                  </div>
+                )}
                 {slide.example && (
                   <div className="bg-muted/30 rounded-lg p-3 text-sm">
                     <span className="text-xs uppercase tracking-wide text-muted-foreground">Example</span>
@@ -261,8 +274,11 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
 
 export default function VideoLessons() {
   const { user, profile } = useAuth();
+  const { toast } = useToast();
   const [selected, setSelected] = useState<PrebuiltLesson | null>(null);
   const [sectionFilter, setSectionFilter] = useState<string>("all");
+  const [genProgress, setGenProgress] = useState<{ done: number; total: number } | null>(null);
+  const isAdmin = (profile as any)?.role === "school_admin" || (profile as any)?.role === "admin";
 
   const vak: Vak = useMemo(() => {
     const s = (profile as any)?.learning_style;
@@ -355,14 +371,46 @@ export default function VideoLessons() {
     <DashboardLayout>
       <PageSeo title="Lessons | AdaptivePrep" description="100 SAT lessons personalized to your learning style — saved to your account." path="/dashboard/lessons" />
       <div className="max-w-5xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-primary" />
-            Lessons
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            100 SAT lessons adapted to your learning style ({vak.replace("_", "/")}). Progress saves automatically.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <BookOpen className="h-6 w-6 text-primary" />
+              Lessons
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              100 SAT lessons adapted to your learning style ({vak.replace("_", "/")}). Progress saves automatically.
+            </p>
+          </div>
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2 shrink-0"
+              disabled={!!genProgress}
+              onClick={async () => {
+                const ids = lessons.map(l => l.id);
+                setGenProgress({ done: 0, total: ids.length });
+                let ok = 0, fail = 0;
+                for (let i = 0; i < ids.length; i++) {
+                  try {
+                    const { error } = await supabase.functions.invoke("generate-lesson-audio", {
+                      body: { lesson_id: ids[i] },
+                    });
+                    if (error) { fail++; console.error(error); } else { ok++; }
+                  } catch (e) { fail++; console.error(e); }
+                  setGenProgress({ done: i + 1, total: ids.length });
+                }
+                setGenProgress(null);
+                toast({ title: "Audio generation complete", description: `${ok} lessons ok, ${fail} failed.` });
+              }}
+            >
+              {genProgress ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> {genProgress.done}/{genProgress.total}</>
+              ) : (
+                <><Sparkles className="h-4 w-4" /> Generate audio (admin)</>
+              )}
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
