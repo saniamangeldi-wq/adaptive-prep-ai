@@ -197,15 +197,15 @@ export default function PracticeTests() {
                 {view === "menu"
                   ? "Practice"
                   : testMode === "official"
-                  ? "Practice Tests"
-                  : "Practice Questions"}
+                  ? "Official SAT"
+                  : "Practice Session"}
               </h1>
               <p className="text-muted-foreground mt-1">
                 {view === "menu"
                   ? "Choose how you want to study today"
                   : testMode === "official"
-                  ? "Full official Digital SAT format"
-                  : "Configure a custom quick practice session"}
+                  ? "Full Digital SAT — 4 modules, directions, break, review"
+                  : "Configure a flexible custom practice session"}
               </p>
             </div>
           </div>
