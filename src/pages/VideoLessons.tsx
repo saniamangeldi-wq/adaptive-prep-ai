@@ -327,18 +327,35 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
         {total > 0 && (() => {
           const narrationText = slide.narration || [slide.heading, ...(slide.bullets || []), slide.example || ""].filter(Boolean).join(". ");
           const isPlaying = tts.speaking && !tts.paused;
+          const isPaused = tts.paused;
           const handlePlayPause = () => {
             if (slide.audio_url) return;
             if (isPlaying) { tts.pause(); return; }
             if (tts.paused) { tts.resume(); return; }
             if (narrationText) tts.speak(narrationText, lang);
           };
+          const handleVideoKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+            if (event.code !== "Space") return;
+            const target = event.target as HTMLElement;
+            if (["BUTTON", "INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)) return;
+            event.preventDefault();
+            handlePlayPause();
+          };
           return (
             <>
               <div
                 ref={videoRef}
+                tabIndex={0}
+                role="region"
+                aria-label="Lesson video player"
+                onClick={(event) => {
+                  const target = event.target as HTMLElement;
+                  if (target.closest("button, input, select, [role='combobox']")) return;
+                  handlePlayPause();
+                }}
+                onKeyDown={handleVideoKeyDown}
                 className={cn(
-                  "relative rounded-2xl overflow-hidden border border-border/60 shadow-2xl bg-[#0B0D14] group",
+                  "relative rounded-2xl overflow-hidden border border-border/60 shadow-2xl bg-[#0B0D14] group focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer",
                   isFullscreen ? "h-screen" : ""
                 )}
               >
@@ -401,22 +418,22 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                 </div>
 
                 {/* Captions band */}
-                {showCaptions && slide.narration && (
+                {showCaptions && (tts.currentText || slide.narration) && (
                   <div className="absolute left-0 right-0 bottom-24 px-6 z-20 pointer-events-none">
                     <div className="mx-auto max-w-3xl text-center">
                       <span className="inline-block px-4 py-2 rounded-md bg-black/70 backdrop-blur-sm text-white text-sm md:text-base leading-relaxed">
-                        {slide.narration}
+                        {tts.currentText || (isPaused ? "Paused" : "")}
                       </span>
                     </div>
                   </div>
                 )}
 
-                {/* Big center play button when paused */}
-                {!isPlaying && !slide.audio_url && (
+                {/* Big center play button when paused/stopped */}
+                {(!isPlaying || isPaused) && !slide.audio_url && (
                   <button
                     onClick={handlePlayPause}
                     className="absolute inset-0 z-20 flex items-center justify-center group/play"
-                    aria-label="Play"
+                    aria-label={isPaused ? "Resume" : "Play"}
                   >
                     <span className="h-20 w-20 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground flex items-center justify-center shadow-2xl transition-transform group-hover/play:scale-110">
                       <Play className="h-9 w-9 ml-1" fill="currentColor" />
@@ -454,7 +471,7 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                     <button
                       onClick={handlePlayPause}
                       className="p-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                      aria-label={isPlaying ? "Pause" : "Play"}
+                      aria-label={isPlaying ? "Pause" : isPaused ? "Resume" : "Play"}
                     >
                       {isPlaying ? <Pause className="h-4 w-4" fill="currentColor" /> : <Play className="h-4 w-4 ml-0.5" fill="currentColor" />}
                     </button>
