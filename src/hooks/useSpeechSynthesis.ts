@@ -43,6 +43,16 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   // between chunked utterances, so we drive the UI from intent instead.
   const pauseIntentRef = useRef(false);
   const speakIntentRef = useRef(false);
+  const [rate, setRateState] = useState<number>(() => {
+    try {
+      const v = parseFloat(localStorage.getItem("lesson.speechRate") || "1");
+      return Number.isFinite(v) && v > 0 ? v : 1;
+    } catch { return 1; }
+  });
+  const rateRef = useRef(rate);
+  useEffect(() => { rateRef.current = rate; try { localStorage.setItem("lesson.speechRate", String(rate)); } catch {} }, [rate]);
+  const lastTextRef = useRef<string>("");
+  const lastLangRef = useRef<SpeechLang>("en");
 
   useEffect(() => {
     if (!supported) return;
