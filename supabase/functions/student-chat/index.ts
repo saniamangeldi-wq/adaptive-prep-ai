@@ -562,7 +562,7 @@ serve(async (req) => {
     // Get user profile for learning style, subjects, and credits
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("learning_style, tier, credits_remaining, credits_reset_at, is_trial, study_subjects, grade_level, primary_goal, full_name")
+      .select("learning_style, tier, credits_remaining, credits_reset_at, is_trial, study_subjects, grade_level, primary_goal, full_name, preferred_language")
       .eq("user_id", userId)
       .single();
 
@@ -704,6 +704,11 @@ serve(async (req) => {
       studySubjects: userSubjects,
     };
     let systemPrompt = getStudentSystemPrompt(profileCtx, modelConfig.qualityNote, detectedSubject);
+
+    // Language instruction — respond in user's preferred language
+    const langCode = (profile as any).preferred_language || "en";
+    const langName = langCode === "ru" ? "Russian (Русский)" : langCode === "kk" ? "Kazakh (Қазақша)" : "English";
+    systemPrompt += `\n\nIMPORTANT: The student's language is ${langName}. Respond ONLY in ${langName}. All explanations, examples, and encouragement must be in ${langName}. Keep subject-specific terms (SAT, math notation, chemical symbols) as-is, but write everything else in ${langName}. If you output structured JSON widgets, keep JSON keys in English but all human-readable values (question text, options, explanations, feedback) must be in ${langName}.`;
 
     // Append cognitive profile guidance if available
     try {
