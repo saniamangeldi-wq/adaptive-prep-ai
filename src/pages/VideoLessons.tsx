@@ -371,15 +371,60 @@ export default function VideoLessons() {
     <DashboardLayout>
       <PageSeo title="Lessons | AdaptivePrep" description="100 SAT lessons personalized to your learning style — saved to your account." path="/dashboard/lessons" />
       <div className="max-w-5xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-primary" />
-            Lessons
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            100 SAT lessons adapted to your learning style ({vak.replace("_", "/")}). Progress saves automatically.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <BookOpen className="h-6 w-6 text-primary" />
+              Lessons
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              100 SAT lessons adapted to your learning style ({vak.replace("_", "/")}). Progress saves automatically.
+            </p>
+          </div>
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2 shrink-0"
+              disabled={!!genProgress}
+              onClick={async () => {
+                const ids = lessons.map(l => l.id);
+                setGenProgress({ done: 0, total: ids.length });
+                let ok = 0, fail = 0;
+                for (let i = 0; i < ids.length; i++) {
+                  try {
+                    const { error } = await supabase.functions.invoke("generate-lesson-audio", {
+                      body: { lesson_id: ids[i] },
+                    });
+                    if (error) { fail++; console.error(error); } else { ok++; }
+                  } catch (e) { fail++; console.error(e); }
+                  setGenProgress({ done: i + 1, total: ids.length });
+                }
+                setGenProgress(null);
+                toast({ title: "Audio generation complete", description: `${ok} lessons ok, ${fail} failed.` });
+              }}
+            >
+              {genProgress ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> {genProgress.done}/{genProgress.total}</>
+              ) : (
+                <><Sparkles className="h-4 w-4" /> Generate audio (admin)</>
+              )}
+            </Button>
+          )}
         </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        ) : (
+          <Tabs defaultValue="math" onValueChange={() => setSectionFilter("all")}>
+            <TabsList>
+              <TabsTrigger value="math">SAT Math (50)</TabsTrigger>
+              <TabsTrigger value="verbal">SAT Verbal (50)</TabsTrigger>
+            </TabsList>
+            <TabsContent value="math" className="mt-4">{renderList("math")}</TabsContent>
+            <TabsContent value="verbal" className="mt-4">{renderList("verbal")}</TabsContent>
+          </Tabs>
+        )}
 
         {isLoading ? (
           <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
