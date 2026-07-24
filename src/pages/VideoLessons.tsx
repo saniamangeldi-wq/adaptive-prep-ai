@@ -207,17 +207,55 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
     }
   }, [tts.speaking, tts.paused, autoPlayNarration, slideIdx, total]);
 
-  // Fullscreen state
+  // Fullscreen state — track vendor-prefixed events for cross-browser reliability
   useEffect(() => {
-    const onFs = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onFs);
-    return () => document.removeEventListener("fullscreenchange", onFs);
+    const onFs = () => {
+      const el =
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement ||
+        (document as any).mozFullScreenElement;
+      setIsFullscreen(!!el);
+    };
+    const events = ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"];
+    events.forEach(e => document.addEventListener(e, onFs));
+    return () => events.forEach(e => document.removeEventListener(e, onFs));
   }, []);
-  const toggleFullscreen = () => {
-    if (!videoRef.current) return;
-    if (document.fullscreenElement) document.exitFullscreen();
-    else videoRef.current.requestFullscreen?.();
+  const enterFullscreen = async () => {
+    const node = videoRef.current as any;
+    if (!node) return;
+    try {
+      const req = node.requestFullscreen || node.webkitRequestFullscreen || node.msRequestFullscreen || node.mozRequestFullScreen;
+      if (req) await req.call(node);
+    } catch (e) {
+      console.warn("Fullscreen request failed", e);
+      toast({ title: "Fullscreen unavailable", description: "Your browser blocked fullscreen for this page." });
+    }
   };
+  const exitFullscreen = async () => {
+    const doc = document as any;
+    try {
+      const exit = document.exitFullscreen || doc.webkitExitFullscreen || doc.msExitFullscreen || doc.mozCancelFullScreen;
+      if (exit) await exit.call(document);
+    } catch (e) { console.warn(e); }
+  };
+  const toggleFullscreen = () => {
+    const active =
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).msFullscreenElement ||
+      (document as any).mozFullScreenElement;
+    if (active) exitFullscreen(); else enterFullscreen();
+  };
+
+  // Esc handler as an additional exit path (some browsers don't fire fullscreenchange reliably on secondary monitors)
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") exitFullscreen(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
+
 
 
   if (loadingVariant) {
