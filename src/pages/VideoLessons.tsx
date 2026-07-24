@@ -32,6 +32,7 @@ interface Slide {
   bullets?: string[];
   narration?: string;
   example?: string | null;
+  audio_url?: string;
 }
 
 interface Quiz {
