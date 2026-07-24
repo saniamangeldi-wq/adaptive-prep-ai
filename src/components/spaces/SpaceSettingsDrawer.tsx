@@ -69,7 +69,7 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
       ai_instructions: aiInstructions.trim() || undefined,
       references: refs,
     });
-    toast.success("Space updated");
+    toast.success(t("spaces.spaceUpdated"));
     setShowUnsavedPrompt(false);
     onClose();
   };
@@ -101,10 +101,10 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/30">
           <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            Space Settings
+            {t("spaces.spaceSettings")}
             {isDirty && (
               <span className="text-[10px] font-medium uppercase tracking-wider text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                Unsaved
+                {t("spaces.unsaved")}
               </span>
             )}
           </h2>
@@ -116,24 +116,24 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Name</label>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">{t("spaces.name")}</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-muted/30 border-border/30" />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Description</label>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">{t("spaces.description")}</label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} className="bg-muted/30 border-border/30" />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Icon</label>
+            <label className="text-sm font-medium text-foreground mb-2 block">{t("spaces.icon")}</label>
             <IconPicker value={icon} onChange={setIcon} />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">AI Instructions</label>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">{t("spaces.aiInstructions")}</label>
             <Textarea
-              placeholder="Custom instructions for conversations in this space..."
+              placeholder={t("spaces.aiInstructionsCustom")}
               rows={6}
               value={aiInstructions}
               onChange={(e) => setAiInstructions(e.target.value)}
@@ -142,41 +142,41 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
           </div>
 
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">📚 Space References</label>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">{t("spaces.spaceReferences")}</label>
             <p className="text-xs text-muted-foreground mb-2">
-              Always active for every conversation in this Space
+              {t("spaces.spaceRefsDesc")}
             </p>
             <SpaceReferencesEditor value={refs} onChange={(next) => setRefs(next)} />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Visibility</label>
+            <label className="text-sm font-medium text-foreground mb-2 block">{t("spaces.visibility")}</label>
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                 <input type="radio" name="visibility" checked readOnly className="accent-primary" />
-                Private
+                {t("spaces.private")}
               </label>
               <label className="flex items-center gap-2 text-sm text-muted-foreground/50 cursor-not-allowed">
                 <input type="radio" name="visibility" disabled className="accent-primary" />
-                Shared <span className="text-xs">(coming soon)</span>
+                {t("spaces.shared")} <span className="text-xs">({t("common.comingSoon")})</span>
               </label>
             </div>
           </div>
 
           <div className="pt-4 border-t border-border/30">
-            <p className="text-xs font-medium text-destructive mb-3 uppercase tracking-wider">Danger Zone</p>
+            <p className="text-xs font-medium text-destructive mb-3 uppercase tracking-wider">{t("spaces.dangerZone")}</p>
             <Button variant="destructive" size="sm" onClick={handleDelete} className="gap-2">
               <Trash2 className="w-3.5 h-3.5" />
-              {confirmDelete ? "Click again to confirm" : "Delete Space"}
+              {confirmDelete ? t("spaces.deleteConfirm") : t("spaces.deleteSpace")}
             </Button>
           </div>
         </div>
 
         {/* Footer */}
         <div className="p-4 border-t border-border/30 flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={attemptClose}>Cancel</Button>
+          <Button variant="outline" className="flex-1" onClick={attemptClose}>{t("common.cancel")}</Button>
           <Button className="flex-1" onClick={doSave} disabled={!name.trim() || !isDirty}>
-            Save Changes
+            {t("spaces.saveChanges")}
           </Button>
         </div>
       </div>
@@ -190,14 +190,14 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
                 <AlertCircle className="w-5 h-5 text-amber-500" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Save changes before leaving?</h3>
+                <h3 className="text-sm font-semibold text-foreground">{t("spaces.unsavedTitle")}</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  You have unsaved changes to this Space.
+                  {t("spaces.unsavedDesc")}
                 </p>
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Button onClick={doSave} disabled={!name.trim()}>Save changes</Button>
+              <Button onClick={doSave} disabled={!name.trim()}>{t("spaces.saveChanges")}</Button>
               <Button
                 variant="outline"
                 onClick={() => {
@@ -205,10 +205,10 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
                   onClose();
                 }}
               >
-                Discard
+                {t("spaces.discard")}
               </Button>
               <Button variant="ghost" onClick={() => setShowUnsavedPrompt(false)}>
-                Keep editing
+                {t("spaces.keepEditing")}
               </Button>
             </div>
           </div>
