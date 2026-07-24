@@ -230,6 +230,18 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                 {slide.narration && (
                   <p className="text-muted-foreground italic border-l-2 border-primary/40 pl-3">{slide.narration}</p>
                 )}
+                {slide.audio_url && (
+                  <div className="flex items-center gap-2 bg-muted/20 rounded-lg p-2">
+                    <Volume2 className="h-4 w-4 text-primary shrink-0 ml-1" />
+                    <audio
+                      key={slide.audio_url}
+                      controls
+                      autoPlay
+                      src={slide.audio_url}
+                      className="w-full h-8"
+                    />
+                  </div>
+                )}
                 {slide.example && (
                   <div className="bg-muted/30 rounded-lg p-3 text-sm">
                     <span className="text-xs uppercase tracking-wide text-muted-foreground">Example</span>
