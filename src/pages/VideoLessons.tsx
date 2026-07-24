@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { PageSeo } from "@/components/seo/PageSeo";
-import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle } from "lucide-react";
+import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle, Volume2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Vak = "visual" | "auditory" | "reading_writing" | "kinesthetic";
