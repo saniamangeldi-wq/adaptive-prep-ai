@@ -140,6 +140,9 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
     setSpeaking(false);
     setPaused(false);
     setCurrentText("");
+    setCharIndex(-1);
+    setCharLength(0);
+
   }, [supported]);
 
   const speak = useCallback(
