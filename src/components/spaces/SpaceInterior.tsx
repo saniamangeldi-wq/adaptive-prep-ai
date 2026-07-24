@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ArrowLeft, MessageSquarePlus, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,7 @@ import { ReferencesBadge } from "@/components/ai/ReferencesBadge";
 import type { Reference } from "@/hooks/useReferences";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+import { ru as ruLocale } from "date-fns/locale";
 import { toast } from "sonner";
 
 const PANEL_KEY_PREFIX = "space-panel-collapsed-";
@@ -33,6 +35,8 @@ export function SpaceInterior({
   children,
   coachType = "student",
 }: SpaceInteriorProps) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language?.startsWith("ru") ? ruLocale : undefined;
   const { conversations, deleteSpace } = useConversations(coachType);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -92,11 +96,11 @@ export function SpaceInterior({
       .eq("id", spaceId);
 
     if (error) {
-      toast.error("Failed to update space");
+      toast.error(t("spaces.failedToUpdate"));
       return;
     }
     await loadSpaces();
-    toast.success("Space updated");
+    toast.success(t("spaces.spaceUpdated"));
   };
 
 
