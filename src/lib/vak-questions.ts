@@ -528,4 +528,2254 @@ export const VAK_QUESTIONS: VAKQuestion[] = [
       { style: "kinesthetic", text: "Interactive exercises, hands-on practice, and physical engagement tools" },
     ],
   },
+  {
+    id: 51,
+    question: 'When your teacher introduces a new topic, you learn fastest by:',
+    options: [
+      { style: "visual", text: 'Seeing a diagram or slide breakdown' },
+      { style: "auditory", text: 'Hearing the verbal walkthrough' },
+      { style: "kinesthetic", text: 'Trying a quick hands-on example' },
+    ],
+  },
+  {
+    id: 52,
+    question: 'When reviewing an SAT vocab list, you remember words best when you:',
+    options: [
+      { style: "visual", text: 'See them written with a small icon' },
+      { style: "auditory", text: 'Say them out loud in a sentence' },
+      { style: "kinesthetic", text: 'Write them repeatedly by hand' },
+    ],
+  },
+  {
+    id: 53,
+    question: 'When your friend describes a movie plot, you:',
+    options: [
+      { style: "visual", text: 'Picture the scenes in your head' },
+      { style: "auditory", text: 'Focus on the dialogue and voices' },
+      { style: "kinesthetic", text: 'Imagine how the action would feel' },
+    ],
+  },
+  {
+    id: 54,
+    question: 'When learning a new dance move, you:',
+    options: [
+      { style: "visual", text: 'Watch it performed several times' },
+      { style: "auditory", text: 'Listen to counting or rhythm cues' },
+      { style: "kinesthetic", text: 'Try the steps immediately' },
+    ],
+  },
+  {
+    id: 55,
+    question: 'When solving a geometry problem, you first:',
+    options: [
+      { style: "visual", text: 'Sketch the figure carefully' },
+      { style: "auditory", text: 'Read the problem out loud to yourself' },
+      { style: "kinesthetic", text: 'Manipulate values on scratch paper' },
+    ],
+  },
+  {
+    id: 56,
+    question: 'When you need to remember a phone number, you:',
+    options: [
+      { style: "visual", text: 'Picture the digits visually' },
+      { style: "auditory", text: 'Repeat it out loud until it sticks' },
+      { style: "kinesthetic", text: 'Type or write it down a few times' },
+    ],
+  },
+  {
+    id: 57,
+    question: 'When you attend a lecture, you get the most from:',
+    options: [
+      { style: "visual", text: 'The slides and visuals shown' },
+      { style: "auditory", text: "The professor's spoken explanations" },
+      { style: "kinesthetic", text: 'The interactive activities or demos' },
+    ],
+  },
+  {
+    id: 58,
+    question: 'When shopping for something new, you like to:',
+    options: [
+      { style: "visual", text: 'Look through photos and reviews with images' },
+      { style: "auditory", text: 'Ask a salesperson to explain features' },
+      { style: "kinesthetic", text: 'Handle and test the product yourself' },
+    ],
+  },
+  {
+    id: 59,
+    question: 'When you daydream, it is usually in the form of:',
+    options: [
+      { style: "visual", text: 'Vivid images or scenes' },
+      { style: "auditory", text: 'Conversations or inner dialogue' },
+      { style: "kinesthetic", text: 'Physical sensations of doing something' },
+    ],
+  },
+  {
+    id: 60,
+    question: 'When someone gives you directions, you prefer:',
+    options: [
+      { style: "visual", text: 'A map or drawn route' },
+      { style: "auditory", text: 'Spoken turn-by-turn directions' },
+      { style: "kinesthetic", text: 'Being walked or driven there once' },
+    ],
+  },
+  {
+    id: 61,
+    question: "When you're stuck on an SAT reading question, you:",
+    options: [
+      { style: "visual", text: 'Highlight and re-scan key sentences' },
+      { style: "auditory", text: 'Read the question aloud in a whisper' },
+      { style: "kinesthetic", text: 'Underline and annotate physically' },
+    ],
+  },
+  {
+    id: 62,
+    question: 'When learning a magic trick or puzzle, you:',
+    options: [
+      { style: "visual", text: 'Watch it done slowly a few times' },
+      { style: "auditory", text: 'Listen to the explanation of the method' },
+      { style: "kinesthetic", text: 'Try it yourself right away' },
+    ],
+  },
+  {
+    id: 63,
+    question: 'When you want to relax, you:',
+    options: [
+      { style: "visual", text: 'Watch something visual like a movie or nature' },
+      { style: "auditory", text: 'Listen to music or a podcast' },
+      { style: "kinesthetic", text: 'Go for a walk or move your body' },
+    ],
+  },
+  {
+    id: 64,
+    question: 'When you enter a new room, you first notice:',
+    options: [
+      { style: "visual", text: 'The colors, layout, and decor' },
+      { style: "auditory", text: 'The sounds and voices around you' },
+      { style: "kinesthetic", text: 'How comfortable it physically feels' },
+    ],
+  },
+  {
+    id: 65,
+    question: "When you're memorizing SAT grammar rules, you:",
+    options: [
+      { style: "visual", text: 'Use a color-coded chart' },
+      { style: "auditory", text: 'Say the rule out loud with an example' },
+      { style: "kinesthetic", text: 'Write example sentences for each rule' },
+    ],
+  },
+  {
+    id: 66,
+    question: 'When someone tells a joke, you appreciate:',
+    options: [
+      { style: "visual", text: 'The visual imagery or gestures' },
+      { style: "auditory", text: 'The wordplay and tone of voice' },
+      { style: "kinesthetic", text: 'The physical timing or reactions' },
+    ],
+  },
+  {
+    id: 67,
+    question: "When you're working through a science problem, you:",
+    options: [
+      { style: "visual", text: 'Draw the process or setup' },
+      { style: "auditory", text: 'Verbally reason through cause and effect' },
+      { style: "kinesthetic", text: 'Simulate it with objects or motion' },
+    ],
+  },
+  {
+    id: 68,
+    question: 'When you cannot fall asleep, your mind is usually:',
+    options: [
+      { style: "visual", text: 'Playing images or memories' },
+      { style: "auditory", text: 'Replaying conversations or songs' },
+      { style: "kinesthetic", text: 'Restless and wanting to move' },
+    ],
+  },
+  {
+    id: 69,
+    question: 'When you use a new appliance, you:',
+    options: [
+      { style: "visual", text: 'Study the diagram in the manual' },
+      { style: "auditory", text: 'Have someone explain how it works' },
+      { style: "kinesthetic", text: 'Press buttons and figure it out' },
+    ],
+  },
+  {
+    id: 70,
+    question: 'When taking an SAT practice test, breaks work best if you:',
+    options: [
+      { style: "visual", text: 'Look away and rest your eyes on something calm' },
+      { style: "auditory", text: 'Listen to quiet music for a minute' },
+      { style: "kinesthetic", text: 'Stand up and stretch' },
+    ],
+  },
+  {
+    id: 71,
+    question: 'When learning about a scientific concept, you understand best via:',
+    options: [
+      { style: "visual", text: 'An animation or labeled diagram' },
+      { style: "auditory", text: 'A clear verbal explanation' },
+      { style: "kinesthetic", text: 'A physical experiment' },
+    ],
+  },
+  {
+    id: 72,
+    question: 'When you argue a point, you tend to:',
+    options: [
+      { style: "visual", text: 'Sketch or point to visuals for support' },
+      { style: "auditory", text: 'Speak clearly and use tone for emphasis' },
+      { style: "kinesthetic", text: 'Use gestures and body language' },
+    ],
+  },
+  {
+    id: 73,
+    question: "When you're distracted while studying, it's usually because of:",
+    options: [
+      { style: "visual", text: 'Visual clutter around you' },
+      { style: "auditory", text: 'Background noise or conversations' },
+      { style: "kinesthetic", text: 'The urge to move or fidget' },
+    ],
+  },
+  {
+    id: 74,
+    question: 'When practicing SAT math word problems, you:',
+    options: [
+      { style: "visual", text: 'Draw a picture of the situation' },
+      { style: "auditory", text: 'Read the wording aloud slowly' },
+      { style: "kinesthetic", text: 'Assign values and try numbers physically' },
+    ],
+  },
+  {
+    id: 75,
+    question: 'When choosing a study playlist, you prefer:',
+    options: [
+      { style: "visual", text: 'None — you like a quiet visual space' },
+      { style: "auditory", text: 'Instrumental or lyric music' },
+      { style: "kinesthetic", text: 'Something with a beat you can tap to' },
+    ],
+  },
+  {
+    id: 76,
+    question: 'When you make a mistake, you learn best by:',
+    options: [
+      { style: "visual", text: 'Seeing a written correction with steps' },
+      { style: "auditory", text: 'Hearing an explanation of the error' },
+      { style: "kinesthetic", text: 'Redoing the task yourself' },
+    ],
+  },
+  {
+    id: 77,
+    question: 'When explaining something to a friend, you:',
+    options: [
+      { style: "visual", text: 'Draw or point to visuals' },
+      { style: "auditory", text: 'Use words and analogies' },
+      { style: "kinesthetic", text: 'Show them by doing it together' },
+    ],
+  },
+  {
+    id: 78,
+    question: 'When you recall a lesson from months ago, you remember:',
+    options: [
+      { style: "visual", text: 'Images from the slides or board' },
+      { style: "auditory", text: "The teacher's voice and phrases" },
+      { style: "kinesthetic", text: 'What you were doing at your desk' },
+    ],
+  },
+  {
+    id: 79,
+    question: 'When you want to master a new skill, you commit to:',
+    options: [
+      { style: "visual", text: 'Studying visuals and examples repeatedly' },
+      { style: "auditory", text: 'Listening to expert explanations' },
+      { style: "kinesthetic", text: "Practicing daily until it's muscle memory" },
+    ],
+  },
+  {
+    id: 80,
+    question: "When you're bored in class, you:",
+    options: [
+      { style: "visual", text: 'Doodle or design in your notebook' },
+      { style: "auditory", text: 'Whisper or hum to yourself' },
+      { style: "kinesthetic", text: 'Fidget, bounce your leg, or shift position' },
+    ],
+  },
+  {
+    id: 81,
+    question: 'When choosing a workout, you enjoy:',
+    options: [
+      { style: "visual", text: 'Following an on-screen visual class' },
+      { style: "auditory", text: 'Listening to an audio-guided workout' },
+      { style: "kinesthetic", text: 'Freestyling based on how your body feels' },
+    ],
+  },
+  {
+    id: 82,
+    question: "When you're planning your week, you use:",
+    options: [
+      { style: "visual", text: 'A visual calendar or planner' },
+      { style: "auditory", text: 'A voice reminder or told plan' },
+      { style: "kinesthetic", text: 'A quick mental to-do you act on' },
+    ],
+  },
+  {
+    id: 83,
+    question: "When you're stressed before a test, you:",
+    options: [
+      { style: "visual", text: 'Review your visual summary sheet' },
+      { style: "auditory", text: 'Talk it out with a friend or parent' },
+      { style: "kinesthetic", text: 'Do a short physical warm-up' },
+    ],
+  },
+  {
+    id: 84,
+    question: 'When you meet a study group, you contribute best by:',
+    options: [
+      { style: "visual", text: 'Sharing diagrams or summaries' },
+      { style: "auditory", text: 'Explaining concepts out loud' },
+      { style: "kinesthetic", text: 'Guiding through practice problems' },
+    ],
+  },
+  {
+    id: 85,
+    question: 'When learning a new song, you:',
+    options: [
+      { style: "visual", text: 'Read the lyrics on screen' },
+      { style: "auditory", text: 'Listen and sing along' },
+      { style: "kinesthetic", text: 'Move or dance while learning' },
+    ],
+  },
+  {
+    id: 86,
+    question: 'When your notes get messy, you:',
+    options: [
+      { style: "visual", text: 'Rewrite them visually and neatly' },
+      { style: "auditory", text: 'Read them aloud to reorganize mentally' },
+      { style: "kinesthetic", text: 'Rewrite by hand from scratch' },
+    ],
+  },
+  {
+    id: 87,
+    question: 'When you want to remember a formula, you:',
+    options: [
+      { style: "visual", text: 'Post it visually where you can see it' },
+      { style: "auditory", text: 'Chant it a few times daily' },
+      { style: "kinesthetic", text: 'Apply it in problems right away' },
+    ],
+  },
+  {
+    id: 88,
+    question: 'When following news, you prefer:',
+    options: [
+      { style: "visual", text: 'Infographics and visual articles' },
+      { style: "auditory", text: 'Podcasts or radio news' },
+      { style: "kinesthetic", text: 'Interactive apps you can navigate' },
+    ],
+  },
+  {
+    id: 89,
+    question: 'When you try to focus, background elements that help most are:',
+    options: [
+      { style: "visual", text: 'A tidy, uncluttered desk' },
+      { style: "auditory", text: 'Steady ambient sound' },
+      { style: "kinesthetic", text: 'The ability to move freely' },
+    ],
+  },
+  {
+    id: 90,
+    question: 'When learning a new concept in class, you retain more when:',
+    options: [
+      { style: "visual", text: 'The teacher writes on the board' },
+      { style: "auditory", text: 'The teacher speaks with clear examples' },
+      { style: "kinesthetic", text: 'The class does a group activity' },
+    ],
+  },
+  {
+    id: 91,
+    question: 'When reading a difficult passage, you:',
+    options: [
+      { style: "visual", text: 'Break it into visual chunks' },
+      { style: "auditory", text: 'Read it aloud slowly' },
+      { style: "kinesthetic", text: 'Annotate as you go' },
+    ],
+  },
+  {
+    id: 92,
+    question: 'When you first meet a new subject, your instinct is to:',
+    options: [
+      { style: "visual", text: 'Look up diagrams online' },
+      { style: "auditory", text: 'Watch a lecture or podcast' },
+      { style: "kinesthetic", text: 'Attempt a beginner exercise' },
+    ],
+  },
+  {
+    id: 93,
+    question: 'When you finish a hard task, you feel most accomplished if:',
+    options: [
+      { style: "visual", text: 'You can see the tidy end result' },
+      { style: "auditory", text: 'Someone tells you good job' },
+      { style: "kinesthetic", text: 'You physically feel the effort paid off' },
+    ],
+  },
+  {
+    id: 94,
+    question: 'When memorizing SAT reading strategies, you:',
+    options: [
+      { style: "visual", text: 'Make a poster of steps' },
+      { style: "auditory", text: 'Repeat the steps out loud' },
+      { style: "kinesthetic", text: 'Practice them on real passages' },
+    ],
+  },
+  {
+    id: 95,
+    question: 'When learning to type or use a keyboard shortcut, you:',
+    options: [
+      { style: "visual", text: 'Look at a cheat sheet diagram' },
+      { style: "auditory", text: 'Say the keys aloud as you press' },
+      { style: "kinesthetic", text: 'Practice until fingers remember' },
+    ],
+  },
+  {
+    id: 96,
+    question: 'When you must give a presentation, you prepare by:',
+    options: [
+      { style: "visual", text: 'Designing polished slides' },
+      { style: "auditory", text: 'Practicing your speech aloud' },
+      { style: "kinesthetic", text: 'Rehearsing your movement and gestures' },
+    ],
+  },
+  {
+    id: 97,
+    question: 'When receiving a tutorial, you learn most from:',
+    options: [
+      { style: "visual", text: 'The screenshots or diagrams' },
+      { style: "auditory", text: "The narrator's voice" },
+      { style: "kinesthetic", text: 'Trying the steps yourself as you go' },
+    ],
+  },
+  {
+    id: 98,
+    question: 'When you plan an essay, you first:',
+    options: [
+      { style: "visual", text: 'Outline visually with bubbles or bullets' },
+      { style: "auditory", text: 'Talk through your thesis aloud' },
+      { style: "kinesthetic", text: 'Free-write to see where you go' },
+    ],
+  },
+  {
+    id: 99,
+    question: 'When you take an SAT diagnostic, you review best by:',
+    options: [
+      { style: "visual", text: 'Reading a color-coded score report' },
+      { style: "auditory", text: 'Hearing an audio review of errors' },
+      { style: "kinesthetic", text: 'Redoing the missed problems' },
+    ],
+  },
+  {
+    id: 100,
+    question: "When you want to remember a person's name, you:",
+    options: [
+      { style: "visual", text: 'Picture their face with the name' },
+      { style: "auditory", text: 'Say it aloud a few times when meeting' },
+      { style: "kinesthetic", text: 'Write it down or use it in conversation' },
+    ],
+  },
+  {
+    id: 101,
+    question: 'During a essay planning, you understand more when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 102,
+    question: 'During a SAT prep session, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 103,
+    question: 'During a biology chapter, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 104,
+    question: 'During a quiz retake, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 105,
+    question: 'During a team project, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 106,
+    question: 'During a scholarship essay, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 107,
+    question: 'During a note-taking session, you prefer to:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 108,
+    question: 'During a weekly recap, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 109,
+    question: 'During a reading comprehension drill, you understand more when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 110,
+    question: 'During a language learning, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 111,
+    question: 'During a note-taking session, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 112,
+    question: 'During a science lab, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 113,
+    question: 'During a algebra practice, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 114,
+    question: 'During a music practice, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 115,
+    question: 'During a art project, you prefer to:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 116,
+    question: 'During a SAT prep session, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 117,
+    question: 'During a book club meeting, you retain material when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 118,
+    question: 'During a interview prep, you prefer to:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 119,
+    question: 'During a essay planning, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 120,
+    question: 'During a field trip, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 121,
+    question: 'During a debate prep, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 122,
+    question: 'During a essay planning, you prefer to:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 123,
+    question: 'During a review of past mistakes, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 124,
+    question: 'During a SAT prep session, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 125,
+    question: 'During a geometry review, you understand more when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 126,
+    question: 'During a music practice, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 127,
+    question: 'During a geometry review, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 128,
+    question: 'During a presentation prep, you prefer to:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 129,
+    question: 'During a field trip, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 130,
+    question: 'During a weekly recap, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 131,
+    question: 'During a debate prep, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 132,
+    question: 'During a podcast learning, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 133,
+    question: 'During a midterm cramming, you prefer to:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 134,
+    question: 'During a podcast learning, you prefer to:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 135,
+    question: 'During a documentary watching, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 136,
+    question: 'During a midterm cramming, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 137,
+    question: 'During a online course lecture, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 138,
+    question: 'During a museum visit, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 139,
+    question: 'During a coding practice, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 140,
+    question: 'During a chemistry chapter, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 141,
+    question: 'During a statistics chapter, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 142,
+    question: 'During a online course lecture, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 143,
+    question: 'During a SAT prep session, you prefer to:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 144,
+    question: 'During a final exam review, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 145,
+    question: 'During a biology chapter, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 146,
+    question: 'During a music practice, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 147,
+    question: 'During a team project, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 148,
+    question: 'During a evening review, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 149,
+    question: 'During a debate prep, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 150,
+    question: 'During a debate prep, you prefer to:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 151,
+    question: 'During a note-taking session, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 152,
+    question: 'During a quiz retake, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 153,
+    question: 'During a scholarship essay, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 154,
+    question: 'During a documentary watching, you prefer to:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 155,
+    question: 'During a evening review, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 156,
+    question: 'During a art project, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 157,
+    question: 'During a podcast learning, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 158,
+    question: 'During a music practice, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 159,
+    question: 'During a psychology chapter, you prefer to:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 160,
+    question: 'During a college research, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 161,
+    question: 'During a flashcard drill, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 162,
+    question: 'During a book club meeting, you prefer to:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 163,
+    question: 'During a quiz retake, you prefer to:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 164,
+    question: 'During a statistics chapter, you prefer to:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 165,
+    question: 'During a history revision, you focus best when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 166,
+    question: 'During a book club meeting, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 167,
+    question: 'During a weekly recap, you prefer to:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 168,
+    question: 'During a reading comprehension drill, you prefer to:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 169,
+    question: 'During a scholarship essay, you prefer to:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 170,
+    question: 'During a coding practice, you prefer to:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 171,
+    question: 'During a history revision, you prefer to:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 172,
+    question: 'During a online course lecture, you prefer to:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 173,
+    question: 'During a morning study routine, you prefer to:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 174,
+    question: 'During a team project, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 175,
+    question: 'During a essay planning, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 176,
+    question: 'During a final exam review, you prefer to:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 177,
+    question: 'During a college research, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 178,
+    question: 'During a documentary watching, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 179,
+    question: 'During a presentation prep, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 180,
+    question: 'During a chemistry chapter, you prefer to:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 181,
+    question: 'During a psychology chapter, you retain material when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 182,
+    question: 'During a SAT prep session, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 183,
+    question: 'During a interview prep, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 184,
+    question: 'During a chemistry chapter, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 185,
+    question: 'During a note-taking session, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 186,
+    question: 'During a review of past mistakes, you prefer to:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 187,
+    question: 'During a peer tutoring session, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 188,
+    question: 'During a field trip, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 189,
+    question: 'During a statistics chapter, you retain material when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 190,
+    question: 'During a algebra practice, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 191,
+    question: 'During a presentation prep, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 192,
+    question: 'During a podcast learning, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 193,
+    question: 'During a science lab, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 194,
+    question: 'During a language learning, you prefer to:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 195,
+    question: 'During a flashcard drill, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 196,
+    question: 'During a flashcard drill, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 197,
+    question: 'During a algebra practice, you understand more when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 198,
+    question: 'During a psychology chapter, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 199,
+    question: 'During a peer tutoring session, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 200,
+    question: 'During a midterm cramming, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 201,
+    question: 'During a documentary watching, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 202,
+    question: 'During a biology chapter, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 203,
+    question: 'During a science lab, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 204,
+    question: 'During a evening review, you prefer to:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 205,
+    question: 'During a biology chapter, you prefer to:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 206,
+    question: 'During a scholarship essay, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 207,
+    question: 'During a quiz retake, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 208,
+    question: 'During a coding practice, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 209,
+    question: 'During a coding practice, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 210,
+    question: 'During a college research, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 211,
+    question: 'During a note-taking session, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 212,
+    question: 'During a science lab, you prefer to:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 213,
+    question: 'During a algebra practice, you prefer to:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 214,
+    question: 'During a museum visit, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 215,
+    question: 'During a midterm cramming, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 216,
+    question: 'During a grammar review, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 217,
+    question: 'During a biology chapter, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 218,
+    question: 'During a college research, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 219,
+    question: 'During a vocabulary study, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 220,
+    question: 'During a history revision, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 221,
+    question: 'During a music practice, you prefer to:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 222,
+    question: 'During a evening review, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 223,
+    question: 'During a documentary watching, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 224,
+    question: 'During a art project, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 225,
+    question: 'During a weekly recap, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 226,
+    question: 'During a peer tutoring session, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 227,
+    question: 'During a museum visit, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 228,
+    question: 'During a science lab, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 229,
+    question: 'During a review of past mistakes, you focus best when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 230,
+    question: 'During a midterm cramming, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 231,
+    question: 'During a vocabulary study, you prefer to:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 232,
+    question: 'During a language learning, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 233,
+    question: 'During a evening review, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 234,
+    question: 'During a language learning, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 235,
+    question: 'During a art project, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 236,
+    question: 'During a book club meeting, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 237,
+    question: 'During a presentation prep, you focus best when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 238,
+    question: 'During a presentation prep, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 239,
+    question: 'During a team project, you prefer to:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 240,
+    question: 'During a interview prep, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 241,
+    question: 'During a final exam review, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 242,
+    question: 'During a review of past mistakes, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 243,
+    question: 'During a history revision, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 244,
+    question: 'During a peer tutoring session, you prefer to:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 245,
+    question: 'During a online course lecture, you focus best when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 246,
+    question: 'During a grammar review, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 247,
+    question: 'During a weekend study block, you prefer to:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 248,
+    question: 'During a museum visit, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 249,
+    question: 'During a college research, you prefer to:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 250,
+    question: 'During a chemistry chapter, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 251,
+    question: 'During a weekly recap, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 252,
+    question: 'During a morning study routine, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 253,
+    question: 'During a essay planning, you focus best when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 254,
+    question: 'During a chemistry chapter, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 255,
+    question: 'During a weekend study block, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 256,
+    question: 'During a art project, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 257,
+    question: 'During a morning study routine, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 258,
+    question: 'During a geometry review, you prefer to:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 259,
+    question: 'During a final exam review, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 260,
+    question: 'During a statistics chapter, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 261,
+    question: 'During a podcast learning, you understand more when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 262,
+    question: 'During a coding practice, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 263,
+    question: 'During a geometry review, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 264,
+    question: 'During a weekend study block, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 265,
+    question: 'During a reading comprehension drill, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 266,
+    question: 'During a psychology chapter, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 267,
+    question: 'During a field trip, you prefer to:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 268,
+    question: 'During a field trip, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 269,
+    question: 'During a peer tutoring session, you focus best when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 270,
+    question: 'During a morning study routine, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 271,
+    question: 'During a online course lecture, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 272,
+    question: 'During a museum visit, you prefer to:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 273,
+    question: 'During a flashcard drill, you prefer to:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 274,
+    question: 'During a flashcard drill, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 275,
+    question: 'During a psychology chapter, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 276,
+    question: 'During a geometry review, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 277,
+    question: 'During a weekend study block, you retain material when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 278,
+    question: 'During a grammar review, you prefer to:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 279,
+    question: 'During a interview prep, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 280,
+    question: 'During a weekend study block, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 281,
+    question: 'During a vocabulary study, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 282,
+    question: 'During a language learning, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 283,
+    question: 'During a grammar review, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 284,
+    question: 'During a interview prep, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 285,
+    question: 'During a debate prep, you focus best when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 286,
+    question: 'During a vocabulary study, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 287,
+    question: 'During a algebra practice, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 288,
+    question: 'During a history revision, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 289,
+    question: 'During a review of past mistakes, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 290,
+    question: 'During a reading comprehension drill, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 291,
+    question: 'During a morning study routine, you retain material when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 292,
+    question: 'During a book club meeting, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
+  {
+    id: 293,
+    question: 'During a vocabulary study, you retain material when you:',
+    options: [
+      { style: "visual", text: 'See it laid out with diagrams or highlights' },
+      { style: "auditory", text: 'Listen to a spoken explanation' },
+      { style: "kinesthetic", text: 'Try it hands-on right away' },
+    ],
+  },
+  {
+    id: 294,
+    question: 'During a final exam review, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Use color-coded notes and charts' },
+      { style: "auditory", text: 'Play an audio recap while reviewing' },
+      { style: "kinesthetic", text: 'Learn through trial and error' },
+    ],
+  },
+  {
+    id: 295,
+    question: 'During a grammar review, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Rely on written outlines and pictures' },
+      { style: "auditory", text: 'Repeat key ideas aloud to yourself' },
+      { style: "kinesthetic", text: 'Simulate the situation actively' },
+    ],
+  },
+  {
+    id: 296,
+    question: 'During a reading comprehension drill, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Watch a short video walkthrough' },
+      { style: "auditory", text: 'Use call-and-response practice' },
+      { style: "kinesthetic", text: 'Rewrite and rework each step by hand' },
+    ],
+  },
+  {
+    id: 297,
+    question: 'During a quiz retake, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Look at annotated examples' },
+      { style: "auditory", text: 'Talk through the steps quietly' },
+      { style: "kinesthetic", text: 'Build or manipulate something related' },
+    ],
+  },
+  {
+    id: 298,
+    question: 'During a scholarship essay, you focus best when you:',
+    options: [
+      { style: "visual", text: 'Take screenshots and organize them' },
+      { style: "auditory", text: 'Discuss it out loud with a partner' },
+      { style: "kinesthetic", text: 'Practice by doing, not just reading' },
+    ],
+  },
+  {
+    id: 299,
+    question: 'During a statistics chapter, you understand more when you:',
+    options: [
+      { style: "visual", text: 'Study a visual summary before starting' },
+      { style: "auditory", text: 'Explain it to someone verbally' },
+      { style: "kinesthetic", text: 'Move between tasks with short breaks' },
+    ],
+  },
+  {
+    id: 300,
+    question: 'During a team project, you stay engaged when you:',
+    options: [
+      { style: "visual", text: 'Create a visual mind map' },
+      { style: "auditory", text: 'Hear it summarized in your own words' },
+      { style: "kinesthetic", text: 'Work through problems physically' },
+    ],
+  },
 ];
