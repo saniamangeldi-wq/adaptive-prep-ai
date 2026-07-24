@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { PageSeo } from "@/components/seo/PageSeo";
-import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle, Volume2, VolumeX, Pause, Play, Sparkles } from "lucide-react";
+import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle, Volume2, VolumeX, Pause, Play, Sparkles, Maximize2, Minimize2, SkipForward, SkipBack } from "lucide-react";
+import { useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import { useTranslation } from "react-i18next";
