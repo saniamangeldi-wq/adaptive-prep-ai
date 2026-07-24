@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +20,7 @@ interface SpaceSettingsDrawerProps {
 }
 
 export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, spaceReferences = [] }: SpaceSettingsDrawerProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("🎓");
