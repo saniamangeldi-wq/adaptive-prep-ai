@@ -1,11 +1,19 @@
 import { useRef, useState } from "react";
-import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
 import { Upload, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const PRESET_ICONS = [
+  "🎓", "📚", "📖", "✏️", "📝", "🧠", "💡", "🔬",
+  "🧪", "🧮", "📐", "📊", "📈", "🌍", "🗺️", "🏛️",
+  "⚗️", "🔭", "💻", "⌨️", "🎨", "🎭", "🎵", "🏆",
+  "⭐", "🚀", "🎯", "🔥", "💼", "📅", "🗂️", "📌",
+];
+
+
 
 const MAX_SIZE = 512 * 1024; // 512KB
 
@@ -36,7 +44,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [showEmoji, setShowEmoji] = useState(false);
+  
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,20 +81,12 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
 
   return (
     <div className="space-y-3">
-      {/* Preview */}
+      {/* Preview + upload */}
       <div className="flex items-center gap-3">
         <div className="w-14 h-14 rounded-xl bg-muted/40 border border-border/30 flex items-center justify-center overflow-hidden text-3xl">
           <SpaceIconDisplay icon={value} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowEmoji((s) => !s)}
-          >
-            {showEmoji ? "Close emoji" : "Choose emoji"}
-          </Button>
           <Button
             type="button"
             variant="outline"
@@ -120,26 +120,33 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
         />
       </div>
 
-      {showEmoji && (
-        <div className="rounded-lg overflow-hidden border border-border/30">
-          <EmojiPicker
-            onEmojiClick={(e) => {
-              onChange(e.emoji);
-              setShowEmoji(false);
-            }}
-            theme={Theme.DARK}
-            emojiStyle={EmojiStyle.NATIVE}
-            width="100%"
-            height={340}
-            searchPlaceholder="Search emoji..."
-            previewConfig={{ showPreview: false }}
-          />
-        </div>
-      )}
+      {/* Preset icon grid */}
+      <div className="grid grid-cols-8 gap-2">
+        {PRESET_ICONS.map((emoji) => {
+          const isSelected = value === emoji;
+          return (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => onChange(emoji)}
+              className={cn(
+                "aspect-square flex items-center justify-center text-2xl rounded-lg border transition-all",
+                isSelected
+                  ? "border-primary bg-primary/15 shadow-[0_0_10px_hsl(var(--primary)/0.25)]"
+                  : "border-border/40 bg-muted/20 hover:border-primary/40 hover:bg-muted/40"
+              )}
+              aria-label={`Choose ${emoji} icon`}
+            >
+              {emoji}
+            </button>
+          );
+        })}
+      </div>
 
       <p className="text-xs text-muted-foreground/60">
-        Pick any emoji or upload a small image (PNG, SVG, JPG — max 512KB).
+        Pick an icon above or upload a custom image (PNG, SVG, JPG — max 512KB).
       </p>
     </div>
   );
 }
+
