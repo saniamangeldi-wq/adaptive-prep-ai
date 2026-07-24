@@ -179,6 +179,10 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIdx]);
 
+  const slides = variant?.slides ?? [];
+  const total = slides.length;
+  const slide = slides[slideIdx];
+
   // Stop any active narration when slide changes; optionally auto-play new slide
   useEffect(() => {
     tts.stop();
@@ -190,9 +194,31 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIdx, variant?.slides]);
 
-  const slides = variant?.slides ?? [];
-  const total = slides.length;
-  const slide = slides[slideIdx];
+  // Auto-advance when narration finishes (video-style playback)
+  const wasSpeakingRef = useRef(false);
+  useEffect(() => {
+    if (tts.speaking) wasSpeakingRef.current = true;
+    if (!tts.speaking && !tts.paused && wasSpeakingRef.current && autoPlayNarration) {
+      wasSpeakingRef.current = false;
+      if (slideIdx < total - 1) {
+        const t = window.setTimeout(() => setSlideIdx(i => Math.min(i + 1, total - 1)), 900);
+        return () => window.clearTimeout(t);
+      }
+    }
+  }, [tts.speaking, tts.paused, autoPlayNarration, slideIdx, total]);
+
+  // Fullscreen state
+  useEffect(() => {
+    const onFs = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+  const toggleFullscreen = () => {
+    if (!videoRef.current) return;
+    if (document.fullscreenElement) document.exitFullscreen();
+    else videoRef.current.requestFullscreen?.();
+  };
+
 
   if (loadingVariant) {
     return (
