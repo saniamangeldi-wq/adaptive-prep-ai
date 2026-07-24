@@ -1,32 +1,50 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Clock, AlertCircle } from "lucide-react";
+import { Clock, AlertCircle, Zap, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   VAK_QUESTIONS,
+  VAK_LENGTHS,
+  getQuestionCountForLength,
   getQuestionCountForTier,
   getEstimatedMinutes,
+  pickRandomQuestionIds,
   type VAKStyle,
+  type VAKLength,
 } from "@/lib/vak-questions";
 
 interface VAKAssessmentProps {
   tier: string;
-  savedProgress?: { answers: Record<number, VAKStyle>; currentIndex: number } | null;
+  /** If true, show the Quick vs Full picker (retake flow). Onboarding uses quick by default. */
+  allowLengthChoice?: boolean;
+  savedProgress?: { answers: Record<number, VAKStyle>; currentIndex: number; questionIds?: number[]; length?: VAKLength } | null;
   onComplete: (answers: Record<number, VAKStyle>) => void;
-  onProgressSave: (answers: Record<number, VAKStyle>, currentIndex: number) => void;
+  onProgressSave: (answers: Record<number, VAKStyle>, currentIndex: number, questionIds: number[], length: VAKLength) => void;
 }
 
 export function VAKAssessment({
   tier,
+  allowLengthChoice = false,
   savedProgress,
   onComplete,
   onProgressSave,
 }: VAKAssessmentProps) {
-  const totalQuestions = getQuestionCountForTier(tier);
-  const questions = VAK_QUESTIONS.slice(0, totalQuestions);
+  // Length state — default 'quick' for onboarding, saved progress overrides.
+  const [length, setLength] = useState<VAKLength>(savedProgress?.length ?? "quick");
+  const [started, setStarted] = useState(!!savedProgress);
+
+  // Randomized question ids for this attempt (stable once started).
+  const [questionIds, setQuestionIds] = useState<number[]>(
+    savedProgress?.questionIds ?? pickRandomQuestionIds(getQuestionCountForLength(savedProgress?.length ?? "quick"))
+  );
+
+  const questions = useMemo(
+    () => questionIds.map((id) => VAK_QUESTIONS.find((q) => q.id === id)!).filter(Boolean),
+    [questionIds]
+  );
+  const totalQuestions = questions.length;
   const estimatedMinutes = getEstimatedMinutes(totalQuestions);
 
-  const [started, setStarted] = useState(!!savedProgress);
   const [currentIndex, setCurrentIndex] = useState(savedProgress?.currentIndex ?? 0);
   const [answers, setAnswers] = useState<Record<number, VAKStyle>>(
     savedProgress?.answers ?? {}
@@ -35,7 +53,7 @@ export function VAKAssessment({
   // Auto-save progress every time answer changes
   useEffect(() => {
     if (started && Object.keys(answers).length > 0) {
-      onProgressSave(answers, currentIndex);
+      onProgressSave(answers, currentIndex, questionIds, length);
     }
   }, [answers, currentIndex, started]);
 
@@ -46,7 +64,6 @@ export function VAKAssessment({
       const updated = { ...answers, [qId]: style };
       setAnswers(updated);
 
-      // Auto-advance after short delay
       setTimeout(() => {
         if (currentIndex < totalQuestions - 1) {
           setCurrentIndex(currentIndex + 1);
@@ -60,6 +77,13 @@ export function VAKAssessment({
 
   const handleBack = () => {
     if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
+  };
+
+  const pickLength = (l: VAKLength) => {
+    setLength(l);
+    setQuestionIds(pickRandomQuestionIds(getQuestionCountForLength(l)));
+    setAnswers({});
+    setCurrentIndex(0);
   };
 
   const currentQId = questions[currentIndex]?.id;
@@ -76,8 +100,42 @@ export function VAKAssessment({
           <p className="text-muted-foreground max-w-md mx-auto">
             A quick way to tell us which content formats you tend to engage with most. We'll use it to pick smart defaults — you can switch formats on any lesson.
           </p>
-
         </div>
+
+        {allowLengthChoice && (
+          <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+            <button
+              onClick={() => pickLength("quick")}
+              className={cn(
+                "p-4 rounded-xl border-2 text-left transition-all",
+                length === "quick" ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+              )}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-foreground">Quick</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {VAK_LENGTHS.quick} questions · ~{getEstimatedMinutes(VAK_LENGTHS.quick)} min
+              </p>
+            </button>
+            <button
+              onClick={() => pickLength("full")}
+              className={cn(
+                "p-4 rounded-xl border-2 text-left transition-all",
+                length === "full" ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+              )}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <Layers className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-foreground">Full</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {VAK_LENGTHS.full} questions · ~{getEstimatedMinutes(VAK_LENGTHS.full)} min · more accurate
+              </p>
+            </button>
+          </div>
+        )}
 
         <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">

@@ -10,11 +10,23 @@ export interface VAKQuestion {
   ];
 }
 
-// Tier thresholds
+// Assessment lengths — user can pick Quick or Full when retaking.
+export const VAK_LENGTHS = {
+  quick: 10,
+  full: 25,
+} as const;
+
+export type VAKLength = keyof typeof VAK_LENGTHS;
+
+export function getQuestionCountForLength(length: VAKLength): number {
+  return VAK_LENGTHS[length];
+}
+
+// Kept for backwards compatibility (tier-based length). New flows use length instead.
 export const VAK_TIER_QUESTIONS = {
-  free: 10,    // tier_0 and tier_1
-  pro: 10,     // tier_2
-  elite: 10,   // tier_3
+  free: 10,
+  pro: 10,
+  elite: 10,
 } as const;
 
 export function getQuestionCountForTier(tier: string): number {
@@ -33,26 +45,32 @@ export function getRetakeDays(tier: string): number {
   return 7; // All tiers: 1 week cooldown
 }
 
+/**
+ * Pick a randomized subset of VAK questions.
+ * Called once per assessment so users don't see the same 10 every week.
+ */
+export function pickRandomQuestionIds(count: number): number[] {
+  const all = VAK_QUESTIONS.map((q) => q.id);
+  // Fisher-Yates
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  return all.slice(0, Math.min(count, all.length)).sort((a, b) => a - b);
+}
+
 // ─── Elite sub-type indicator questions ─────────────────────
-// Elite currently serves the first 10 questions (ids 1–10) via
-// VAK_QUESTIONS.slice(0, getQuestionCountForTier("tier_3")).
-// All indicator IDs below MUST be a subset of {1..10} so they are
-// actually answered during the assessment.
+// Expanded across the full 50-question pool so subtype detection still
+// works when the assessment uses a randomized subset.
 
-// Visual sub-types
-//   Spatial  = mental imagery / spatial reasoning (picture, map, visualize)
-//   Verbal   = text / notes / diagrams-with-words (default when NOT spatial)
-export const SPATIAL_VISUAL_QS = [2, 4, 6];
+// Visual: Spatial (mental imagery / maps / picture in head)
+export const SPATIAL_VISUAL_QS = [2, 4, 6, 13, 18, 34, 41, 47, 49];
 
-// Auditory sub-types
-//   Expressive = talking / repeating out loud / verbalizing
-//   Receptive  = listening to others (default when NOT expressive)
-export const EXPRESSIVE_AUDITORY_QS = [2, 10];
+// Auditory: Expressive (talking / repeating out loud / verbalizing)
+export const EXPRESSIVE_AUDITORY_QS = [2, 10, 12, 17, 22, 26, 29, 32, 39, 43, 46];
 
-// Kinesthetic sub-types
-//   Physical = whole-body movement / walking / exercise
-//   Tactile  = hands-on writing / practicing (default when NOT physical)
-export const PHYSICAL_KINESTHETIC_QS = [4, 10];
+// Kinesthetic: Physical (whole-body movement / walking / exercise)
+export const PHYSICAL_KINESTHETIC_QS = [4, 10, 12, 20, 25, 29, 43, 47];
 
 export const VAK_QUESTIONS: VAKQuestion[] = [
   // ==================== FREE TIER: Q1–Q15 ====================

@@ -29,6 +29,8 @@ export default function Onboarding() {
   const [savedVAKProgress, setSavedVAKProgress] = useState<{
     answers: Record<number, VAKStyle>;
     currentIndex: number;
+    questionIds?: number[];
+    length?: "quick" | "full";
   } | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -53,6 +55,8 @@ export default function Onboarding() {
         setSavedVAKProgress({
           answers: progress.answers,
           currentIndex: progress.currentIndex,
+          questionIds: progress.questionIds,
+          length: progress.length,
         });
       }
     }
@@ -103,12 +107,14 @@ export default function Onboarding() {
 
   const handleVAKProgressSave = async (
     answers: Record<number, VAKStyle>,
-    currentIndex: number
+    currentIndex: number,
+    questionIds: number[],
+    length: "quick" | "full"
   ) => {
     if (!user) return;
     supabase
       .from("profiles")
-      .update({ vak_progress: { answers, currentIndex } } as any)
+      .update({ vak_progress: { answers, currentIndex, questionIds, length } } as any)
       .eq("user_id", user.id)
       .then(({ error }) => {
         if (error) console.error("Error saving VAK progress:", error);
@@ -298,6 +304,7 @@ export default function Onboarding() {
           {phase === "vak" && (
             <VAKAssessment
               tier={userTier}
+              allowLengthChoice={isRetake}
               savedProgress={savedVAKProgress}
               onComplete={handleVAKComplete}
               onProgressSave={handleVAKProgressSave}
