@@ -477,3 +477,39 @@ function categorizeLength(questionCount: number): "quick" | "short" | "medium" |
   if (questionCount <= 100) return "long";
   return "full";
 }
+
+function sanitizeTable(raw: unknown): QuestionTable | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const t = raw as Partial<QuestionTable>;
+  if (!Array.isArray(t.headers) || !Array.isArray(t.rows)) return undefined;
+  const headers = t.headers.map((h) => String(h ?? ""));
+  const rows = t.rows
+    .filter((r) => Array.isArray(r))
+    .map((r) => (r as unknown[]).map((c) => String(c ?? "")));
+  if (headers.length === 0 || rows.length === 0) return undefined;
+  const out: QuestionTable = { headers, rows };
+  if (typeof t.caption === "string" && t.caption.trim()) out.caption = t.caption;
+  return out;
+}
+
+function sanitizeFigure(raw: unknown): QuestionFigure | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const f = raw as Partial<QuestionFigure>;
+  const alt = typeof f.alt === "string" && f.alt.trim() ? f.alt : "Figure";
+  if (f.type === "svg" && typeof f.svg === "string" && f.svg.includes("<svg")) {
+    // Strip <script>, on* handlers, and javascript: URLs from inline SVG.
+    let svg = f.svg;
+    svg = svg.replace(/<script[\s\S]*?<\/script>/gi, "");
+    svg = svg.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+    svg = svg.replace(/(href|xlink:href)\s*=\s*("|')\s*javascript:[^"']*("|')/gi, '$1="#"');
+    const out: QuestionFigure = { type: "svg", svg, alt };
+    if (typeof f.caption === "string" && f.caption.trim()) out.caption = f.caption;
+    return out;
+  }
+  if (f.type === "image" && typeof f.src === "string" && /^(https?:|data:image\/)/i.test(f.src)) {
+    const out: QuestionFigure = { type: "image", src: f.src, alt };
+    if (typeof f.caption === "string" && f.caption.trim()) out.caption = f.caption;
+    return out;
+  }
+  return undefined;
+}
