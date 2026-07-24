@@ -202,8 +202,7 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
     if (!tts.speaking && !tts.paused && wasSpeakingRef.current && autoPlayNarration) {
       wasSpeakingRef.current = false;
       if (slideIdx < total - 1) {
-        const t = window.setTimeout(() => setSlideIdx(i => Math.min(i + 1, total - 1)), 5000);
-        return () => window.clearTimeout(t);
+        setSlideIdx(i => Math.min(i + 1, total - 1));
       }
     }
   }, [tts.speaking, tts.paused, autoPlayNarration, slideIdx, total]);
