@@ -111,6 +111,8 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
 
   const stop = useCallback(() => {
     if (!supported) return;
+    pauseIntentRef.current = false;
+    speakIntentRef.current = false;
     window.speechSynthesis.cancel();
     utteranceRef.current = null;
     setSpeaking(false);
@@ -141,6 +143,8 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
       if (chunks.length === 0) chunks.push(text);
 
       const startQueue = () => {
+        pauseIntentRef.current = false;
+        speakIntentRef.current = true;
         chunks.forEach((chunk, i) => {
           const u = new SpeechSynthesisUtterance(chunk);
           u.lang = bcp;
@@ -148,9 +152,19 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
           u.rate = 1;
           u.pitch = 1;
           if (i === chunks.length - 1) {
-            u.onend = () => { setSpeaking(false); setPaused(false); };
+            u.onend = () => {
+              speakIntentRef.current = false;
+              pauseIntentRef.current = false;
+              setSpeaking(false);
+              setPaused(false);
+            };
           }
-          u.onerror = () => { setSpeaking(false); setPaused(false); };
+          u.onerror = () => {
+            speakIntentRef.current = false;
+            pauseIntentRef.current = false;
+            setSpeaking(false);
+            setPaused(false);
+          };
           synth.speak(u);
           if (i === 0) utteranceRef.current = u;
         });
@@ -173,14 +187,22 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
 
   const pause = useCallback(() => {
     if (!supported) return;
+    pauseIntentRef.current = true;
     window.speechSynthesis.pause();
+    setSpeaking(false);
     setPaused(true);
   }, [supported]);
 
   const resume = useCallback(() => {
     if (!supported) return;
+    pauseIntentRef.current = false;
+    // Chrome sometimes needs resume() called twice after a chunk boundary.
     window.speechSynthesis.resume();
+    window.setTimeout(() => {
+      if (!pauseIntentRef.current) window.speechSynthesis.resume();
+    }, 50);
     setPaused(false);
+    setSpeaking(true);
   }, [supported]);
 
   // Stop on unmount
