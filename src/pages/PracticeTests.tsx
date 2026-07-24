@@ -133,7 +133,7 @@ export default function PracticeTests() {
     // selector isn't undermined by an ordering pass.
     const effectiveConfig = testMode === "official"
       ? { testType: "combined" as TestType, length: "full" as TestLength, difficulty, timerEnabled, sortOrder }
-      : { testType, length, difficulty, timerEnabled, sortOrder: "mixed" as SortOrder };
+      : { testType, length, difficulty, timerEnabled, sortOrder: "mixed" as SortOrder, topics: selectedTopics };
 
     try {
       const test = await generateTest(
