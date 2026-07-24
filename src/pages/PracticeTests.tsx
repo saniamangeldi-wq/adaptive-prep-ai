@@ -17,7 +17,8 @@ import {
   LineChart as LineChartIcon,
   Layers,
   HelpCircle,
-  ArrowLeft
+  ArrowLeft,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
