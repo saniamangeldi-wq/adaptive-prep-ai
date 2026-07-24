@@ -183,9 +183,25 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
           u.onstart = () => {
             if (!pauseIntentRef.current) {
               setCurrentText(chunk);
+              setCharIndex(-1);
+              setCharLength(0);
               setSpeaking(true);
               setPaused(false);
             }
+          };
+          u.onboundary = (ev: SpeechSynthesisEvent) => {
+            // Firefox/Chrome fire 'word' boundaries; Safari may not fire at all.
+            if ((ev as any).name && (ev as any).name !== "word") return;
+            if (pauseIntentRef.current) return;
+            const idx = ev.charIndex ?? 0;
+            // charLength is unreliable in some engines; derive from chunk text.
+            let len = (ev as any).charLength as number | undefined;
+            if (!len || len <= 0) {
+              const m = chunk.slice(idx).match(/^\S+/);
+              len = m ? m[0].length : 0;
+            }
+            setCharIndex(idx);
+            setCharLength(len);
           };
           if (i === chunks.length - 1) {
             u.onend = () => {
@@ -194,6 +210,8 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
               setSpeaking(false);
               setPaused(false);
               setCurrentText("");
+              setCharIndex(-1);
+              setCharLength(0);
             };
           }
           u.onerror = () => {
@@ -202,6 +220,8 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
             setSpeaking(false);
             setPaused(false);
             setCurrentText("");
+            setCharIndex(-1);
+            setCharLength(0);
           };
           synth.speak(u);
           if (i === 0) utteranceRef.current = u;
