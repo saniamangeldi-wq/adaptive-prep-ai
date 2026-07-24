@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MathRenderer } from "@/components/MathRenderer";
+import { QuestionMedia } from "@/components/test/QuestionMedia";
 import type { Question } from "@/lib/test-generator";
 
 interface QuestionCardProps {
