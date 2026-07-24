@@ -11,10 +11,71 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { PageSeo } from "@/components/seo/PageSeo";
-import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle, Volume2, Sparkles } from "lucide-react";
+import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle, Volume2, VolumeX, Pause, Play, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
+import { useTranslation } from "react-i18next";
+
+function NarrationBar({
+  text,
+  lang,
+  tts,
+  autoPlay,
+  onToggleAutoPlay,
+}: {
+  text: string;
+  lang: string;
+  tts: ReturnType<typeof useSpeechSynthesis>;
+  autoPlay: boolean;
+  onToggleAutoPlay: () => void;
+}) {
+  if (!text) return null;
+  const fallback = tts.isLangFallback(lang);
+  const playing = tts.speaking && !tts.paused;
+  const handlePlayPause = () => {
+    if (tts.speaking && !tts.paused) { tts.pause(); return; }
+    if (tts.paused) { tts.resume(); return; }
+    tts.speak(text, lang);
+  };
+  return (
+    <div className="flex items-center gap-2 bg-muted/20 rounded-lg p-2 flex-wrap">
+      <Volume2 className="h-4 w-4 text-primary shrink-0 ml-1" />
+      <Button
+        type="button"
+        size="sm"
+        variant={playing ? "secondary" : "default"}
+        onClick={handlePlayPause}
+        className="gap-1.5 h-8"
+      >
+        {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+        {playing ? "Pause" : tts.paused ? "Resume" : "Play narration"}
+      </Button>
+      {(tts.speaking || tts.paused) && (
+        <Button type="button" size="sm" variant="ghost" onClick={tts.stop} className="gap-1.5 h-8">
+          <VolumeX className="h-3.5 w-3.5" /> Stop
+        </Button>
+      )}
+      <label className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={autoPlay}
+          onChange={onToggleAutoPlay}
+          className="h-3 w-3 accent-primary"
+        />
+        Auto-play
+      </label>
+      {playing && (
+        <span className="text-[10px] text-primary/70 animate-pulse hidden sm:inline">speaking…</span>
+      )}
+      {fallback && lang === "kk" && (
+        <span className="text-[10px] text-muted-foreground/70 hidden md:inline">Kazakh voice may be unavailable on this device</span>
+      )}
+    </div>
+  );
+}
 
 type Vak = "visual" | "auditory" | "reading_writing" | "kinesthetic";
+
 
 interface PrebuiltLesson {
   id: string;
@@ -58,6 +119,15 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
   const [showQuiz, setShowQuiz] = useState(false);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
+  const { i18n } = useTranslation();
+  const lang = (i18n.language || "en").slice(0, 2);
+  const tts = useSpeechSynthesis();
+  const [autoPlayNarration, setAutoPlayNarration] = useState<boolean>(() => {
+    try { return localStorage.getItem("lesson.autoPlayNarration") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("lesson.autoPlayNarration", autoPlayNarration ? "1" : "0"); } catch {}
+  }, [autoPlayNarration]);
 
   const { data: variant, isLoading: loadingVariant } = useQuery({
     queryKey: ["variant", lesson.id, vak],
@@ -101,6 +171,17 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
     saveProgress.mutate({ status: "in_progress", last_slide_index: slideIdx });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIdx]);
+
+  // Stop any active narration when slide changes; optionally auto-play new slide
+  useEffect(() => {
+    tts.stop();
+    if (!autoPlayNarration) return;
+    const s = slides[slideIdx];
+    if (!s || s.audio_url) return; // audio_url handled by <audio> element
+    const text = s.narration || [s.heading, ...(s.bullets || []), s.example || ""].filter(Boolean).join(". ");
+    if (text) tts.speak(text, lang);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slideIdx, variant?.slides]);
 
   const slides = variant?.slides ?? [];
   const total = slides.length;
@@ -232,7 +313,7 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                 {slide.narration && (
                   <p className="text-muted-foreground italic border-l-2 border-primary/40 pl-3">{slide.narration}</p>
                 )}
-                {slide.audio_url && (
+                {slide.audio_url ? (
                   <div className="flex items-center gap-2 bg-muted/20 rounded-lg p-2">
                     <Volume2 className="h-4 w-4 text-primary shrink-0 ml-1" />
                     <audio
@@ -243,7 +324,15 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                       className="w-full h-8"
                     />
                   </div>
-                )}
+                ) : tts.supported ? (
+                  <NarrationBar
+                    text={slide.narration || [slide.heading, ...(slide.bullets || []), slide.example || ""].filter(Boolean).join(". ")}
+                    lang={lang}
+                    tts={tts}
+                    autoPlay={autoPlayNarration}
+                    onToggleAutoPlay={() => setAutoPlayNarration(v => !v)}
+                  />
+                ) : null}
                 {slide.example && (
                   <div className="bg-muted/30 rounded-lg p-3 text-sm">
                     <span className="text-xs uppercase tracking-wide text-muted-foreground">Example</span>
