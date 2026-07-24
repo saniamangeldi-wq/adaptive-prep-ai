@@ -32,24 +32,6 @@ import { useDueReviews } from "@/hooks/useDueReviews";
 
 
 
-// Subject icons map
-const subjectIcons: Record<string, string> = {
-  SAT: "📝",
-  ACT: "📊",
-  "AP Calculus": "📐",
-  "AP English": "📖",
-  Math: "🔢",
-  Science: "🧪",
-  English: "📚",
-  History: "🏛️",
-  "Essay Writing": "✍️",
-  "Homework Help": "📝",
-};
-
-function getSubjectIcon(subject: string): string {
-  return subjectIcons[subject] || "📚";
-}
-
 function hasSATorACT(profile: { study_subjects?: string[] | null } | null): boolean {
   if (!profile?.study_subjects) return true; // Default to SAT behavior
   return profile.study_subjects.some(s => s === "SAT" || s === "ACT");
