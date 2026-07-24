@@ -1,4 +1,6 @@
 // Drafts AI instructions for a new Conversation Space based on user answers.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -18,13 +20,40 @@ Deno.serve(async (req) => {
 
     const { name, description, answers, freeText } = await req.json();
 
+    // Read user's preferred language (optional — default English)
+    let langCode = "en";
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } }
+        );
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("preferred_language")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (profile?.preferred_language) langCode = profile.preferred_language;
+        }
+      } catch (e) {
+        console.error("draft-space-instructions: could not load preferred_language", e);
+      }
+    }
+    const langName = langCode === "ru" ? "Russian (Русский)" : langCode === "kk" ? "Kazakh (Қазақша)" : "English";
+
     const context = freeText && String(freeText).trim().length > 0
       ? `The user described the space as:\n"${freeText}"`
       : `The user answered guided questions:\n${(answers || [])
           .map((a: { q: string; a: string }) => `Q: ${a.q}\nA: ${a.a || "(skipped)"}`)
           .join("\n\n")}`;
 
-    const systemPrompt = `You write concise "AI Instructions" for a study workspace called a Space in AdaptivePrep. Output ONLY the instructions text (no preamble, no markdown headers, no quotes). 4-8 short sentences or bullet lines. Second-person voice addressed to the AI assistant. Cover: focus/subject, audience, tone, boundaries, and how to use references if mentioned. Keep it tight and practical.`;
+    const systemPrompt = `You write concise "AI Instructions" for a study workspace called a Space in AdaptivePrep. Output ONLY the instructions text (no preamble, no markdown headers, no quotes). 4-8 short sentences or bullet lines. Second-person voice addressed to the AI assistant. Cover: focus/subject, audience, tone, boundaries, and how to use references if mentioned. Keep it tight and practical.
+
+IMPORTANT: Write the entire output in ${langName}. Keep proper nouns and technical terms as-is, but all instructional text must be in ${langName}.`;
 
     const userPrompt = `Space name: ${name || "(untitled)"}\nDescription: ${description || "(none)"}\n\n${context}\n\nWrite the AI instructions now.`;
 

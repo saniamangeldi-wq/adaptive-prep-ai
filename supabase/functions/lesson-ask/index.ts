@@ -1,7 +1,8 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Context-aware Q&A for a student watching a video lesson.
-// Body: { question: string, currentSlide: { heading, narration, bullets? }, deepDive?: boolean, fullLessonContext?: string, lessonTitle?: string, vakStyle?: string }
+// Body: { question, currentSlide, deepDive?, fullLessonContext?, lessonTitle?, vakStyle? }
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -28,6 +29,31 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Read user's preferred language (optional — default English)
+    let langCode: string = 'en';
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_ANON_KEY')!,
+          { global: { headers: { Authorization: authHeader } } }
+        );
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('preferred_language')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (profile?.preferred_language) langCode = profile.preferred_language;
+        }
+      } catch (e) {
+        console.error('lesson-ask: could not load preferred_language', e);
+      }
+    }
+    const langName = langCode === 'ru' ? 'Russian (Русский)' : langCode === 'kk' ? 'Kazakh (Қазақша)' : 'English';
+
     const vakHint =
       vakStyle === 'visual' ? 'Use vivid visual analogies.' :
       vakStyle === 'auditory' ? 'Use rhythmic, conversational phrasing.' :
@@ -39,9 +65,11 @@ Deno.serve(async (req) => {
       ? `Current slide heading: ${currentSlide.heading}\nNarration: ${currentSlide.narration ?? ''}\nBullets: ${(currentSlide.bullets ?? []).join(' | ')}`
       : '';
 
+    const languageInstruction = ` IMPORTANT: Respond ONLY in ${langName}. Keep subject-specific terms (SAT, math notation, chemical symbols, proper nouns) as-is, but write everything else in ${langName}.`;
+
     const systemPrompt = deepDive
-      ? `You are an AdaptivePrep tutor answering a student's question while they watch the lesson "${lessonTitle ?? ''}". Give a thorough, connected explanation that references earlier parts of the lesson when helpful. ${vakHint} Keep it under 180 words. Never invent facts outside the lesson context.`
-      : `You are an AdaptivePrep tutor answering a student's quick question during a video lesson. Answer briefly (2-4 sentences) focused ONLY on the current slide. ${vakHint} If the answer needs earlier lesson context, tell them to tap 'Dig deeper'.`;
+      ? `You are an AdaptivePrep tutor answering a student's question while they watch the lesson "${lessonTitle ?? ''}". Give a thorough, connected explanation that references earlier parts of the lesson when helpful. ${vakHint} Keep it under 180 words. Never invent facts outside the lesson context.${languageInstruction}`
+      : `You are an AdaptivePrep tutor answering a student's quick question during a video lesson. Answer briefly (2-4 sentences) focused ONLY on the current slide. ${vakHint} If the answer needs earlier lesson context, tell them to tap 'Dig deeper'.${languageInstruction}`;
 
     const userContent = deepDive && fullLessonContext
       ? `FULL LESSON CONTEXT:\n${fullLessonContext.slice(0, 8000)}\n\nCURRENT SLIDE:\n${slideContext}\n\nSTUDENT QUESTION: ${question}`
