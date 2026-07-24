@@ -113,6 +113,17 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIdx]);
 
+  // Stop any active narration when slide changes; optionally auto-play new slide
+  useEffect(() => {
+    tts.stop();
+    if (!autoPlayNarration) return;
+    const s = slides[slideIdx];
+    if (!s || s.audio_url) return; // audio_url handled by <audio> element
+    const text = s.narration || [s.heading, ...(s.bullets || []), s.example || ""].filter(Boolean).join(". ");
+    if (text) tts.speak(text, lang);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slideIdx, variant?.slides]);
+
   const slides = variant?.slides ?? [];
   const total = slides.length;
   const slide = slides[slideIdx];
@@ -243,7 +254,7 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                 {slide.narration && (
                   <p className="text-muted-foreground italic border-l-2 border-primary/40 pl-3">{slide.narration}</p>
                 )}
-                {slide.audio_url && (
+                {slide.audio_url ? (
                   <div className="flex items-center gap-2 bg-muted/20 rounded-lg p-2">
                     <Volume2 className="h-4 w-4 text-primary shrink-0 ml-1" />
                     <audio
@@ -254,7 +265,15 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                       className="w-full h-8"
                     />
                   </div>
-                )}
+                ) : tts.supported ? (
+                  <NarrationBar
+                    text={slide.narration || [slide.heading, ...(slide.bullets || []), slide.example || ""].filter(Boolean).join(". ")}
+                    lang={lang}
+                    tts={tts}
+                    autoPlay={autoPlayNarration}
+                    onToggleAutoPlay={() => setAutoPlayNarration(v => !v)}
+                  />
+                ) : null}
                 {slide.example && (
                   <div className="bg-muted/30 rounded-lg p-3 text-sm">
                     <span className="text-xs uppercase tracking-wide text-muted-foreground">Example</span>
