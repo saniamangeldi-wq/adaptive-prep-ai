@@ -18,6 +18,7 @@ export interface UseSpeechSynthesisResult {
   supported: boolean;
   speaking: boolean;
   paused: boolean;
+  currentText: string;
   voices: SpeechSynthesisVoice[];
   /** Returns true if speech started, false if fallback/unsupported for that language */
   speak: (text: string, lang?: SpeechLang) => boolean;
@@ -34,6 +35,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [speaking, setSpeaking] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [currentText, setCurrentText] = useState("");
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   // Tracks user intent — the Web Speech `paused`/`speaking` flags flicker
   // between chunked utterances, so we drive the UI from intent instead.
@@ -117,6 +119,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
     utteranceRef.current = null;
     setSpeaking(false);
     setPaused(false);
+    setCurrentText("");
   }, [supported]);
 
   const speak = useCallback(
@@ -145,18 +148,27 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
       const startQueue = () => {
         pauseIntentRef.current = false;
         speakIntentRef.current = true;
+        setCurrentText("");
         chunks.forEach((chunk, i) => {
           const u = new SpeechSynthesisUtterance(chunk);
           u.lang = bcp;
           if (voice) u.voice = voice;
           u.rate = 1;
           u.pitch = 1;
+          u.onstart = () => {
+            if (!pauseIntentRef.current) {
+              setCurrentText(chunk);
+              setSpeaking(true);
+              setPaused(false);
+            }
+          };
           if (i === chunks.length - 1) {
             u.onend = () => {
               speakIntentRef.current = false;
               pauseIntentRef.current = false;
               setSpeaking(false);
               setPaused(false);
+              setCurrentText("");
             };
           }
           u.onerror = () => {
@@ -164,6 +176,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
             pauseIntentRef.current = false;
             setSpeaking(false);
             setPaused(false);
+            setCurrentText("");
           };
           synth.speak(u);
           if (i === 0) utteranceRef.current = u;
@@ -210,5 +223,5 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
     if (supported) window.speechSynthesis.cancel();
   }, [supported]);
 
-  return { supported, speaking, paused, voices, speak, pause, resume, stop, isLangFallback };
+  return { supported, speaking, paused, currentText, voices, speak, pause, resume, stop, isLangFallback };
 }
