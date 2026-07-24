@@ -1,11 +1,19 @@
 import { useRef, useState } from "react";
-import EmojiPicker, { EmojiStyle, Theme } from "emoji-picker-react";
 import { Upload, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const PRESET_ICONS = [
+  "🎓", "📚", "📖", "✏️", "📝", "🧠", "💡", "🔬",
+  "🧪", "🧮", "📐", "📊", "📈", "🌍", "🗺️", "🏛️",
+  "⚗️", "🔭", "💻", "⌨️", "🎨", "🎭", "🎵", "🏆",
+  "⭐", "🚀", "🎯", "🔥", "💼", "📅", "🗂️", "📌",
+];
+
+
 
 const MAX_SIZE = 512 * 1024; // 512KB
 
