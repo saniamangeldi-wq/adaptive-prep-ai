@@ -292,24 +292,56 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
     if (supported) window.speechSynthesis.cancel();
   }, [supported]);
 
-  
+  const speak = useCallback(
+    (text: string, lang: SpeechLang = "en"): boolean =>
+      speakImpl(text, lang),
+    [speakImpl]
+  );
+
   const setRate = useCallback((r: number) => {
     setRateState(r);
     rateRef.current = r;
-    // If currently speaking, restart the current text at the new rate.
-    if (supported && speakIntentRef.current && lastTextRef.current) {
-      const text = lastTextRef.current;
+    // If currently speaking, restart from current absolute position at new rate.
+    if (supported && speakIntentRef.current && fullTextRef.current) {
+      const full = fullTextRef.current;
       const lang = lastLangRef.current;
+      const abs = baseOffsetRef.current + (chunkStartsRef.current[activeChunkRef.current] ?? 0) + Math.max(0, charIndex);
       window.speechSynthesis.cancel();
       window.setTimeout(() => {
-        // Inline mini-speak using latest rate via ref; reuse `speak` closure.
-        speakRef.current?.(text, lang);
+        const clamped = Math.max(0, Math.min(full.length - 1, abs));
+        speakImpl(full.slice(clamped), lang, { preserveFull: true, baseOffset: clamped });
       }, 120);
     }
-  }, [supported]);
+  }, [supported, charIndex, speakImpl]);
 
-  const speakRef = useRef(speak);
-  useEffect(() => { speakRef.current = speak; }, [speak]);
+  /** Jump ±seconds within the current narration. Estimates ~15 chars/sec × rate. */
+  const seekBy = useCallback((seconds: number) => {
+    if (!supported || !fullTextRef.current) return;
+    const full = fullTextRef.current;
+    const lang = lastLangRef.current;
+    const currentAbs = baseOffsetRef.current + (chunkStartsRef.current[activeChunkRef.current] ?? 0) + Math.max(0, charIndex);
+    const deltaChars = Math.round(seconds * 15 * rateRef.current);
+    let target = currentAbs + deltaChars;
+    target = Math.max(0, Math.min(full.length - 1, target));
+    // Snap to nearest word start so we don't begin mid-word.
+    while (target > 0 && /\S/.test(full[target - 1] || "")) target--;
+    window.speechSynthesis.cancel();
+    window.setTimeout(() => {
+      speakImpl(full.slice(target), lang, { preserveFull: true, baseOffset: target });
+    }, 120);
+  }, [supported, charIndex, speakImpl]);
 
-  return { supported, speaking, paused, currentText, charIndex, charLength, voices, rate, setRate, speak, pause, resume, stop, isLangFallback };
+  /** Restart the current narration from the beginning. */
+  const replay = useCallback(() => {
+    if (!supported || !fullTextRef.current) return;
+    const full = fullTextRef.current;
+    const lang = lastLangRef.current;
+    window.speechSynthesis.cancel();
+    window.setTimeout(() => {
+      speakImpl(full, lang);
+    }, 120);
+  }, [supported, speakImpl]);
+
+  return { supported, speaking, paused, currentText, charIndex, charLength, voices, rate, setRate, speak, pause, resume, stop, isLangFallback, seekBy, replay };
 }
+
