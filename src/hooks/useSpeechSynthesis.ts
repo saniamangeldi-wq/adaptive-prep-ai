@@ -35,6 +35,10 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   const [speaking, setSpeaking] = useState(false);
   const [paused, setPaused] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  // Tracks user intent — the Web Speech `paused`/`speaking` flags flicker
+  // between chunked utterances, so we drive the UI from intent instead.
+  const pauseIntentRef = useRef(false);
+  const speakIntentRef = useRef(false);
 
   useEffect(() => {
     if (!supported) return;
@@ -47,14 +51,30 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
     };
   }, [supported]);
 
-  // Poll speaking/paused state (Web Speech events are unreliable across browsers)
+  // Poll actual synth state, but let user intent win so pause/resume UI is
+  // stable across queued utterance boundaries.
   useEffect(() => {
     if (!supported) return;
     const id = window.setInterval(() => {
       const s = window.speechSynthesis;
-      setSpeaking(s.speaking && !s.paused);
-      setPaused(s.paused);
-    }, 250);
+      if (pauseIntentRef.current) {
+        // Chrome sometimes auto-resumes the queue; re-assert pause.
+        if (!s.paused && (s.speaking || s.pending)) s.pause();
+        setSpeaking(false);
+        setPaused(true);
+        return;
+      }
+      if (speakIntentRef.current && (s.speaking || s.pending)) {
+        setSpeaking(true);
+        setPaused(false);
+        return;
+      }
+      if (!s.speaking && !s.pending) {
+        speakIntentRef.current = false;
+        setSpeaking(false);
+        setPaused(false);
+      }
+    }, 200);
     return () => window.clearInterval(id);
   }, [supported]);
 
