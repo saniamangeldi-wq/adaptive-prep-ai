@@ -82,7 +82,9 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
         .eq("lesson_id", lesson.id)
         .maybeSingle();
       if (error) throw error;
-      return data?.questions as Quiz["questions"] | null;
+      const raw = data?.questions as any;
+      const arr = Array.isArray(raw) ? raw : Array.isArray(raw?.questions) ? raw.questions : [];
+      return arr as Quiz["questions"];
     },
   });
 
@@ -112,7 +114,7 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
     );
   }
 
-  if (showQuiz && quiz) {
+  if (showQuiz && Array.isArray(quiz) && quiz.length > 0) {
     const correct = quiz.filter((q, i) => answers[i] === q.answer).length;
     return (
       <DashboardLayout>
