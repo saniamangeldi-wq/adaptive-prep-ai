@@ -44,7 +44,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [showEmoji, setShowEmoji] = useState(false);
+  
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
