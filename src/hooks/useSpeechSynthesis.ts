@@ -19,6 +19,10 @@ export interface UseSpeechSynthesisResult {
   speaking: boolean;
   paused: boolean;
   currentText: string;
+  /** Char offset of the currently spoken word within currentText (-1 if none). */
+  charIndex: number;
+  /** Length in chars of the currently spoken word. */
+  charLength: number;
   voices: SpeechSynthesisVoice[];
   rate: number;
   setRate: (rate: number) => void;
@@ -31,6 +35,7 @@ export interface UseSpeechSynthesisResult {
   isLangFallback: (lang: SpeechLang) => boolean;
 }
 
+
 export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   const supported =
     typeof window !== "undefined" && "speechSynthesis" in window;
@@ -38,6 +43,9 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   const [speaking, setSpeaking] = useState(false);
   const [paused, setPaused] = useState(false);
   const [currentText, setCurrentText] = useState("");
+  const [charIndex, setCharIndex] = useState(-1);
+  const [charLength, setCharLength] = useState(0);
+
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   // Tracks user intent — the Web Speech `paused`/`speaking` flags flicker
   // between chunked utterances, so we drive the UI from intent instead.
@@ -132,6 +140,9 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
     setSpeaking(false);
     setPaused(false);
     setCurrentText("");
+    setCharIndex(-1);
+    setCharLength(0);
+
   }, [supported]);
 
   const speak = useCallback(
@@ -172,9 +183,25 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
           u.onstart = () => {
             if (!pauseIntentRef.current) {
               setCurrentText(chunk);
+              setCharIndex(-1);
+              setCharLength(0);
               setSpeaking(true);
               setPaused(false);
             }
+          };
+          u.onboundary = (ev: SpeechSynthesisEvent) => {
+            // Firefox/Chrome fire 'word' boundaries; Safari may not fire at all.
+            if ((ev as any).name && (ev as any).name !== "word") return;
+            if (pauseIntentRef.current) return;
+            const idx = ev.charIndex ?? 0;
+            // charLength is unreliable in some engines; derive from chunk text.
+            let len = (ev as any).charLength as number | undefined;
+            if (!len || len <= 0) {
+              const m = chunk.slice(idx).match(/^\S+/);
+              len = m ? m[0].length : 0;
+            }
+            setCharIndex(idx);
+            setCharLength(len);
           };
           if (i === chunks.length - 1) {
             u.onend = () => {
@@ -183,6 +210,8 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
               setSpeaking(false);
               setPaused(false);
               setCurrentText("");
+              setCharIndex(-1);
+              setCharLength(0);
             };
           }
           u.onerror = () => {
@@ -191,6 +220,8 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
             setSpeaking(false);
             setPaused(false);
             setCurrentText("");
+            setCharIndex(-1);
+            setCharLength(0);
           };
           synth.speak(u);
           if (i === 0) utteranceRef.current = u;
@@ -256,5 +287,5 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   const speakRef = useRef(speak);
   useEffect(() => { speakRef.current = speak; }, [speak]);
 
-  return { supported, speaking, paused, currentText, voices, rate, setRate, speak, pause, resume, stop, isLangFallback };
+  return { supported, speaking, paused, currentText, charIndex, charLength, voices, rate, setRate, speak, pause, resume, stop, isLangFallback };
 }
