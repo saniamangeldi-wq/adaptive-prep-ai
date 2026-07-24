@@ -596,8 +596,19 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                       disabled={slideIdx === 0}
                       className="p-2 rounded hover:bg-white/10 disabled:opacity-30"
                       aria-label="Previous scene"
+                      title="Previous scene"
                     >
                       <SkipBack className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => tts.seekBy(-10)}
+                      disabled={!tts.speaking && !tts.paused}
+                      className="p-2 rounded hover:bg-white/10 disabled:opacity-30 relative"
+                      aria-label="Rewind 10 seconds"
+                      title="Rewind 10s"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      <span className="absolute -bottom-0.5 -right-0.5 text-[8px] font-bold bg-black/60 rounded px-0.5">10</span>
                     </button>
                     <button
                       onClick={handlePlayPause}
@@ -607,18 +618,38 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                       {isPlaying ? <Pause className="h-4 w-4" fill="currentColor" /> : <Play className="h-4 w-4 ml-0.5" fill="currentColor" />}
                     </button>
                     <button
+                      onClick={() => tts.seekBy(10)}
+                      disabled={!tts.speaking && !tts.paused}
+                      className="p-2 rounded hover:bg-white/10 disabled:opacity-30 relative"
+                      aria-label="Forward 10 seconds"
+                      title="Forward 10s"
+                    >
+                      <RotateCw className="h-4 w-4" />
+                      <span className="absolute -bottom-0.5 -right-0.5 text-[8px] font-bold bg-black/60 rounded px-0.5">10</span>
+                    </button>
+                    <button
+                      onClick={() => tts.replay()}
+                      className="p-2 rounded hover:bg-white/10"
+                      aria-label="Replay scene from start"
+                      title="Replay from start"
+                    >
+                      <Repeat className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() => {
                         if (slideIdx < total - 1) setSlideIdx(i => i + 1);
                         else setShowQuiz(true);
                       }}
                       className="p-2 rounded hover:bg-white/10"
                       aria-label="Next scene"
+                      title="Next scene"
                     >
                       <SkipForward className="h-4 w-4" />
                     </button>
                     <span className="text-xs text-white/80 tabular-nums ml-1">
                       {slideIdx + 1} / {total}
                     </span>
+
                     <div className="ml-auto flex items-center gap-1">
                       <button
                         onClick={(e) => { e.stopPropagation(); setShowChapters(v => !v); }}
