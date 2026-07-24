@@ -43,6 +43,9 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   const [speaking, setSpeaking] = useState(false);
   const [paused, setPaused] = useState(false);
   const [currentText, setCurrentText] = useState("");
+  const [charIndex, setCharIndex] = useState(-1);
+  const [charLength, setCharLength] = useState(0);
+
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   // Tracks user intent — the Web Speech `paused`/`speaking` flags flicker
   // between chunked utterances, so we drive the UI from intent instead.
