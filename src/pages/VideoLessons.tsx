@@ -538,6 +538,25 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                       >
                         CC
                       </button>
+                      {/* Playback speed */}
+                      <div className="flex items-center gap-0.5 rounded border border-white/20 overflow-hidden">
+                        <Gauge className="h-3.5 w-3.5 text-white/60 ml-1.5 mr-0.5" />
+                        {[0.75, 1, 1.25, 1.5].map((r) => (
+                          <button
+                            key={r}
+                            onClick={() => tts.setRate(r)}
+                            className={cn(
+                              "px-1.5 py-1 text-[10px] font-semibold tabular-nums transition-colors",
+                              Math.abs(tts.rate - r) < 0.01
+                                ? "bg-primary text-primary-foreground"
+                                : "text-white/70 hover:bg-white/10"
+                            )}
+                            aria-label={`Playback speed ${r}x`}
+                          >
+                            {r}x
+                          </button>
+                        ))}
+                      </div>
                       <label className="flex items-center gap-1.5 text-[11px] text-white/80 cursor-pointer select-none px-2">
                         <input
                           type="checkbox"
