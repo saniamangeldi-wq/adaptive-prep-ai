@@ -5,6 +5,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface QuestionTable {
+  headers: string[];
+  rows: string[][];
+  caption?: string;
+}
+
+interface QuestionFigure {
+  type: "image" | "svg";
+  src?: string;
+  svg?: string;
+  alt: string;
+  caption?: string;
+}
+
 interface Question {
   id: string;
   type: "multiple_choice" | "grid_in";
@@ -15,6 +29,9 @@ interface Question {
   options: string[];
   correct_answer: string;
   explanation: string;
+  stimulus?: string;
+  table?: QuestionTable;
+  figure?: QuestionFigure;
 }
 
 interface ParsedTest {
@@ -246,34 +263,55 @@ JSON structure:
       "section": "math" | "reading_writing",
       "difficulty": "easy" | "normal" | "hard",
       "topic": "algebra" | "geometry" | "data_analysis" | "reading_comprehension" | "grammar" | "vocabulary",
-      "text": "Full question text",
+      "stimulus": "OPTIONAL passage / intro text shown above the prompt (R&W passages, scenario setup). Omit if none.",
+      "table": {                       // OPTIONAL — include ONLY when the source shows tabular data
+        "headers": ["x", "f(x)"],
+        "rows": [["10", "82"], ["15", "137"]],
+        "caption": "optional short caption"
+      },
+      "figure": {                      // OPTIONAL — include ONLY when the source shows a chart/graph/diagram
+        "type": "svg" | "image",
+        "svg": "<svg xmlns=... viewBox=...>...</svg>",   // when type == "svg" (preferred for simple charts you can reconstruct)
+        "src": "https://... or data:image/...;base64,...", // when type == "image" (only if you have a real image URL)
+        "alt": "short accessible description",
+        "caption": "optional caption"
+      },
+      "text": "The question prompt itself, with math in LaTeX using \\( ... \\) delimiters, e.g. \\( f(x) = mx - 28 \\).",
       "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
       "correct_answer": "A" | "B" | "C" | "D",
-      "explanation": "Step by step solution"
+      "explanation": "Step by step solution, also using LaTeX for math."
     }
   ]
 }
 
 STRICT RULES YOU MUST FOLLOW:
-1. For every multiple_choice question, you MUST:
+1. MATH FORMATTING — NEVER spell out math in words. Do NOT write "f left parenthesis x right parenthesis equals m x minus 28"; write \\( f(x) = mx - 28 \\). Use LaTeX inline delimiters \\( ... \\) (or \\[ ... \\] for display) inside "text", "stimulus", "explanation", "options", table cells, and figure captions.
+
+2. TABLES — If the source shows a table (a grid of aligned numbers/labels, e.g. "x | 10 15 20 25" and "f(x) | 82 137 192 247"), you MUST emit it as a structured "table" object with headers[] and rows[][]. Do NOT inline the numbers into the "text" as prose. Cells may contain LaTeX.
+
+3. FIGURES — If the source shows a chart, graph, coordinate plane, or diagram, emit a "figure". Prefer type "svg" with a clean, minimal inline <svg> (viewBox, no scripts, no external refs) that reproduces the shape/points/axes. Only use type "image" when you have a real image URL/data-URL for that figure. Always include "alt".
+
+4. PARENTHESES/OPERATORS — Never describe them in words ("left parenthesis", "equals", "over", "square root of"). Use the LaTeX symbol.
+
+5. For every multiple_choice question, you MUST:
    a. Solve the question mathematically yourself
    b. Identify which option (A/B/C/D) contains your computed answer
    c. Set correct_answer to that letter
    d. Write an explanation that matches that letter
    e. Never set correct_answer to a letter whose option text does not match your solution
 
-2. For ratio/proportion questions, ONLY use numbers that produce clean integer answers.
+6. For ratio/proportion questions, ONLY use numbers that produce clean integer answers.
    Test: if answer = given_value × (b/a) and the result is not an integer, change the given value before writing the question.
 
-3. options must always have exactly 4 entries for multiple_choice questions.
+7. options must always have exactly 4 entries for multiple_choice questions.
 
-4. All 4 options must be different from each other.
+8. All 4 options must be different from each other.
 
-5. correct_answer must be exactly one of: "A", "B", "C", or "D"
+9. correct_answer must be exactly one of: "A", "B", "C", or "D"
 
-6. If the PDF text is unreadable, corrupted, or clearly not SAT content, return:
-   { "error": "Unable to parse PDF content" }
-   Do NOT invent questions. Do NOT guess. Return the error object only.`;
+10. If the PDF text is unreadable, corrupted, or clearly not SAT content, return:
+    { "error": "Unable to parse PDF content" }
+    Do NOT invent questions. Do NOT guess. Return the error object only.`;
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -287,7 +325,7 @@ STRICT RULES YOU MUST FOLLOW:
         { role: "system", content: systemPrompt },
         {
           role: "user",
-          content: `Parse this SAT practice test content from file "${fileName}":\n\n${pdfText.slice(0, 30000)}\n\nExtract all questions with their answer choices, correct answers, and explanations. If the text is unreadable or clearly not SAT content, return the error object as instructed.`,
+          content: `Parse this SAT practice test content from file "${fileName}":\n\n${pdfText.slice(0, 30000)}\n\nExtract all questions with their answer choices, correct answers, and explanations. When you see a table of values, output a structured "table" object (never inline the numbers as prose). When you see a chart or diagram, output a "figure" with inline SVG. Write ALL math with LaTeX \\( ... \\) delimiters. If the text is unreadable or clearly not SAT content, return the error object as instructed.`,
         },
       ],
       max_tokens: 8000,
@@ -322,17 +360,25 @@ STRICT RULES YOU MUST FOLLOW:
       throw new Error("Invalid parsed structure: missing questions array");
     }
 
-    parsed.questions = parsed.questions.map((q: Partial<Question>, i: number) => ({
-      id: q.id || `q${i + 1}`,
-      type: q.type || "multiple_choice",
-      section: q.section || "math",
-      difficulty: q.difficulty || "normal",
-      topic: q.topic || "general",
-      text: q.text || "",
-      options: q.options || [],
-      correct_answer: q.correct_answer || "",
-      explanation: q.explanation || "",
-    }));
+    parsed.questions = parsed.questions.map((q: Partial<Question>, i: number) => {
+      const cleaned: Question = {
+        id: q.id || `q${i + 1}`,
+        type: q.type || "multiple_choice",
+        section: q.section || "math",
+        difficulty: q.difficulty || "normal",
+        topic: q.topic || "general",
+        text: q.text || "",
+        options: q.options || [],
+        correct_answer: q.correct_answer || "",
+        explanation: q.explanation || "",
+      };
+      if (typeof q.stimulus === "string" && q.stimulus.trim()) cleaned.stimulus = q.stimulus;
+      const table = sanitizeTable(q.table);
+      if (table) cleaned.table = table;
+      const figure = sanitizeFigure(q.figure);
+      if (figure) cleaned.figure = figure;
+      return cleaned;
+    });
 
     return {
       testName: parsed.testName || fileName.replace(".pdf", ""),
@@ -430,4 +476,40 @@ function categorizeLength(questionCount: number): "quick" | "short" | "medium" |
   if (questionCount <= 50) return "medium";
   if (questionCount <= 100) return "long";
   return "full";
+}
+
+function sanitizeTable(raw: unknown): QuestionTable | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const t = raw as Partial<QuestionTable>;
+  if (!Array.isArray(t.headers) || !Array.isArray(t.rows)) return undefined;
+  const headers = t.headers.map((h) => String(h ?? ""));
+  const rows = t.rows
+    .filter((r) => Array.isArray(r))
+    .map((r) => (r as unknown[]).map((c) => String(c ?? "")));
+  if (headers.length === 0 || rows.length === 0) return undefined;
+  const out: QuestionTable = { headers, rows };
+  if (typeof t.caption === "string" && t.caption.trim()) out.caption = t.caption;
+  return out;
+}
+
+function sanitizeFigure(raw: unknown): QuestionFigure | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const f = raw as Partial<QuestionFigure>;
+  const alt = typeof f.alt === "string" && f.alt.trim() ? f.alt : "Figure";
+  if (f.type === "svg" && typeof f.svg === "string" && f.svg.includes("<svg")) {
+    // Strip <script>, on* handlers, and javascript: URLs from inline SVG.
+    let svg = f.svg;
+    svg = svg.replace(/<script[\s\S]*?<\/script>/gi, "");
+    svg = svg.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+    svg = svg.replace(/(href|xlink:href)\s*=\s*("|')\s*javascript:[^"']*("|')/gi, '$1="#"');
+    const out: QuestionFigure = { type: "svg", svg, alt };
+    if (typeof f.caption === "string" && f.caption.trim()) out.caption = f.caption;
+    return out;
+  }
+  if (f.type === "image" && typeof f.src === "string" && /^(https?:|data:image\/)/i.test(f.src)) {
+    const out: QuestionFigure = { type: "image", src: f.src, alt };
+    if (typeof f.caption === "string" && f.caption.trim()) out.caption = f.caption;
+    return out;
+  }
+  return undefined;
 }
