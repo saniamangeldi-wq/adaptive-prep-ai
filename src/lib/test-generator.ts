@@ -46,7 +46,62 @@ export interface TestConfig {
   difficulty: "easy" | "normal" | "hard";
   timerEnabled: boolean;
   sortOrder?: SortOrder;
+  /** Canonical SAT domain filter (see SAT_TOPICS). Empty/undefined = all. */
+  topics?: string[];
 }
+
+/** Canonical SAT domains per section. Kept in sync with the College Board's Digital SAT specification. */
+export const SAT_TOPICS: {
+  math: readonly string[];
+  reading_writing: readonly string[];
+} = {
+  math: [
+    "Algebra",
+    "Advanced Math",
+    "Problem Solving & Data Analysis",
+    "Geometry & Trigonometry",
+  ],
+  reading_writing: [
+    "Craft & Structure",
+    "Information & Ideas",
+    "Standard English Conventions",
+    "Expression of Ideas",
+  ],
+} as const;
+
+/** Fallback bucket for questions whose raw topic doesn't match any canonical domain. */
+export const OTHER_TOPIC = "Other";
+
+/**
+ * Map a raw question topic string to one of the canonical SAT domains
+ * (case-insensitive keyword match). Returns OTHER_TOPIC when nothing matches
+ * so no question is silently dropped.
+ */
+export function mapToCanonicalTopic(
+  rawTopic: string | undefined | null,
+  section: "math" | "reading_writing"
+): string {
+  const t = (rawTopic || "").toLowerCase();
+  if (!t) return OTHER_TOPIC;
+
+  if (section === "math") {
+    if (/\balgebra\b/.test(t) && !/advanced|pre-?calc/.test(t)) return "Algebra";
+    if (/advanced|polynomial|quadratic|exponential|nonlinear|function/.test(t)) return "Advanced Math";
+    if (/geometry|trig|angle|circle|triangle|volume|area/.test(t)) return "Geometry & Trigonometry";
+    if (/data|statistic|probability|ratio|percent|problem\s*solving|analysis/.test(t))
+      return "Problem Solving & Data Analysis";
+    return OTHER_TOPIC;
+  }
+
+  // reading_writing
+  if (/grammar|convention|punctuation|syntax|subject-verb|tense/.test(t)) return "Standard English Conventions";
+  if (/craft|structure|word\s*choice|tone|purpose|rhetoric|vocab/.test(t)) return "Craft & Structure";
+  if (/information|idea|evidence|inference|main\s*idea|detail|comprehension|reading/.test(t))
+    return "Information & Ideas";
+  if (/expression|transition|synthes|revis|writing/.test(t)) return "Expression of Ideas";
+  return OTHER_TOPIC;
+}
+
 
 export interface GeneratedTest {
   id: string;
@@ -248,9 +303,17 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     return { match, other };
   };
 
+  // Topic filter: narrow the pool BEFORE difficulty/seen ranking runs.
+  const topicFilter = (config.topics ?? []).filter(Boolean);
+  const topicFiltered = topicFilter.length
+    ? allQuestions.filter((q) =>
+        topicFilter.includes(mapToCanonicalTopic(q.topic, q.section))
+      )
+    : allQuestions;
+
   // CHANGE 3: Fisher-Yates instead of biased Math.random()-0.5 sort.
-  const unseenAll = shuffle(allQuestions.filter((q) => !seenQuestionIds.has(q.id)));
-  const seenAll = allQuestions
+  const unseenAll = shuffle(topicFiltered.filter((q) => !seenQuestionIds.has(q.id)));
+  const seenAll = topicFiltered
     .filter((q) => seenQuestionIds.has(q.id))
     .sort((a, b) => (lastSeenAt.get(a.id) ?? 0) - (lastSeenAt.get(b.id) ?? 0));
 
@@ -306,8 +369,9 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     (q) => (difficultyRank[q.difficulty] ?? 1) !== preferredRank
   ).length;
   if (selectedQuestions.length < targetQuestions) {
-    poolWarning =
-      "Some sections have fewer questions than a full SAT because the question bank is still being expanded.";
+    poolWarning = topicFilter.length
+      ? `Not enough questions for the selected topics yet — delivered ${selectedQuestions.length} of ${targetQuestions}. Try adding more topics or a different difficulty.`
+      : "Some sections have fewer questions than a full SAT because the question bank is still being expanded.";
   } else if (mismatchedCount > 0) {
     poolWarning =
       `Only ${selectedQuestions.length - mismatchedCount} of ${selectedQuestions.length} questions ` +

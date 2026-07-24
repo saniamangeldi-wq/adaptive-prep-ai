@@ -17,11 +17,12 @@ import {
   LineChart as LineChartIcon,
   Layers,
   HelpCircle,
-  ArrowLeft
+  ArrowLeft,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { generateTest } from "@/lib/test-generator";
+import { generateTest, SAT_TOPICS } from "@/lib/test-generator";
 import { useToast } from "@/hooks/use-toast";
 import { getTierLimits, PricingTier } from "@/lib/tier-limits";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
@@ -73,7 +74,28 @@ export default function PracticeTests() {
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const [view, setView] = useState<"menu" | "config">("menu");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const { user, profile } = useAuth();
+
+  const availableTopics: { section: "math" | "reading_writing"; label: string; topic: string }[] = (() => {
+    const groups: { section: "math" | "reading_writing"; label: string; topic: string }[] = [];
+    if (testType === "math" || testType === "combined") {
+      SAT_TOPICS.math.forEach((t) => groups.push({ section: "math", label: "Math", topic: t }));
+    }
+    if (testType === "reading_writing" || testType === "combined") {
+      SAT_TOPICS.reading_writing.forEach((t) =>
+        groups.push({ section: "reading_writing", label: "Reading & Writing", topic: t })
+      );
+    }
+    return groups;
+  })();
+
+  const toggleTopic = (topic: string) => {
+    setSelectedTopics((prev) =>
+      prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
+    );
+  };
+
 
   const selectedLength = { id: length, label: baseTestLengths.find(l => l.id === length)?.label || "", ...getLengthMeta(length, testType) };
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
@@ -111,7 +133,7 @@ export default function PracticeTests() {
     // selector isn't undermined by an ordering pass.
     const effectiveConfig = testMode === "official"
       ? { testType: "combined" as TestType, length: "full" as TestLength, difficulty, timerEnabled, sortOrder }
-      : { testType, length, difficulty, timerEnabled, sortOrder: "mixed" as SortOrder };
+      : { testType, length, difficulty, timerEnabled, sortOrder: "mixed" as SortOrder, topics: selectedTopics };
 
     try {
       const test = await generateTest(
@@ -387,6 +409,84 @@ export default function PracticeTests() {
               </div>
             </div>
 
+            {/* Topics (Practice mode only) */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Topics</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Leave all off to include every domain, or pick specific ones to focus your session.
+                  </p>
+                </div>
+                {selectedTopics.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTopics([])}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+
+              {(["math", "reading_writing"] as const)
+                .filter((s) => testType === "combined" || testType === s)
+                .map((section) => {
+                  const topics = section === "math" ? SAT_TOPICS.math : SAT_TOPICS.reading_writing;
+                  const label = section === "math" ? "Math" : "Reading & Writing";
+                  return (
+                    <div key={section} className="space-y-2">
+                      {testType === "combined" && (
+                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</div>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {topics.map((topic) => {
+                          const active = selectedTopics.includes(topic);
+                          return (
+                            <button
+                              key={topic}
+                              type="button"
+                              onClick={() => toggleTopic(topic)}
+                              className={cn(
+                                "px-3 py-1.5 rounded-full text-xs font-medium border-2 transition-all",
+                                active
+                                  ? "border-primary bg-primary/15 text-primary"
+                                  : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                              )}
+                            >
+                              {topic}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {selectedTopics.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
+                  <span className="text-xs text-muted-foreground self-center">Filtering:</span>
+                  {selectedTopics.map((topic) => (
+                    <span
+                      key={topic}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs"
+                    >
+                      {topic}
+                      <button
+                        type="button"
+                        onClick={() => toggleTopic(topic)}
+                        aria-label={`Remove ${topic}`}
+                        className="hover:bg-primary/20 rounded-sm"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+
             {/* Timer Toggle */}
             <div className="flex items-center justify-between p-4 rounded-xl bg-card border border-border/50">
               <div className="flex items-center gap-3">
@@ -428,7 +528,7 @@ export default function PracticeTests() {
             <p className="text-sm text-muted-foreground">
               {testMode === "official"
                 ? "Real Digital SAT: 2 R&W (27q, 32min) + 2 Math (22q, ~35min) with break"
-                : `${selectedLength?.questions} questions • ${selectedLength?.time} • ${difficulty} difficulty${timerEnabled ? "" : " • no timer"}`
+                : `${selectedLength?.questions} questions • ${selectedLength?.time} • ${difficulty} difficulty${timerEnabled ? "" : " • no timer"}${selectedTopics.length ? ` • ${selectedTopics.length} topic${selectedTopics.length > 1 ? "s" : ""}` : ""}`
               }
             </p>
           </div>
