@@ -75,7 +75,7 @@ function NarrationBar({
   );
 }
 
-type Vak = "visual" | "auditory" | "reading_writing" | "kinesthetic";
+type Vak = "visual" | "auditory" | "kinesthetic";
 
 
 interface PrebuiltLesson {
@@ -342,15 +342,7 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
           <Button variant="ghost" className="gap-2" onClick={onBack}>
             <ArrowLeft className="h-4 w-4" /> Back to Lessons
           </Button>
-          <Select value={vak} onValueChange={(v) => { setVak(v as Vak); setSlideIdx(0); }}>
-            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="visual">Visual</SelectItem>
-              <SelectItem value="auditory">Auditory</SelectItem>
-              <SelectItem value="reading_writing">Reading/Writing</SelectItem>
-              <SelectItem value="kinesthetic">Kinesthetic</SelectItem>
-            </SelectContent>
-          </Select>
+          <Badge variant="outline" className="capitalize">{vak} mode</Badge>
         </div>
 
         <div>
@@ -758,7 +750,7 @@ export default function VideoLessons() {
 
   const vak: Vak = useMemo(() => {
     const s = (profile as any)?.learning_style;
-    if (s === "visual" || s === "auditory" || s === "reading_writing" || s === "kinesthetic") return s;
+    if (s === "visual" || s === "auditory" || s === "kinesthetic") return s;
     return "visual";
   }, [profile]);
 
