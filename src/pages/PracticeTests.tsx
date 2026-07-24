@@ -74,7 +74,28 @@ export default function PracticeTests() {
   const [timerEnabled, setTimerEnabled] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const [view, setView] = useState<"menu" | "config">("menu");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const { user, profile } = useAuth();
+
+  const availableTopics: { section: "math" | "reading_writing"; label: string; topic: string }[] = (() => {
+    const groups: { section: "math" | "reading_writing"; label: string; topic: string }[] = [];
+    if (testType === "math" || testType === "combined") {
+      SAT_TOPICS.math.forEach((t) => groups.push({ section: "math", label: "Math", topic: t }));
+    }
+    if (testType === "reading_writing" || testType === "combined") {
+      SAT_TOPICS.reading_writing.forEach((t) =>
+        groups.push({ section: "reading_writing", label: "Reading & Writing", topic: t })
+      );
+    }
+    return groups;
+  })();
+
+  const toggleTopic = (topic: string) => {
+    setSelectedTopics((prev) =>
+      prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
+    );
+  };
+
 
   const selectedLength = { id: length, label: baseTestLengths.find(l => l.id === length)?.label || "", ...getLengthMeta(length, testType) };
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
