@@ -351,6 +351,7 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                 onClick={(event) => {
                   const target = event.target as HTMLElement;
                   if (target.closest("button, input, select, [role='combobox']")) return;
+                  videoRef.current?.focus();
                   handlePlayPause();
                 }}
                 onKeyDown={handleVideoKeyDown}
@@ -418,11 +419,11 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                 </div>
 
                 {/* Captions band */}
-                {showCaptions && (tts.currentText || slide.narration) && (
+                {showCaptions && tts.currentText && (
                   <div className="absolute left-0 right-0 bottom-24 px-6 z-20 pointer-events-none">
                     <div className="mx-auto max-w-3xl text-center">
                       <span className="inline-block px-4 py-2 rounded-md bg-black/70 backdrop-blur-sm text-white text-sm md:text-base leading-relaxed">
-                        {tts.currentText || (isPaused ? "Paused" : "")}
+                        {tts.currentText}
                       </span>
                     </div>
                   </div>
