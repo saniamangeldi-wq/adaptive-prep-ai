@@ -11,8 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { PageSeo } from "@/components/seo/PageSeo";
-import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle, Volume2, Sparkles } from "lucide-react";
+import { BookOpen, ArrowLeft, CheckCircle2, Circle, ChevronLeft, ChevronRight, Loader2, PlayCircle, Volume2, VolumeX, Pause, Play, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
+import { useTranslation } from "react-i18next";
 
 type Vak = "visual" | "auditory" | "reading_writing" | "kinesthetic";
 
@@ -58,6 +60,15 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
   const [showQuiz, setShowQuiz] = useState(false);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
+  const { i18n } = useTranslation();
+  const lang = (i18n.language || "en").slice(0, 2);
+  const tts = useSpeechSynthesis();
+  const [autoPlayNarration, setAutoPlayNarration] = useState<boolean>(() => {
+    try { return localStorage.getItem("lesson.autoPlayNarration") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("lesson.autoPlayNarration", autoPlayNarration ? "1" : "0"); } catch {}
+  }, [autoPlayNarration]);
 
   const { data: variant, isLoading: loadingVariant } = useQuery({
     queryKey: ["variant", lesson.id, vak],
