@@ -603,6 +603,16 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                     </span>
                     <div className="ml-auto flex items-center gap-1">
                       <button
+                        onClick={(e) => { e.stopPropagation(); setShowChapters(v => !v); }}
+                        className={cn(
+                          "flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold border transition-colors",
+                          showChapters ? "border-primary text-primary bg-primary/10" : "border-white/30 text-white/70 hover:text-white hover:border-white/60"
+                        )}
+                        aria-label="Toggle chapters"
+                      >
+                        <LayoutGrid className="h-3 w-3" /> Chapters
+                      </button>
+                      <button
                         onClick={() => setShowCaptions(v => !v)}
                         className={cn(
                           "px-2 py-1 rounded text-[10px] font-bold border transition-colors",
