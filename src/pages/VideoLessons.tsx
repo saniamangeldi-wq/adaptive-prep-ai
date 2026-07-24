@@ -267,7 +267,8 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
 
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto space-y-4">
+      <div className="max-w-5xl mx-auto space-y-4">
+
         <div className="flex items-center justify-between">
           <Button variant="ghost" className="gap-2" onClick={onBack}>
             <ArrowLeft className="h-4 w-4" /> Back to Lessons
@@ -303,18 +304,21 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
               <Progress value={((slideIdx + 1) / total) * 100} className="h-1.5" />
             </div>
 
-            <Card>
-              <CardContent className="p-6 space-y-4 min-h-[280px]">
-                <h2 className="text-xl font-semibold text-foreground">{slide.heading}</h2>
+            <Card className="border-border/60 shadow-xl bg-card">
+              <CardContent className="p-8 md:p-12 space-y-6 min-h-[520px] flex flex-col justify-center">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">{slide.heading}</h2>
                 {slide.bullets && slide.bullets.length > 0 && (
-                  <ul className="space-y-2 list-disc pl-5">
+                  <ul className="space-y-4 max-w-3xl">
                     {slide.bullets.map((b, i) => (
-                      <li key={i} className="text-foreground">{b}</li>
+                      <li key={i} className="flex items-start gap-3 text-lg md:text-xl leading-relaxed text-foreground">
+                        <span className="mt-2.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+                        <span>{b}</span>
+                      </li>
                     ))}
                   </ul>
                 )}
                 {slide.narration && (
-                  <p className="text-muted-foreground italic border-l-2 border-primary/40 pl-3">{slide.narration}</p>
+                  <p className="text-base md:text-lg text-muted-foreground italic border-l-4 border-primary/50 pl-4 max-w-3xl leading-relaxed">{slide.narration}</p>
                 )}
                 {slide.audio_url ? (
                   <div className="flex items-center gap-2 bg-muted/20 rounded-lg p-2">
@@ -336,14 +340,15 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                     onToggleAutoPlay={() => setAutoPlayNarration(v => !v)}
                   />
                 ) : null}
-                {slide.example && (
-                  <div className="bg-muted/30 rounded-lg p-3 text-sm">
-                    <span className="text-xs uppercase tracking-wide text-muted-foreground">Example</span>
-                    <p className="mt-1 text-foreground whitespace-pre-wrap">{slide.example}</p>
+                {slide.example && slide.example.trim() && slide.example.trim().toUpperCase() !== "N/A" && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 md:p-6 space-y-2">
+                    <span className="text-xs uppercase tracking-wider text-primary font-semibold">Example</span>
+                    <p className="text-base md:text-lg text-foreground whitespace-pre-wrap leading-relaxed">{slide.example}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
+
 
             <div className="flex items-center justify-between gap-2">
               <Button variant="outline" disabled={slideIdx === 0} onClick={() => setSlideIdx(i => i - 1)} className="gap-2">
