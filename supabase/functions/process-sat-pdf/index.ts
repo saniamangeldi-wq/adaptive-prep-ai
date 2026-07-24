@@ -5,6 +5,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface QuestionTable {
+  headers: string[];
+  rows: string[][];
+  caption?: string;
+}
+
+interface QuestionFigure {
+  type: "image" | "svg";
+  src?: string;
+  svg?: string;
+  alt: string;
+  caption?: string;
+}
+
 interface Question {
   id: string;
   type: "multiple_choice" | "grid_in";
@@ -15,6 +29,9 @@ interface Question {
   options: string[];
   correct_answer: string;
   explanation: string;
+  stimulus?: string;
+  table?: QuestionTable;
+  figure?: QuestionFigure;
 }
 
 interface ParsedTest {
