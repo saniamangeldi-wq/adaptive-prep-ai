@@ -101,26 +101,51 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
     (text: string, lang: SpeechLang = "en"): boolean => {
       if (!supported || !text) return false;
       const synth = window.speechSynthesis;
-      synth.cancel();
-      const u = new SpeechSynthesisUtterance(text);
       const bcp = toBcp47(lang);
-      u.lang = bcp;
       const voice = pickVoice(bcp);
-      if (voice) u.voice = voice;
-      u.rate = 1;
-      u.pitch = 1;
-      u.onend = () => {
-        setSpeaking(false);
+
+      // Chunk long text into ~180-char sentence groups — Chrome cuts off
+      // utterances after ~15s / ~200 chars, so we queue smaller chunks.
+      const chunks: string[] = [];
+      const sentences = text.replace(/\s+/g, " ").trim().split(/(?<=[.!?…])\s+/);
+      let buf = "";
+      for (const s of sentences) {
+        if ((buf + " " + s).trim().length > 180 && buf) {
+          chunks.push(buf.trim());
+          buf = s;
+        } else {
+          buf = (buf + " " + s).trim();
+        }
+      }
+      if (buf) chunks.push(buf);
+      if (chunks.length === 0) chunks.push(text);
+
+      const startQueue = () => {
+        chunks.forEach((chunk, i) => {
+          const u = new SpeechSynthesisUtterance(chunk);
+          u.lang = bcp;
+          if (voice) u.voice = voice;
+          u.rate = 1;
+          u.pitch = 1;
+          if (i === chunks.length - 1) {
+            u.onend = () => { setSpeaking(false); setPaused(false); };
+          }
+          u.onerror = () => { setSpeaking(false); setPaused(false); };
+          synth.speak(u);
+          if (i === 0) utteranceRef.current = u;
+        });
+        setSpeaking(true);
         setPaused(false);
       };
-      u.onerror = () => {
-        setSpeaking(false);
-        setPaused(false);
-      };
-      utteranceRef.current = u;
-      synth.speak(u);
-      setSpeaking(true);
-      setPaused(false);
+
+      // synth.cancel() is async in Chrome — a follow-up speak() in the same
+      // tick can be swallowed. Defer briefly if we need to clear a queue.
+      if (synth.speaking || synth.pending) {
+        synth.cancel();
+        window.setTimeout(startQueue, 120);
+      } else {
+        startQueue();
+      }
       return true;
     },
     [supported, pickVoice]
