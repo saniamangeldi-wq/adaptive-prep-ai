@@ -457,16 +457,34 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                   </div>
                 </div>
 
-                {/* Captions band */}
+                {/* Captions band with word-by-word highlighting */}
                 {showCaptions && tts.currentText && (
                   <div className="absolute left-0 right-0 bottom-24 px-6 z-20 pointer-events-none">
                     <div className="mx-auto max-w-3xl text-center">
-                      <span className="inline-block px-4 py-2 rounded-md bg-black/70 backdrop-blur-sm text-white text-sm md:text-base leading-relaxed">
-                        {tts.currentText}
+                      <span className="inline-block px-4 py-2 rounded-md bg-black/70 backdrop-blur-sm text-white/80 text-sm md:text-base leading-relaxed">
+                        {(() => {
+                          const text = tts.currentText;
+                          const idx = tts.charIndex;
+                          const len = tts.charLength;
+                          if (idx < 0 || idx >= text.length) return text;
+                          const before = text.slice(0, idx);
+                          const word = text.slice(idx, idx + (len || 0));
+                          const after = text.slice(idx + (len || 0));
+                          return (
+                            <>
+                              <span className="text-white/60">{before}</span>
+                              <span className="text-white font-semibold bg-primary/40 rounded px-1">
+                                {word}
+                              </span>
+                              <span className="text-white/40">{after}</span>
+                            </>
+                          );
+                        })()}
                       </span>
                     </div>
                   </div>
                 )}
+
 
                 {/* Big center play button when paused/stopped */}
                 {(!isPlaying || isPaused) && !slide.audio_url && (
