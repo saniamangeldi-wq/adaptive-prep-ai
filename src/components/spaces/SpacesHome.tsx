@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Folder } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useConversations, ConversationSpace } from "@/hooks/useConversations";
 import { SpaceCard } from "./SpaceCard";
