@@ -287,5 +287,5 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   const speakRef = useRef(speak);
   useEffect(() => { speakRef.current = speak; }, [speak]);
 
-  return { supported, speaking, paused, currentText, voices, rate, setRate, speak, pause, resume, stop, isLangFallback };
+  return { supported, speaking, paused, currentText, charIndex, charLength, voices, rate, setRate, speak, pause, resume, stop, isLangFallback };
 }
