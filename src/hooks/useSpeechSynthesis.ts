@@ -61,6 +61,13 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   useEffect(() => { rateRef.current = rate; try { localStorage.setItem("lesson.speechRate", String(rate)); } catch {} }, [rate]);
   const lastTextRef = useRef<string>("");
   const lastLangRef = useRef<SpeechLang>("en");
+  // For seek: full original text, absolute offset within it of the currently
+  // queued speech, and per-chunk start offsets within the current speech.
+  const fullTextRef = useRef<string>("");
+  const baseOffsetRef = useRef<number>(0);
+  const chunkStartsRef = useRef<number[]>([]);
+  const activeChunkRef = useRef<number>(0);
+
 
   useEffect(() => {
     if (!supported) return;
