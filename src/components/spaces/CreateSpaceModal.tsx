@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,11 +31,11 @@ interface CreateSpaceModalProps {
 
 type Phase = "basic" | "guided" | "freetext" | "draft";
 
-const QUESTIONS: { q: string; placeholder: string }[] = [
-  { q: "What subject or goal is this space for?", placeholder: "e.g. SAT Math prep, essay coaching, biology review" },
-  { q: "Who is it for — you, or students you teach?", placeholder: "e.g. Just me / My 10th-grade students" },
-  { q: "What tone should the AI use?", placeholder: "e.g. Encouraging and Socratic, or strict and concise" },
-  { q: "Any sources or references it must rely on?", placeholder: "e.g. Only the uploaded notes / official College Board rules" },
+const QUESTION_KEYS: { q: string; p: string }[] = [
+  { q: "spaces.q1", p: "spaces.q1p" },
+  { q: "spaces.q2", p: "spaces.q2p" },
+  { q: "spaces.q3", p: "spaces.q3p" },
+  { q: "spaces.q4", p: "spaces.q4p" },
 ];
 
 export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSpaceModalProps) {
