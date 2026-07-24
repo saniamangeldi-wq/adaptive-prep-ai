@@ -16,7 +16,66 @@ import { cn } from "@/lib/utils";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import { useTranslation } from "react-i18next";
 
+function NarrationBar({
+  text,
+  lang,
+  tts,
+  autoPlay,
+  onToggleAutoPlay,
+}: {
+  text: string;
+  lang: string;
+  tts: ReturnType<typeof useSpeechSynthesis>;
+  autoPlay: boolean;
+  onToggleAutoPlay: () => void;
+}) {
+  if (!text) return null;
+  const fallback = tts.isLangFallback(lang);
+  const playing = tts.speaking && !tts.paused;
+  const handlePlayPause = () => {
+    if (tts.speaking && !tts.paused) { tts.pause(); return; }
+    if (tts.paused) { tts.resume(); return; }
+    tts.speak(text, lang);
+  };
+  return (
+    <div className="flex items-center gap-2 bg-muted/20 rounded-lg p-2 flex-wrap">
+      <Volume2 className="h-4 w-4 text-primary shrink-0 ml-1" />
+      <Button
+        type="button"
+        size="sm"
+        variant={playing ? "secondary" : "default"}
+        onClick={handlePlayPause}
+        className="gap-1.5 h-8"
+      >
+        {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+        {playing ? "Pause" : tts.paused ? "Resume" : "Play narration"}
+      </Button>
+      {(tts.speaking || tts.paused) && (
+        <Button type="button" size="sm" variant="ghost" onClick={tts.stop} className="gap-1.5 h-8">
+          <VolumeX className="h-3.5 w-3.5" /> Stop
+        </Button>
+      )}
+      <label className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={autoPlay}
+          onChange={onToggleAutoPlay}
+          className="h-3 w-3 accent-primary"
+        />
+        Auto-play
+      </label>
+      {playing && (
+        <span className="text-[10px] text-primary/70 animate-pulse hidden sm:inline">speaking…</span>
+      )}
+      {fallback && lang === "kk" && (
+        <span className="text-[10px] text-muted-foreground/70 hidden md:inline">Kazakh voice may be unavailable on this device</span>
+      )}
+    </div>
+  );
+}
+
 type Vak = "visual" | "auditory" | "reading_writing" | "kinesthetic";
+
 
 interface PrebuiltLesson {
   id: string;
