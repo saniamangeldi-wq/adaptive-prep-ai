@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { useBadges, BADGE_DEFINITIONS } from "@/hooks/useBadges";
 import { useStreakTracker } from "@/hooks/useStreakTracker";
 import { 
   BookOpen, 
@@ -18,7 +17,6 @@ import {
   Calculator,
   PenLine,
   Flame,
-  Star,
   LineChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,24 +32,6 @@ import { useDueReviews } from "@/hooks/useDueReviews";
 
 
 
-// Subject icons map
-const subjectIcons: Record<string, string> = {
-  SAT: "📝",
-  ACT: "📊",
-  "AP Calculus": "📐",
-  "AP English": "📖",
-  Math: "🔢",
-  Science: "🧪",
-  English: "📚",
-  History: "🏛️",
-  "Essay Writing": "✍️",
-  "Homework Help": "📝",
-};
-
-function getSubjectIcon(subject: string): string {
-  return subjectIcons[subject] || "📚";
-}
-
 function hasSATorACT(profile: { study_subjects?: string[] | null } | null): boolean {
   if (!profile?.study_subjects) return true; // Default to SAT behavior
   return profile.study_subjects.some(s => s === "SAT" || s === "ACT");
@@ -61,7 +41,6 @@ export function StudentDashboard() {
   const { t } = useTranslation();
   const { profile } = useAuth();
   const { totalSATScore, mathScore, rwScore, testsTaken, hasProgress, avgAccuracy } = useDashboardStats();
-  const { earnedBadges, checkAndAwardBadges, allBadges } = useBadges();
   const { streakData } = useStreakTracker();
   const { dueCount: reviewsDue } = useDueReviews();
   const [showTutorial, setShowTutorial] = useState(false);
@@ -283,67 +262,6 @@ export function StudentDashboard() {
           </div>
         </div>
       </Link>
-
-      {/* Achievement Badges */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Star className="w-4 h-4" /> {t("dashboard.achievement_badges")}
-          </h3>
-          <span className="text-xs text-muted-foreground">
-            {earnedBadges.length}/{allBadges.length} {t("dashboard.earned")}
-          </span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {allBadges.map((badge) => {
-            const isEarned = earnedBadges.some(b => b.badge_type === badge.type);
-            return (
-              <Tooltip key={badge.type}>
-                <TooltipTrigger asChild>
-                  <div
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all ${
-                      isEarned
-                        ? "bg-primary/20 border border-primary/40 shadow-sm"
-                        : "bg-secondary/50 border border-border/30 opacity-40 grayscale"
-                    }`}
-                  >
-                    {badge.icon}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="font-medium">{badge.name}</p>
-                  <p className="text-xs text-muted-foreground">{badge.description}</p>
-                  {!isEarned && <p className="text-xs text-muted-foreground italic mt-1">{t("dashboard.not_yet_earned")}</p>}
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Subject Quick Actions */}
-      {profile?.study_subjects && (profile.study_subjects as string[]).length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">{t("dashboard.quick_help_by_subject")}</h3>
-          <div className="flex flex-wrap gap-2">
-            {(profile.study_subjects as string[]).slice(0, 6).map((subject: string) => (
-              <Tooltip key={subject}>
-                <TooltipTrigger asChild>
-                  <Link
-                    to={`/dashboard/coach?subject=${encodeURIComponent(subject)}`}
-                    className="px-4 py-2 rounded-full bg-secondary hover:bg-secondary/80 text-secondary-foreground text-sm font-medium transition-colors flex items-center gap-2"
-                  >
-                    {getSubjectIcon(subject)} {subject}
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t("dashboard.get_ai_help_with")} {subject}</p>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Quick actions */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
