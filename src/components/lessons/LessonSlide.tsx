@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import type { WordTimestamp } from "./LessonPlayer";
 import { VisualSlide } from "./vak/VisualSlide";
 import { KinestheticSlide } from "./vak/KinestheticSlide";
@@ -445,7 +445,7 @@ export function LessonSlide({
 }
 
 function MiniQuestion({ mq }: { mq: { prompt?: string; choices?: string[]; answer?: string | number; explanation?: string } }) {
-  const [picked, setPicked] = require("react").useState<number | null>(null);
+  const [picked, setPicked] = useState<number | null>(null);
   const correctIdx = typeof mq.answer === "number"
     ? mq.answer
     : mq.choices?.findIndex((c) => c.toLowerCase().trim() === String(mq.answer ?? "").toLowerCase().trim()) ?? -1;
