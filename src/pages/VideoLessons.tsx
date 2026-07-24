@@ -123,7 +123,10 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
   const lang = (i18n.language || "en").slice(0, 2);
   const tts = useSpeechSynthesis();
   const [autoPlayNarration, setAutoPlayNarration] = useState<boolean>(() => {
-    try { return localStorage.getItem("lesson.autoPlayNarration") === "1"; } catch { return false; }
+    try {
+      const v = localStorage.getItem("lesson.autoPlayNarration");
+      return v === null ? true : v === "1"; // default ON so lessons have audio out of the box
+    } catch { return true; }
   });
   useEffect(() => {
     try { localStorage.setItem("lesson.autoPlayNarration", autoPlayNarration ? "1" : "0"); } catch {}
