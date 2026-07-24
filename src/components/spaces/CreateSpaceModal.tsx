@@ -39,6 +39,8 @@ const QUESTION_KEYS: { q: string; p: string }[] = [
 ];
 
 export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSpaceModalProps) {
+  const { t } = useTranslation();
+  const QUESTIONS = QUESTION_KEYS.map((k) => ({ q: t(k.q), placeholder: t(k.p) }));
   const [phase, setPhase] = useState<Phase>("basic");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
