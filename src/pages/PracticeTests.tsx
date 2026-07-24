@@ -528,7 +528,7 @@ export default function PracticeTests() {
             <p className="text-sm text-muted-foreground">
               {testMode === "official"
                 ? "Real Digital SAT: 2 R&W (27q, 32min) + 2 Math (22q, ~35min) with break"
-                : `${selectedLength?.questions} questions • ${selectedLength?.time} • ${difficulty} difficulty${timerEnabled ? "" : " • no timer"}`
+                : `${selectedLength?.questions} questions • ${selectedLength?.time} • ${difficulty} difficulty${timerEnabled ? "" : " • no timer"}${selectedTopics.length ? ` • ${selectedTopics.length} topic${selectedTopics.length > 1 ? "s" : ""}` : ""}`
               }
             </p>
           </div>
