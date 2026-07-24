@@ -493,6 +493,67 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                   </button>
                 )}
 
+                {/* Chapter thumbnail strip */}
+                {showChapters && (
+                  <div className="absolute left-0 right-0 bottom-[92px] z-30 px-3 md:px-5 pb-2">
+                    <div className="mx-auto max-w-[95%] rounded-xl bg-black/80 backdrop-blur-md border border-white/10 p-3 shadow-2xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] uppercase tracking-[0.18em] text-white/60 font-semibold">Chapters · {total}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setShowChapters(false); }}
+                          className="text-white/50 hover:text-white p-1 rounded"
+                          aria-label="Close chapters"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="flex gap-2 overflow-x-auto pb-1 scroll-smooth">
+                        {slides.map((s, i) => {
+                          const active = i === slideIdx;
+                          const done = i < slideIdx;
+                          return (
+                            <button
+                              key={i}
+                              onClick={(e) => { e.stopPropagation(); setSlideIdx(i); }}
+                              className={cn(
+                                "shrink-0 w-44 h-24 rounded-lg text-left p-2 border transition-all relative overflow-hidden group/thumb",
+                                active
+                                  ? "border-primary bg-primary/15 shadow-[0_0_0_2px_hsl(var(--primary)/0.4)]"
+                                  : "border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10"
+                              )}
+                              aria-label={`Jump to scene ${i + 1}: ${s.heading}`}
+                            >
+                              <div className="absolute inset-0 opacity-40">
+                                <div className={cn(
+                                  "absolute -inset-6",
+                                  active
+                                    ? "bg-[radial-gradient(circle_at_30%_30%,hsl(var(--primary)/0.5),transparent_60%)]"
+                                    : "bg-[radial-gradient(circle_at_30%_30%,hsl(var(--primary)/0.2),transparent_60%)]"
+                                )} />
+                              </div>
+                              <div className="relative flex items-center gap-1.5 mb-1">
+                                <span className={cn(
+                                  "text-[9px] font-bold tabular-nums px-1.5 py-0.5 rounded",
+                                  active ? "bg-primary text-primary-foreground" : "bg-white/15 text-white/80"
+                                )}>
+                                  {String(i + 1).padStart(2, "0")}
+                                </span>
+                                {done && <CheckCircle2 className="h-3 w-3 text-primary" />}
+                                {active && (
+                                  <span className="text-[8px] uppercase tracking-widest text-primary font-bold ml-auto">Now</span>
+                                )}
+                              </div>
+                              <div className="relative text-[11px] leading-tight text-white/90 font-medium line-clamp-3">
+                                {s.heading}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Player chrome */}
                 <div className="absolute left-0 right-0 bottom-0 z-30 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-10 pb-3 px-4 md:px-6">
                   {/* Chapter scrubber */}
