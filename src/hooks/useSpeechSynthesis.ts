@@ -140,6 +140,8 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
       const synth = window.speechSynthesis;
       const bcp = toBcp47(lang);
       const voice = pickVoice(bcp);
+      lastTextRef.current = text;
+      lastLangRef.current = lang;
 
       // Chunk long text into ~180-char sentence groups — Chrome cuts off
       // utterances after ~15s / ~200 chars, so we queue smaller chunks.
@@ -165,7 +167,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
           const u = new SpeechSynthesisUtterance(chunk);
           u.lang = bcp;
           if (voice) u.voice = voice;
-          u.rate = 1;
+          u.rate = rateRef.current;
           u.pitch = 1;
           u.onstart = () => {
             if (!pauseIntentRef.current) {
