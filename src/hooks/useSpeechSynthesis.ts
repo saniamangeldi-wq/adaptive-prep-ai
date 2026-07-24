@@ -19,6 +19,10 @@ export interface UseSpeechSynthesisResult {
   speaking: boolean;
   paused: boolean;
   currentText: string;
+  /** Char offset of the currently spoken word within currentText (-1 if none). */
+  charIndex: number;
+  /** Length in chars of the currently spoken word. */
+  charLength: number;
   voices: SpeechSynthesisVoice[];
   rate: number;
   setRate: (rate: number) => void;
@@ -30,6 +34,7 @@ export interface UseSpeechSynthesisResult {
   /** true if a voice for the requested lang is unavailable and a fallback will be used */
   isLangFallback: (lang: SpeechLang) => boolean;
 }
+
 
 export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   const supported =
