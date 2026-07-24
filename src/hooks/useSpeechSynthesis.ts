@@ -152,14 +152,20 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
 
   }, [supported]);
 
-  const speak = useCallback(
-    (text: string, lang: SpeechLang = "en"): boolean => {
+  const speakImpl = useCallback(
+    (text: string, lang: SpeechLang, opts: { preserveFull?: boolean; baseOffset?: number } = {}): boolean => {
       if (!supported || !text) return false;
       const synth = window.speechSynthesis;
       const bcp = toBcp47(lang);
       const voice = pickVoice(bcp);
       lastTextRef.current = text;
       lastLangRef.current = lang;
+      if (!opts.preserveFull) {
+        fullTextRef.current = text;
+        baseOffsetRef.current = 0;
+      } else {
+        baseOffsetRef.current = opts.baseOffset ?? 0;
+      }
 
       // Chunk long text into ~180-char sentence groups — Chrome cuts off
       // utterances after ~15s / ~200 chars, so we queue smaller chunks.
@@ -177,6 +183,16 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
       if (buf) chunks.push(buf);
       if (chunks.length === 0) chunks.push(text);
 
+      // Compute chunk starts (offsets into the joined text) for seek math.
+      const starts: number[] = [];
+      let cursor = 0;
+      for (const c of chunks) {
+        starts.push(cursor);
+        cursor += c.length + 1; // + separator space
+      }
+      chunkStartsRef.current = starts;
+      activeChunkRef.current = 0;
+
       const startQueue = () => {
         pauseIntentRef.current = false;
         speakIntentRef.current = true;
@@ -189,6 +205,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
           u.pitch = 1;
           u.onstart = () => {
             if (!pauseIntentRef.current) {
+              activeChunkRef.current = i;
               setCurrentText(chunk);
               setCharIndex(-1);
               setCharLength(0);
@@ -197,11 +214,9 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
             }
           };
           u.onboundary = (ev: SpeechSynthesisEvent) => {
-            // Firefox/Chrome fire 'word' boundaries; Safari may not fire at all.
             if ((ev as any).name && (ev as any).name !== "word") return;
             if (pauseIntentRef.current) return;
             const idx = ev.charIndex ?? 0;
-            // charLength is unreliable in some engines; derive from chunk text.
             let len = (ev as any).charLength as number | undefined;
             if (!len || len <= 0) {
               const m = chunk.slice(idx).match(/^\S+/);
@@ -236,6 +251,8 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
         setSpeaking(true);
         setPaused(false);
       };
+
+
 
       // synth.cancel() is async in Chrome — a follow-up speak() in the same
       // tick can be swallowed. Defer briefly if we need to clear a queue.
