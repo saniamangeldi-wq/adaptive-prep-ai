@@ -480,6 +480,18 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                   </button>
                 )}
 
+                {/* Prominent exit-fullscreen button (only visible in fullscreen) */}
+                {isFullscreen && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); exitFullscreen(); }}
+                    className="absolute top-4 right-4 z-40 flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/70 hover:bg-black/90 text-white text-xs font-medium border border-white/20 backdrop-blur-sm shadow-lg"
+                    aria-label="Exit fullscreen"
+                  >
+                    <X className="h-4 w-4" /> Exit fullscreen
+                    <span className="hidden md:inline text-white/50 ml-1 text-[10px]">Esc</span>
+                  </button>
+                )}
+
                 {/* Player chrome */}
                 <div className="absolute left-0 right-0 bottom-0 z-30 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-10 pb-3 px-4 md:px-6">
                   {/* Chapter scrubber */}
