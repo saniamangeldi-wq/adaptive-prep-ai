@@ -114,7 +114,7 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
     );
   }
 
-  if (showQuiz && quiz) {
+  if (showQuiz && Array.isArray(quiz) && quiz.length > 0) {
     const correct = quiz.filter((q, i) => answers[i] === q.answer).length;
     return (
       <DashboardLayout>
