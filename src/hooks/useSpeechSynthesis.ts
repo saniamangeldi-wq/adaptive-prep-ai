@@ -20,6 +20,8 @@ export interface UseSpeechSynthesisResult {
   paused: boolean;
   currentText: string;
   voices: SpeechSynthesisVoice[];
+  rate: number;
+  setRate: (rate: number) => void;
   /** Returns true if speech started, false if fallback/unsupported for that language */
   speak: (text: string, lang?: SpeechLang) => boolean;
   pause: () => void;
