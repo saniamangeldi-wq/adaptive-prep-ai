@@ -426,9 +426,9 @@ export default function PracticeTests() {
           <div>
             <h3 className="font-semibold text-foreground">Ready to start?</h3>
             <p className="text-sm text-muted-foreground">
-              {testMode === "official" 
-                ? "98 questions • 4 modules • Official SAT format"
-                : `${selectedLength?.questions} questions • ${selectedLength?.time} • ${difficulty} difficulty`
+              {testMode === "official"
+                ? "Real Digital SAT: 2 R&W (27q, 32min) + 2 Math (22q, ~35min) with break"
+                : `${selectedLength?.questions} questions • ${selectedLength?.time} • ${difficulty} difficulty${timerEnabled ? "" : " • no timer"}`
               }
             </p>
           </div>
