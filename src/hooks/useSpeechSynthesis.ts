@@ -237,7 +237,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
     if (supported) window.speechSynthesis.cancel();
   }, [supported]);
 
-  return { supported, speaking, paused, currentText, voices, speak, pause, resume, stop, isLangFallback };
+  
   const setRate = useCallback((r: number) => {
     setRateState(r);
     rateRef.current = r;
