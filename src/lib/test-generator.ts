@@ -369,8 +369,9 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     (q) => (difficultyRank[q.difficulty] ?? 1) !== preferredRank
   ).length;
   if (selectedQuestions.length < targetQuestions) {
-    poolWarning =
-      "Some sections have fewer questions than a full SAT because the question bank is still being expanded.";
+    poolWarning = topicFilter.length
+      ? `Not enough questions for the selected topics yet — delivered ${selectedQuestions.length} of ${targetQuestions}. Try adding more topics or a different difficulty.`
+      : "Some sections have fewer questions than a full SAT because the question bank is still being expanded.";
   } else if (mismatchedCount > 0) {
     poolWarning =
       `Only ${selectedQuestions.length - mismatchedCount} of ${selectedQuestions.length} questions ` +
