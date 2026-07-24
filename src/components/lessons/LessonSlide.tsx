@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import type { WordTimestamp } from "./LessonPlayer";
 import { VisualSlide } from "./vak/VisualSlide";
 import { KinestheticSlide } from "./vak/KinestheticSlide";
@@ -295,10 +295,18 @@ export function LessonSlide({
     return equationProgress;
   }, [slide.equation, isNarrating, hasWordTimestamps, wordTimestamps, currentTime, equationProgress]);
 
+  const example = (slide as any).example as
+    | { problem?: string; steps?: string[]; answer?: string }
+    | undefined;
+  const miniQ = (slide as any).mini_question as
+    | { prompt?: string; choices?: string[]; answer?: string | number; explanation?: string }
+    | undefined;
+  const isExampleSlide = slide.slide_type === "example";
+
   return (
     <div
       className={cn(
-        "w-full aspect-video rounded-xl border border-border bg-card overflow-hidden relative flex flex-col transition-all duration-500",
+        "w-full aspect-video rounded-2xl border border-border bg-card overflow-hidden relative flex flex-col transition-all duration-500 shadow-lg",
         isActive ? "opacity-100 scale-100" : "opacity-0 scale-95 absolute inset-0 pointer-events-none"
       )}
     >
@@ -308,31 +316,31 @@ export function LessonSlide({
         </div>
       )}
 
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border/50 bg-muted/30">
-        <span className="text-xs text-muted-foreground font-medium">{sectionTitle}</span>
-        <span className="text-xs text-muted-foreground">{slideIndex + 1} / {totalSlides}</span>
+      <div className="flex items-center justify-between px-8 py-4 border-b border-border/50 bg-muted/30">
+        <span className="text-sm text-muted-foreground font-medium truncate">{sectionTitle}</span>
+        <span className="text-sm text-muted-foreground">{slideIndex + 1} / {totalSlides}</span>
       </div>
 
-      <div className="flex-1 flex flex-col justify-center px-8 md:px-12 py-6 md:py-8 overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-center px-10 md:px-16 py-8 md:py-12 overflow-y-auto">
         {vakContent ? (
           vakContent
         ) : slide.slide_type === "title" ? (
-          <div className="text-center space-y-4">
-            <h1 className={cn("text-2xl md:text-4xl font-bold text-foreground leading-tight transition-all duration-700", isNarrating && !headingDone ? "scale-[1.02]" : "")}>
+          <div className="text-center space-y-6 max-w-5xl mx-auto w-full">
+            <h1 className={cn("text-4xl md:text-6xl font-bold text-foreground leading-tight transition-all duration-700", isNarrating && !headingDone ? "scale-[1.02]" : "")}>
               {highlightText(slide.heading, allHighlights, isNarrating && !headingDone)}
             </h1>
             {slide.subheading && (
-              <p className={cn("text-base md:text-lg text-muted-foreground transition-opacity duration-500", isNarrating && narrationProgress < 0.3 ? "opacity-50" : "opacity-100")}>
+              <p className={cn("text-xl md:text-2xl text-muted-foreground transition-opacity duration-500", isNarrating && narrationProgress < 0.3 ? "opacity-50" : "opacity-100")}>
                 {slide.subheading}
               </p>
             )}
             {slide.bullets && slide.bullets.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-2 mt-4">
+              <div className="flex flex-wrap justify-center gap-3 mt-6">
                 {slide.bullets.map((b, i) => {
                   const state = getBulletState(i);
                   return (
                     <Badge key={i} variant="secondary" className={cn(
-                      "text-sm px-3 py-1 transition-all duration-500",
+                      "text-base px-4 py-1.5 transition-all duration-500",
                       state === "hidden" && "opacity-0 translate-y-2",
                       state === "active" && "ring-2 ring-primary/40 bg-primary/10 scale-105",
                       state === "revealed" && "opacity-100",
@@ -346,35 +354,40 @@ export function LessonSlide({
             )}
           </div>
         ) : (
-          <div className="space-y-5 max-w-2xl mx-auto w-full">
-            <h2 className={cn("text-xl md:text-2xl font-bold text-foreground transition-all duration-500", isNarrating && !headingDone ? "text-primary" : "text-foreground")}>
+          <div className="space-y-6 max-w-4xl mx-auto w-full">
+            {isExampleSlide && (
+              <span className="inline-block text-xs font-semibold tracking-wider uppercase text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
+                Worked Example
+              </span>
+            )}
+            <h2 className={cn("text-3xl md:text-4xl font-bold leading-tight transition-all duration-500", isNarrating && !headingDone ? "text-primary" : "text-foreground")}>
               {highlightText(slide.heading, allHighlights, isNarrating && !headingDone)}
             </h2>
-            {slide.subheading && <p className="text-sm text-muted-foreground">{slide.subheading}</p>}
+            {slide.subheading && <p className="text-lg md:text-xl text-muted-foreground">{slide.subheading}</p>}
 
             {slide.equation && (
               <div className={cn(
-                "bg-muted/50 border border-border rounded-lg px-6 py-4 text-center transition-all duration-700",
+                "bg-muted/50 border border-border rounded-xl px-8 py-6 text-center transition-all duration-700",
                 isNarrating && isEquationRevealed ? "border-primary/40 bg-primary/5 scale-[1.02] opacity-100" : isNarrating ? "opacity-40" : "opacity-100"
               )}>
-                <code className="text-lg md:text-xl font-mono text-primary font-semibold">{slide.equation}</code>
+                <code className="text-2xl md:text-3xl font-mono text-primary font-semibold">{slide.equation}</code>
               </div>
             )}
 
             {slide.bullets && slide.bullets.length > 0 && (
-              <ul className="space-y-3">
+              <ul className="space-y-4">
                 {slide.bullets.map((bullet, i) => {
                   const state = getBulletState(i);
                   return (
                     <li key={i} className={cn(
-                      "flex items-start gap-3 transition-all duration-500",
+                      "flex items-start gap-4 transition-all duration-500",
                       state === "hidden" && "opacity-0 translate-x-[-8px]",
                       state === "active" && "opacity-100 translate-x-0",
                       state === "revealed" && "opacity-70 translate-x-0",
                       state === "visible" && "opacity-100 translate-x-0"
                     )}>
-                      <span className={cn("mt-1.5 h-2 w-2 rounded-full shrink-0 transition-all duration-500", state === "active" ? "bg-primary scale-150 ring-4 ring-primary/20" : "bg-primary/50")} />
-                      <span className={cn("text-sm md:text-base leading-relaxed transition-all duration-500", state === "active" ? "text-foreground font-medium" : "text-foreground/80")}>
+                      <span className={cn("mt-2 h-2.5 w-2.5 rounded-full shrink-0 transition-all duration-500", state === "active" ? "bg-primary scale-150 ring-4 ring-primary/20" : "bg-primary/50")} />
+                      <span className={cn("text-lg md:text-xl leading-relaxed transition-all duration-500", state === "active" ? "text-foreground font-medium" : "text-foreground/80")}>
                         {renderBulletContent(bullet, i, state)}
                       </span>
                     </li>
@@ -383,24 +396,92 @@ export function LessonSlide({
               </ul>
             )}
 
+            {example && (example.problem || example.steps?.length) && (
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 space-y-3">
+                <div className="text-xs font-semibold tracking-wider uppercase text-primary">Example</div>
+                {example.problem && (
+                  <p className="text-lg md:text-xl font-medium text-foreground">{example.problem}</p>
+                )}
+                {example.steps && example.steps.length > 0 && (
+                  <ol className="space-y-2 list-decimal list-inside">
+                    {example.steps.map((s, i) => (
+                      <li key={i} className="text-base md:text-lg text-foreground/90 leading-relaxed">{s}</li>
+                    ))}
+                  </ol>
+                )}
+                {example.answer && (
+                  <div className="pt-2 border-t border-primary/20">
+                    <span className="text-sm text-muted-foreground">Answer: </span>
+                    <span className="text-lg font-semibold text-primary">{example.answer}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {miniQ && miniQ.prompt && (
+              <MiniQuestion mq={miniQ} />
+            )}
+
             {slide.code_snippet && (
-              <pre className={cn("bg-muted border border-border rounded-lg p-4 text-sm font-mono text-foreground overflow-x-auto transition-opacity duration-500", isNarrating && narrationProgress < 0.5 ? "opacity-30" : "opacity-100")}>
+              <pre className={cn("bg-muted border border-border rounded-lg p-5 text-base font-mono text-foreground overflow-x-auto transition-opacity duration-500", isNarrating && narrationProgress < 0.5 ? "opacity-30" : "opacity-100")}>
                 {slide.code_snippet}
               </pre>
             )}
 
             {slide.note && (
               <div className={cn(
-                "bg-primary/5 border border-primary/20 rounded-lg px-4 py-3 flex items-start gap-2 transition-all duration-700",
+                "bg-primary/5 border border-primary/20 rounded-xl px-5 py-4 flex items-start gap-3 transition-all duration-700",
                 isNarrating && narrationProgress > 0.85 ? "opacity-100 translate-y-0 border-primary/40" : isNarrating ? "opacity-0 translate-y-2" : "opacity-100"
               )}>
-                <span className="text-primary text-sm">💡</span>
-                <p className="text-sm text-foreground">{slide.note}</p>
+                <span className="text-primary text-lg">💡</span>
+                <p className="text-base md:text-lg text-foreground">{slide.note}</p>
               </div>
             )}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function MiniQuestion({ mq }: { mq: { prompt?: string; choices?: string[]; answer?: string | number; explanation?: string } }) {
+  const [picked, setPicked] = useState<number | null>(null);
+  const correctIdx = typeof mq.answer === "number"
+    ? mq.answer
+    : mq.choices?.findIndex((c) => c.toLowerCase().trim() === String(mq.answer ?? "").toLowerCase().trim()) ?? -1;
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+      <div className="text-xs font-semibold tracking-wider uppercase text-primary">Check yourself</div>
+      <p className="text-lg md:text-xl font-medium text-foreground">{mq.prompt}</p>
+      {mq.choices && mq.choices.length > 0 && (
+        <div className="grid gap-2">
+          {mq.choices.map((c, i) => {
+            const isPicked = picked === i;
+            const isCorrect = picked !== null && i === correctIdx;
+            const isWrong = isPicked && i !== correctIdx;
+            return (
+              <button
+                key={i}
+                onClick={() => setPicked(i)}
+                className={cn(
+                  "text-left px-4 py-3 rounded-lg border text-base md:text-lg transition-all",
+                  picked === null && "border-border hover:border-primary/40 hover:bg-primary/5",
+                  isCorrect && "border-primary bg-primary/10 text-primary font-semibold",
+                  isWrong && "border-destructive/50 bg-destructive/10 text-destructive",
+                  picked !== null && !isPicked && i !== correctIdx && "opacity-60"
+                )}
+              >
+                <span className="mr-2 font-semibold">{String.fromCharCode(65 + i)}.</span>
+                {c}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {picked !== null && mq.explanation && (
+        <p className="text-sm md:text-base text-muted-foreground border-t border-border pt-3">{mq.explanation}</p>
+      )}
     </div>
   );
 }
