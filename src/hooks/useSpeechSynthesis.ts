@@ -238,4 +238,23 @@ export function useSpeechSynthesis(): UseSpeechSynthesisResult {
   }, [supported]);
 
   return { supported, speaking, paused, currentText, voices, speak, pause, resume, stop, isLangFallback };
+  const setRate = useCallback((r: number) => {
+    setRateState(r);
+    rateRef.current = r;
+    // If currently speaking, restart the current text at the new rate.
+    if (supported && speakIntentRef.current && lastTextRef.current) {
+      const text = lastTextRef.current;
+      const lang = lastLangRef.current;
+      window.speechSynthesis.cancel();
+      window.setTimeout(() => {
+        // Inline mini-speak using latest rate via ref; reuse `speak` closure.
+        speakRef.current?.(text, lang);
+      }, 120);
+    }
+  }, [supported]);
+
+  const speakRef = useRef(speak);
+  useEffect(() => { speakRef.current = speak; }, [speak]);
+
+  return { supported, speaking, paused, currentText, voices, rate, setRate, speak, pause, resume, stop, isLangFallback };
 }
