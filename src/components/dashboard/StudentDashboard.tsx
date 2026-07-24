@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { useBadges, BADGE_DEFINITIONS } from "@/hooks/useBadges";
 import { useStreakTracker } from "@/hooks/useStreakTracker";
 import { 
   BookOpen, 
@@ -18,7 +17,6 @@ import {
   Calculator,
   PenLine,
   Flame,
-  Star,
   LineChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
