@@ -360,17 +360,25 @@ STRICT RULES YOU MUST FOLLOW:
       throw new Error("Invalid parsed structure: missing questions array");
     }
 
-    parsed.questions = parsed.questions.map((q: Partial<Question>, i: number) => ({
-      id: q.id || `q${i + 1}`,
-      type: q.type || "multiple_choice",
-      section: q.section || "math",
-      difficulty: q.difficulty || "normal",
-      topic: q.topic || "general",
-      text: q.text || "",
-      options: q.options || [],
-      correct_answer: q.correct_answer || "",
-      explanation: q.explanation || "",
-    }));
+    parsed.questions = parsed.questions.map((q: Partial<Question>, i: number) => {
+      const cleaned: Question = {
+        id: q.id || `q${i + 1}`,
+        type: q.type || "multiple_choice",
+        section: q.section || "math",
+        difficulty: q.difficulty || "normal",
+        topic: q.topic || "general",
+        text: q.text || "",
+        options: q.options || [],
+        correct_answer: q.correct_answer || "",
+        explanation: q.explanation || "",
+      };
+      if (typeof q.stimulus === "string" && q.stimulus.trim()) cleaned.stimulus = q.stimulus;
+      const table = sanitizeTable(q.table);
+      if (table) cleaned.table = table;
+      const figure = sanitizeFigure(q.figure);
+      if (figure) cleaned.figure = figure;
+      return cleaned;
+    });
 
     return {
       testName: parsed.testName || fileName.replace(".pdf", ""),
