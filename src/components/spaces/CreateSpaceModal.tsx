@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,14 +31,16 @@ interface CreateSpaceModalProps {
 
 type Phase = "basic" | "guided" | "freetext" | "draft";
 
-const QUESTIONS: { q: string; placeholder: string }[] = [
-  { q: "What subject or goal is this space for?", placeholder: "e.g. SAT Math prep, essay coaching, biology review" },
-  { q: "Who is it for — you, or students you teach?", placeholder: "e.g. Just me / My 10th-grade students" },
-  { q: "What tone should the AI use?", placeholder: "e.g. Encouraging and Socratic, or strict and concise" },
-  { q: "Any sources or references it must rely on?", placeholder: "e.g. Only the uploaded notes / official College Board rules" },
+const QUESTION_KEYS: { q: string; p: string }[] = [
+  { q: "spaces.q1", p: "spaces.q1p" },
+  { q: "spaces.q2", p: "spaces.q2p" },
+  { q: "spaces.q3", p: "spaces.q3p" },
+  { q: "spaces.q4", p: "spaces.q4p" },
 ];
 
 export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSpaceModalProps) {
+  const { t } = useTranslation();
+  const QUESTIONS = QUESTION_KEYS.map((k) => ({ q: t(k.q), placeholder: t(k.p) }));
   const [phase, setPhase] = useState<Phase>("basic");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -84,7 +87,7 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
       setInstructions((data?.draft || "").trim());
       setPhase("draft");
     } catch (e: any) {
-      toast.error("Couldn't draft instructions. You can write them yourself.");
+      toast.error(t("spaces.couldntDraft"));
       setPhase("draft");
     } finally {
       setDrafting(false);
@@ -112,15 +115,15 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
               <button
                 onClick={() => setPhase("basic")}
                 className="text-muted-foreground hover:text-foreground"
-                aria-label="Back"
+                aria-label={t("common.back")}
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            {phase === "basic" && "Create a Space"}
-            {phase === "guided" && "Let's set up your Space"}
-            {phase === "freetext" && "Describe your Space"}
-            {phase === "draft" && "Review AI Instructions"}
+            {phase === "basic" && t("spaces.createSpace")}
+            {phase === "guided" && t("spaces.letsSetup")}
+            {phase === "freetext" && t("spaces.describeSpace")}
+            {phase === "draft" && t("spaces.reviewInstructions")}
           </DialogTitle>
         </DialogHeader>
 
@@ -128,50 +131,50 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
           <>
             <div className="space-y-5 py-2">
               <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Space Name</label>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">{t("spaces.spaceName")}</label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g., SAT Math Prep"
+                  placeholder={t("spaces.spaceNamePlaceholder")}
                   className="bg-muted/30 border-border/30"
                   autoFocus
                 />
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">
-                  Description <span className="text-muted-foreground font-normal">(optional)</span>
+                  {t("spaces.description")} <span className="text-muted-foreground font-normal">({t("common.optional")})</span>
                 </label>
                 <Input
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Brief description of this space"
+                  placeholder={t("spaces.descriptionPlaceholder")}
                   className="bg-muted/30 border-border/30"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Icon</label>
+                <label className="text-sm font-medium text-foreground mb-2 block">{t("spaces.icon")}</label>
                 <IconPicker value={icon} onChange={setIcon} />
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">
-                  📚 References <span className="text-muted-foreground font-normal">(optional)</span>
+                  {t("spaces.referencesLabel")} <span className="text-muted-foreground font-normal">({t("common.optional")})</span>
                 </label>
                 <SpaceReferencesEditor value={refs} onChange={(next) => setRefs(next)} />
               </div>
             </div>
             <DialogFooter className="gap-2 flex-col sm:flex-row">
-              <Button variant="outline" onClick={() => close(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => close(false)}>{t("common.cancel")}</Button>
               <Button
                 variant="secondary"
                 onClick={() => finalize("")}
                 disabled={!name.trim()}
-                title="Create with no AI instructions"
+                title={t("spaces.quickCreateTitle")}
               >
-                Quick create
+                {t("spaces.quickCreate")}
               </Button>
               <Button onClick={startGuided} disabled={!name.trim()} className="gap-1.5">
                 <Sparkles className="w-4 h-4" />
-                Create with AI setup
+                {t("spaces.createWithAI")}
               </Button>
             </DialogFooter>
           </>
@@ -182,13 +185,13 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
             <div className="space-y-4 py-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Question {qIndex + 1} of {QUESTIONS.length}
+                  {t("spaces.questionOf", { current: qIndex + 1, total: QUESTIONS.length })}
                 </p>
                 <button
                   onClick={() => setPhase("freetext")}
                   className="text-xs text-primary hover:underline"
                 >
-                  Skip all · I'll write it myself
+                  {t("spaces.skipAll")}
                 </button>
               </div>
               <div className="rounded-lg border border-border/30 bg-muted/20 p-4">
@@ -212,11 +215,11 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
             </div>
             <DialogFooter className="gap-2">
               <Button variant="ghost" onClick={() => submitAnswerAndAdvance(true)} disabled={drafting}>
-                Skip
+                {t("common.skip")}
               </Button>
               <Button onClick={() => submitAnswerAndAdvance(false)} disabled={drafting} className="gap-1.5">
                 {drafting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
-                {qIndex === QUESTIONS.length - 1 ? "Generate draft" : "Next"}
+                {qIndex === QUESTIONS.length - 1 ? t("spaces.generateDraft") : t("common.next")}
               </Button>
             </DialogFooter>
           </>
@@ -226,12 +229,12 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
           <>
             <div className="space-y-3 py-2">
               <p className="text-sm text-muted-foreground">
-                Briefly describe what this space is for. The AI will turn it into instructions.
+                {t("spaces.freetextDesc")}
               </p>
               <Textarea
                 value={freeText}
                 onChange={(e) => setFreeText(e.target.value)}
-                placeholder="e.g. Help me prep for SAT Math. Use a Socratic tone and only rely on my uploaded notes."
+                placeholder={t("spaces.freetextPlaceholder")}
                 rows={5}
                 className="bg-muted/30 border-border/30 resize-none"
                 autoFocus
@@ -245,7 +248,7 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
                   setPhase("draft");
                 }}
               >
-                Skip — no instructions
+                {t("spaces.skipNoInstructions")}
               </Button>
               <Button
                 onClick={() => generateDraft({ freeText })}
@@ -253,7 +256,7 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
                 className="gap-1.5"
               >
                 {drafting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                Generate draft
+                {t("spaces.generateDraft")}
               </Button>
             </DialogFooter>
           </>
@@ -263,21 +266,21 @@ export function CreateSpaceModal({ open, onOpenChange, onCreateSpace }: CreateSp
           <>
             <div className="space-y-3 py-2">
               <p className="text-xs text-muted-foreground">
-                Edit freely — this is what the AI will follow in this Space.
+                {t("spaces.draftHelper")}
               </p>
               <Textarea
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
-                placeholder="AI instructions for this space..."
+                placeholder={t("spaces.aiInstructionsPlaceholder")}
                 rows={10}
                 className="bg-muted/30 border-border/30 resize-none font-mono text-sm"
                 autoFocus
               />
             </div>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setPhase("basic")}>Back</Button>
+              <Button variant="outline" onClick={() => setPhase("basic")}>{t("common.back")}</Button>
               <Button onClick={() => finalize(instructions)} disabled={!name.trim()}>
-                Create Space →
+                {t("spaces.createSpaceCta")}
               </Button>
             </DialogFooter>
           </>

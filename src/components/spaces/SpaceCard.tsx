@@ -1,5 +1,7 @@
 import { formatDistanceToNow } from "date-fns";
+import { ru } from "date-fns/locale";
 import { ArrowRight, MoreHorizontal, Settings, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { ConversationSpace } from "@/hooks/useConversations";
 import { SpaceIconDisplay, isImageIcon } from "./IconPicker";
@@ -39,8 +41,11 @@ const SPACE_GRADIENTS: Record<string, string> = {
 };
 
 export function SpaceCard({ space, onOpen, onSettings, onDelete }: SpaceCardProps) {
+  const { t, i18n } = useTranslation();
   const gradient = SPACE_GRADIENTS[space.icon] || "from-primary/8 to-teal-500/4";
   const iconIsImage = isImageIcon(space.icon);
+  const dateLocale = i18n.language?.startsWith("ru") ? ru : undefined;
+  const count = space.conversation_count || 0;
 
   return (
     <div
@@ -52,30 +57,24 @@ export function SpaceCard({ space, onOpen, onSettings, onDelete }: SpaceCardProp
       style={{ background: "rgba(255,255,255,0.04)" }}
       onClick={() => onOpen(space)}
     >
-      {/* Icon */}
       <div className={cn("mb-3", iconIsImage ? "w-10 h-10 rounded-lg overflow-hidden" : "text-3xl")}>
         <SpaceIconDisplay icon={space.icon} />
       </div>
 
-
-      {/* Name */}
       <h3 className="text-base font-semibold text-foreground mb-1 truncate">
         {space.name}
       </h3>
 
-      {/* Description */}
       <p className="text-[13px] text-muted-foreground truncate mb-3">
-        {space.description || "No description"}
+        {space.description || t("spaces.noDescription")}
       </p>
 
-      {/* Meta */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
-        <span>{space.conversation_count || 0} conversations</span>
+        <span>{t("spaces.conversations", { count })}</span>
         <span>•</span>
-        <span>Updated {formatDistanceToNow(new Date(space.created_at), { addSuffix: true })}</span>
+        <span>{t("spaces.updatedAgo", { time: formatDistanceToNow(new Date(space.created_at), { addSuffix: true, locale: dateLocale }) })}</span>
       </div>
 
-      {/* Actions */}
       <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -89,7 +88,7 @@ export function SpaceCard({ space, onOpen, onSettings, onDelete }: SpaceCardProp
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onSettings(space); }}>
               <Settings className="w-4 h-4 mr-2" />
-              Settings
+              {t("spaces.settings")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -97,13 +96,12 @@ export function SpaceCard({ space, onOpen, onSettings, onDelete }: SpaceCardProp
               onClick={(e) => { e.stopPropagation(); onDelete(space.id); }}
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Delete
+              {t("common.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Open arrow */}
       <div className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity">
         <ArrowRight className="w-4 h-4 text-primary" />
       </div>

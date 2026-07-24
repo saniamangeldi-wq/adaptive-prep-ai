@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ArrowLeft, MessageSquarePlus, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,7 @@ import { ReferencesBadge } from "@/components/ai/ReferencesBadge";
 import type { Reference } from "@/hooks/useReferences";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+import { ru as ruLocale } from "date-fns/locale";
 import { toast } from "sonner";
 
 const PANEL_KEY_PREFIX = "space-panel-collapsed-";
@@ -33,6 +35,8 @@ export function SpaceInterior({
   children,
   coachType = "student",
 }: SpaceInteriorProps) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language?.startsWith("ru") ? ruLocale : undefined;
   const { conversations, deleteSpace } = useConversations(coachType);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -92,11 +96,11 @@ export function SpaceInterior({
       .eq("id", spaceId);
 
     if (error) {
-      toast.error("Failed to update space");
+      toast.error(t("spaces.failedToUpdate"));
       return;
     }
     await loadSpaces();
-    toast.success("Space updated");
+    toast.success(t("spaces.spaceUpdated"));
   };
 
 
@@ -120,7 +124,7 @@ export function SpaceInterior({
               onClick={onNewConversation}
             >
               <MessageSquarePlus className="w-3.5 h-3.5" />
-              New Chat in {space.name}
+              {t("spaces.newChatIn", { name: space.name })}
             </Button>
           </div>
 
@@ -129,7 +133,7 @@ export function SpaceInterior({
             <div className="p-2 space-y-0.5">
               {spaceConversations.length === 0 ? (
                 <p className="text-xs text-muted-foreground/50 text-center py-8">
-                  No conversations yet
+                  {t("spaces.noConvYet")}
                 </p>
               ) : (
                 spaceConversations.map((conv) => (
@@ -144,10 +148,10 @@ export function SpaceInterior({
                     )}
                   >
                     <p className="truncate font-medium text-xs">
-                      {conv.title || "Untitled"}
+                      {conv.title || t("spaces.untitled")}
                     </p>
                     <p className="text-[10px] text-muted-foreground/50 mt-0.5">
-                      {formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true, locale: dateLocale })}
                     </p>
                   </button>
                 ))
@@ -162,7 +166,7 @@ export function SpaceInterior({
               className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              Back to All Spaces
+              {t("spaces.backToAll")}
             </button>
           </div>
         </div>
@@ -177,7 +181,7 @@ export function SpaceInterior({
             ? "left-1 top-1/2 -translate-y-1/2"
             : "left-[244px] top-1/2 -translate-y-1/2"
         )}
-        title="Toggle panel (⌘B)"
+        title={t("spaces.togglePanel")}
       >
         {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
       </button>
@@ -198,7 +202,7 @@ export function SpaceInterior({
               )}
             </div>
             {spaceReferences.length > 0 && (
-              <ReferencesBadge count={spaceReferences.length} label="space sources" onClick={() => setShowSettings(true)} />
+              <ReferencesBadge count={spaceReferences.length} label={t("spaces.spaceSources")} onClick={() => setShowSettings(true)} />
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -207,7 +211,7 @@ export function SpaceInterior({
             </Button>
             <Button variant="outline" size="sm" className="gap-1.5 text-xs hidden sm:flex" onClick={onNewConversation}>
               <MessageSquarePlus className="w-3.5 h-3.5" />
-              New Chat
+              {t("spaces.newChat")}
             </Button>
           </div>
         </div>

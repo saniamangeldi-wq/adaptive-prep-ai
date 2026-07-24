@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Folder } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useConversations, ConversationSpace } from "@/hooks/useConversations";
 import { SpaceCard } from "./SpaceCard";
@@ -14,6 +15,7 @@ interface SpacesHomeProps {
 }
 
 export function SpacesHome({ onOpenSpace, coachType = "student" }: SpacesHomeProps) {
+  const { t } = useTranslation();
   const { spaces, createSpace, deleteSpace, loadSpaces } = useConversations(coachType);
   const [showCreate, setShowCreate] = useState(false);
   const [settingsSpace, setSettingsSpace] = useState<ConversationSpace | null>(null);
@@ -52,38 +54,36 @@ export function SpacesHome({ onOpenSpace, coachType = "student" }: SpacesHomePro
       .eq("id", spaceId);
 
     if (error) {
-      toast.error("Failed to update space");
+      toast.error(t("spaces.failedToUpdate"));
       return;
     }
     await loadSpaces();
-    toast.success("Space updated");
+    toast.success(t("spaces.spaceUpdated"));
   };
 
 
   return (
     <div className="max-w-[900px] mx-auto px-4 py-8">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Your Spaces</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t("spaces.yourSpaces")}</h1>
         <Button onClick={() => setShowCreate(true)} className="gap-2">
           <Plus className="w-4 h-4" />
-          New Space
+          {t("spaces.newSpace")}
         </Button>
       </div>
 
-      {/* Grid */}
       {spaces.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
             <Folder className="w-8 h-8 text-muted-foreground/40" />
           </div>
-          <h3 className="text-lg font-medium text-foreground mb-2">No spaces yet</h3>
+          <h3 className="text-lg font-medium text-foreground mb-2">{t("spaces.noSpacesYet")}</h3>
           <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-            Create a Space to organize your conversations by topic and give the AI custom instructions.
+            {t("spaces.noSpacesDesc")}
           </p>
           <Button onClick={() => setShowCreate(true)} className="gap-2">
             <Plus className="w-4 h-4" />
-            Create your first Space
+            {t("spaces.createFirst")}
           </Button>
         </div>
       ) : (
@@ -100,14 +100,12 @@ export function SpacesHome({ onOpenSpace, coachType = "student" }: SpacesHomePro
         </div>
       )}
 
-      {/* Create Modal */}
       <CreateSpaceModal
         open={showCreate}
         onOpenChange={setShowCreate}
         onCreateSpace={handleCreateSpace}
       />
 
-      {/* Settings Drawer */}
       <SpaceSettingsDrawer
         space={settingsSpace}
         open={!!settingsSpace}
