@@ -267,14 +267,14 @@ export default function PracticeTests() {
                     "w-8 h-8 mb-3",
                     testMode === "official" ? "text-primary" : "text-muted-foreground"
                   )} />
-                  <div className="font-semibold text-foreground">Official SAT Format</div>
+                  <div className="font-semibold text-foreground">Official SAT</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    4 modules with sections, breaks, directions & review screens
+                    Mirrors the real Digital SAT: 2 R&W + 2 Math modules with directions, break, and review screens.
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">98 Questions</span>
                     <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">~2h 14m</span>
-                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">Adaptive</span>
+                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">Exam chrome</span>
                   </div>
                 </button>
 
@@ -291,16 +291,17 @@ export default function PracticeTests() {
                     "w-8 h-8 mb-3",
                     testMode === "practice" ? "text-primary" : "text-muted-foreground"
                   )} />
-                  <div className="font-semibold text-foreground">Practice Questions</div>
+                  <div className="font-semibold text-foreground">Practice</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    Interleaved set — topics are mixed rather than blocked, which strengthens recall.
+                    Flexible custom session — pick section, length, difficulty, and whether the timer is on.
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">10-154 Qs</span>
-                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">Custom Time</span>
+                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">Custom section</span>
+                    <span className="px-2 py-1 rounded-md bg-muted text-[10px] text-muted-foreground">Timer optional</span>
                     <span className="px-2 py-1 rounded-md bg-primary/20 text-[10px] text-primary font-semibold">Interleaved</span>
                   </div>
                 </button>
+
               </div>
             </div>
 
