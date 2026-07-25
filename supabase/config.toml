@@ -2,3 +2,6 @@ project_id = "cgoskszhxymcdmiajaai"
 
 [functions.seed-test-accounts]
 verify_jwt = false
+
+[functions.seed-test-teacher]
+verify_jwt = false
