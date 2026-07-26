@@ -750,7 +750,7 @@ export default function VideoLessons() {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const [selected, setSelected] = useState<PrebuiltLesson | null>(null);
-  const [sectionFilter, setSectionFilter] = useState<string>("all");
+  
   const [genProgress, setGenProgress] = useState<{ done: number; total: number } | null>(null);
   const isAdmin = (profile as any)?.role === "school_admin" || (profile as any)?.role === "admin";
 
