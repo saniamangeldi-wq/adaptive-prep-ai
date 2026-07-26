@@ -315,8 +315,15 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
               onClick={() => {
                 setSubmitted(true);
                 const c = quiz.filter((q, i) => answers[i] === q.answer).length;
-                saveProgress.mutate({ status: "completed", quiz_score: c, quiz_total: quiz.length, completed_at: new Date().toISOString() as any } as any);
-                toast({ title: `${c} / ${quiz.length} correct`, description: c === quiz.length ? "Perfect!" : "Review the explanations below." });
+                const pct = quiz.length ? (c / quiz.length) * 100 : 0;
+                const passed = pct >= 70;
+                saveProgress.mutate({ status: passed ? "completed" : "in_progress", quiz_score: c, quiz_total: quiz.length, completed_at: passed ? (new Date().toISOString() as any) : null } as any);
+                toast({
+                  title: `${c} / ${quiz.length} correct`,
+                  description: passed
+                    ? "Passed! Next lesson unlocked."
+                    : "You need 70% or higher to unlock the next lesson. Review the explanations and retake.",
+                });
               }}
             >
               Submit Quiz
@@ -743,7 +750,7 @@ export default function VideoLessons() {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const [selected, setSelected] = useState<PrebuiltLesson | null>(null);
-  const [sectionFilter, setSectionFilter] = useState<string>("all");
+  
   const [genProgress, setGenProgress] = useState<{ done: number; total: number } | null>(null);
   const isAdmin = (profile as any)?.role === "school_admin" || (profile as any)?.role === "admin";
 
@@ -789,47 +796,126 @@ export default function VideoLessons() {
     return <LessonDetail lesson={selected} onBack={() => setSelected(null)} defaultVak={vak} />;
   }
 
-  const renderList = (subj: "math" | "verbal") => {
-    const filtered = lessons.filter(l => l.subject === subj && (sectionFilter === "all" || l.section === sectionFilter));
-    const sections = Array.from(new Set(lessons.filter(l => l.subject === subj).map(l => l.section)));
+  // Domain ordering per subject
+  const DOMAIN_ORDER: Record<"math" | "verbal", string[]> = {
+    math: ["Algebra", "Advanced Math", "Problem Solving and Data Analysis", "Geometry and Trigonometry", "Mixed Review"],
+    verbal: ["Information and Ideas", "Craft and Structure", "Expression of Ideas", "Standard English Conventions", "Mixed Review"],
+  };
+
+  const renderJourney = (subj: "math" | "verbal") => {
+    const subjectLessons = lessons
+      .filter((l) => l.subject === subj)
+      .sort((a, b) => a.order_index - b.order_index);
+
+    // Group by domain in declared order
+    const domains = DOMAIN_ORDER[subj]
+      .map((name) => ({
+        name,
+        lessons: subjectLessons.filter((l) => l.section === name),
+      }))
+      .filter((d) => d.lessons.length > 0);
+
+    // Compute unlocks: within a domain, sequential. Between domains, next unlocks when prev domain fully complete.
+    let prevDomainComplete = true;
+    const isCompleted = (l: PrebuiltLesson) => progressMap.get(l.id)?.status === "completed";
+
     return (
-      <div className="space-y-4">
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant={sectionFilter === "all" ? "default" : "outline"} onClick={() => setSectionFilter("all")}>All</Button>
-          {sections.map(s => (
-            <Button key={s} size="sm" variant={sectionFilter === s ? "default" : "outline"} onClick={() => setSectionFilter(s)}>{s}</Button>
-          ))}
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          {filtered.map((l) => {
-            const p = progressMap.get(l.id);
-            const completed = p?.status === "completed";
-            return (
-              <Card key={l.id} className="hover:border-primary/40 cursor-pointer transition-colors" onClick={() => setSelected(l)}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        {completed
-                          ? <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                          : <Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
-                        <h3 className="font-medium text-foreground truncate">{l.title}</h3>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">{l.section} · {l.topic}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="secondary" className="text-xs capitalize">{l.difficulty}</Badge>
-                        {p?.quiz_score != null && (
-                          <span className="text-xs text-muted-foreground">Quiz: {p.quiz_score}/{p.quiz_total}</span>
-                        )}
-                      </div>
+      <div className="space-y-10">
+        {domains.map((domain, di) => {
+          const domainUnlocked = prevDomainComplete;
+          const completedCount = domain.lessons.filter(isCompleted).length;
+          const domainDone = completedCount === domain.lessons.length;
+
+          // For rendering nodes we need per-lesson unlocked state
+          let unlockNext = domainUnlocked;
+          const nodes = domain.lessons.map((l) => {
+            const done = isCompleted(l);
+            const unlocked = unlockNext;
+            // Next lesson unlocks only after this one is done
+            if (!done) unlockNext = false;
+            return { lesson: l, done, unlocked };
+          });
+
+          prevDomainComplete = domainDone;
+
+          // zig-zag offset pattern
+          const OFFSETS = [0, 60, 100, 60, 0, -60, -100, -60];
+
+          return (
+            <section key={domain.name} className="space-y-4">
+              <Card className={cn("border-border/50", !domainUnlocked && "opacity-60")}>
+                <CardContent className="p-4 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Chapter {di + 1}</span>
+                      {!domainUnlocked && <Badge variant="outline" className="text-[10px]">Locked</Badge>}
+                      {domainDone && <Badge className="text-[10px] bg-primary/20 text-primary border-primary/30">Complete</Badge>}
                     </div>
-                    <PlayCircle className="h-5 w-5 text-primary shrink-0" />
+                    <h3 className="font-semibold text-foreground truncate">{domain.name}</h3>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="h-1.5 w-32 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-primary transition-all" style={{ width: `${(completedCount / domain.lessons.length) * 100}%` }} />
+                      </div>
+                      <span className="text-xs text-muted-foreground">{completedCount}/{domain.lessons.length}</span>
+                    </div>
                   </div>
+                  {!domainUnlocked && <Circle className="h-6 w-6 text-muted-foreground/60 shrink-0" />}
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
+
+              <div className="relative flex flex-col items-center gap-3 py-4">
+                {nodes.map(({ lesson, done, unlocked }, i) => {
+                  const offset = OFFSETS[i % OFFSETS.length];
+                  const isCurrent = unlocked && !done;
+                  return (
+                    <div key={lesson.id} className="w-full flex flex-col items-center" style={{ transform: `translateX(${offset}px)` }}>
+                      <button
+                        type="button"
+                        disabled={!unlocked}
+                        onClick={() => {
+                          if (!unlocked) {
+                            toast({
+                              title: "Locked",
+                              description: done ? "This lesson is already complete." : "Finish the previous lesson (70%+ on the quiz) to unlock this one.",
+                            });
+                            return;
+                          }
+                          setSelected(lesson);
+                        }}
+                        className={cn(
+                          "relative h-20 w-20 rounded-full flex items-center justify-center transition-all shadow-md",
+                          done && "bg-primary text-primary-foreground hover:scale-105",
+                          isCurrent && "bg-primary/20 text-primary ring-4 ring-primary/40 animate-pulse hover:scale-105",
+                          !unlocked && "bg-muted text-muted-foreground cursor-not-allowed"
+                        )}
+                        aria-label={lesson.title}
+                      >
+                        {done ? (
+                          <CheckCircle2 className="h-8 w-8" />
+                        ) : !unlocked ? (
+                          <Circle className="h-7 w-7" />
+                        ) : (
+                          <PlayCircle className="h-9 w-9" />
+                        )}
+                        {isCurrent && (
+                          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-semibold bg-primary text-primary-foreground rounded-full px-2 py-0.5 shadow">
+                            START
+                          </span>
+                        )}
+                      </button>
+                      <div className="mt-3 max-w-[220px] text-center">
+                        <p className={cn("text-sm font-medium leading-tight", !unlocked && "text-muted-foreground")}>
+                          {lesson.title}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 capitalize">{lesson.difficulty}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
     );
   };
@@ -883,13 +969,13 @@ export default function VideoLessons() {
         {isLoading ? (
           <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
         ) : (
-          <Tabs defaultValue="math" onValueChange={() => setSectionFilter("all")}>
+          <Tabs defaultValue="math">
             <TabsList>
-              <TabsTrigger value="math">SAT Math (50)</TabsTrigger>
-              <TabsTrigger value="verbal">SAT Verbal (50)</TabsTrigger>
+              <TabsTrigger value="math">SAT Math</TabsTrigger>
+              <TabsTrigger value="verbal">SAT Verbal</TabsTrigger>
             </TabsList>
-            <TabsContent value="math" className="mt-4">{renderList("math")}</TabsContent>
-            <TabsContent value="verbal" className="mt-4">{renderList("verbal")}</TabsContent>
+            <TabsContent value="math" className="mt-6">{renderJourney("math")}</TabsContent>
+            <TabsContent value="verbal" className="mt-6">{renderJourney("verbal")}</TabsContent>
           </Tabs>
         )}
       </div>
