@@ -35,21 +35,49 @@
        });
      }
  
-     const { url } = await req.json();
+      const { url } = await req.json();
  
-     if (!url || !isValidUrl(url)) {
-       return new Response(JSON.stringify({ error: "Invalid URL" }), {
-         status: 400,
-         headers: { ...corsHeaders, "Content-Type": "application/json" },
-       });
-     }
- 
-     // Fetch the website
-     const response = await fetch(url, {
-       headers: {
-         "User-Agent": "Mozilla/5.0 (compatible; AdaptivePrep/1.0; +https://adaptiveprep.app)",
-       },
-     });
+      if (!url || !isValidUrl(url)) {
+        return new Response(JSON.stringify({ error: "Invalid URL" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // SSRF protection: reject private, loopback, link-local, and metadata targets.
+      if (!(await isPublicUrl(url))) {
+        return new Response(JSON.stringify({ error: "URL host is not allowed" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Fetch the website (do not automatically follow redirects — re-validate each hop)
+      let currentUrl = url;
+      let response: Response | null = null;
+      for (let i = 0; i < 3; i++) {
+        response = await fetch(currentUrl, {
+          redirect: "manual",
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; AdaptivePrep/1.0; +https://adaptiveprep.app)",
+          },
+        });
+        if (response.status >= 300 && response.status < 400) {
+          const loc = response.headers.get("location");
+          if (!loc) break;
+          const next = new URL(loc, currentUrl).href;
+          if (!isValidUrl(next) || !(await isPublicUrl(next))) {
+            return new Response(JSON.stringify({ error: "Redirect target not allowed" }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          currentUrl = next;
+          continue;
+        }
+        break;
+      }
+      if (!response) throw new Error("No response");
  
      if (!response.ok) {
        return new Response(JSON.stringify({ error: "Failed to fetch URL" }), {
