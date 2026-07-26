@@ -742,9 +742,9 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
                     src={slide.audio_url}
                     className="hidden"
                     onEnded={() => {
-                      if (autoPlayNarration && slideIdx < total - 1) {
-                        window.setTimeout(() => setSlideIdx(i => i + 1), 900);
-                      }
+                      if (!autoPlayNarration) return;
+                      if (slideIdx < total - 1) setSlideIdx(i => i + 1);
+                      else setShowQuiz(true);
                     }}
                   />
                 )}
