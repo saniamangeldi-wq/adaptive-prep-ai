@@ -203,9 +203,28 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
       wasSpeakingRef.current = false;
       if (slideIdx < total - 1) {
         setSlideIdx(i => Math.min(i + 1, total - 1));
+      } else {
+        setShowQuiz(true);
       }
     }
   }, [tts.speaking, tts.paused, autoPlayNarration, slideIdx, total]);
+
+  // Fallback auto-advance for silent slides (no narration text, no audio_url)
+  // so lessons play continuously end-to-end like a real video.
+  useEffect(() => {
+    if (!autoPlayNarration) return;
+    const s = slides[slideIdx];
+    if (!s || s.audio_url) return;
+    const narrText = s.narration || [s.heading, ...(s.bullets || []), s.example || ""].filter(Boolean).join(". ");
+    if (narrText) return; // TTS effect handles advancing
+    const visible = [s.heading, ...(s.bullets || []), s.example || ""].filter(Boolean).join(" ");
+    const ms = Math.max(5000, Math.min(15000, Math.round((visible.length / 18) * 1000)));
+    const t = window.setTimeout(() => {
+      if (slideIdx < total - 1) setSlideIdx(i => i + 1);
+      else setShowQuiz(true);
+    }, ms);
+    return () => window.clearTimeout(t);
+  }, [slideIdx, total, autoPlayNarration, slides]);
 
   // Fullscreen state — track vendor-prefixed events for cross-browser reliability
   useEffect(() => {
