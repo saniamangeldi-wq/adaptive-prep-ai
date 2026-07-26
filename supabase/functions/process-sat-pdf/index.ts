@@ -497,11 +497,26 @@ function sanitizeFigure(raw: unknown): QuestionFigure | undefined {
   const f = raw as Partial<QuestionFigure>;
   const alt = typeof f.alt === "string" && f.alt.trim() ? f.alt : "Figure";
   if (f.type === "svg" && typeof f.svg === "string" && f.svg.includes("<svg")) {
-    // Strip <script>, on* handlers, and javascript: URLs from inline SVG.
-    let svg = f.svg;
-    svg = svg.replace(/<script[\s\S]*?<\/script>/gi, "");
-    svg = svg.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-    svg = svg.replace(/(href|xlink:href)\s*=\s*("|')\s*javascript:[^"']*("|')/gi, '$1="#"');
+    // Sanitize inline SVG with DOMPurify (server-side, works in Deno via esm.sh).
+    // deno-lint-ignore no-explicit-any
+    const dp: any = (globalThis as any).__dompurify ?? (async () => {
+      const mod = await import("https://esm.sh/isomorphic-dompurify@2.16.0?target=deno");
+      (globalThis as any).__dompurify = mod.default ?? mod;
+      return (globalThis as any).__dompurify;
+    })();
+    // Fallback: if DOMPurify hasn't resolved yet (top-level await not used here),
+    // apply a conservative regex strip and rely on client-side DOMPurify as the
+    // authoritative sanitizer on render.
+    let svg = f.svg
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+      .replace(/(href|xlink:href)\s*=\s*("|')\s*javascript:[^"']*("|')/gi, '$1="#"');
+    try {
+      // If DOMPurify already loaded synchronously, use it.
+      if (dp && typeof dp.sanitize === "function") {
+        svg = dp.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
+      }
+    } catch { /* keep regex-stripped svg */ }
     const out: QuestionFigure = { type: "svg", svg, alt };
     if (typeof f.caption === "string" && f.caption.trim()) out.caption = f.caption;
     return out;
