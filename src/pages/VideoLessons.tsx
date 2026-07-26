@@ -195,36 +195,40 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIdx, variant?.slides]);
 
-  // Auto-advance when narration finishes (video-style playback)
+  // Video-style auto-advance: robust timer that fires whether TTS actually spoke or not.
+  // This runs on every slide when playback is intended, so slides flow continuously
+  // like a real video — no clicking needed. TTS-driven "speaking finished" is used as
+  // a fast-path in case narration ends earlier than estimated.
   const wasSpeakingRef = useRef(false);
   useEffect(() => {
     if (tts.speaking) wasSpeakingRef.current = true;
     if (!tts.speaking && !tts.paused && wasSpeakingRef.current && autoPlayNarration) {
       wasSpeakingRef.current = false;
-      if (slideIdx < total - 1) {
-        setSlideIdx(i => Math.min(i + 1, total - 1));
-      } else {
-        setShowQuiz(true);
-      }
+      if (slideIdx < total - 1) setSlideIdx(i => Math.min(i + 1, total - 1));
+      else setShowQuiz(true);
     }
   }, [tts.speaking, tts.paused, autoPlayNarration, slideIdx, total]);
 
-  // Fallback auto-advance for silent slides (no narration text, no audio_url)
-  // so lessons play continuously end-to-end like a real video.
+  // Estimated-duration fallback advance — guarantees each slide moves on even when
+  // the browser blocks TTS autoplay or the voice never fires. Cancelled on pause,
+  // slide change, or unmount.
   useEffect(() => {
     if (!autoPlayNarration) return;
+    if (tts.paused) return;
     const s = slides[slideIdx];
-    if (!s || s.audio_url) return;
+    if (!s) return;
+    if (s.audio_url) return; // <audio onEnded> handles this case
     const narrText = s.narration || [s.heading, ...(s.bullets || []), s.example || ""].filter(Boolean).join(". ");
-    if (narrText) return; // TTS effect handles advancing
     const visible = [s.heading, ...(s.bullets || []), s.example || ""].filter(Boolean).join(" ");
-    const ms = Math.max(5000, Math.min(15000, Math.round((visible.length / 18) * 1000)));
+    const charCount = (narrText || visible).length;
+    // ~14 chars/sec speaking rate + 1.5s buffer, clamped to a sane range.
+    const ms = Math.max(5000, Math.min(45000, Math.round((charCount / 14) * 1000) + 1500));
     const t = window.setTimeout(() => {
       if (slideIdx < total - 1) setSlideIdx(i => i + 1);
       else setShowQuiz(true);
     }, ms);
     return () => window.clearTimeout(t);
-  }, [slideIdx, total, autoPlayNarration, slides]);
+  }, [slideIdx, total, autoPlayNarration, slides, tts.paused]);
 
   // Fullscreen state — track vendor-prefixed events for cross-browser reliability
   useEffect(() => {
