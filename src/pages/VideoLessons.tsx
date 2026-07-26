@@ -969,13 +969,13 @@ export default function VideoLessons() {
         {isLoading ? (
           <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
         ) : (
-          <Tabs defaultValue="math" onValueChange={() => setSectionFilter("all")}>
+          <Tabs defaultValue="math">
             <TabsList>
-              <TabsTrigger value="math">SAT Math (50)</TabsTrigger>
-              <TabsTrigger value="verbal">SAT Verbal (50)</TabsTrigger>
+              <TabsTrigger value="math">SAT Math</TabsTrigger>
+              <TabsTrigger value="verbal">SAT Verbal</TabsTrigger>
             </TabsList>
-            <TabsContent value="math" className="mt-4">{renderList("math")}</TabsContent>
-            <TabsContent value="verbal" className="mt-4">{renderList("verbal")}</TabsContent>
+            <TabsContent value="math" className="mt-6">{renderJourney("math")}</TabsContent>
+            <TabsContent value="verbal" className="mt-6">{renderJourney("verbal")}</TabsContent>
           </Tabs>
         )}
       </div>
