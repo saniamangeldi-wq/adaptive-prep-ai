@@ -315,8 +315,15 @@ function LessonDetail({ lesson, onBack, defaultVak }: { lesson: PrebuiltLesson; 
               onClick={() => {
                 setSubmitted(true);
                 const c = quiz.filter((q, i) => answers[i] === q.answer).length;
-                saveProgress.mutate({ status: "completed", quiz_score: c, quiz_total: quiz.length, completed_at: new Date().toISOString() as any } as any);
-                toast({ title: `${c} / ${quiz.length} correct`, description: c === quiz.length ? "Perfect!" : "Review the explanations below." });
+                const pct = quiz.length ? (c / quiz.length) * 100 : 0;
+                const passed = pct >= 70;
+                saveProgress.mutate({ status: passed ? "completed" : "in_progress", quiz_score: c, quiz_total: quiz.length, completed_at: passed ? (new Date().toISOString() as any) : null } as any);
+                toast({
+                  title: `${c} / ${quiz.length} correct`,
+                  description: passed
+                    ? "Passed! Next lesson unlocked."
+                    : "You need 70% or higher to unlock the next lesson. Review the explanations and retake.",
+                });
               }}
             >
               Submit Quiz
