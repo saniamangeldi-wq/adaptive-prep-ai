@@ -1,22 +1,20 @@
+import DOMPurify from "dompurify";
 import { MathRenderer } from "@/components/MathRenderer";
 import type { Question, QuestionFigure, QuestionTable } from "@/lib/test-generator";
 
 /**
- * Minimal SVG sanitizer: strips <script> tags, on* event handlers, and
- * javascript: URLs. Not a full XSS shield — only safe for trusted-authored
- * content bundled with the question bank. Do not use for arbitrary user input.
+ * SVG sanitizer backed by DOMPurify. Strips scripts, event handlers, and
+ * javascript: URLs while preserving safe SVG markup for question figures.
  */
 function sanitizeSvg(raw: string): string {
   if (!raw) return "";
-  let s = raw;
-  s = s.replace(/<script[\s\S]*?<\/script>/gi, "");
-  s = s.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "");
-  s = s.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "");
-  s = s.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "");
-  s = s.replace(/(href|xlink:href)\s*=\s*"(\s*javascript:[^"]*)"/gi, '$1="#"');
-  s = s.replace(/(href|xlink:href)\s*=\s*'(\s*javascript:[^']*)'/gi, "$1='#'");
-  return s;
+  return DOMPurify.sanitize(raw, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    FORBID_TAGS: ["script", "foreignObject"],
+    FORBID_ATTR: ["onerror", "onload", "onclick"],
+  });
 }
+
 
 export function resolveFigure(question: Question): QuestionFigure | undefined {
   if (question.figure) return question.figure;
