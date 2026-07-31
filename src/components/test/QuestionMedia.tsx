@@ -26,14 +26,14 @@ export function resolveFigure(question: Question): QuestionFigure | undefined {
 
 function DataTable({ table }: { table: QuestionTable }) {
   return (
-    <figure className="my-2 overflow-x-auto">
-      <table className="min-w-[240px] border-collapse border border-border rounded-lg overflow-hidden text-sm">
-        <thead className="bg-muted/60">
+    <figure className="my-4 flex flex-col items-center overflow-x-auto">
+      <table className="min-w-[240px] max-w-full border-separate border-spacing-0 rounded-lg overflow-hidden border border-border bg-card text-sm shadow-sm">
+        <thead className="bg-muted">
           <tr>
             {table.headers.map((h, i) => (
               <th
                 key={i}
-                className="border border-border px-3 py-2 text-left font-semibold text-foreground"
+                className="border-b border-border px-4 py-3 text-center font-semibold text-foreground tracking-wide"
               >
                 <MathRenderer text={h} />
               </th>
@@ -42,11 +42,11 @@ function DataTable({ table }: { table: QuestionTable }) {
         </thead>
         <tbody>
           {table.rows.map((row, ri) => (
-            <tr key={ri} className="odd:bg-background even:bg-muted/20">
+            <tr key={ri} className="last:border-b-0">
               {row.map((cell, ci) => (
                 <td
                   key={ci}
-                  className="border border-border px-3 py-2 text-foreground align-top"
+                  className="border-b border-border px-4 py-3 text-center text-foreground tabular-nums"
                 >
                   <MathRenderer text={cell} />
                 </td>
@@ -66,8 +66,8 @@ function DataTable({ table }: { table: QuestionTable }) {
 
 function Figure({ figure }: { figure: QuestionFigure }) {
   return (
-    <figure className="my-2">
-      <div className="flex justify-center p-4 rounded-xl bg-white border border-border/50">
+    <figure className="my-4 flex flex-col items-center">
+      <div className="flex justify-center p-5 rounded-xl bg-white border border-border shadow-sm">
         {figure.type === "svg" && figure.svg ? (
           <div
             role="img"

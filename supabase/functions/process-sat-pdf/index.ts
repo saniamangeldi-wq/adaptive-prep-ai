@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+// No external PDF libraries — we use a small built-in extractor to avoid
+// native canvas/graphics dependencies that break in the edge runtime.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -215,6 +217,387 @@ Deno.serve(async (req) => {
 });
 
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
+  try {
+    const text = await extractTextFromPdf(pdfBytes);
+    if (text.trim().length > 50) return text.slice(0, 50000);
+  } catch (err) {
+    console.warn("Built-in PDF extraction failed, using fallback:", err);
+  }
+  return fallbackExtractPdfText(pdfBytes);
+}
+
+/**
+ * Lightweight PDF text extractor using only Deno/Web APIs.
+ * Works directly with the raw Uint8Array so compressed streams are not
+ * corrupted by UTF-8 decoding. It decompresses FlateDecode content streams
+ * and reconstructs lines from text positioning operators so tables and
+ * aligned values stay readable.
+ */
+async function extractTextFromPdf(pdfBytes: Uint8Array): Promise<string> {
+  const decoder = new TextDecoder("utf-8", { fatal: false });
+  const pageTexts: string[] = [];
+
+  const streamStart = encode("stream\n");
+  const streamStartCR = encode("stream\r\n");
+  const streamEnd = encode("endstream");
+
+  let pos = 0;
+  while (pos < pdfBytes.length) {
+    const startIdx = findNext(pdfBytes, streamStart, pos);
+    const startIdxCR = findNext(pdfBytes, streamStartCR, pos);
+    let start = -1;
+    if (startIdx !== -1 && (startIdxCR === -1 || startIdx < startIdxCR)) {
+      start = startIdx + streamStart.length;
+    } else if (startIdxCR !== -1) {
+      start = startIdxCR + streamStartCR.length;
+    }
+    if (start === -1) break;
+
+    const end = findNext(pdfBytes, streamEnd, start);
+    if (end === -1) break;
+
+    // Trim the trailing newline that usually precedes endstream.
+    let contentStart = start;
+    let contentEnd = end;
+    if (contentEnd > contentStart && pdfBytes[contentEnd - 1] === 0x0A) contentEnd--;
+    if (contentEnd > contentStart && pdfBytes[contentEnd - 1] === 0x0D) contentEnd--;
+
+    const rawStream = pdfBytes.slice(contentStart, contentEnd);
+
+    // Read the stream dictionary that precedes "stream" to determine filters.
+    const dictStart = findPrevDictStart(pdfBytes, startIdx === -1 ? startIdxCR : startIdx);
+    const dictText = decoder.decode(pdfBytes.slice(dictStart, startIdx === -1 ? startIdxCR : startIdx));
+    const filters = parseFilters(dictText);
+
+    let streamText = "";
+    try {
+      const decoded = await applyFilters(rawStream, filters);
+      streamText = decoder.decode(decoded);
+    } catch {
+      streamText = decoder.decode(rawStream);
+    }
+
+    const pageText = parseContentStream(streamText);
+    if (pageText.trim().length > 10) pageTexts.push(pageText);
+
+    pos = end + streamEnd.length;
+  }
+
+  return pageTexts.join("\n\n---PAGE BREAK---\n\n");
+}
+
+function encode(str: string): Uint8Array {
+  return new TextEncoder().encode(str);
+}
+
+function findNext(haystack: Uint8Array, needle: Uint8Array, start: number): number {
+  for (let i = start; i <= haystack.length - needle.length; i++) {
+    let found = true;
+    for (let j = 0; j < needle.length; j++) {
+      if (haystack[i + j] !== needle[j]) {
+        found = false;
+        break;
+      }
+    }
+    if (found) return i;
+  }
+  return -1;
+}
+
+function findPrevDictStart(pdfBytes: Uint8Array, before: number): number {
+  for (let i = before - 1; i >= 0; i--) {
+    if (pdfBytes[i] === 0x3C && pdfBytes[i + 1] === 0x3C) return i;
+  }
+  return Math.max(0, before - 500);
+}
+
+function parseFilters(dictText: string): string[] {
+  const filters: string[] = [];
+  const single = dictText.match(/\/Filter\s+\/([A-Za-z0-9]+)/);
+  if (single) {
+    filters.push(single[1]);
+  } else {
+    const array = dictText.match(/\/Filter\s*\[([^\]]*)\]/);
+    if (array) {
+      const names = array[1].match(/\/([A-Za-z0-9]+)/g);
+      if (names) {
+        for (const n of names) filters.push(n.slice(1));
+      }
+    }
+  }
+  return filters;
+}
+
+async function applyFilters(data: Uint8Array, filters: string[]): Promise<Uint8Array> {
+  let current = data;
+  for (const filter of filters) {
+    if (filter === "FlateDecode") {
+      current = await inflateZlib(current);
+    } else if (filter === "ASCII85Decode") {
+      current = decodeAscii85(current);
+    } else if (filter === "ASCIIHexDecode") {
+      current = decodeAsciiHex(current);
+    } else {
+      // Unsupported filter; pass through and hope the next filter works.
+    }
+  }
+  return current;
+}
+
+async function inflateZlib(data: Uint8Array): Promise<Uint8Array> {
+  const ds = new DecompressionStream("deflate");
+  const writer = ds.writable.getWriter();
+  writer.write(data as unknown as BufferSource);
+  writer.close();
+  const reader = ds.readable.getReader();
+  const chunks: Uint8Array[] = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+  const total = chunks.reduce((a, b) => a + b.length, 0);
+  const result = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+function decodeAscii85(data: Uint8Array): Uint8Array {
+  const str = decoderLatin1.decode(data).trim();
+  let input = str;
+  if (input.endsWith("~>")) input = input.slice(0, -2);
+  const out: number[] = [];
+  let i = 0;
+  while (i < input.length) {
+    if (/\s/.test(input[i])) { i++; continue; }
+    if (input[i] === "z") {
+      out.push(0, 0, 0, 0);
+      i++;
+      continue;
+    }
+    const chunk = input.slice(i, i + 5);
+    if (chunk.length < 5) break;
+    let value = 0;
+    for (let k = 0; k < 5; k++) {
+      const code = chunk.charCodeAt(k) - 33;
+      value = value * 85 + code;
+    }
+    const bytesToWrite = chunk.trimEnd().length === 5 ? 4 : chunk.trimEnd().length - 1;
+    for (let k = 3; k >= 4 - bytesToWrite; k--) {
+      out.push((value >>> (k * 8)) & 0xFF);
+    }
+    i += 5;
+  }
+  return new Uint8Array(out);
+}
+
+function decodeAsciiHex(data: Uint8Array): Uint8Array {
+  const str = decoderLatin1.decode(data).replace(/\s/g, "");
+  const out: number[] = [];
+  for (let i = 0; i < str.length; i += 2) {
+    const hex = str.slice(i, i + 2);
+    if (hex === ">") break;
+    const code = parseInt(hex, 16);
+    if (!isNaN(code)) out.push(code);
+  }
+  return new Uint8Array(out);
+}
+
+const decoderLatin1 = new TextDecoder("latin1", { fatal: false });
+
+interface TextItem {
+  x: number;
+  y: number;
+  text: string;
+}
+
+function parseContentStream(content: string): string {
+  const items: TextItem[] = [];
+  const tokens = tokenize(content);
+
+  // Current text matrix (simplified: we track x, y offsets).
+  let tx = 0;
+  let ty = 0;
+  let lineY = 0;
+  let fontSize = 12;
+  let textBuffer = "";
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+
+    if (token === "BT") {
+      tx = 0;
+      ty = 0;
+      textBuffer = "";
+    } else if (token === "ET") {
+      flushBuffer();
+    } else if (token === "Tj" || token === "'") {
+      if (textBuffer) {
+        items.push({ x: tx, y: ty, text: textBuffer });
+        textBuffer = "";
+      }
+    } else if (token === "TJ") {
+      // Array of strings/numbers: [(text) -120 (more)] TJ
+      // We already collected the joined string in textBuffer during tokenization.
+      if (textBuffer) {
+        items.push({ x: tx, y: ty, text: textBuffer });
+        textBuffer = "";
+      }
+    } else if (token === "Td" || token === "TD") {
+      flushBuffer();
+      const dy = parseFloat(tokens[i - 1]);
+      const dx = parseFloat(tokens[i - 2]);
+      tx += dx;
+      ty += dy;
+      if (token === "TD") {
+        lineY = ty;
+      }
+    } else if (token === "Tm") {
+      flushBuffer();
+      const y = parseFloat(tokens[i - 1]);
+      const x = parseFloat(tokens[i - 2]);
+      tx = x;
+      ty = y;
+      lineY = y;
+    } else if (token === "T*") {
+      flushBuffer();
+      ty -= fontSize * 1.2;
+      tx = 0;
+    } else if (token === "Tf") {
+      flushBuffer();
+      const size = parseFloat(tokens[i - 2]);
+      if (!isNaN(size) && size > 0) fontSize = size;
+    } else if (token.startsWith("(") || token.startsWith("<") || /^-?\d+(\.\d+)?$/.test(token)) {
+      // Collect text or numeric adjustments. We only care about the text itself.
+      if (token.startsWith("(") || token.startsWith("<")) {
+        textBuffer += decodePdfString(token);
+      }
+    }
+  }
+
+  flushBuffer();
+
+  // Group items by line (rounded y) and sort left-to-right.
+  const lines = new Map<number, TextItem[]>();
+  for (const item of items) {
+    const y = Math.round(item.y / 3) * 3;
+    if (!lines.has(y)) lines.set(y, []);
+    lines.get(y)!.push(item);
+  }
+
+  const sortedLines = Array.from(lines.entries())
+    .sort((a, b) => b[0] - a[0]) // top-to-bottom (PDF y increases upward)
+    .map(([, lineItems]) => {
+      lineItems.sort((a, b) => a.x - b.x);
+      return lineItems.map((it) => it.text).join(" ");
+    });
+
+  return sortedLines.join("\n");
+
+  function flushBuffer() {
+    if (textBuffer) {
+      items.push({ x: tx, y: ty, text: textBuffer });
+      textBuffer = "";
+    }
+  }
+}
+
+function tokenize(content: string): string[] {
+  const tokens: string[] = [];
+  let i = 0;
+  while (i < content.length) {
+    const ch = content[i];
+    if (/\s/.test(ch)) {
+      i++;
+      continue;
+    }
+    if (ch === "(") {
+      // Literal string; handle escaped parentheses.
+      let depth = 1;
+      let j = i + 1;
+      while (j < content.length && depth > 0) {
+        if (content[j] === "\\") {
+          j += 2;
+          continue;
+        }
+        if (content[j] === "(") depth++;
+        if (content[j] === ")") depth--;
+        j++;
+      }
+      tokens.push(content.slice(i, j));
+      i = j;
+    } else if (ch === "<") {
+      // Hex string or dictionary start. We only capture simple hex strings.
+      const end = content.indexOf(">", i);
+      if (end !== -1 && end - i < 500) {
+        tokens.push(content.slice(i, end + 1));
+        i = end + 1;
+      } else {
+        i++;
+      }
+    } else if (ch === "[") {
+      // Array (commonly used in TJ). We tokenize its contents recursively.
+      let depth = 1;
+      let j = i + 1;
+      while (j < content.length && depth > 0) {
+        if (content[j] === "[") depth++;
+        if (content[j] === "]") depth--;
+        j++;
+      }
+      const inner = content.slice(i + 1, j - 1);
+      tokens.push(...tokenize(inner));
+      tokens.push("TJ");
+      i = j;
+    } else if (/[A-Za-z*']/.test(ch)) {
+      let j = i;
+      while (j < content.length && /[A-Za-z*']/.test(content[j])) j++;
+      tokens.push(content.slice(i, j));
+      i = j;
+    } else if (/[\d\-\.]/.test(ch)) {
+      let j = i;
+      while (j < content.length && /[\d\-\.]/.test(content[j])) j++;
+      tokens.push(content.slice(i, j));
+      i = j;
+    } else {
+      i++;
+    }
+  }
+  return tokens;
+}
+
+function decodePdfString(token: string): string {
+  if (token.startsWith("(") && token.endsWith(")")) {
+    let inner = token.slice(1, -1);
+    // Unescape common PDF escapes.
+    inner = inner
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\r")
+      .replace(/\\t/g, "\t")
+      .replace(/\\b/g, "\b")
+      .replace(/\\f/g, "\f")
+      .replace(/\\\(/g, "(")
+      .replace(/\\\)/g, ")")
+      .replace(/\\\\/g, "\\")
+      .replace(/\\(\d{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+    return inner;
+  }
+  if (token.startsWith("<") && token.endsWith(">")) {
+    const hex = token.slice(1, -1).replace(/\s/g, "");
+    let out = "";
+    for (let k = 0; k < hex.length; k += 2) {
+      const code = parseInt(hex.slice(k, k + 2), 16);
+      if (!isNaN(code)) out += String.fromCharCode(code);
+    }
+    return out;
+  }
+  return token;
+}
+
+function fallbackExtractPdfText(pdfBytes: Uint8Array): Promise<string> {
   const decoder = new TextDecoder("utf-8", { fatal: false });
   const rawText = decoder.decode(pdfBytes);
 
@@ -235,7 +618,7 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
     }
   }
 
-  return textContent.join("\n").slice(0, 50000);
+  return Promise.resolve(textContent.join("\n").slice(0, 50000));
 }
 
 async function parseWithAI(
@@ -287,9 +670,17 @@ JSON structure:
 STRICT RULES YOU MUST FOLLOW:
 1. MATH FORMATTING — NEVER spell out math in words. Do NOT write "f left parenthesis x right parenthesis equals m x minus 28"; write \\( f(x) = mx - 28 \\). Use LaTeX inline delimiters \\( ... \\) (or \\[ ... \\] for display) inside "text", "stimulus", "explanation", "options", table cells, and figure captions.
 
-2. TABLES — If the source shows a table (a grid of aligned numbers/labels, e.g. "x | 10 15 20 25" and "f(x) | 82 137 192 247"), you MUST emit it as a structured "table" object with headers[] and rows[][]. Do NOT inline the numbers into the "text" as prose. Cells may contain LaTeX.
+2. TABLES — This is the #1 priority. If the source shows a table (a grid of aligned numbers/labels, e.g. "x    10   15   20" and "f(x)  82  137  192"), you MUST emit it as a structured "table" object with headers[] and rows[][]. Do NOT inline the numbers into the "text" as prose. Do NOT describe the table in words. Cells may contain LaTeX.
 
-3. FIGURES — If the source shows a chart, graph, coordinate plane, or diagram, emit a "figure". Prefer type "svg" with a clean, minimal inline <svg> (viewBox, no scripts, no external refs) that reproduces the shape/points/axes. Only use type "image" when you have a real image URL/data-URL for that figure. Always include "alt".
+   Example input from PDF:
+     x      10   15   20
+     f(x)   82  137  192
+   Required output:
+     "table": { "headers": ["x", "f(x)"], "rows": [["10", "82"], ["15", "137"], ["20", "192"]] }
+
+3. FIGURES — If the source describes or shows a chart, graph, coordinate plane, or diagram, emit a "figure". Prefer type "svg" with a clean, minimal inline <svg> (viewBox, no scripts, no external refs) that reproduces the shape/points/axes. Only use type "image" when you have a real image URL/data-URL for that figure. Always include "alt". NEVER replace a figure with a long prose description.
+
+   Example: for a triangle with vertices A, B, C, output a simple SVG with three labeled points and sides, not a paragraph describing the triangle.
 
 4. PARENTHESES/OPERATORS — Never describe them in words ("left parenthesis", "equals", "over", "square root of"). Use the LaTeX symbol.
 
@@ -310,8 +701,8 @@ STRICT RULES YOU MUST FOLLOW:
 9. correct_answer must be exactly one of: "A", "B", "C", or "D"
 
 10. If the PDF text is unreadable, corrupted, or clearly not SAT content, return:
-    { "error": "Unable to parse PDF content" }
-    Do NOT invent questions. Do NOT guess. Return the error object only.`;
+     { "error": "Unable to parse PDF content" }
+     Do NOT invent questions. Do NOT guess. Return the error object only.`;
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -373,7 +764,7 @@ STRICT RULES YOU MUST FOLLOW:
         explanation: q.explanation || "",
       };
       if (typeof q.stimulus === "string" && q.stimulus.trim()) cleaned.stimulus = q.stimulus;
-      const table = sanitizeTable(q.table);
+      const table = sanitizeTable(q.table) ?? extractTableFromText(cleaned.text);
       if (table) cleaned.table = table;
       const figure = sanitizeFigure(q.figure);
       if (figure) cleaned.figure = figure;
@@ -399,6 +790,36 @@ STRICT RULES YOU MUST FOLLOW:
       { status: 422, headers: { "Content-Type": "application/json" } }
     );
   }
+}
+
+// Try to recover a structured table when the AI inlined tabular data as prose.
+function extractTableFromText(text: string): QuestionTable | undefined {
+  if (!text) return undefined;
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  // Look for a block of 2-6 consecutive lines that all have the same number
+  // of whitespace-separated tokens (at least 2 tokens and at least one number).
+  for (let start = 0; start < lines.length; start++) {
+    const tokens = lines[start].split(/\s+/);
+    if (tokens.length < 2 || tokens.length > 8) continue;
+    const hasNumber = tokens.some((t) => /^-?\d+(\.\d+)?$/.test(t));
+    if (!hasNumber) continue;
+
+    let end = start;
+    for (let j = start + 1; j < Math.min(start + 6, lines.length); j++) {
+      const nextTokens = lines[j].split(/\s+/);
+      if (nextTokens.length !== tokens.length) break;
+      if (!nextTokens.some((t) => /^-?\d+(\.\d+)?$/.test(t))) break;
+      end = j;
+    }
+
+    if (end > start) {
+      const block = lines.slice(start, end + 1);
+      const headers = block[0].split(/\s+/);
+      const rows = block.slice(1).map((line) => line.split(/\s+/));
+      return { headers, rows };
+    }
+  }
+  return undefined;
 }
 
 // FIX 3: Real per-question validation
@@ -497,26 +918,13 @@ function sanitizeFigure(raw: unknown): QuestionFigure | undefined {
   const f = raw as Partial<QuestionFigure>;
   const alt = typeof f.alt === "string" && f.alt.trim() ? f.alt : "Figure";
   if (f.type === "svg" && typeof f.svg === "string" && f.svg.includes("<svg")) {
-    // Sanitize inline SVG with DOMPurify (server-side, works in Deno via esm.sh).
-    // deno-lint-ignore no-explicit-any
-    const dp: any = (globalThis as any).__dompurify ?? (async () => {
-      const mod = await import("https://esm.sh/isomorphic-dompurify@2.16.0?target=deno");
-      (globalThis as any).__dompurify = mod.default ?? mod;
-      return (globalThis as any).__dompurify;
-    })();
-    // Fallback: if DOMPurify hasn't resolved yet (top-level await not used here),
-    // apply a conservative regex strip and rely on client-side DOMPurify as the
-    // authoritative sanitizer on render.
-    let svg = f.svg
+    // Server-side SVG sanitization without DOMPurify (avoids jsdom/canvas).
+    // The authoritative sanitizer runs on the client before render.
+    const svg = f.svg
       .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "")
       .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
       .replace(/(href|xlink:href)\s*=\s*("|')\s*javascript:[^"']*("|')/gi, '$1="#"');
-    try {
-      // If DOMPurify already loaded synchronously, use it.
-      if (dp && typeof dp.sanitize === "function") {
-        svg = dp.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
-      }
-    } catch { /* keep regex-stripped svg */ }
     const out: QuestionFigure = { type: "svg", svg, alt };
     if (typeof f.caption === "string" && f.caption.trim()) out.caption = f.caption;
     return out;
