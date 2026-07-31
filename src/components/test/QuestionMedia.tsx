@@ -1,6 +1,7 @@
 import DOMPurify from "dompurify";
 import { MathRenderer } from "@/components/MathRenderer";
 import type { Question, QuestionFigure, QuestionTable } from "@/lib/test-generator";
+import { resolveQuestionParts } from "@/lib/question-table";
 
 /**
  * SVG sanitizer backed by DOMPurify. Strips scripts, event handlers, and
@@ -105,7 +106,8 @@ interface QuestionMediaProps {
  */
 export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProps) {
   const figure = resolveFigure(question);
-  const hasAny = question.stimulus || question.table || figure;
+  const { table } = resolveQuestionParts(question);
+  const hasAny = question.stimulus || table || figure;
   if (!hasAny) return null;
 
   return (
@@ -121,7 +123,7 @@ export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProp
         />
       )}
       {figure && <Figure figure={figure} />}
-      {question.table && <DataTable table={question.table} />}
+      {table && <DataTable table={table} />}
     </div>
   );
 }

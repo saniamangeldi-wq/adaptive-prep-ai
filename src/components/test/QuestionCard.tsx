@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MathRenderer } from "@/components/MathRenderer";
 import { QuestionMedia } from "@/components/test/QuestionMedia";
+import { resolveQuestionParts } from "@/lib/question-table";
 import type { Question } from "@/lib/test-generator";
 
 interface QuestionCardProps {
@@ -87,7 +88,7 @@ export function QuestionCard({
       {/* Question */}
       <div className="p-6 space-y-6">
         <QuestionMedia question={question} />
-        <MathRenderer as="div" className="text-lg text-foreground leading-relaxed" text={question.text} />
+        <MathRenderer as="div" className="text-lg text-foreground leading-relaxed" text={resolveQuestionParts(question).text} />
 
 
         {/* Answer Options */}
