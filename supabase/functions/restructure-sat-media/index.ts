@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
         .select("role")
         .eq("id", uid)
         .maybeSingle();
-      authorized = profile?.role === "school_admin" || Deno.env.get("SAT_MEDIA_OPEN") === "1";
+      authorized = profile?.role === "school_admin";
     }
     if (!authorized) return json({ error: "Forbidden" }, 403);
 
