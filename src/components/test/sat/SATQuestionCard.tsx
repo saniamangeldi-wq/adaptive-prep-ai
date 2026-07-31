@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { MathRenderer } from "@/components/MathRenderer";
 import { QuestionMedia } from "@/components/test/QuestionMedia";
+import { resolveQuestionParts } from "@/lib/question-table";
 import type { Question } from "@/lib/test-generator";
 
 interface SATQuestionCardProps {
@@ -24,6 +25,8 @@ export function SATQuestionCard({
     onAnswerChange(value);
   };
 
+  const { text: promptText } = resolveQuestionParts(question);
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Stimulus + figure + table */}
@@ -31,21 +34,21 @@ export function SATQuestionCard({
 
       {/* Question Text / Prompt */}
       <div className="space-y-4">
-        {question.text && question.text.length > 300 && (
+        {promptText && promptText.length > 300 && (
           <div className="p-6 rounded-xl bg-muted/50 border border-border/50">
             <MathRenderer
               as="div"
               className="text-foreground leading-relaxed whitespace-pre-line"
-              text={question.text}
+              text={promptText}
             />
           </div>
         )}
 
-        {question.text && question.text.length <= 300 && (
+        {promptText && promptText.length <= 300 && (
           <MathRenderer
             as="div"
             className="text-lg text-foreground leading-relaxed"
-            text={question.text}
+            text={promptText}
           />
         )}
       </div>
