@@ -12,6 +12,7 @@ export interface Reference {
   type: "document" | "url" | "text";
   name: string;
   content: string;
+  source?: "conversation" | "space";
   isLoading?: boolean;
   wordCount?: number;
 }
@@ -45,7 +46,7 @@ export function useReferences() {
     const tempId = `ref-${Date.now()}`;
     setReferences((prev) => [
       ...prev,
-      { id: tempId, type: "document", name: file.name, content: "", isLoading: true },
+        { id: tempId, type: "document", name: file.name, content: "", isLoading: true, source: "conversation" },
     ]);
     setIsProcessing(true);
 
@@ -93,7 +94,7 @@ export function useReferences() {
     const domain = new URL(url).hostname;
     setReferences((prev) => [
       ...prev,
-      { id: tempId, type: "url", name: domain, content: "", isLoading: true },
+      { id: tempId, type: "url", name: domain, content: "", isLoading: true, source: "conversation" },
     ]);
     setIsProcessing(true);
 
@@ -146,6 +147,7 @@ export function useReferences() {
         name: `Pasted text (${wordCount} words)`,
         content: text.trim(),
         wordCount,
+        source: "conversation",
       },
     ]);
     toast.success("Text added as reference");
@@ -159,8 +161,13 @@ export function useReferences() {
     setReferences([]);
   }, []);
 
-  const getReferenceContext = useCallback(() => {
-    const active = references.filter((r) => !r.isLoading && r.content);
+  const getReferenceContext = useCallback((options?: { includeSpaceReferences?: boolean }) => {
+    const includeSpaceReferences = options?.includeSpaceReferences ?? true;
+    const active = references.filter((r) => (
+      !r.isLoading &&
+      r.content &&
+      (includeSpaceReferences || r.source !== "space")
+    ));
     if (active.length === 0) return "";
 
     let context = "\n\n---REFERENCE DOCUMENTS---";
@@ -183,10 +190,12 @@ export function useReferences() {
   // Load references from a space's stored references
   const loadSpaceReferences = useCallback((spaceRefs: Reference[]) => {
     setReferences((prev) => {
-      // Merge: keep conversation-level refs, add space refs that aren't already present
-      const existingIds = new Set(prev.map((r) => r.id));
-      const newRefs = spaceRefs.filter((r) => !existingIds.has(r.id));
-      return [...prev, ...newRefs];
+      const conversationReferences = prev.filter((reference) => reference.source !== "space");
+      const selectedSpaceReferences = spaceRefs.map((reference) => ({
+        ...reference,
+        source: "space" as const,
+      }));
+      return [...conversationReferences, ...selectedSpaceReferences];
     });
   }, []);
 

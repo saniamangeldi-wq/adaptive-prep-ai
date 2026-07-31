@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
+import { CONVERSATION_UPDATED_EVENT, emitConversationUpdated } from "@/lib/conversationEvents";
+import { DEFAULT_CONVERSATION_TITLE, normalizeConversationTitle } from "@/lib/conversationTitle";
 
 export interface ConversationSpace {
   id: string;
@@ -19,7 +21,14 @@ export interface Conversation {
   id: string;
   user_id: string;
   title: string | null;
-  messages: Array<{ role: string; content: string }>;
+  title_source: "automatic" | "manual";
+  messages: Array<{
+    role: string;
+    content: string;
+    visibleText?: string | null;
+    hidden?: boolean;
+    attachmentMeta?: Array<{ type: string; name: string; preview?: string }>;
+  }>;
   space_id: string | null;
   is_archived: boolean;
   is_pinned: boolean;
@@ -28,12 +37,30 @@ export interface Conversation {
 }
 
 // Helper to transform database messages to typed format
-function transformMessages(messages: Json): Array<{ role: string; content: string }> {
+function transformMessages(messages: Json): Conversation["messages"] {
   if (Array.isArray(messages)) {
-    return messages.map(m => ({
-      role: String((m as Record<string, unknown>)?.role || "user"),
-      content: String((m as Record<string, unknown>)?.content || ""),
-    }));
+    return messages.map(m => {
+      const message = (m && typeof m === "object" ? m : {}) as Record<string, unknown>;
+      const attachmentMeta = Array.isArray(message.attachmentMeta)
+        ? message.attachmentMeta.filter((item): item is { type: string; name: string; preview?: string } => (
+            Boolean(item) && typeof item === "object" &&
+            typeof (item as Record<string, unknown>).type === "string" &&
+            typeof (item as Record<string, unknown>).name === "string"
+          )).map(item => ({
+            type: item.type,
+            name: item.name,
+            ...(typeof item.preview === "string" ? { preview: item.preview } : {}),
+          }))
+        : undefined;
+
+      return {
+        role: String(message.role || "user"),
+        content: String(message.content || ""),
+        visibleText: typeof message.visibleText === "string" ? message.visibleText : null,
+        hidden: Boolean(message.hidden),
+        ...(attachmentMeta ? { attachmentMeta } : {}),
+      };
+    });
   }
   return [];
 }
@@ -44,6 +71,7 @@ function transformConversation(data: Record<string, unknown>): Conversation {
     id: String(data.id),
     user_id: String(data.user_id),
     title: data.title ? String(data.title) : null,
+    title_source: data.title_source === "manual" ? "manual" : "automatic",
     messages: transformMessages(data.messages as Json),
     space_id: data.space_id ? String(data.space_id) : null,
     is_archived: Boolean(data.is_archived),
@@ -105,6 +133,23 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
     }
   }, [user, loadSpaces, loadConversations, selectedSpaceId]);
 
+  useEffect(() => {
+    const handleConversationUpdated = (event: Event) => {
+      const { conversationId, updates } = (event as CustomEvent<{
+        conversationId: string;
+        updates: Partial<Conversation>;
+      }>).detail;
+      setConversations(prev => prev.map(conversation => (
+        conversation.id === conversationId
+          ? { ...conversation, ...updates }
+          : conversation
+      )));
+    };
+
+    window.addEventListener(CONVERSATION_UPDATED_EVENT, handleConversationUpdated);
+    return () => window.removeEventListener(CONVERSATION_UPDATED_EVENT, handleConversationUpdated);
+  }, []);
+
   const createSpace = useCallback(async (
     name: string,
     description?: string,
@@ -161,7 +206,8 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
       .from("ai_conversations")
       .insert({
         user_id: user.id,
-        title: title || "New Conversation",
+        title: title ? normalizeConversationTitle(title) : DEFAULT_CONVERSATION_TITLE,
+        title_source: title ? "manual" : "automatic",
         messages: [],
         space_id: spaceId || selectedSpaceId,
         coach_type: coachType,
@@ -182,20 +228,29 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
   const updateConversation = useCallback(async (
     conversationId: string,
     updates: Partial<Pick<Conversation, "title" | "messages" | "space_id" | "is_archived" | "is_pinned">>
-  ) => {
+  ): Promise<boolean> => {
+    const persistedUpdates = updates.title === undefined
+      ? updates
+      : {
+          ...updates,
+          title: normalizeConversationTitle(updates.title),
+          title_source: "manual" as const,
+        };
     const { error } = await supabase
       .from("ai_conversations")
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...persistedUpdates, updated_at: new Date().toISOString() })
       .eq("id", conversationId);
 
     if (error) {
       toast.error("Failed to update conversation");
-      return;
+      return false;
     }
 
     setConversations(prev =>
-      prev.map(c => (c.id === conversationId ? { ...c, ...updates } : c))
+      prev.map(c => (c.id === conversationId ? { ...c, ...persistedUpdates } : c))
     );
+    emitConversationUpdated(conversationId, persistedUpdates);
+    return true;
   }, []);
 
   const deleteConversation = useCallback(async (conversationId: string) => {

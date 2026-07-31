@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
   FolderPlus,
   Archive,
+  Pencil,
   ChevronRight,
   ChevronDown
 } from "lucide-react";
@@ -31,6 +32,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDistanceToNow } from "date-fns";
+import { normalizeConversationTitle } from "@/lib/conversationTitle";
 
 interface ConversationSidebarProps {
   currentConversationId?: string;
@@ -60,6 +62,7 @@ export function ConversationSidebar({
     togglePin,
     archiveConversation,
     moveToSpace,
+    updateConversation,
   } = useConversations(coachType);
 
   const [showCreateSpace, setShowCreateSpace] = useState(false);
@@ -69,6 +72,9 @@ export function ConversationSidebar({
   const [newSpaceIcon, setNewSpaceIcon] = useState("📁");
   const [newSpaceColor, setNewSpaceColor] = useState("#3b82f6");
   const [expandedSpaces, setExpandedSpaces] = useState(true);
+  const [renamingConversationId, setRenamingConversationId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
 
   const handleCreateSpace = async () => {
     if (!newSpaceName.trim()) return;
@@ -94,6 +100,25 @@ export function ConversationSidebar({
   // Find the space for a conversation
   const getSpaceForConv = (conv: Conversation) => spaces.find(s => s.id === conv.space_id);
 
+  const startRename = (conversation: Conversation) => {
+    setRenamingConversationId(conversation.id);
+    setRenameValue(conversation.title || "");
+    setRenameError(null);
+  };
+
+  const saveRename = async () => {
+    if (!renamingConversationId) return;
+    const saved = await updateConversation(renamingConversationId, {
+      title: normalizeConversationTitle(renameValue),
+    });
+    if (!saved) {
+      setRenameError("Unable to save name. Try again.");
+      return;
+    }
+    setRenamingConversationId(null);
+    setRenameError(null);
+  };
+
   const renderConversation = (conv: Conversation, showSpaceBadge = false) => {
     const space = showSpaceBadge ? getSpaceForConv(conv) : null;
     return (
@@ -111,10 +136,34 @@ export function ConversationSidebar({
           <div className="flex items-center gap-1.5">
             {conv.is_pinned && <Pin className="w-3 h-3 text-primary flex-shrink-0" />}
             {space && <span className="text-[10px] flex-shrink-0">{space.icon}</span>}
-            <p className="text-sm font-medium truncate">
-              {conv.title || "Untitled"}
-            </p>
+            {renamingConversationId === conv.id ? (
+              <div className="flex min-w-0 items-center gap-1" onClick={(event) => event.stopPropagation()}>
+                <label htmlFor={`rename-${conv.id}`} className="sr-only">Rename conversation</label>
+                <Input
+                  id={`rename-${conv.id}`}
+                  value={renameValue}
+                  onChange={(event) => setRenameValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void saveRename();
+                    if (event.key === "Escape") setRenamingConversationId(null);
+                  }}
+                  autoFocus
+                  maxLength={60}
+                  className="h-7 min-w-0 text-sm"
+                />
+                <Button type="button" size="sm" className="h-7 px-2" onClick={() => void saveRename()}>
+                  Save
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm font-medium truncate">
+                {conv.title || "Untitled"}
+              </p>
+            )}
           </div>
+          {renamingConversationId === conv.id && renameError && (
+            <p role="alert" className="text-xs text-destructive mt-1">{renameError}</p>
+          )}
           <p className="text-xs text-muted-foreground/60 truncate mt-0.5">
             {getPreviewText(conv.messages)}
           </p>
@@ -132,6 +181,10 @@ export function ConversationSidebar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => startRename(conv)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Rename
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => togglePin(conv.id)}>
               <Pin className="h-4 w-4 mr-2" />
               {conv.is_pinned ? "Unpin" : "Pin"}

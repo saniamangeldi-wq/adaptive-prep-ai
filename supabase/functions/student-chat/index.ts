@@ -1,33 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Tier credit limits for daily reset
-const TIER_CREDIT_LIMITS: Record<string, number> = {
-  tier_0: 15,
-  tier_1: 40,
-  tier_2: 100,
-  tier_3: 200,
-};
-
-const TRIAL_CREDITS_PER_DAY = 75;
-
-// Check if credits should be reset (new day)
-function shouldResetCredits(creditsResetAt: string | null): boolean {
-  if (!creditsResetAt) return true;
-  
-  const resetDate = new Date(creditsResetAt);
-  const now = new Date();
-  
-  // Check if it's a new day (compare dates in UTC)
-  return now.toDateString() !== resetDate.toDateString();
-}
-
-// Get daily credit limit based on tier and trial status
-function getDailyCredits(tier: string, isTrial: boolean): number {
-  if (isTrial) return TRIAL_CREDITS_PER_DAY;
-  return TIER_CREDIT_LIMITS[tier] || TIER_CREDIT_LIMITS.tier_0;
-}
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -532,6 +505,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let creditReserved = false;
+  let refundReservedCredit: (() => Promise<void>) | null = null;
+
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -547,6 +523,16 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
+    const refundCredit = async () => {
+      if (!creditReserved) return;
+      const { error } = await supabase.rpc("refund_ai_credits", {
+        p_user_id: userId,
+        p_cost: 1,
+      });
+      if (error) console.error("Failed to refund reserved credit:", error);
+      creditReserved = false;
+    };
+
     // Validate user token
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -558,6 +544,7 @@ serve(async (req) => {
     }
 
     const userId = user.id;
+    refundReservedCredit = refundCredit;
 
     // Get user profile for learning style, subjects, and credits
     const { data: profile, error: profileError } = await supabase
@@ -573,51 +560,43 @@ serve(async (req) => {
       });
     }
 
-    // Check if credits need to be reset (new day)
-    let currentCredits = profile.credits_remaining;
-    const needsReset = shouldResetCredits(profile.credits_reset_at);
-    
-    if (needsReset) {
-      const dailyLimit = getDailyCredits(profile.tier, profile.is_trial);
-      currentCredits = dailyLimit;
-      
-      // Reset credits in database
-      const { error: resetError } = await supabase
-        .from("profiles")
-        .update({ 
-          credits_remaining: dailyLimit,
-          credits_reset_at: new Date().toISOString()
-        })
-        .eq("user_id", userId);
-      
-      if (resetError) {
-        console.error("Failed to reset credits:", resetError);
-      } else {
-        console.log(`Credits reset for user ${userId}: ${dailyLimit} credits`);
-      }
-    }
-
-    // Check credits after potential reset
-    if (currentCredits <= 0) {
-      return new Response(JSON.stringify({ 
-        error: "No credits remaining. Please upgrade your plan for more credits.",
-        credits_remaining: 0 
-      }), {
-        status: 402,
+    const { messages, taskType, subject: explicitSubject, modelOverride, spaceId } = await req.json();
+    if (!Array.isArray(messages)) {
+      return new Response(JSON.stringify({ error: "messages must be an array" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { messages, taskType, subject: explicitSubject, modelOverride } = await req.json();
+    let selectedSpace: {
+      name: string;
+      description: string | null;
+      ai_instructions: string | null;
+      references: unknown;
+    } | null = null;
 
-    // Deduct 1 credit
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ credits_remaining: currentCredits - 1 })
-      .eq("user_id", userId);
+    if (typeof spaceId === "string" && spaceId.trim()) {
+      const { data: space, error: spaceError } = await supabase
+        .from("conversation_spaces")
+        .select("name, description, ai_instructions, references")
+        .eq("id", spaceId)
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    if (updateError) {
-      console.error("Failed to deduct credit:", updateError);
+      if (spaceError) {
+        console.error("Failed to load selected space:", spaceError);
+        return new Response(JSON.stringify({ error: "Unable to load selected space" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!space) {
+        return new Response(JSON.stringify({ error: "Selected space is unavailable" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      selectedSpace = space;
     }
 
     // Ensure messages alternate correctly for API compatibility
@@ -664,6 +643,28 @@ serve(async (req) => {
       });
     }
 
+    const { data: creditRows, error: creditError } = await supabase.rpc("consume_ai_credits", {
+      p_user_id: userId,
+      p_cost: 1,
+    });
+    if (creditError) {
+      console.error("Failed to reserve credit:", creditError);
+      return new Response(JSON.stringify({ error: "Unable to verify credits" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!creditRows?.length) {
+      return new Response(JSON.stringify({
+        error: "No credits remaining. Please upgrade your plan for more credits.",
+        credits_remaining: 0,
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    creditReserved = true;
+
     // Get the last user message to determine routing and subject
     const lastUserMessage = alternatingMessages.filter((m) => m.role === "user").pop()?.content || "";
 
@@ -704,6 +705,22 @@ serve(async (req) => {
       studySubjects: userSubjects,
     };
     let systemPrompt = getStudentSystemPrompt(profileCtx, modelConfig.qualityNote, detectedSubject);
+
+    if (selectedSpace) {
+      systemPrompt += `\n\nSELECTED STUDY SPACE: ${selectedSpace.name}`;
+      if (selectedSpace.description) systemPrompt += `\nDescription: ${selectedSpace.description}`;
+      if (selectedSpace.ai_instructions) systemPrompt += `\nSpace instructions: ${selectedSpace.ai_instructions}`;
+
+      const references = Array.isArray(selectedSpace.references) ? selectedSpace.references : [];
+      const usableReferences = references.filter((reference): reference is { name?: string; content?: string } => (
+        Boolean(reference) && typeof reference === "object" && typeof (reference as { content?: unknown }).content === "string"
+      ));
+      for (const reference of usableReferences) {
+        const content = reference.content!.slice(0, 5000);
+        if (!content.trim()) continue;
+        systemPrompt += `\n\n[SPACE REFERENCE: ${reference.name || "Untitled"}]\n${content}`;
+      }
+    }
 
     // Language instruction — respond in user's preferred language
     const langCode = (profile as any).preferred_language || "en";
@@ -833,12 +850,14 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
+        await refundReservedCredit?.();
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
+        await refundReservedCredit?.();
         return new Response(JSON.stringify({ error: "AI service credits exhausted. Please add funds to continue." }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -846,6 +865,7 @@ serve(async (req) => {
       }
       const errorText = await response.text();
       console.error("AI service error:", response.status, errorText);
+      await refundReservedCredit?.();
       return new Response(JSON.stringify({ error: "AI service error. Please try again." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -854,12 +874,14 @@ serve(async (req) => {
 
     // Strip <think>...</think> blocks from SSE stream before sending to client
     const transformedBody = stripThinkTagsFromStream(response.body!);
+    creditReserved = false;
 
     return new Response(transformedBody, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
     console.error("student-chat error:", e);
+    if (creditReserved) await refundReservedCredit?.();
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

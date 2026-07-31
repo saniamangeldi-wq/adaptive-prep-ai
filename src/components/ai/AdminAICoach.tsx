@@ -38,6 +38,7 @@ import { useAttachments } from "@/hooks/useAttachments";
 import { useReferences, type Reference } from "@/hooks/useReferences";
 import { ReferencesPanel } from "./ReferencesPanel";
 import { ReferencesBadge } from "./ReferencesBadge";
+import { useConversationLifecycle, type ConversationLifecycleProps } from "./conversationLifecycle";
 import { CitationChip } from "./CitationChip";
 import { getTierLimits, TRIAL_LIMITS } from "@/lib/tier-limits";
 import { toast } from "sonner";
@@ -78,32 +79,25 @@ const projectionTypes = [
   { value: "budget", label: "Budget Forecast" },
 ];
 
-interface AdminAICoachProps {
-  conversationId?: string | null;
-  onEnsureConversation?: () => Promise<string | null>;
+interface AdminAICoachProps extends ConversationLifecycleProps {
   chatMode?: "text" | "voice";
   spaceReferences?: Reference[];
-  activeSpace?: { name: string; description?: string | null; icon?: string | null } | null;
+  activeSpace?: { id: string; name: string; description?: string | null; icon?: string | null } | null;
 }
 
-export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [], activeSpace = null }: AdminAICoachProps) {
+export function AdminAICoach({ conversationId, onEnsureConversation, initialMessage, onInitialMessageConsumed, chatMode = "text", spaceReferences = [], activeSpace = null }: AdminAICoachProps) {
   const [input, setInput] = useState("");
-  const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
   const [showReferences, setShowReferences] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
   const [projectionType, setProjectionType] = useState("");
-  const skipNextLoad = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { profile } = useAuth();
+  const { activeConvId, skipNextLoad, ensureConversationId } = useConversationLifecycle({ conversationId, onEnsureConversation });
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
-
-  useEffect(() => {
-    setActiveConvId(conversationId || null);
-  }, [conversationId]);
 
   useEffect(() => {
     if (skipNextLoad.current) {
@@ -146,9 +140,7 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
   } = useReferences();
 
   useEffect(() => {
-    if (spaceReferences.length > 0) {
-      loadSpaceReferences(spaceReferences);
-    }
+    loadSpaceReferences(spaceReferences);
   }, [spaceReferences, loadSpaceReferences]);
 
   const handleVoiceTranscript = (text: string) => {
@@ -168,16 +160,11 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
     if (!text.trim() || isLoading) return;
     if ((profile?.credits_remaining || 0) <= 0) return;
     
-    if (!activeConvId && onEnsureConversation) {
-      const newId = await onEnsureConversation();
-      if (newId) {
-        skipNextLoad.current = true;
-        setActiveConvId(newId);
-      }
-    }
+    const ensuredConversationId = await ensureConversationId();
+    if (!ensuredConversationId) return;
     
     const attachmentContext = getAttachmentContext();
-    const referenceContext = getReferenceContext();
+    const referenceContext = getReferenceContext({ includeSpaceReferences: false });
     const fullInput = text + attachmentContext + referenceContext;
 
     const attachMeta = attachments
@@ -192,8 +179,15 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
     clearAttachments();
     setShowAttachments(false);
     setShowReferences(false);
-    await streamChat(fullInput, { endpoint: "admin-analytics" }, text, attachMeta);
+    await streamChat(fullInput, { endpoint: "admin-analytics", conversationId: ensuredConversationId, spaceId: activeSpace?.id ?? null }, text, attachMeta);
   };
+
+  const initialMessageSentRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialMessage || initialMessageSentRef.current === initialMessage) return;
+    initialMessageSentRef.current = initialMessage;
+    void handleSend(initialMessage).then(() => onInitialMessageConsumed?.());
+  }, [initialMessage]);
 
   const handleChipClick = (prompt: string) => {
     handleSend(prompt);
@@ -214,6 +208,7 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
         instructions: instruction,
       },
       analysisType: "projection",
+      spaceId: activeSpace?.id ?? null,
     });
   };
 
