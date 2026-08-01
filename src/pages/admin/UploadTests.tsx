@@ -37,6 +37,8 @@ export default function UploadTests() {
   const { toast } = useToast();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResult, setBackfillResult] = useState<string | null>(null);
 
   // Check if user is admin (for now, check if role is school_admin)
   const isAdmin = profile?.role === "school_admin";
@@ -187,6 +189,35 @@ export default function UploadTests() {
 
   const pendingCount = files.filter(f => f.status === "pending").length;
   const successCount = files.filter(f => f.status === "success").length;
+
+  const runBackfill = async () => {
+    setBackfilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("restructure-sat-media", {
+        body: { limit: 50 },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const scanned = (data as any)?.scanned ?? 0;
+      const converted = (data as any)?.converted ?? 0;
+      setBackfillResult(`Scanned ${scanned} flattened question${scanned === 1 ? "" : "s"}, rebuilt ${converted} table/figure${converted === 1 ? "" : "s"}.`);
+      toast({
+        title: converted > 0 ? "Backfill batch complete" : "Nothing left to fix",
+        description: converted > 0
+          ? `Rebuilt ${converted} question${converted === 1 ? "" : "s"}. Run again to continue.`
+          : "No remaining flattened tables or charts were found.",
+      });
+    } catch (e: any) {
+      setBackfillResult(null);
+      toast({
+        title: "Backfill failed",
+        description: e?.message ?? String(e),
+        variant: "destructive",
+      });
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   return (
     <DashboardLayout>
