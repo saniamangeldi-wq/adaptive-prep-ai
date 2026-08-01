@@ -23,7 +23,7 @@ describe("QuestionMedia", () => {
 
   it("renders a valid image figure", () => {
     const view = render(<QuestionMedia question={{ ...question, figure: { type: "image", alt: "Line graph", src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" } }} />);
-    expect(view.getByLabelText("Line graph")).toBeInTheDocument();
+    expect(view.getByAltText("Line graph")).toBeInTheDocument();
   });
 
   it("shows a fallback for a malformed visual", () => {
