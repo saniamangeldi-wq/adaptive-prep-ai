@@ -2,6 +2,8 @@ import DOMPurify from "dompurify";
 import { MathRenderer } from "@/components/MathRenderer";
 import type { Question, QuestionFigure, QuestionTable } from "@/lib/test-generator";
 import { resolveQuestionParts } from "@/lib/question-table";
+import { isPotentiallyRenderableFigure, shouldShowVisualFallback } from "@/lib/sat-content";
+import { useState } from "react";
 
 /**
  * SVG sanitizer backed by DOMPurify. Strips scripts, event handlers, and
@@ -65,16 +67,28 @@ function DataTable({ table }: { table: QuestionTable }) {
   );
 }
 
+function VisualFallback() {
+  return (
+    <div role="status" className="my-4 flex min-h-28 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-6 py-8 text-center text-sm font-medium text-muted-foreground">
+      Source visual unavailable
+    </div>
+  );
+}
+
 function Figure({ figure }: { figure: QuestionFigure }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const safeSvg = figure.type === "svg" && figure.svg ? sanitizeSvg(figure.svg) : "";
+  const validSvg = safeSvg && /<svg\b/i.test(safeSvg) && /<(?:path|line|polyline|polygon|rect|circle|ellipse|text|image)\b/i.test(safeSvg);
+  if (!isPotentiallyRenderableFigure(figure) || (figure.type === "svg" && !validSvg) || imageFailed) return <VisualFallback />;
   return (
     <figure className="my-4 flex flex-col items-center">
-      <div className="flex justify-center p-5 rounded-xl bg-white border border-border shadow-sm">
+      <div className="flex justify-center p-5 rounded-xl bg-background border border-border shadow-sm">
         {figure.type === "svg" && figure.svg ? (
           <div
             role="img"
             aria-label={figure.alt}
             className="max-w-full [&>svg]:max-h-[420px] [&>svg]:w-auto"
-            dangerouslySetInnerHTML={{ __html: sanitizeSvg(figure.svg) }}
+            dangerouslySetInnerHTML={{ __html: safeSvg }}
           />
         ) : figure.src ? (
           <img
@@ -82,6 +96,7 @@ function Figure({ figure }: { figure: QuestionFigure }) {
             alt={figure.alt}
             className="max-w-full max-h-[420px] object-contain"
             loading="lazy"
+            onError={() => setImageFailed(true)}
           />
         ) : null}
       </div>
@@ -106,8 +121,9 @@ interface QuestionMediaProps {
  */
 export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProps) {
   const figure = resolveFigure(question);
-  const { table } = resolveQuestionParts(question);
-  const hasAny = question.stimulus || table || figure;
+  const { table, text } = resolveQuestionParts(question);
+  const showFallback = shouldShowVisualFallback(question, text);
+  const hasAny = question.stimulus || table || figure || showFallback;
   if (!hasAny) return null;
 
   return (
@@ -124,6 +140,7 @@ export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProp
       )}
       {figure && <Figure figure={figure} />}
       {table && <DataTable table={table} />}
+      {!figure && !table && showFallback && <VisualFallback />}
     </div>
   );
 }

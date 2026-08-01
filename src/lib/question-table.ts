@@ -1,4 +1,5 @@
 import type { Question, QuestionTable } from "@/lib/test-generator";
+import { isValidTable, normalizeSatText } from "@/lib/sat-content";
 
 const MAX_CELL_LEN = 60;
 
@@ -40,7 +41,7 @@ export interface ParsedQuestionText {
  * rendered as a real table. Question wording is left untouched.
  */
 export function parseFlattenedTable(rawText: string): ParsedQuestionText {
-  const text = rawText || "";
+  const text = normalizeSatText(rawText || "");
   const blocks = text.split(/\n\s*\n/);
   if (blocks.length < 2) return { text };
 
@@ -74,6 +75,6 @@ export function resolveQuestionParts(question: Question): {
   table?: QuestionTable;
   text: string;
 } {
-  if (question.table) return { table: question.table, text: question.text };
+  if (isValidTable(question.table)) return { table: question.table, text: normalizeSatText(question.text) };
   return parseFlattenedTable(question.text);
 }
