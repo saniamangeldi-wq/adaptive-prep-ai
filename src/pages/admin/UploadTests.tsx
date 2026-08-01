@@ -15,7 +15,9 @@ import {
   AlertCircle, 
   Loader2,
   Trash2,
-  BookOpen
+  BookOpen,
+  Wand2
+
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageSeo } from "@/components/seo/PageSeo";
@@ -276,6 +278,37 @@ export default function UploadTests() {
             </div>
           </div>
         </Card>
+
+        {/* Table / figure backfill */}
+        <Card className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+            <div>
+              <h4 className="font-medium text-foreground">Rebuild flattened tables & figures</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Scans imported questions whose tables or charts were flattened into text and restores
+                structured tables/diagrams. Processes up to 50 questions per run.
+              </p>
+              {backfillResult && (
+                <p className="text-sm text-primary mt-2">{backfillResult}</p>
+              )}
+            </div>
+            <Button onClick={runBackfill} disabled={backfilling} variant="outline" className="shrink-0">
+              {backfilling ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-4 h-4" />
+                  Run backfill
+                </>
+              )}
+            </Button>
+          </div>
+        </Card>
+
+
 
         {/* File List */}
         {files.length > 0 && (
