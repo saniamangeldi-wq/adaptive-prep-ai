@@ -34,6 +34,44 @@ interface Question {
   stimulus?: string;
   table?: QuestionTable;
   figure?: QuestionFigure;
+  visual_unavailable?: boolean;
+}
+
+const RAW_VISUAL_MARKUP_RE = /<\/?(?:svg|style|script|foreignObject)\b|\*\s*\{[^}]*\}|\b(?:stroke-linecap|stroke-linejoin|viewBox)\s*:/i;
+const VISUAL_REFERENCE_RE = /\b(?:the|this|shown|given|following)\s+(?:graph|chart|figure|diagram|table)\b|\bgraph represents\b/i;
+
+function normalizeMathTokens(input: string): string {
+  return (input || "")
+    .replace(/\bleft parenthesis\b/gi, "(")
+    .replace(/\bright parenthesis\b/gi, ")")
+    .replace(/\bleft bracket\b/gi, "[")
+    .replace(/\bright bracket\b/gi, "]")
+    .replace(/\bequals(?: sign)?\b/gi, "=")
+    .replace(/\bplus(?: sign)?\b/gi, "+")
+    .replace(/\bminus(?: sign)?\b/gi, "−")
+    .replace(/\btimes(?: sign)?\b/gi, "×")
+    .replace(/\bgreater than or equal to\b/gi, "≥")
+    .replace(/\bless than or equal to\b/gi, "≤")
+    .replace(/\bnot equal to\b/gi, "≠")
+    .replace(/\b([A-Za-z])\s+\(/g, "$1(")
+    .replace(/[ \t]+([),.;:?])/g, "$1")
+    .replace(/([([])[ \t]+/g, "$1")
+    .replace(/[ \t]{2,}/g, " ");
+}
+
+function normalizeStoredText(input: string): { text: string; removedVisualMarkup: boolean } {
+  const source = input || "";
+  const removedVisualMarkup = RAW_VISUAL_MARKUP_RE.test(source);
+  const text = source
+    .replace(/<script\b[\s\S]*?<\/script\s*>/gi, "")
+    .replace(/<style\b[\s\S]*?<\/style\s*>/gi, "")
+    .replace(/<svg\b[\s\S]*?<\/svg\s*>/gi, "")
+    .replace(/<foreignObject\b[\s\S]*?<\/foreignObject\s*>/gi, "")
+    .replace(/^\s*\*?\s*\{[^}]*\}\s*$/gim, "")
+    .replace(/^.*\b(?:stroke-linecap|stroke-linejoin|viewBox)\s*:[^\n]*$/gim, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return { text: normalizeMathTokens(text), removedVisualMarkup };
 }
 
 interface ParsedTest {
@@ -752,22 +790,28 @@ STRICT RULES YOU MUST FOLLOW:
     }
 
     parsed.questions = parsed.questions.map((q: Partial<Question>, i: number) => {
+      const normalizedPrompt = normalizeStoredText(q.text || "");
+      const normalizedStimulus = normalizeStoredText(typeof q.stimulus === "string" ? q.stimulus : "");
       const cleaned: Question = {
         id: q.id || `q${i + 1}`,
         type: q.type || "multiple_choice",
         section: q.section || "math",
         difficulty: q.difficulty || "normal",
         topic: q.topic || "general",
-        text: q.text || "",
-        options: q.options || [],
+        text: normalizedPrompt.text,
+        options: Array.isArray(q.options) ? q.options.map((option) => normalizeStoredText(String(option)).text) : [],
         correct_answer: q.correct_answer || "",
-        explanation: q.explanation || "",
+        explanation: normalizeStoredText(q.explanation || "").text,
       };
-      if (typeof q.stimulus === "string" && q.stimulus.trim()) cleaned.stimulus = q.stimulus;
+      if (normalizedStimulus.text) cleaned.stimulus = normalizedStimulus.text;
       const table = sanitizeTable(q.table) ?? extractTableFromText(cleaned.text);
       if (table) cleaned.table = table;
       const figure = sanitizeFigure(q.figure);
       if (figure) cleaned.figure = figure;
+      const sourceReferencedVisual = VISUAL_REFERENCE_RE.test(`${normalizedStimulus.text}\n${normalizedPrompt.text}`);
+      if ((normalizedPrompt.removedVisualMarkup || normalizedStimulus.removedVisualMarkup || sourceReferencedVisual) && !cleaned.figure && !cleaned.table) {
+        cleaned.visual_unavailable = true;
+      }
       return cleaned;
     });
 
@@ -907,7 +951,7 @@ function sanitizeTable(raw: unknown): QuestionTable | undefined {
   const rows = t.rows
     .filter((r) => Array.isArray(r))
     .map((r) => (r as unknown[]).map((c) => String(c ?? "")));
-  if (headers.length === 0 || rows.length === 0) return undefined;
+  if (headers.length < 2 || rows.length === 0 || rows.some((row) => row.length !== headers.length)) return undefined;
   const out: QuestionTable = { headers, rows };
   if (typeof t.caption === "string" && t.caption.trim()) out.caption = t.caption;
   return out;

@@ -1,5 +1,6 @@
 import { Fragment, useMemo } from "react";
 import katex from "katex";
+import { normalizeSatText } from "@/lib/sat-content";
 
 interface MathRendererProps {
   text: string;
@@ -26,7 +27,7 @@ const CONNECTOR_WORD_RE = /\b(?:and|or)\b/i;
  */
 function normalizeVerbalMath(input: string): string {
   if (!input) return input;
-  let s = input;
+  let s = normalizeSatText(input);
 
   // Fractions: StartFraction A Over B EndFraction  ->  \frac{A}{B}
   const fracRe = /StartFraction\s+([\s\S]+?)\s+Over\s+([\s\S]+?)\s+EndFraction/gi;

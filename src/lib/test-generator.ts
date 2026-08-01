@@ -32,6 +32,8 @@ export interface Question {
   table?: QuestionTable;
   /** Optional figure (image URL or inline SVG). */
   figure?: QuestionFigure;
+  /** Set during import when a referenced visual was missing or malformed. */
+  visual_unavailable?: boolean;
   /** Legacy shorthand: image URL. Mapped to figure at render time. */
   image_url?: string;
   /** Legacy shorthand: alt text for image_url. */
