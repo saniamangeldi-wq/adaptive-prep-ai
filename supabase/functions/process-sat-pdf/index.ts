@@ -53,6 +53,7 @@ function normalizeMathTokens(input: string): string {
     .replace(/\bgreater than or equal to\b/gi, "≥")
     .replace(/\bless than or equal to\b/gi, "≤")
     .replace(/\bnot equal to\b/gi, "≠")
+    .replace(/\b([A-Za-z])\s+\(/g, "$1(")
     .replace(/[ \t]+([),.;:?])/g, "$1")
     .replace(/([([])[ \t]+/g, "$1")
     .replace(/[ \t]{2,}/g, " ");
