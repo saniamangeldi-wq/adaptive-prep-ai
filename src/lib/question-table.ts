@@ -1,5 +1,5 @@
 import type { Question, QuestionTable } from "@/lib/test-generator";
-import { isValidTable, normalizeSatText } from "@/lib/sat-content";
+import { extractEmbeddedChartTable, isValidTable, normalizeSatText } from "@/lib/sat-content";
 
 const MAX_CELL_LEN = 60;
 
@@ -76,5 +76,9 @@ export function resolveQuestionParts(question: Question): {
   text: string;
 } {
   if (isValidTable(question.table)) return { table: question.table, text: normalizeSatText(question.text) };
+
+  const extracted = extractEmbeddedChartTable(question.text);
+  if (extracted.table) return extracted;
+
   return parseFlattenedTable(question.text);
 }

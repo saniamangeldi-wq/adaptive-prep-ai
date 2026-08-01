@@ -62,7 +62,49 @@ export function isPotentiallyRenderableFigure(figure: QuestionFigure | undefined
   return typeof figure.svg === "string" && /<svg\b/i.test(figure.svg) && /<\/(?:svg)\s*>/i.test(figure.svg);
 }
 
-export function shouldShowVisualFallback(question: Question, promptText: string): boolean {
+const CATEGORY_BLOCK_RE = /(\d+):\s*\n\s*\n((?:[A-Za-z][\w\s]*:\s*[\d.]+%\s*\n?)+)/g;
+
+/**
+ * Recovers a real data table from imported SAT questions whose chart was
+ * flattened into the question text as a repeating
+ * "N:\n\nlabel: value%\nlabel: value%" enumeration. The axis/legend jumble
+ * before the data is discarded and only the real prose after it is kept.
+ */
+export function extractEmbeddedChartTable(rawText: string): { table?: QuestionTable; text: string } {
+  if (!rawText) return { text: rawText };
+
+  const matches = [...rawText.matchAll(CATEGORY_BLOCK_RE)];
+  if (matches.length < 2) return { text: rawText };
+
+  const lastMatch = matches[matches.length - 1];
+  const dataEnd = (lastMatch.index ?? 0) + lastMatch[0].length;
+
+  const seriesOrder: string[] = [];
+  const rowMaps: Array<{ category: string; values: Record<string, string> }> = [];
+
+  for (const m of matches) {
+    const values: Record<string, string> = {};
+    for (const [, label, value] of m[2].matchAll(/([A-Za-z][\w\s]*?):\s*([\d.]+%)/g)) {
+      const key = label.trim();
+      if (!seriesOrder.includes(key)) seriesOrder.push(key);
+      values[key] = value;
+    }
+    rowMaps.push({ category: m[1], values });
+  }
+
+  const rows = rowMaps.map(({ category, values }) => [category, ...seriesOrder.map((s) => values[s] ?? "")]);
+
+  const remainder = rawText.slice(dataEnd).trim();
+  if (!remainder) return { text: rawText };
+
+  return {
+    table: { headers: ["Category", ...seriesOrder], rows },
+    text: normalizeSatText(remainder),
+  };
+}
+
+export function shouldShowVisualFallback(question: Question, promptText: string, hasRecoveredTable = false): boolean {
+  if (hasRecoveredTable) return false;
   if (question.visual_unavailable) return true;
   if (question.figure && !isPotentiallyRenderableFigure(question.figure)) return true;
   if (question.table && !isValidTable(question.table)) return true;
