@@ -120,6 +120,18 @@ interface QuestionMediaProps {
  * The prompt text and options are rendered by the caller.
  */
 export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProps) {
+  // TEMPORARY DEBUG LOG — remove after diagnosing the flattened-chart-table
+  // rendering bug for question id "opensat-rw-m-2-27". Not part of any fix.
+  if (question.id === "opensat-rw-m-2-27") {
+    // eslint-disable-next-line no-console
+    console.debug(
+      "[DEBUG opensat-rw-m-2-27] question.table =",
+      JSON.stringify(question.table),
+      "question.text =",
+      JSON.stringify(question.text)
+    );
+  }
+
   const figure = resolveFigure(question);
   const { table, text } = resolveQuestionParts(question);
   const showFallback = shouldShowVisualFallback(question, text, Boolean(table));
