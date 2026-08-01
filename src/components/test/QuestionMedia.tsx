@@ -122,7 +122,7 @@ interface QuestionMediaProps {
 export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProps) {
   const figure = resolveFigure(question);
   const { table, text } = resolveQuestionParts(question);
-  const showFallback = shouldShowVisualFallback(question, text);
+  const showFallback = shouldShowVisualFallback(question, text, Boolean(table));
   const hasAny = question.stimulus || table || figure || showFallback;
   if (!hasAny) return null;
 
