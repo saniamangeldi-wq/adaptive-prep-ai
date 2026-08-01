@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       const { data: profile } = await admin
         .from("profiles")
         .select("role")
-        .eq("id", uid)
+        .eq("user_id", uid)
         .maybeSingle();
       authorized = profile?.role === "school_admin";
     }
