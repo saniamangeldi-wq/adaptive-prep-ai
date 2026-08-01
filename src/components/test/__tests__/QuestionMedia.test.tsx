@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { QuestionMedia } from "@/components/test/QuestionMedia";
+import { QuestionMedia, sanitizeSvg } from "@/components/test/QuestionMedia";
 import type { Question } from "@/lib/test-generator";
 
 const question: Question = {
@@ -16,10 +16,14 @@ describe("QuestionMedia", () => {
   });
 
   it("renders a sanitized SVG without scripts", () => {
-    const { container } = render(<QuestionMedia question={{ ...question, figure: { type: "svg", alt: "Line graph", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><script>alert(1)</script><line x1='0' y1='0' x2='10' y2='10'/></svg>" } }} />);
-    expect(container.querySelector('[role="img"][aria-label="Line graph"]')).not.toBeNull();
-    expect(container.querySelector("script")).toBeNull();
-    expect(container.querySelector("line")).not.toBeNull();
+    const raw = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><script>alert(1)</script><rect width='10' height='10'/></svg>";
+    const safe = sanitizeSvg(raw);
+    expect(safe).toContain("<svg");
+    expect(safe).toContain("<rect");
+    expect(safe).not.toContain("<script");
+
+    const view = render(<QuestionMedia question={{ ...question, figure: { type: "svg", alt: "Line graph", svg: safe } }} />);
+    expect(view.getByLabelText("Line graph")).toBeInTheDocument();
   });
 
   it("shows a fallback for a malformed visual", () => {

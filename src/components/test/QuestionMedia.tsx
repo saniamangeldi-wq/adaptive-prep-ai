@@ -9,7 +9,7 @@ import { useState } from "react";
  * SVG sanitizer backed by DOMPurify. Strips scripts, event handlers, and
  * javascript: URLs while preserving safe SVG markup for question figures.
  */
-function sanitizeSvg(raw: string): string {
+export function sanitizeSvg(raw: string): string {
   if (!raw) return "";
   return DOMPurify.sanitize(raw, {
     USE_PROFILES: { svg: true, svgFilters: true },
