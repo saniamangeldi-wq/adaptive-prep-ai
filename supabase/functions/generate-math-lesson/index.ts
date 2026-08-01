@@ -127,6 +127,17 @@ serve(async (req) => {
     const { topic_id, topic_slug, styles } = await req.json().catch(() => ({}));
     const admin = createClient(supabaseUrl, serviceKey);
 
+    // Admin-only: generation writes into the globally-readable math_lessons table
+    // and consumes paid AI budget.
+    const { data: callerProfile } = await admin
+      .from("profiles").select("role").eq("user_id", user.id).maybeSingle();
+    if (callerProfile?.role !== "school_admin" && callerProfile?.role !== "admin") {
+      return new Response(JSON.stringify({ error: "Admin only" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
     // Resolve topic
     let topicQuery = admin.from("math_topics").select("*");
     if (topic_id) topicQuery = topicQuery.eq("id", topic_id);
