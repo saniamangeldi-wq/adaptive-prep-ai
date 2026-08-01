@@ -38,12 +38,21 @@ serve(async (req) => {
 
     const session = await stripe.checkout.sessions.retrieve(session_id);
 
+    // Only the user who initiated the checkout may redeem it.
+    if (session.metadata?.user_id !== user.id) {
+      return new Response(JSON.stringify({ granted: false, reason: "Session does not belong to this account" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
+
     if (session.payment_status !== "paid") {
       return new Response(JSON.stringify({ granted: false, reason: "Payment not completed" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
+
 
     // Check if this session was already used
     const { data: existing } = await supabaseAdmin

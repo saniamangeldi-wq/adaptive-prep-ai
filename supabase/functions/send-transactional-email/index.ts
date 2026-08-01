@@ -30,10 +30,8 @@ function generateToken(): string {
     .join('')
 }
 
-// Auth note: this function uses verify_jwt = true in config.toml, so Supabase's
-// gateway validates the caller's JWT (anon or service_role) before the request
-// reaches this code. No in-function auth check is needed.
-
+// Auth: explicitly validate the caller in code. Only a real signed-in user JWT
+// or a service-role JWT may enqueue mail — the public anon key alone is rejected.
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -42,6 +40,27 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+  {
+    const authHeader = req.headers.get('Authorization') || ''
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+    const unauthorized = () =>
+      new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    if (!token || !supabaseUrl) return unauthorized()
+    if (token !== supabaseServiceKey) {
+      const authClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? '')
+      const { data, error } = await authClient.auth.getClaims(token)
+      const role = (data?.claims as any)?.role
+      if (error || !data?.claims || !(data.claims as any).sub || role === 'anon') {
+        return unauthorized()
+      }
+    }
+  }
+
+
 
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('Missing required environment variables')
