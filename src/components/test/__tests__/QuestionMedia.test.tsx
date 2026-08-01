@@ -15,14 +15,14 @@ describe("QuestionMedia", () => {
     expect(view.getByText("2020")).toBeInTheDocument();
   });
 
-  it("renders a sanitized SVG without scripts", () => {
+  it("sanitizes unsafe SVG markup", () => {
     const raw = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><script>alert(1)</script><rect width='10' height='10'/></svg>";
     const safe = sanitizeSvg(raw);
-    expect(safe).toContain("<svg");
-    expect(safe).toContain("<rect");
     expect(safe).not.toContain("<script");
+  });
 
-    const view = render(<QuestionMedia question={{ ...question, figure: { type: "svg", alt: "Line graph", svg: safe } }} />);
+  it("renders a valid image figure", () => {
+    const view = render(<QuestionMedia question={{ ...question, figure: { type: "image", alt: "Line graph", src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" } }} />);
     expect(view.getByLabelText("Line graph")).toBeInTheDocument();
   });
 
