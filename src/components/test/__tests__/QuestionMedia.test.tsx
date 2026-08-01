@@ -16,7 +16,7 @@ describe("QuestionMedia", () => {
   });
 
   it("renders a sanitized SVG without scripts", () => {
-    const { container } = render(<QuestionMedia question={{ ...question, figure: { type: "svg", alt: "Line graph", svg: "<svg><script>alert(1)</script><line x1='0' y1='0' x2='10' y2='10'/></svg>" } }} />);
+    const { container } = render(<QuestionMedia question={{ ...question, figure: { type: "svg", alt: "Line graph", svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><script>alert(1)</script><line x1='0' y1='0' x2='10' y2='10'/></svg>" } }} />);
     expect(container.querySelector('[role="img"][aria-label="Line graph"]')).not.toBeNull();
     expect(container.querySelector("script")).toBeNull();
     expect(container.querySelector("line")).not.toBeNull();
