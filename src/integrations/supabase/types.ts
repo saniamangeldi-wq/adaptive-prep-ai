@@ -59,6 +59,7 @@ export type Database = {
           related_test_id: string | null
           space_id: string | null
           title: string | null
+          title_source: string
           updated_at: string
           user_id: string
         }
@@ -74,6 +75,7 @@ export type Database = {
           related_test_id?: string | null
           space_id?: string | null
           title?: string | null
+          title_source?: string
           updated_at?: string
           user_id: string
         }
@@ -89,6 +91,7 @@ export type Database = {
           related_test_id?: string | null
           space_id?: string | null
           title?: string | null
+          title_source?: string
           updated_at?: string
           user_id?: string
         }
@@ -2887,6 +2890,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_ai_credits: {
+        Args: {
+          p_cost: number
+          p_now?: string
+          p_user_id: string
+        }
+        Returns: { credits_remaining: number }[]
+      }
       check_trial_expiration: { Args: never; Returns: undefined }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -2945,6 +2956,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      refund_ai_credits: {
+        Args: { p_cost: number; p_user_id: string }
+        Returns: { credits_remaining: number }[]
       }
       upgrade_student_to_tutor_tier: {
         Args: { _student_id: string; _tutor_id: string }

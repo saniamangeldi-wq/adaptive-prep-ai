@@ -1,6 +1,6 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { getResponsePreview } from "@/utils/sanitizeAIResponse";
-import { Folder, Plus, MoreHorizontal, Clock, Upload, Link2, ClipboardPaste, FileText, Calendar, ArrowLeft, X, Send } from "lucide-react";
+import { Folder, Plus, MoreHorizontal, Clock, Upload, Link2, ClipboardPaste, FileText, Calendar, ArrowLeft, X, Send, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,17 +13,18 @@ import type { Reference } from "@/hooks/useReferences";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow, format } from "date-fns";
 import { toast } from "sonner";
+import { normalizeConversationTitle } from "@/lib/conversationTitle";
 
 interface SpaceDashboardProps {
   space: ConversationSpace;
   onSelectConversation: (conv: Conversation) => void;
-  onNewConversation: (initialMessage?: string) => void;
+  onNewConversation: (initialMessage?: string) => Promise<string | null> | void;
   onBack: () => void;
   coachType?: "student" | "tutor";
 }
 
 export function SpaceDashboard({ space, onSelectConversation, onNewConversation, onBack, coachType = "student" }: SpaceDashboardProps) {
-  const { conversations, deleteConversation, deleteSpace } = useConversations(coachType);
+  const { conversations, deleteConversation, deleteSpace, updateConversation } = useConversations(coachType);
   const [showSettings, setShowSettings] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [addRefMode, setAddRefMode] = useState<"none" | "url" | "paste">("none");
@@ -32,6 +33,9 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
   const [showInstructions, setShowInstructions] = useState(false);
   const [instructionsValue, setInstructionsValue] = useState((space as any).ai_instructions || "");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [renamingConversationId, setRenamingConversationId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
 
   const spaceConversations = useMemo(
     () => conversations.filter((c) => c.space_id === space.id),
@@ -47,11 +51,18 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
   }, [space]);
 
   const [refs, setRefs] = useState<Reference[]>(spaceReferences);
+  const refsRef = useRef<Reference[]>(spaceReferences);
+  const referenceWriteQueue = useRef(Promise.resolve());
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    refsRef.current = spaceReferences;
+    setRefs(spaceReferences);
+  }, [spaceReferences]);
+
+  const handleSubmit = async () => {
     if (!inputValue.trim()) return;
-    onNewConversation(inputValue.trim());
-    setInputValue("");
+    const conversationId = await onNewConversation(inputValue.trim());
+    if (conversationId) setInputValue("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -93,9 +104,7 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
           content: content.substring(0, 15000),
           wordCount,
         };
-        setRefs(prev => [...prev, newRef]);
-        // Save immediately
-        await saveRefs([...refs, newRef]);
+        await updateReferences((previous) => [...previous, newRef]);
         toast.success(`${file.name} added`);
       } catch {
         toast.error("Failed to read file");
@@ -109,8 +118,7 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
     const { fetchUrlAsReference } = await import("@/lib/spaceReferences");
     try {
       const newRef = await fetchUrlAsReference(urlValue.trim());
-      setRefs(prev => [...prev, newRef]);
-      await saveRefs([...refs, newRef]);
+      await updateReferences((previous) => [...previous, newRef]);
       setUrlValue("");
       setAddRefMode("none");
       toast.success("URL added");
@@ -130,24 +138,36 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
       content: textValue.trim(),
       wordCount,
     };
-    setRefs(prev => [...prev, newRef]);
-    await saveRefs([...refs, newRef]);
+    await updateReferences((previous) => [...previous, newRef]);
     setTextValue("");
     setAddRefMode("none");
     toast.success("Text added");
   };
 
   const handleRemoveRef = async (refId: string) => {
-    const updated = refs.filter(r => r.id !== refId);
-    setRefs(updated);
-    await saveRefs(updated);
+    await updateReferences(previous => previous.filter(r => r.id !== refId));
   };
 
   const saveRefs = async (newRefs: Reference[]) => {
-    await supabase
+    const { error } = await supabase
       .from("conversation_spaces")
       .update({ references: newRefs as any })
       .eq("id", space.id);
+    if (error) throw error;
+  };
+
+  const updateReferences = async (update: (previous: Reference[]) => Reference[]) => {
+    const nextRefs = update(refsRef.current);
+    refsRef.current = nextRefs;
+    setRefs(nextRefs);
+    referenceWriteQueue.current = referenceWriteQueue.current
+      .catch(() => undefined)
+      .then(() => saveRefs(nextRefs));
+    try {
+      await referenceWriteQueue.current;
+    } catch {
+      toast.error("Failed to save references");
+    }
   };
 
   const handleSaveInstructions = async () => {
@@ -170,9 +190,28 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
     const userMsg = conv.messages.find(m => m.role === "user");
     const aiMsg = conv.messages.find(m => m.role === "assistant");
     return {
-      userText: userMsg?.content || conv.title || "Untitled",
+      userText: conv.title || userMsg?.content || "Untitled",
       aiText: aiMsg?.content || "",
     };
+  };
+
+  const startRename = (conversation: Conversation) => {
+    setRenamingConversationId(conversation.id);
+    setRenameValue(conversation.title || "");
+    setRenameError(null);
+  };
+
+  const saveRename = async () => {
+    if (!renamingConversationId) return;
+    const saved = await updateConversation(renamingConversationId, {
+      title: normalizeConversationTitle(renameValue),
+    });
+    if (!saved) {
+      setRenameError("Unable to save name. Try again.");
+      return;
+    }
+    setRenamingConversationId(null);
+    setRenameError(null);
   };
 
   return (
@@ -267,14 +306,43 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
                   {spaceConversations.map((conv) => {
                     const { userText, aiText } = getThreadPreview(conv);
                     return (
-                      <button
+                      <div
                         key={conv.id}
-                        onClick={() => onSelectConversation(conv)}
-                        className="w-full text-left px-4 py-3.5 rounded-lg hover:bg-muted/10 transition-colors group"
+                        className="relative w-full text-left px-4 py-3.5 rounded-lg hover:bg-muted/10 transition-colors group"
                       >
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {userText}
-                        </p>
+                        {renamingConversationId === conv.id ? (
+                          <div className="flex items-center gap-2" role="group" aria-label="Rename conversation">
+                            <label htmlFor={`space-rename-${conv.id}`} className="sr-only">Rename conversation</label>
+                            <Input
+                              id={`space-rename-${conv.id}`}
+                              value={renameValue}
+                              onChange={(event) => setRenameValue(event.target.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") void saveRename();
+                                if (event.key === "Escape") setRenamingConversationId(null);
+                              }}
+                              autoFocus
+                              maxLength={60}
+                              className="h-8"
+                            />
+                            <Button type="button" size="sm" className="h-8" onClick={() => void saveRename()}>
+                              Save
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onSelectConversation(conv)}
+                            className="w-full text-left"
+                          >
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {userText}
+                            </p>
+                          </button>
+                        )}
+                        {renamingConversationId === conv.id && renameError && (
+                          <p role="alert" className="text-xs text-destructive mt-1">{renameError}</p>
+                        )}
                         {aiText && (
                           <p className="text-[13px] text-muted-foreground/60 mt-1 line-clamp-2 leading-relaxed">
                             {getResponsePreview(aiText)}
@@ -287,8 +355,21 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
                           </span>
                         </div>
                         {/* Hover actions */}
-                        <div className="hidden group-hover:flex absolute right-4 top-1/2 -translate-y-1/2 items-center gap-1">
+                        <div className="flex absolute right-4 top-1/2 -translate-y-1/2 items-center gap-1">
                           <button
+                            type="button"
+                            aria-label={`Rename ${userText}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              startRename(conv);
+                            }}
+                            className="p-1 rounded text-muted-foreground/40 hover:text-foreground"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Delete ${userText}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               deleteConversation(conv.id);
@@ -298,7 +379,7 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>

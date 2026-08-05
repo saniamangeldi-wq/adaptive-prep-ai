@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  appendSpaceContext,
+  consumeAiCredits,
+  loadAuthorizedSpace,
+  refundAiCredits,
+} from "../_shared/ai-context.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -101,6 +107,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let refundReservedCredit: (() => Promise<void>) | null = null;
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -125,11 +132,17 @@ serve(async (req) => {
     }
 
     const userId = user.id;
+    let creditReserved = false;
+    refundReservedCredit = async () => {
+      if (!creditReserved) return;
+      await refundAiCredits(supabase, userId, creditCost);
+      creditReserved = false;
+    };
 
     // Verify school admin role
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("role, tier, credits_remaining")
+      .select("role, tier, credits_remaining, is_trial")
       .eq("user_id", userId)
       .single();
 
@@ -147,20 +160,30 @@ serve(async (req) => {
       });
     }
 
-    const { messages, analysisType = "general" } = await req.json();
+    const { messages, analysisType = "general", spaceId } = await req.json();
+    if (!Array.isArray(messages)) {
+      return new Response(JSON.stringify({ error: "messages must be an array" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Calculate credit cost based on analysis type
     let creditCost = 1;
     if (analysisType === "projection") creditCost = 5;
     if (analysisType === "comprehensive") creditCost = 10;
 
-    if (profile.credits_remaining < creditCost) {
-      return new Response(JSON.stringify({ 
-        error: `Insufficient credits. This analysis requires ${creditCost} credits.`,
-        credits_remaining: profile.credits_remaining,
-        credits_required: creditCost
-      }), {
-        status: 402,
+    const selectedSpaceResult = await loadAuthorizedSpace(supabase, userId, spaceId);
+    if (selectedSpaceResult.error) {
+      console.error("Failed to load selected space:", selectedSpaceResult.error);
+      return new Response(JSON.stringify({ error: "Unable to load selected space" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (selectedSpaceResult.unauthorized) {
+      return new Response(JSON.stringify({ error: "Selected space is unavailable" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -310,18 +333,35 @@ serve(async (req) => {
       }
     }
 
-    // Deduct credits
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ credits_remaining: profile.credits_remaining - creditCost })
-      .eq("user_id", userId);
-
-    if (updateError) {
-      console.error("Failed to deduct credits:", updateError);
-    }
-
     // Build system prompt with all gathered data
-    const systemPrompt = getAdminAnalyticsPrompt(schoolData, teacherPerformance, projections);
+    const systemPrompt = appendSpaceContext(
+      getAdminAnalyticsPrompt(schoolData, teacherPerformance, projections),
+      selectedSpaceResult.space,
+    );
+
+    const creditResult = await consumeAiCredits(
+      supabase,
+      userId,
+      creditCost,
+    );
+    if (creditResult.error) {
+      console.error("Failed to reserve credit:", creditResult.error);
+      return new Response(JSON.stringify({ error: "Unable to verify credits" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!creditResult.reserved) {
+      return new Response(JSON.stringify({
+        error: `Insufficient credits. This analysis requires ${creditCost} credits.`,
+        credits_remaining: profile.credits_remaining,
+        credits_required: creditCost,
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    creditReserved = true;
 
     // Call Lovable AI
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -344,12 +384,14 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
+        await refundReservedCredit();
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
+        await refundReservedCredit();
         return new Response(JSON.stringify({ error: "AI service credits exhausted." }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -357,6 +399,7 @@ serve(async (req) => {
       }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
+      await refundReservedCredit();
       return new Response(JSON.stringify({ error: "AI service error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -364,12 +407,14 @@ serve(async (req) => {
     }
 
     const transformedBody = stripThinkTagsFromStream(response.body!);
+    creditReserved = false;
 
     return new Response(transformedBody, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
     console.error("admin-analytics error:", e);
+    await refundReservedCredit?.();
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

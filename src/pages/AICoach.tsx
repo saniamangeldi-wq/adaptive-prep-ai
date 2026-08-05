@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { StudentAICoach } from "@/components/ai/StudentAICoach";
+import { StudentAICoach, type StudentSubject } from "@/components/ai/StudentAICoach";
 import { TeacherAICoach } from "@/components/ai/TeacherAICoach";
 import { AdminAICoach } from "@/components/ai/AdminAICoach";
 import { ConversationSidebar } from "@/components/ai/ConversationSidebar";
@@ -21,6 +21,7 @@ import { PageSeo } from "@/components/seo/PageSeo";
 import { UpgradeModal } from "@/components/upgrade/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { useRef } from "react";
+import { CONVERSATION_UPDATED_EVENT } from "@/lib/conversationEvents";
 
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
@@ -50,13 +51,31 @@ export default function AICoach() {
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
-  const [selectedSubject, setSelectedSubject] = useState("SAT");
+  const [selectedSubject, setSelectedSubject] = useState<StudentSubject>("SAT");
   const [eliteModel, setEliteModel] = useState<EliteModel>(
     (profile?.preferred_ai_model as EliteModel) || "perplexity-pro"
   );
   const isElite = profile?.tier === "tier_3";
   const coachType = (profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") ? "tutor" : "student";
   const { spaces, createConversation } = useConversations(coachType);
+  const createConversationPromise = useRef<Promise<Conversation | null> | null>(null);
+
+  useEffect(() => {
+    const handleConversationUpdated = (event: Event) => {
+      const { conversationId, updates } = (event as CustomEvent<{
+        conversationId: string;
+        updates: Partial<Conversation>;
+      }>).detail;
+      setCurrentConversation(previous => (
+        previous?.id === conversationId
+          ? { ...previous, ...updates }
+          : previous
+      ));
+    };
+
+    window.addEventListener(CONVERSATION_UPDATED_EVENT, handleConversationUpdated);
+    return () => window.removeEventListener(CONVERSATION_UPDATED_EVENT, handleConversationUpdated);
+  }, []);
 
   // Persist model preference when changed
   const handleModelChange = useCallback(async (model: EliteModel) => {
@@ -73,8 +92,13 @@ export default function AICoach() {
   const spaceId = searchParams.get("space");
   const activeSpace = spaceId ? spaces.find((s) => s.id === spaceId) || null : null;
 
-  const handleNewConversation = async (initialMessage?: string) => {
-    const conv = await createConversation(undefined, spaceId);
+  const handleNewConversation = async (initialMessage?: string): Promise<string | null> => {
+    if (!createConversationPromise.current) {
+      createConversationPromise.current = createConversation(undefined, spaceId).finally(() => {
+        createConversationPromise.current = null;
+      });
+    }
+    const conv = await createConversationPromise.current;
     if (conv) {
       setCurrentConversation(conv);
       // If initialMessage provided, it will be sent by the chat component via the empty state
@@ -82,19 +106,16 @@ export default function AICoach() {
         // Store the initial message to pass to the coach
         setInitialMessage(initialMessage);
       }
+      return conv.id;
     }
+    return null;
   };
 
   const [initialMessage, setInitialMessage] = useState<string | null>(null);
 
   const ensureConversation = async (): Promise<string | null> => {
     if (currentConversation) return currentConversation.id;
-    const conv = await createConversation(undefined, spaceId);
-    if (conv) {
-      setCurrentConversation(conv);
-      return conv.id;
-    }
-    return null;
+    return handleNewConversation();
   };
 
   const handleSelectConversation = (conversation: Conversation | null) => {
@@ -124,9 +145,11 @@ export default function AICoach() {
           <AdminAICoach
             conversationId={currentConversation?.id || null}
             onEnsureConversation={ensureConversation}
+            initialMessage={initialMessage}
+            onInitialMessageConsumed={() => setInitialMessage(null)}
             chatMode={chatMode}
             spaceReferences={spaceRefs}
-            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
+            activeSpace={activeSpace ? { id: activeSpace.id, name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
           />
         );
       case "teacher":
@@ -135,9 +158,11 @@ export default function AICoach() {
           <TeacherAICoach
             conversationId={currentConversation?.id || null}
             onEnsureConversation={ensureConversation}
+            initialMessage={initialMessage}
+            onInitialMessageConsumed={() => setInitialMessage(null)}
             chatMode={chatMode}
             spaceReferences={spaceRefs}
-            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
+            activeSpace={activeSpace ? { id: activeSpace.id, name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
           />
         );
       case "student":
@@ -146,9 +171,11 @@ export default function AICoach() {
           <StudentAICoach
             conversationId={currentConversation?.id || null}
             onEnsureConversation={ensureConversation}
+            initialMessage={initialMessage}
+            onInitialMessageConsumed={() => setInitialMessage(null)}
             chatMode={chatMode}
             spaceReferences={spaceRefs}
-            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
+            activeSpace={activeSpace ? { id: activeSpace.id, name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
             modelOverride={isElite ? eliteModel : undefined}
             subject={selectedSubject}
             onSubjectChange={setSelectedSubject}

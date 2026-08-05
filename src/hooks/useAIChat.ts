@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { awardXP } from "@/lib/award-xp";
 import { XP_REWARDS } from "@/lib/gamification-config";
+import { emitConversationUpdated } from "@/lib/conversationEvents";
+import { getAutomaticConversationTitle } from "@/lib/conversationTitle";
 
 export interface Message {
   id: string;
@@ -15,8 +17,11 @@ export interface Message {
   attachmentMeta?: Array<{ type: string; name: string; preview?: string }>;
 }
 
-interface StreamChatOptions {
+export interface StreamChatOptions {
   endpoint: "student-chat" | "teacher-reports" | "admin-analytics";
+  conversationId?: string | null;
+  subject?: string;
+  spaceId?: string | null;
   isReport?: boolean;
   reportContext?: {
     type: string;
@@ -33,17 +38,51 @@ export function useAIChat(conversationId?: string | null) {
   const [isLoading, setIsLoading] = useState(false);
   const { user, refreshProfile } = useAuth();
   const conversationIdRef = useRef(conversationId);
+  const isLoadingRef = useRef(false);
   conversationIdRef.current = conversationId;
 
   // Save messages to the ai_conversations table
-  const saveMessages = useCallback(async (msgs: Message[]) => {
-    const convId = conversationIdRef.current;
-    if (!convId) return;
-    const dbMessages = msgs.map(m => ({ role: m.role, content: m.content }));
-    await supabase
+  const saveMessages = useCallback(async (
+    msgs: Message[],
+    conversationIdOverride?: string | null,
+    visibleText?: string,
+  ) => {
+    const convId = conversationIdOverride || conversationIdRef.current;
+    if (!convId) return false;
+    const dbMessages = msgs.map(m => ({
+      role: m.role,
+      content: m.content,
+      visibleText: m.visibleText ?? null,
+      hidden: Boolean(m.hidden),
+      attachmentMeta: m.attachmentMeta ?? [],
+    }));
+    const { error: messageError } = await supabase
       .from("ai_conversations")
       .update({ messages: dbMessages, updated_at: new Date().toISOString() })
       .eq("id", convId);
+
+    if (messageError) {
+      toast.error("Failed to save conversation");
+      return false;
+    }
+
+    const title = getAutomaticConversationTitle(visibleText);
+    if (!title) return true;
+
+    const { error: titleError } = await supabase
+      .from("ai_conversations")
+      .update({ title, title_source: "automatic" })
+      .eq("id", convId)
+      .eq("title_source", "automatic")
+      .eq("title", "New Conversation");
+
+    if (titleError) {
+      toast.error("Failed to name conversation");
+      return false;
+    }
+
+    emitConversationUpdated(convId, { title, title_source: "automatic" });
+    return true;
   }, []);
 
   const streamChat = useCallback(async (
@@ -53,7 +92,7 @@ export function useAIChat(conversationId?: string | null) {
     attachmentMeta?: Array<{ type: string; name: string; preview?: string }>,
     hidden?: boolean
   ) => {
-    if (!userInput.trim() || isLoading) return;
+    if (!userInput.trim() || isLoadingRef.current) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -66,7 +105,16 @@ export function useAIChat(conversationId?: string | null) {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    isLoadingRef.current = true;
     setIsLoading(true);
+
+    let assistantId: string | null = null;
+
+    const removeFailedMessages = () => {
+      setMessages(prev => prev.filter(message => (
+        message.id !== userMessage.id && message.id !== assistantId
+      )));
+    };
 
     try {
       // Get user's session token for authorization
@@ -91,6 +139,8 @@ export function useAIChat(conversationId?: string | null) {
         },
         body: JSON.stringify({
           messages: allMessages,
+          subject: options.subject,
+          spaceId: options.spaceId,
           isReport: options.isReport || false,
           reportContext: options.reportContext,
           analysisType: options.analysisType,
@@ -104,18 +154,21 @@ export function useAIChat(conversationId?: string | null) {
         if (response.status === 402) {
           toast.error(errorData.error || "Insufficient credits");
           setIsLoading(false);
+          removeFailedMessages();
           return;
         }
         
         if (response.status === 429) {
           toast.error("Rate limit exceeded. Please try again in a moment.");
           setIsLoading(false);
+          removeFailedMessages();
           return;
         }
 
         if (response.status === 403) {
           toast.error(errorData.error || "Access denied");
           setIsLoading(false);
+          removeFailedMessages();
           return;
         }
 
@@ -133,7 +186,7 @@ export function useAIChat(conversationId?: string | null) {
       let streamDone = false;
 
       // Create initial assistant message
-      const assistantId = (Date.now() + 1).toString();
+      assistantId = (Date.now() + 1).toString();
       setMessages(prev => [...prev, {
         id: assistantId,
         role: "assistant",
@@ -214,7 +267,7 @@ export function useAIChat(conversationId?: string | null) {
 
       // Save to database
       setMessages(prev => {
-        saveMessages(prev);
+        void saveMessages(prev, options.conversationId, visibleText);
         return prev;
       });
 
@@ -222,8 +275,9 @@ export function useAIChat(conversationId?: string | null) {
       console.error("AI chat error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to get AI response");
       // Remove the user message if it failed
-      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+      removeFailedMessages();
     } finally {
+      isLoadingRef.current = false;
       setIsLoading(false);
     }
   }, [messages, isLoading, refreshProfile, saveMessages]);
@@ -240,11 +294,20 @@ export function useAIChat(conversationId?: string | null) {
       .eq("id", convId)
       .single();
     if (data?.messages && Array.isArray(data.messages)) {
-      const loaded = (data.messages as Array<{ role: string; content: string }>).map((m, i) => ({
+      const loaded = (data.messages as Array<{
+        role: string;
+        content: string;
+        visibleText?: string | null;
+        hidden?: boolean;
+        attachmentMeta?: Array<{ type: string; name: string; preview?: string }>;
+      }>).map((m, i) => ({
         id: `loaded-${i}`,
         role: m.role as "user" | "assistant",
         content: m.content,
         timestamp: new Date(),
+        visibleText: m.visibleText || undefined,
+        hidden: m.hidden || undefined,
+        attachmentMeta: m.attachmentMeta?.length ? m.attachmentMeta : undefined,
       }));
       setMessages(loaded);
     }

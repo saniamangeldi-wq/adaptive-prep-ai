@@ -44,6 +44,7 @@ import { sanitizeAIResponse } from "@/utils/sanitizeAIResponse";
 import { QuestionWidget } from "./QuestionWidget";
 import { DocumentWidget } from "./DocumentWidget";
 import { AISuggestions } from "./AISuggestions";
+import { useConversationLifecycle, type ConversationLifecycleProps } from "./conversationLifecycle";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
@@ -108,33 +109,34 @@ const getSpacePrompts = (spaceName: string, spaceDescription: string) => {
 };
 
 interface SpaceInfo {
+  id?: string;
   name: string;
   description?: string | null;
   icon?: string | null;
 }
 
-interface StudentAICoachProps {
-  conversationId?: string | null;
-  onEnsureConversation?: () => Promise<string | null>;
+export const STUDENT_SUBJECTS = ["SAT", "Math", "English", "Science", "History", "General"] as const;
+export type StudentSubject = typeof STUDENT_SUBJECTS[number];
+
+interface StudentAICoachProps extends ConversationLifecycleProps {
   chatMode?: "text" | "voice";
   spaceReferences?: Reference[];
   activeSpace?: SpaceInfo | null;
   modelOverride?: string;
-  subject?: string;
-  onSubjectChange?: (subject: string) => void;
+  subject?: StudentSubject;
+  onSubjectChange?: (subject: StudentSubject) => void;
 }
 
-const SUBJECTS = ["SAT", "Math", "English", "Science", "History", "General"];
+const SUBJECTS = STUDENT_SUBJECTS;
 
-export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [], activeSpace = null, modelOverride, subject = "SAT", onSubjectChange }: StudentAICoachProps) {
+export function StudentAICoach({ conversationId, onEnsureConversation, initialMessage, onInitialMessageConsumed, chatMode = "text", spaceReferences = [], activeSpace = null, modelOverride, subject = "SAT", onSubjectChange }: StudentAICoachProps) {
   const [input, setInput] = useState("");
-  const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
   const [showReferences, setShowReferences] = useState(false);
-  const skipNextLoad = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { profile } = useAuth();
+  const { activeConvId, skipNextLoad, ensureConversationId } = useConversationLifecycle({ conversationId, onEnsureConversation });
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
@@ -173,10 +175,6 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     onComplete: handleSTTComplete,
   });
 
-
-  useEffect(() => {
-    setActiveConvId(conversationId || null);
-  }, [conversationId]);
 
   useEffect(() => {
     if (skipNextLoad.current) {
@@ -221,9 +219,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
 
   // Load space-level references
   useEffect(() => {
-    if (spaceReferences.length > 0) {
-      loadSpaceReferences(spaceReferences);
-    }
+    loadSpaceReferences(spaceReferences);
   }, [spaceReferences, loadSpaceReferences]);
 
   const handleVoiceTranscript = (text: string) => {
@@ -272,16 +268,11 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     }
 
     
-    if (!activeConvId && onEnsureConversation) {
-      const newId = await onEnsureConversation();
-      if (newId) {
-        skipNextLoad.current = true;
-        setActiveConvId(newId);
-      }
-    }
+    const ensuredConversationId = await ensureConversationId();
+    if (!ensuredConversationId) return;
     
     const attachmentContext = getAttachmentContext();
-    const referenceContext = getReferenceContext();
+    const referenceContext = getReferenceContext({ includeSpaceReferences: false });
     const fullInput = text + attachmentContext + referenceContext;
 
     // Build attachment metadata for display (not the extracted text)
@@ -300,8 +291,27 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       setShowAttachments(false);
       setShowReferences(false);
     }
-    await streamChat(fullInput, { endpoint: "student-chat", modelOverride }, text, attachMeta, options?.hidden);
+    await streamChat(
+      fullInput,
+      {
+        endpoint: "student-chat",
+        modelOverride,
+        conversationId: ensuredConversationId,
+        subject,
+        spaceId: activeSpace?.id || null,
+      },
+      text,
+      attachMeta,
+      options?.hidden,
+    );
   };
+
+  const initialMessageSentRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialMessage || initialMessageSentRef.current === initialMessage) return;
+    initialMessageSentRef.current = initialMessage;
+    void handleSend(initialMessage).then(() => onInitialMessageConsumed?.());
+  }, [initialMessage]);
 
   // Keep handleSendRef in sync so the STT callback can call it
   handleSendRef.current = handleSend;
