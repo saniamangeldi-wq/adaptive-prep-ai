@@ -1,7 +1,7 @@
 import type { Question, QuestionFigure, QuestionTable } from "@/lib/test-generator";
 
 const RAW_MARKUP_RE = /<\/?(?:svg|style|script|foreignObject)\b|\*\s*\{[^}]*\}|\b(?:stroke-linecap|stroke-linejoin|viewBox)\s*:/i;
-const VISUAL_REFERENCE_RE = /\b(?:the|this|shown|given|following)\s+(?:graph|chart|figure|diagram|table)\b|\bgraph represents\b/i;
+const VISUAL_REFERENCE_RE = /\b(?:the|this|shown|given|following)\s+(?:graph|chart|figure|diagram|table)\b(?!\s+of\s+(?:this|the|the given)\s+equation)|\bgraph represents\b/i;
 
 /** Converts common PDF/screen-reader math tokens without rewriting prose. */
 export function normalizeMathTokens(input: string): string {

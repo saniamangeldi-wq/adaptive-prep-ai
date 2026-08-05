@@ -29,4 +29,10 @@ describe("SAT content normalization", () => {
     expect(shouldShowVisualFallback({ ...baseQuestion, text: "The graph represents cost." }, "The graph represents cost.")).toBe(true);
     expect(shouldShowVisualFallback({ ...baseQuestion, figure: { type: "svg", svg: "broken", alt: "Graph" } }, baseQuestion.text)).toBe(true);
   });
+
+  it("does not show fallback for algebraic graph descriptions without an embedded image", () => {
+    const algebraicText =
+      "The graph of this equation in the xy-plane is a line. What is the best interpretation of the x-intercept in this context?";
+    expect(shouldShowVisualFallback({ ...baseQuestion, text: algebraicText }, algebraicText)).toBe(false);
+  });
 });
