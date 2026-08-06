@@ -21,6 +21,22 @@ interface QuestionFigure {
   caption?: string;
 }
 
+interface QuestionTableSpec {
+  kind: "table";
+  headers: string[];
+  rows: string[][];
+}
+
+interface QuestionGraphSpec {
+  kind: "graph";
+  relationship: "linear";
+  xVariable: string;
+  yVariable: string;
+  equation: string;
+  slope: number;
+  intercept: number;
+}
+
 interface Question {
   id: string;
   type: "multiple_choice" | "grid_in";
@@ -33,7 +49,9 @@ interface Question {
   explanation: string;
   stimulus?: string;
   table?: QuestionTable;
+  table_spec?: QuestionTableSpec;
   figure?: QuestionFigure;
+  graph_spec?: QuestionGraphSpec;
   visual_unavailable?: boolean;
 }
 
@@ -806,10 +824,14 @@ STRICT RULES YOU MUST FOLLOW:
       if (normalizedStimulus.text) cleaned.stimulus = normalizedStimulus.text;
       const table = sanitizeTable(q.table) ?? extractTableFromText(cleaned.text);
       if (table) cleaned.table = table;
+      const tableSpec = deriveTableSpec(cleaned.table);
+      if (tableSpec && validateTableSpec(tableSpec)) cleaned.table_spec = tableSpec;
       const figure = sanitizeFigure(q.figure);
       if (figure) cleaned.figure = figure;
+      const graphSpec = deriveGraphSpec(cleaned);
+      if (graphSpec && validateGraphSpec(graphSpec)) cleaned.graph_spec = graphSpec;
       const sourceReferencedVisual = VISUAL_REFERENCE_RE.test(`${normalizedStimulus.text}\n${normalizedPrompt.text}`);
-      if ((normalizedPrompt.removedVisualMarkup || normalizedStimulus.removedVisualMarkup || sourceReferencedVisual) && !cleaned.figure && !cleaned.table) {
+      if ((normalizedPrompt.removedVisualMarkup || normalizedStimulus.removedVisualMarkup || sourceReferencedVisual) && !cleaned.figure && !cleaned.table_spec && !cleaned.graph_spec) {
         cleaned.visual_unavailable = true;
       }
       return cleaned;
@@ -979,4 +1001,97 @@ function sanitizeFigure(raw: unknown): QuestionFigure | undefined {
     return out;
   }
   return undefined;
+}
+
+function deriveTableSpec(table: QuestionTable | undefined): QuestionTableSpec | undefined {
+  if (!table) return undefined;
+  return {
+    kind: "table",
+    headers: table.headers.map((header) => String(header ?? "").trim()),
+    rows: table.rows.map((row) => row.map((cell) => String(cell ?? "").trim())),
+  };
+}
+
+function validateTableSpec(spec: QuestionTableSpec): boolean {
+  if (!Array.isArray(spec.headers) || spec.headers.length < 2 || spec.headers.some((header) => !header)) {
+    return false;
+  }
+  if (!Array.isArray(spec.rows) || spec.rows.length === 0) return false;
+  if (spec.rows.some((row) => !Array.isArray(row) || row.length !== spec.headers.length)) return false;
+  return spec.rows.some((row) => row.some((cell) => Number.isFinite(parseNumericCell(cell))));
+}
+
+function parseNumericCell(value: string | undefined): number {
+  if (!value) return Number.NaN;
+  const parsed = Number(value.replace(/[$,%]/g, "").replace(/,/g, "").trim());
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+function parseLinearEquation(source: string): Omit<QuestionGraphSpec, "kind" | "relationship"> | undefined {
+  if (!source) return undefined;
+  const compact = source.replace(/\s+/g, "").replace(/−/g, "-");
+  const fxMatch = compact.match(/^([a-zA-Z])\(([a-zA-Z])\)=([+-]?\d*\.?\d*)([a-zA-Z])([+-]\d*\.?\d+)$/);
+  if (fxMatch) {
+    const yVariable = fxMatch[1];
+    const xVariable = fxMatch[2];
+    const slopeToken = fxMatch[3];
+    const xTermVariable = fxMatch[4];
+    const interceptToken = fxMatch[5];
+    if (xVariable !== xTermVariable) return undefined;
+    const slope = slopeToken === "" || slopeToken === "+" ? 1 : slopeToken === "-" ? -1 : Number(slopeToken);
+    const intercept = Number(interceptToken);
+    if (!Number.isFinite(slope) || !Number.isFinite(intercept)) return undefined;
+    return {
+      xVariable,
+      yVariable,
+      equation: `${yVariable}(${xVariable}) = ${slope}${xVariable} ${intercept >= 0 ? "+" : "−"} ${Math.abs(intercept)}`,
+      slope,
+      intercept,
+    };
+  }
+
+  const yxMatch = compact.match(/^([a-zA-Z])=([+-]?\d*\.?\d*)([a-zA-Z])([+-]\d*\.?\d+)$/);
+  if (!yxMatch) return undefined;
+  const yVariable = yxMatch[1];
+  const slopeToken = yxMatch[2];
+  const xVariable = yxMatch[3];
+  const interceptToken = yxMatch[4];
+  const slope = slopeToken === "" || slopeToken === "+" ? 1 : slopeToken === "-" ? -1 : Number(slopeToken);
+  const intercept = Number(interceptToken);
+  if (!Number.isFinite(slope) || !Number.isFinite(intercept)) return undefined;
+  return {
+    xVariable,
+    yVariable,
+    equation: `${yVariable} = ${slope}${xVariable} ${intercept >= 0 ? "+" : "−"} ${Math.abs(intercept)}`,
+    slope,
+    intercept,
+  };
+}
+
+function deriveGraphSpec(question: Question): QuestionGraphSpec | undefined {
+  const candidates = [question.text, question.stimulus].filter((value): value is string => Boolean(value));
+  for (const candidate of candidates) {
+    const equalities = candidate.match(/[a-zA-Z]\s*(?:\(\s*[a-zA-Z]\s*\))?\s*=\s*[^\n.;:!?]+/g) || [];
+    for (const equation of equalities) {
+      const parsed = parseLinearEquation(equation);
+      if (parsed) {
+        return {
+          kind: "graph",
+          relationship: "linear",
+          ...parsed,
+        };
+      }
+    }
+  }
+  return undefined;
+}
+
+function validateGraphSpec(spec: QuestionGraphSpec): boolean {
+  return Boolean(
+    spec.equation &&
+      spec.xVariable &&
+      spec.yVariable &&
+      Number.isFinite(spec.slope) &&
+      Number.isFinite(spec.intercept)
+  );
 }

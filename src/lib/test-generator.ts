@@ -16,6 +16,22 @@ export interface QuestionFigure {
   caption?: string;
 }
 
+export interface QuestionTableSpec {
+  kind: "table";
+  headers: string[];
+  rows: string[][];
+}
+
+export interface QuestionGraphSpec {
+  kind: "graph";
+  relationship: "linear";
+  xVariable: string;
+  yVariable: string;
+  equation: string;
+  slope: number;
+  intercept: number;
+}
+
 export interface Question {
   id: string;
   type: "multiple_choice" | "grid_in";
@@ -34,6 +50,10 @@ export interface Question {
   figure?: QuestionFigure;
   /** Set during import when a referenced visual was missing or malformed. */
   visual_unavailable?: boolean;
+  /** Optional structured table spec derived from prompt/table data. */
+  table_spec?: QuestionTableSpec;
+  /** Optional structured graph spec derived from linear relationships in text. */
+  graph_spec?: QuestionGraphSpec;
   /** Legacy shorthand: image URL. Mapped to figure at render time. */
   image_url?: string;
   /** Legacy shorthand: alt text for image_url. */
