@@ -103,8 +103,12 @@ export function extractEmbeddedChartTable(rawText: string): { table?: QuestionTa
   };
 }
 
-export function shouldShowVisualFallback(question: Question, promptText: string, hasRecoveredTable = false): boolean {
-  if (hasRecoveredTable) return false;
+export function shouldShowVisualFallback(
+  question: Question,
+  promptText: string,
+  hasStructuredVisualSpec = false
+): boolean {
+  if (hasStructuredVisualSpec) return false;
   if (question.visual_unavailable) return true;
   if (question.figure && !isPotentiallyRenderableFigure(question.figure)) return true;
   if (question.table && !isValidTable(question.table)) return true;

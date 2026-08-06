@@ -3,6 +3,7 @@ import { MathRenderer } from "@/components/MathRenderer";
 import type { Question, QuestionFigure, QuestionTable } from "@/lib/test-generator";
 import { resolveQuestionParts } from "@/lib/question-table";
 import { isPotentiallyRenderableFigure, shouldShowVisualFallback } from "@/lib/sat-content";
+import { createGraphSpec, createTableSpec, validateGraphSpec, validateTableSpec } from "@/lib/visual-specs";
 import { useState } from "react";
 
 /**
@@ -109,6 +110,33 @@ function Figure({ figure }: { figure: QuestionFigure }) {
   );
 }
 
+function GraphSummary({
+  equation,
+  slope,
+  intercept,
+  xVariable,
+  yVariable,
+}: {
+  equation: string;
+  slope: number;
+  intercept: number;
+  xVariable: string;
+  yVariable: string;
+}) {
+  const direction = slope > 0 ? "increases" : slope < 0 ? "decreases" : "is constant";
+  return (
+    <figure className="my-4 rounded-lg border border-border bg-card p-4 shadow-sm">
+      <figcaption className="text-xs text-muted-foreground mb-2">Structured relationship</figcaption>
+      <div className="space-y-1 text-sm text-foreground">
+        <div><MathRenderer text={equation} /></div>
+        <div>{`Slope: ${slope}`}</div>
+        <div>{`Intercept: ${intercept}`}</div>
+        <div>{`As ${xVariable} increases, ${yVariable} ${direction}.`}</div>
+      </div>
+    </figure>
+  );
+}
+
 interface QuestionMediaProps {
   question: Question;
   /** Optional className applied to the stimulus paragraph. */
@@ -134,8 +162,21 @@ export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProp
 
   const figure = resolveFigure(question);
   const { table, text } = resolveQuestionParts(question);
-  const showFallback = shouldShowVisualFallback(question, text, Boolean(table));
-  const hasAny = question.stimulus || table || figure || showFallback;
+  const candidateTableSpec = question.table_spec ?? createTableSpec(table);
+  const tableSpecValidation = validateTableSpec(candidateTableSpec);
+  const tableToRender: QuestionTable | undefined = tableSpecValidation.valid
+    ? {
+      headers: candidateTableSpec!.headers,
+      rows: candidateTableSpec!.rows,
+    }
+    : undefined;
+
+  const candidateGraphSpec = question.graph_spec ?? createGraphSpec(question, text);
+  const graphSpecValidation = validateGraphSpec(candidateGraphSpec);
+  const graphSpec = graphSpecValidation.valid ? candidateGraphSpec : undefined;
+
+  const showFallback = shouldShowVisualFallback(question, text, Boolean(tableToRender || graphSpec));
+  const hasAny = question.stimulus || tableToRender || graphSpec || figure || showFallback;
   if (!hasAny) return null;
 
   return (
@@ -151,8 +192,17 @@ export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProp
         />
       )}
       {figure && <Figure figure={figure} />}
-      {table && <DataTable table={table} />}
-      {!figure && !table && showFallback && <VisualFallback />}
+      {tableToRender && <DataTable table={tableToRender} />}
+      {!figure && !tableToRender && graphSpec && (
+        <GraphSummary
+          equation={graphSpec.equation}
+          slope={graphSpec.slope}
+          intercept={graphSpec.intercept}
+          xVariable={graphSpec.xVariable}
+          yVariable={graphSpec.yVariable}
+        />
+      )}
+      {!figure && !tableToRender && !graphSpec && showFallback && <VisualFallback />}
     </div>
   );
 }

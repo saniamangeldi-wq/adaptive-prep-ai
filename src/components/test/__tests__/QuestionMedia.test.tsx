@@ -15,6 +15,51 @@ describe("QuestionMedia", () => {
     expect(view.getByText("2020")).toBeInTheDocument();
   });
 
+  it("renders recovered tile-distribution data instead of fallback", () => {
+    const view = render(
+      <QuestionMedia
+        question={{
+          ...question,
+          text: "Type\nPercent\n\nBlue\n30\n\nGreen\n70\n\nThe table shows the distribution of tiles in a bag.",
+        }}
+      />
+    );
+    expect(view.getByRole("table")).toBeInTheDocument();
+    expect(view.queryByText("Source visual unavailable")).not.toBeInTheDocument();
+  });
+
+  it("renders a valid table spec even when the prompt references a graph", () => {
+    const view = render(
+      <QuestionMedia
+        question={{
+          ...question,
+          text: "The graph shows plumber charges based on hours worked.",
+          table_spec: {
+            kind: "table",
+            headers: ["Hours", "Charge"],
+            rows: [["1", "75"], ["2", "125"]],
+          },
+        }}
+      />
+    );
+    expect(view.getByRole("table")).toBeInTheDocument();
+    expect(view.queryByText("Source visual unavailable")).not.toBeInTheDocument();
+  });
+
+  it("renders linear function summary for f(x)=2x+3 without fallback", () => {
+    const view = render(
+      <QuestionMedia
+        question={{
+          ...question,
+          text: "The graph of \\( f(x) = 2x + 3 \\) is shown. Which statement is true?",
+        }}
+      />
+    );
+    expect(view.getByText("Structured relationship")).toBeInTheDocument();
+    expect(view.getByText("Slope: 2")).toBeInTheDocument();
+    expect(view.queryByText("Source visual unavailable")).not.toBeInTheDocument();
+  });
+
   it("sanitizes unsafe SVG markup", () => {
     const raw = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><script>alert(1)</script><rect width='10' height='10'/></svg>";
     const safe = sanitizeSvg(raw);
