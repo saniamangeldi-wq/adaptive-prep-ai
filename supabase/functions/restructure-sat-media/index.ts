@@ -66,6 +66,73 @@ async function restructure(text: string) {
   }
 }
 
+
+/* ---------------- Visual requirement validation ---------------- */
+
+const EXPLICIT_VISUAL_RE =
+  /\bin the (?:graph|table|figure|chart|diagram|scatterplot|histogram)\b|\b(?:graph|table|figure|chart|diagram)\s+(?:above|below|shown)\b|\bas shown\b|\bthe graph of\b(?!\s+(?:this|the|the given)\s+equation)|\bscatterplot\b|\bbar (?:graph|chart)\b|\bthe (?:following|given) (?:graph|table|figure|chart|diagram)\b/i;
+const DOMAIN_HINT_RE = /\b(?:data set|dataset|frequency|distribution|quantitative evidence|percent of respondents|survey)\b/i;
+const RAW_MATH_TOKEN_RE = /\b(?:Superscript|Subscript|Baseline|StartFraction|EndFraction|StartRoot|EndRoot)\b/i;
+
+function isValidTable(t: any): boolean {
+  return !!t && Array.isArray(t.headers) && t.headers.length >= 2 && Array.isArray(t.rows) && t.rows.length > 0 &&
+    t.rows.every((r: any) => Array.isArray(r) && r.length === t.headers.length);
+}
+
+function isRenderableFigure(f: any): boolean {
+  if (!f) return false;
+  if (f.type === "image") return typeof f.src === "string" && /^(https?:|data:image\/)/i.test(f.src);
+  return typeof f.svg === "string" && /<svg\b/i.test(f.svg) && /<\/svg\s*>/i.test(f.svg);
+}
+
+function isUsableTextEquivalent(text: any): boolean {
+  if (typeof text !== "string" || text.trim().length < 120) return false;
+  return (text.match(/-?\d+(?:\.\d+)?/g) || []).length >= 2;
+}
+
+/** Mirrors src/lib/sat-content.ts `validateQuestion`. Keep the two in sync. */
+export function validateQuestion(q: any) {
+  const source = [q.stimulus, q.text].filter(Boolean).join("\n");
+  const failure_reasons: string[] = [];
+  if (RAW_MATH_TOKEN_RE.test(source)) failure_reasons.push("math_serialization_invalid");
+
+  const media = q.media || {};
+  const figure = q.figure || (q.image_url ? { type: "image", src: q.image_url } : null);
+  const structured = q.table || media.data;
+  const figureOk = isRenderableFigure(figure);
+  const mediaUrlOk = typeof media.src === "string" && /^(https?:|data:image\/)/i.test(media.src);
+  const structuredOk = isValidTable(structured);
+  const textOk = isUsableTextEquivalent(media.text_equivalent);
+
+  const visual_requirement = EXPLICIT_VISUAL_RE.test(source)
+    ? "required"
+    : figure || structured || media.src ? "optional" : "none";
+
+  if (q.visual_unavailable) failure_reasons.push("flagged_visual_unavailable");
+  if (figure && !figureOk) failure_reasons.push("asset_invalid");
+  if (q.table && !isValidTable(q.table)) failure_reasons.push("structured_data_invalid");
+
+  let fallback_used: string | null = null;
+  if (visual_requirement === "required") {
+    const hasPrimary = figureOk || mediaUrlOk;
+    if (!hasPrimary && !structuredOk && !textOk) {
+      failure_reasons.push(figure || media.src ? "asset_unreachable_no_fallback" : "required_visual_missing_media");
+    } else if (!hasPrimary) {
+      fallback_used = structuredOk ? "structured" : "text";
+    }
+  }
+
+  let delivery_status = "deliverable";
+  if (failure_reasons.length) delivery_status = "quarantined";
+  else if (fallback_used) delivery_status = "degraded";
+  else if (visual_requirement === "none" && DOMAIN_HINT_RE.test(source) && !structuredOk && !figureOk) {
+    delivery_status = "needs_review";
+  }
+
+  const media_type = figureOk ? figure.type : mediaUrlOk ? "image" : structuredOk ? "table" : textOk ? "text" : null;
+  return { visual_requirement, delivery_status, media_type, fallback_used, failure_reasons };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -105,6 +172,7 @@ Deno.serve(async (req) => {
 
     let scanned = 0;
     let converted = 0;
+    let quarantined = 0;
     const samples: unknown[] = [];
 
     for (const test of tests ?? []) {
@@ -135,6 +203,44 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Record validation state for every question in this test.
+      if (!dryRun) {
+        const rows = questions
+          .filter((q: any) => q && typeof q === "object" && q.id)
+          .map((q: any) => {
+            const v = validateQuestion(q);
+            if (v.delivery_status === "quarantined") quarantined++;
+            return {
+              question_id: String(q.id),
+              test_id: test.id,
+              visual_requirement: v.visual_requirement,
+              delivery_status: v.delivery_status,
+              media_type: v.media_type,
+              fallback_used: v.fallback_used,
+              failure_reasons: v.failure_reasons,
+              difficulty: q.difficulty ?? null,
+              domain: q.section ?? null,
+              skill: q.topic ?? null,
+              validated_at: new Date().toISOString(),
+            };
+          });
+        if (rows.length) {
+          await admin.from("question_validation_state").upsert(rows, { onConflict: "question_id" });
+          const events = rows
+            .filter((r) => r.delivery_status === "quarantined")
+            .map((r) => ({
+              question_id: r.question_id,
+              event_type: "quarantined",
+              visual_requirement: r.visual_requirement,
+              media_type: r.media_type,
+              visual_status: r.media_type ? "invalid" : "missing",
+              fallback_used: r.fallback_used,
+              failure_reasons: r.failure_reasons,
+            }));
+          if (events.length) await admin.from("visual_health_events").insert(events);
+        }
+      }
+
       if (dirty && !dryRun) {
         const { error: upErr } = await admin
           .from("sat_tests")
@@ -145,7 +251,7 @@ Deno.serve(async (req) => {
       if (converted >= limit) break;
     }
 
-    return json({ scanned, converted, dry_run: dryRun, samples });
+    return json({ scanned, converted, quarantined, dry_run: dryRun, samples });
   } catch (e) {
     return json({ error: String(e) }, 500);
   }
