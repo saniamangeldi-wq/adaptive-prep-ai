@@ -12,6 +12,13 @@ export type VisualHealthEventType =
  * Fire-and-forget audit log for visual health problems. Never throws and never
  * blocks rendering — a failed log must not break a test in progress.
  */
+/**
+ * Client-side de-duplication. React re-renders, remounts and slide navigation
+ * must never produce a second report for the same question + event + status.
+ * The backend applies its own de-duplication on top of this.
+ */
+const reported = new Set<string>();
+
 export function logVisualHealthEvent(
   question: Question,
   event_type: VisualHealthEventType,
@@ -19,6 +26,9 @@ export function logVisualHealthEvent(
   practice_set_id?: string
 ): void {
   try {
+    const key = `${question.id}|${event_type}|${visual_status}`;
+    if (reported.has(key)) return;
+    reported.add(key);
     const result = validateQuestion(question);
     void supabase.from("visual_health_events").insert({
       question_id: question.id,
@@ -32,5 +42,29 @@ export function logVisualHealthEvent(
     });
   } catch {
     /* audit logging is best-effort */
+  }
+}
+
+const mathReported = new Set<string>();
+
+/**
+ * Reports a math rendering failure exactly once per question. Never includes
+ * question prose, options or correct-answer data — only the reason code.
+ */
+export function logMathFallback(questionId: string | undefined, reason: "legacy_tokens" | "katex_error"): void {
+  const key = `${questionId ?? "unknown"}|math|${reason}`;
+  if (mathReported.has(key)) return;
+  mathReported.add(key);
+  if (!questionId) return;
+  try {
+    void supabase.from("visual_health_events").insert({
+      question_id: questionId,
+      event_type: "fallback_rendered",
+      visual_requirement: "none",
+      visual_status: "invalid",
+      failure_reasons: [reason === "legacy_tokens" ? "math_serialization_invalid" : "math_render_failed"],
+    });
+  } catch {
+    /* best-effort */
   }
 }

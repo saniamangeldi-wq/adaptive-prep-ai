@@ -1,33 +1,98 @@
-import { render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QuestionMedia, sanitizeSvg } from "@/components/test/QuestionMedia";
+import { VISUAL_COPY, scanPracticeSet } from "@/lib/visual-status";
 import type { Question } from "@/lib/test-generator";
 
 const question: Question = {
   id: "q1", type: "multiple_choice", section: "math", difficulty: "normal", topic: "data",
-  text: "What does the graph show?", options: ["A", "B", "C", "D"], correct_answer: "A", explanation: "",
+  text: "What does the graph above show?", options: ["A", "B", "C", "D"], correct_answer: "A", explanation: "",
 };
 
-describe("QuestionMedia", () => {
-  it("renders a structured table", () => {
-    const view = render(<QuestionMedia question={{ ...question, table: { headers: ["Year", "Value"], rows: [["2020", "10"]] } }} />);
-    expect(view.getByRole("table")).toBeInTheDocument();
-    expect(view.getByText("2020")).toBeInTheDocument();
+const plainQuestion: Question = { ...question, id: "q-plain", text: "If 2x + 4 = 10, what is x?" };
+
+const VALID_TABLE = { headers: ["Year", "Value"], rows: [["2020", "10"]] };
+
+/** Controls whether the probed image "loads". */
+let imageOutcome: "load" | "error" | "pending" = "load";
+
+class MockImage {
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  naturalWidth = 100;
+  set src(_value: string) {
+    queueMicrotask(() => {
+      if (imageOutcome === "load") this.onload?.();
+      else if (imageOutcome === "error") this.onerror?.();
+    });
+  }
+}
+
+beforeEach(() => {
+  imageOutcome = "load";
+  vi.stubGlobal("Image", MockImage);
+});
+afterEach(() => vi.unstubAllGlobals());
+
+const IMG = "https://cdn.example.com/graph.png";
+
+describe("VisualRenderer states", () => {
+  it("shows the checking state before the asset resolves", () => {
+    imageOutcome = "pending";
+    render(<QuestionMedia question={{ ...question, figure: { type: "image", alt: "Graph", src: IMG } }} />);
+    expect(screen.getByText(VISUAL_COPY.checking)).toBeInTheDocument();
+    expect(screen.queryByText("Visual OK")).not.toBeInTheDocument();
+  });
+
+  it("renders a valid graph once it genuinely loads", async () => {
+    render(<QuestionMedia question={{ ...question, figure: { type: "image", alt: "Line graph", src: IMG } }} />);
+    expect(await screen.findByAltText("Line graph")).toBeInTheDocument();
+    expect(screen.getByText("Visual OK")).toBeInTheDocument();
+  });
+
+  it("falls back to structured data when the graph URL is broken", async () => {
+    imageOutcome = "error";
+    render(<QuestionMedia question={{ ...question, figure: { type: "image", alt: "Graph", src: IMG }, table: VALID_TABLE }} />);
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
+    expect(screen.getByText(VISUAL_COPY.structuredFallback)).toBeInTheDocument();
+    expect(screen.queryByAltText("Graph")).not.toBeInTheDocument();
+  });
+
+  it("blocks the item when a required visual has no usable representation", async () => {
+    imageOutcome = "error";
+    render(<QuestionMedia question={{ ...question, figure: { type: "image", alt: "Graph", src: IMG } }} />);
+    expect(await screen.findByText(VISUAL_COPY.broken)).toBeInTheDocument();
+    expect(screen.queryByText("Source visual unavailable")).not.toBeInTheDocument();
+  });
+
+  it("renders nothing for a normal text-only question", () => {
+    const { container } = render(<QuestionMedia question={plainQuestion} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("renders a structured table when it is the only representation", () => {
+    render(<QuestionMedia question={{ ...question, table: VALID_TABLE }} />);
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByText("2020")).toBeInTheDocument();
   });
 
   it("sanitizes unsafe SVG markup", () => {
     const raw = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><script>alert(1)</script><rect width='10' height='10'/></svg>";
-    const safe = sanitizeSvg(raw);
-    expect(safe).not.toContain("<script");
+    expect(sanitizeSvg(raw)).not.toContain("<script");
   });
+});
 
-  it("renders a valid image figure", () => {
-    const view = render(<QuestionMedia question={{ ...question, figure: { type: "image", alt: "Line graph", src: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" } }} />);
-    expect(view.getByAltText("Line graph")).toBeInTheDocument();
-  });
-
-  it("shows a fallback for a malformed visual", () => {
-    const view = render(<QuestionMedia question={{ ...question, figure: { type: "svg", alt: "Graph", svg: "<svg></svg>" } }} />);
-    expect(view.getByText("Source visual unavailable")).toBeInTheDocument();
+describe("practice set scan", () => {
+  it("classifies requirement and health counts", () => {
+    const scan = scanPracticeSet([
+      plainQuestion,
+      { ...question, id: "q-broken" },
+      { ...question, id: "q-table", table: VALID_TABLE },
+    ]);
+    expect(scan.total).toBe(3);
+    expect(scan.visual_required).toBe(2);
+    expect(scan.no_visual_requirement).toBe(1);
+    expect(scan.broken).toBe(1);
+    expect(scan.ok + scan.degraded).toBe(2);
   });
 });

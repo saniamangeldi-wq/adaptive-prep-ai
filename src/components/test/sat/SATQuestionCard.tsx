@@ -40,6 +40,7 @@ export function SATQuestionCard({
               as="div"
               className="text-foreground leading-relaxed whitespace-pre-line"
               text={promptText}
+              questionId={question.id}
             />
           </div>
         )}
@@ -49,6 +50,7 @@ export function SATQuestionCard({
             as="div"
             className="text-lg text-foreground leading-relaxed"
             text={promptText}
+            questionId={question.id}
           />
         )}
       </div>

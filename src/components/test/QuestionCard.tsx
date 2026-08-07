@@ -88,7 +88,7 @@ export function QuestionCard({
       {/* Question */}
       <div className="p-6 space-y-6">
         <QuestionMedia question={question} />
-        <MathRenderer as="div" className="text-lg text-foreground leading-relaxed" text={resolveQuestionParts(question).text} />
+        <MathRenderer as="div" className="text-lg text-foreground leading-relaxed" text={resolveQuestionParts(question).text} questionId={question.id} />
 
 
         {/* Answer Options */}
