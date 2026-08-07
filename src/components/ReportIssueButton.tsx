@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 interface ReportIssueButtonProps {
@@ -26,7 +26,7 @@ export function ReportIssueButton({
   const [freeText, setFreeText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const supabase = useSupabaseClient();
+  
   const { toast } = useToast();
 
   const handleSubmit = async () => {
@@ -68,7 +68,7 @@ export function ReportIssueButton({
             user_tier: 'free', // TODO: Get from user profile
             timestamp_iso: new Date().toISOString(),
             user_agent: navigator.userAgent,
-            session_id: session.id,
+            session_id: session.user.id,
           }),
         }
       );
