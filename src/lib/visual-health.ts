@@ -44,3 +44,27 @@ export function logVisualHealthEvent(
     /* audit logging is best-effort */
   }
 }
+
+const mathReported = new Set<string>();
+
+/**
+ * Reports a math rendering failure exactly once per question. Never includes
+ * question prose, options or correct-answer data — only the reason code.
+ */
+export function logMathFallback(questionId: string | undefined, reason: "legacy_tokens" | "katex_error"): void {
+  const key = `${questionId ?? "unknown"}|math|${reason}`;
+  if (mathReported.has(key)) return;
+  mathReported.add(key);
+  if (!questionId) return;
+  try {
+    void supabase.from("visual_health_events").insert({
+      question_id: questionId,
+      event_type: "fallback_rendered",
+      visual_requirement: "none",
+      visual_status: "invalid",
+      failure_reasons: [reason === "legacy_tokens" ? "math_serialization_invalid" : "math_render_failed"],
+    });
+  } catch {
+    /* best-effort */
+  }
+}

@@ -1,13 +1,24 @@
-import { Fragment, useMemo } from "react";
+import { Fragment, useEffect, useMemo } from "react";
 import katex from "katex";
 import { normalizeSatText } from "@/lib/sat-content";
+import { logMathFallback } from "@/lib/visual-health";
+import { VISUAL_COPY } from "@/lib/visual-status";
 
 interface MathRendererProps {
   text: string;
   className?: string;
   /** Render wrapper element. Defaults to span. */
   as?: "span" | "div" | "p";
+  /** Enables one-shot reporting of math failures for this question. */
+  questionId?: string;
 }
+
+/**
+ * Legacy screen-reader serialization that must never reach KaTeX. If any of
+ * these survive normalization the expression is considered malformed.
+ */
+const LEGACY_MATH_TOKEN_RE =
+  /\b(?:Superscript|Subscript|Baseline|StartFraction|EndFraction|StartRoot|EndRoot|StartAbsoluteValue|EndAbsoluteValue)\b/i;
 
 type Segment =
   | { type: "text"; content: string }
@@ -184,14 +195,20 @@ function useKatexHtml(value: string, displayMode: boolean) {
 }
 
 
-function SafeInline({ value }: { value: string }) {
+function SafeInline({ value, questionId }: { value: string; questionId?: string }) {
   const html = useKatexHtml(value, false);
+  useEffect(() => {
+    if (!html) logMathFallback(questionId, "katex_error");
+  }, [html, questionId]);
   if (!html) return <span>{value}</span>;
   return <span aria-label={value} role="img" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-function SafeBlock({ value }: { value: string }) {
+function SafeBlock({ value, questionId }: { value: string; questionId?: string }) {
   const html = useKatexHtml(value, true);
+  useEffect(() => {
+    if (!html) logMathFallback(questionId, "katex_error");
+  }, [html, questionId]);
   if (!html) return <span>{value}</span>;
   return <div aria-label={value} role="img" dangerouslySetInnerHTML={{ __html: html }} />;
 }
@@ -200,17 +217,40 @@ function SafeBlock({ value }: { value: string }) {
  * Renders text containing LaTeX expressions across multiple delimiter styles.
  * Plain (non-math) substrings preserve their original whitespace.
  */
-export function MathRenderer({ text, className, as = "span" }: MathRendererProps) {
-  const segments = useMemo(() => splitIntoSegments(text ?? ""), [text]);
+export function MathRenderer({ text, className, as = "span", questionId }: MathRendererProps) {
+  const normalized = useMemo(() => normalizeVerbalMath(text ?? ""), [text]);
+  const hasLegacyTokens = LEGACY_MATH_TOKEN_RE.test(normalized);
+  const segments = useMemo(
+    () => (hasLegacyTokens ? [] : splitIntoSegments(text ?? "")),
+    [hasLegacyTokens, text]
+  );
+
+  useEffect(() => {
+    if (hasLegacyTokens) logMathFallback(questionId, "legacy_tokens");
+  }, [hasLegacyTokens, questionId]);
+
+  // Malformed serialization: never hand it to KaTeX. Show the readable text
+  // plus a notice so the student knows the formatting, not the content, failed.
+  if (hasLegacyTokens) {
+    const Wrapper = as === "div" ? "div" : as === "p" ? "p" : "span";
+    return (
+      <Wrapper className={className}>
+        <span className="whitespace-pre-line">{normalized}</span>
+        <span role="status" className="mt-2 block text-xs text-muted-foreground">
+          {VISUAL_COPY.mathFallback}
+        </span>
+      </Wrapper>
+    );
+  }
 
   const content = segments.map((seg, i) => {
     if (seg.type === "text") {
       return <Fragment key={i}>{seg.content}</Fragment>;
     }
     if (seg.type === "block") {
-      return <SafeBlock key={i} value={seg.content} />;
+      return <SafeBlock key={i} value={seg.content} questionId={questionId} />;
     }
-    return <SafeInline key={i} value={seg.content} />;
+    return <SafeInline key={i} value={seg.content} questionId={questionId} />;
   });
 
   if (as === "div") return <div className={className}>{content}</div>;
