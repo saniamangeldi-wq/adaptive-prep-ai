@@ -68,7 +68,7 @@ export function ReportIssueButton({
             user_tier: 'free', // TODO: Get from user profile
             timestamp_iso: new Date().toISOString(),
             user_agent: navigator.userAgent,
-            session_id: session.id,
+            session_id: session.user.id,
           }),
         }
       );
