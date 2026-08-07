@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeSatText, isValidTable, shouldShowVisualFallback } from "@/lib/sat-content";
+import { normalizeSatText, isValidTable, shouldShowVisualFallback, isQuestionDeliverable } from "@/lib/sat-content";
 import type { Question } from "@/lib/test-generator";
 
 const baseQuestion: Question = {
@@ -34,5 +34,32 @@ describe("SAT content normalization", () => {
     const algebraicText =
       "The graph of this equation in the xy-plane is a line. What is the best interpretation of the x-intercept in this context?";
     expect(shouldShowVisualFallback({ ...baseQuestion, text: algebraicText }, algebraicText)).toBe(false);
+  });
+});
+describe("MathML-speech token normalization", () => {
+  it("converts Superscript/Baseline exponents", () => {
+    expect(normalizeSatText("x Superscript negative 2 Baseline equals 4")).toBe("x^(-2) = 4");
+  });
+
+  it("converts Subscript/Baseline indices", () => {
+    expect(normalizeSatText("a Subscript n Baseline")).toBe("a_(n)");
+  });
+
+  it("converts standalone negative numbers", () => {
+    expect(normalizeSatText("the value is negative 7")).toBe("the value is -7");
+  });
+});
+
+describe("question deliverability", () => {
+  it("rejects questions referencing a missing visual", () => {
+    expect(isQuestionDeliverable({ ...baseQuestion, text: "In the table above, Melissa recorded the price." })).toBe(false);
+  });
+
+  it("accepts questions with a valid table", () => {
+    expect(isQuestionDeliverable({ ...baseQuestion, text: "In the table above.", table: { headers: ["x", "y"], rows: [["1", "2"]] } })).toBe(true);
+  });
+
+  it("accepts plain algebra questions", () => {
+    expect(isQuestionDeliverable(baseQuestion)).toBe(true);
   });
 });

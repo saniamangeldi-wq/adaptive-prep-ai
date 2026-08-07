@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { isQuestionDeliverable } from "@/lib/sat-content";
 
 export interface QuestionTable {
   headers: string[];
@@ -240,7 +241,7 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
 
   // CHANGE 1: Dedup by question id when flattening across sat_tests rows.
   const seenIds = new Set<string>();
-  const allQuestions: Question[] = rawTests
+  const flattened: Question[] = rawTests
     .flatMap((t) => {
       const qs = t.questions as unknown as Question[];
       return qs.map((q) => ({
@@ -253,6 +254,13 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
       seenIds.add(q.id);
       return true;
     });
+
+  // Drop questions that depend on a visual we cannot render — they would show
+  // "Source visual unavailable" and be unanswerable. Fall back to the full pool
+  // only if filtering would leave too few questions to build the test.
+  const deliverable = flattened.filter(isQuestionDeliverable);
+  const allQuestions: Question[] = deliverable.length >= targetQuestions ? deliverable : flattened;
+
 
   // Build the "already seen" set across recent attempts (kept as-is — strips __repN
   // so legacy padded ids still map back to their base id for cross-session tracking).
