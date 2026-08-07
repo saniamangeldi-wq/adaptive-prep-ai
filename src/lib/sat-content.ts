@@ -141,16 +141,13 @@ export function shouldShowVisualFallback(question: Question, promptText: string,
   return hadRawVisualMarkup(source) || (!question.figure && !question.table && hasVisualReference(source));
 }
 /**
- * A question is undeliverable when it depends on a visual we cannot render:
- * either it was flagged at import time, or it references a graph/table/figure
- * while carrying no renderable figure and no structured table.
+ * A question may be delivered when validation returns "deliverable" or
+ * "degraded" (a usable fallback exists). Quarantined and needs-review
+ * questions never enter the live pool. See `validateQuestion` below.
  */
 export function isQuestionDeliverable(question: Question): boolean {
-  if (question.visual_unavailable) return false;
-  if (question.figure && isPotentiallyRenderableFigure(question.figure)) return true;
-  if (question.table && isValidTable(question.table)) return true;
-  const source = [question.stimulus, question.text].filter(Boolean).join("\n");
-  return !hadRawVisualMarkup(source) && !hasVisualReference(source);
+  const status = validateQuestion(question).delivery_status;
+  return status === "deliverable" || status === "degraded";
 }
 
 /* ------------------------------------------------------------------ *
