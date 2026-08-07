@@ -112,8 +112,8 @@ async function auditOne(q: Question) {
 const rx = {
   geometry: /lines?\s+s\b[\s\S]{0,80}\bq\b[\s\S]{0,80}\br\b|line\s+s\s*,\s*q|parallel[\s\S]{0,40}\bs\b[\s\S]{0,40}\bq\b/i,
   gas: /gas\s*(price|oline)/i,
-  hx: /y\s*=\s*h\s*\(\s*x\s*\)|function\s+h\b/i,
-  superscript: /Superscript|Baseline/i,
+  hx: /y equals h left parenthesis x right parenthesis|y\s*=\s*h\s*\(\s*x\s*\)/i,
+  superscript: /Superscript negative|Superscript 4 Baseline/i,
 };
 
 function pickSet(): Question[] {
@@ -157,7 +157,16 @@ const spotlightIds = {
   superscript_baseline_algebra: rows[3]?.id ?? null,
 };
 
-const json = { summary, spotlight: spotlightIds, questions: rows };
+const corpus_totals = {
+  corpus_questions: all.length,
+  corpus_raw_superscript_baseline: all.filter((q) => /Superscript|Baseline/.test(String((q as any).text ?? ""))).length,
+  corpus_verbal_math_tokens: all.filter((q) => /left parenthesis|right parenthesis/i.test(String((q as any).text ?? ""))).length,
+  corpus_visual_reference_no_media: all.filter(
+    (q) => hasVisualReference(String((q as any).text ?? "")) && !(q as any).figure && !(q as any).table,
+  ).length,
+};
+
+const json = { summary, corpus_totals, spotlight: spotlightIds, questions: rows };
 writeFileSync("/mnt/documents/sat-practice-audit.json", JSON.stringify(json, null, 2));
 
 const md = [
@@ -166,6 +175,7 @@ const md = [
   "| Metric | Value |",
   "| --- | --- |",
   ...Object.entries(summary).map(([k, v]) => `| ${k} | ${v} |`),
+  ...Object.entries(corpus_totals).map(([k, v]) => `| ${k} | ${v} |`),
   "",
   "## Per-question findings",
   "",
@@ -178,5 +188,5 @@ const md = [
 ].join("\n");
 writeFileSync("/mnt/documents/sat-practice-audit.md", md);
 
-console.log(JSON.stringify({ summary, spotlight: spotlightIds }, null, 2));
+console.log(JSON.stringify({ summary, corpus_totals, spotlight: spotlightIds }, null, 2));
 console.log("\nSpotlight rows:\n", JSON.stringify(rows.slice(0, 4), null, 2));
