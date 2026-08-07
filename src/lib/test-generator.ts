@@ -1,6 +1,16 @@
 import { supabase } from "@/integrations/supabase/client";
 import { isQuestionDeliverable } from "@/lib/sat-content";
 
+/** Question ids whose recorded state blocks delivery (quarantined / needs review). */
+export async function fetchQuarantinedQuestionIds(): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("question_validation_state")
+    .select("question_id")
+    .in("delivery_status", ["quarantined", "needs_review"]);
+  if (error || !data) return new Set();
+  return new Set(data.map((r) => r.question_id as string));
+}
+
 export interface QuestionTable {
   headers: string[];
   rows: string[][];
@@ -35,6 +45,12 @@ export interface Question {
   figure?: QuestionFigure;
   /** Set during import when a referenced visual was missing or malformed. */
   visual_unavailable?: boolean;
+  /** Whether this question can be answered without a visual. Derived at validation time. */
+  visual_requirement?: import("@/lib/sat-content").VisualRequirement;
+  /** Recorded delivery status from `question_validation_state`. */
+  delivery_status?: import("@/lib/sat-content").DeliveryStatus;
+  /** Unified media record (asset URL, structured data, alt, text equivalent, checksum). */
+  media?: import("@/lib/sat-content").QuestionMediaRecord;
   /** Legacy shorthand: image URL. Mapped to figure at render time. */
   image_url?: string;
   /** Legacy shorthand: alt text for image_url. */
@@ -255,11 +271,15 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
       return true;
     });
 
-  // Drop questions that depend on a visual we cannot render — they would show
-  // "Source visual unavailable" and be unanswerable. Fall back to the full pool
-  // only if filtering would leave too few questions to build the test.
-  const deliverable = flattened.filter(isQuestionDeliverable);
-  const allQuestions: Question[] = deliverable.length >= targetQuestions ? deliverable : flattened;
+  // Quarantined questions may never be served: they depend on a visual we
+  // cannot render, or their math failed serialization validation. This applies
+  // both to the recorded state in `question_validation_state` and to the
+  // content-derived rules, and there is deliberately NO fallback to the full
+  // pool — a short test is preferable to an unanswerable one.
+  const quarantinedIds = await fetchQuarantinedQuestionIds();
+  const allQuestions: Question[] = flattened.filter(
+    (q) => !quarantinedIds.has(q.id) && isQuestionDeliverable(q)
+  );
 
 
   // Build the "already seen" set across recent attempts (kept as-is — strips __repN

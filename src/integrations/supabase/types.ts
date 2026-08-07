@@ -1532,6 +1532,65 @@ export type Database = {
         }
         Relationships: []
       }
+      question_validation_state: {
+        Row: {
+          asset_checksum: string | null
+          created_at: string
+          delivery_status: string
+          difficulty: string | null
+          domain: string | null
+          failure_reasons: string[]
+          fallback_used: string | null
+          media_type: string | null
+          question_id: string
+          skill: string | null
+          test_id: string | null
+          updated_at: string
+          validated_at: string
+          visual_requirement: string
+        }
+        Insert: {
+          asset_checksum?: string | null
+          created_at?: string
+          delivery_status?: string
+          difficulty?: string | null
+          domain?: string | null
+          failure_reasons?: string[]
+          fallback_used?: string | null
+          media_type?: string | null
+          question_id: string
+          skill?: string | null
+          test_id?: string | null
+          updated_at?: string
+          validated_at?: string
+          visual_requirement?: string
+        }
+        Update: {
+          asset_checksum?: string | null
+          created_at?: string
+          delivery_status?: string
+          difficulty?: string | null
+          domain?: string | null
+          failure_reasons?: string[]
+          fallback_used?: string | null
+          media_type?: string | null
+          question_id?: string
+          skill?: string | null
+          test_id?: string | null
+          updated_at?: string
+          validated_at?: string
+          visual_requirement?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_validation_state_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "sat_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sat_tests: {
         Row: {
           created_at: string
@@ -2857,6 +2916,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      visual_health_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          failure_reasons: string[]
+          fallback_used: string | null
+          id: string
+          media_type: string | null
+          practice_set_id: string | null
+          question_id: string
+          visual_requirement: string | null
+          visual_status: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          failure_reasons?: string[]
+          fallback_used?: string | null
+          id?: string
+          media_type?: string | null
+          practice_set_id?: string | null
+          question_id: string
+          visual_requirement?: string | null
+          visual_status?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          failure_reasons?: string[]
+          fallback_used?: string | null
+          id?: string
+          media_type?: string | null
+          practice_set_id?: string | null
+          question_id?: string
+          visual_requirement?: string | null
+          visual_status?: string | null
+        }
+        Relationships: []
       }
       voice_usage: {
         Row: {

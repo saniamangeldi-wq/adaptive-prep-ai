@@ -3,7 +3,8 @@ import { MathRenderer } from "@/components/MathRenderer";
 import type { Question, QuestionFigure, QuestionTable } from "@/lib/test-generator";
 import { resolveQuestionParts } from "@/lib/question-table";
 import { isPotentiallyRenderableFigure, shouldShowVisualFallback } from "@/lib/sat-content";
-import { useState } from "react";
+import { logVisualHealthEvent } from "@/lib/visual-health";
+import { useEffect, useState } from "react";
 
 /**
  * SVG sanitizer backed by DOMPurify. Strips scripts, event handlers, and
@@ -67,7 +68,10 @@ function DataTable({ table }: { table: QuestionTable }) {
   );
 }
 
-function VisualFallback() {
+function VisualFallback({ question, reason }: { question?: Question; reason?: "missing" | "unreachable" | "invalid" }) {
+  useEffect(() => {
+    if (question) logVisualHealthEvent(question, "fallback_rendered", reason ?? "missing");
+  }, [question, reason]);
   return (
     <div role="status" className="my-4 flex min-h-28 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-6 py-8 text-center text-sm font-medium text-muted-foreground">
       Source visual unavailable
@@ -75,11 +79,11 @@ function VisualFallback() {
   );
 }
 
-function Figure({ figure }: { figure: QuestionFigure }) {
+function Figure({ figure, question }: { figure: QuestionFigure; question: Question }) {
   const [imageFailed, setImageFailed] = useState(false);
   const safeSvg = figure.type === "svg" && figure.svg ? sanitizeSvg(figure.svg) : "";
   const validSvg = safeSvg && /<svg\b/i.test(safeSvg) && /<(?:path|line|polyline|polygon|rect|circle|ellipse|text|image)\b/i.test(safeSvg);
-  if (!isPotentiallyRenderableFigure(figure) || (figure.type === "svg" && !validSvg) || imageFailed) return <VisualFallback />;
+  if (!isPotentiallyRenderableFigure(figure) || (figure.type === "svg" && !validSvg) || imageFailed) return <VisualFallback question={question} reason={imageFailed ? "unreachable" : "invalid"} />;
   return (
     <figure className="my-4 flex flex-col items-center">
       <div className="flex justify-center p-5 rounded-xl bg-background border border-border shadow-sm">
@@ -120,18 +124,6 @@ interface QuestionMediaProps {
  * The prompt text and options are rendered by the caller.
  */
 export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProps) {
-  // TEMPORARY DEBUG LOG — remove after diagnosing the flattened-chart-table
-  // rendering bug for question id "opensat-rw-m-2-27". Not part of any fix.
-  if (question.id === "opensat-rw-m-2-27") {
-    // eslint-disable-next-line no-console
-    console.debug(
-      "[DEBUG opensat-rw-m-2-27] question.table =",
-      JSON.stringify(question.table),
-      "question.text =",
-      JSON.stringify(question.text)
-    );
-  }
-
   const figure = resolveFigure(question);
   const { table, text } = resolveQuestionParts(question);
   const showFallback = shouldShowVisualFallback(question, text, Boolean(table));
@@ -150,9 +142,9 @@ export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProp
           text={question.stimulus}
         />
       )}
-      {figure && <Figure figure={figure} />}
+      {figure && <Figure figure={figure} question={question} />}
       {table && <DataTable table={table} />}
-      {!figure && !table && showFallback && <VisualFallback />}
+      {!figure && !table && showFallback && <VisualFallback question={question} reason="missing" />}
     </div>
   );
 }
