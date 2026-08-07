@@ -30,6 +30,7 @@ export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProp
             "p-4 rounded-xl bg-muted/40 border border-border/50 text-foreground leading-relaxed whitespace-pre-line"
           }
           text={question.stimulus}
+          questionId={question.id}
         />
       )}
       <VisualRenderer question={question} />
