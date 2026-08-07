@@ -6,11 +6,31 @@ const VISUAL_REFERENCE_RE = /\b(?:the|this|shown|given|following)\s+(?:graph|cha
 /** Converts common PDF/screen-reader math tokens without rewriting prose. */
 export function normalizeMathTokens(input: string): string {
   if (!input) return "";
-  return input
+  let out = input
     .replace(/\bleft parenthesis\b/gi, "(")
     .replace(/\bright parenthesis\b/gi, ")")
     .replace(/\bleft bracket\b/gi, "[")
-    .replace(/\bright bracket\b/gi, "]")
+    .replace(/\bright bracket\b/gi, "]");
+
+  // MathML-speech superscripts/subscripts:
+  //   "x Superscript negative 2 Baseline"  -> "x^(-2)"
+  //   "a Subscript n Baseline"             -> "a_(n)"
+  // The exponent body runs up to the closing "Baseline" marker.
+  for (let i = 0; i < 5; i++) {
+    const before = out;
+    out = out
+      .replace(/\s*\bSuperscript\b\s+([\s\S]*?)\s*\bBaseline\b/gi, (_m, body) => `^(${normalizeScriptBody(body)})`)
+      .replace(/\s*\bSubscript\b\s+([\s\S]*?)\s*\bBaseline\b/gi, (_m, body) => `_(${normalizeScriptBody(body)})`);
+    if (out === before) break;
+  }
+  // Trailing Superscript/Subscript with no Baseline terminator: take the next token.
+  out = out
+    .replace(/\s*\bSuperscript\b\s+(negative\s+)?([A-Za-z0-9.]+)/gi, (_m, neg, tok) => `^(${neg ? "-" : ""}${tok})`)
+    .replace(/\s*\bSubscript\b\s+([A-Za-z0-9.]+)/gi, (_m, tok) => `_(${tok})`)
+    .replace(/\s*\bBaseline\b/gi, "");
+
+  return out
+    .replace(/\bnegative\s+([0-9.]+)/gi, "-$1")
     .replace(/\bequals(?: sign)?\b/gi, "=")
     .replace(/\bplus(?: sign)?\b/gi, "+")
     .replace(/\bminus(?: sign)?\b/gi, "−")
@@ -23,6 +43,15 @@ export function normalizeMathTokens(input: string): string {
     .replace(/([([])[ \t]+/g, "$1")
     .replace(/[ \t]{2,}/g, " ");
 }
+
+/** Normalizes the inside of a Superscript/Subscript body ("negative 2" -> "-2"). */
+function normalizeScriptBody(body: string): string {
+  return body
+    .trim()
+    .replace(/\bnegative\s+/gi, "-")
+    .replace(/[ \t]{2,}/g, " ");
+}
+
 
 /** Removes leaked SVG/style markup while retaining surrounding question prose. */
 export function stripRawVisualMarkup(input: string): string {
