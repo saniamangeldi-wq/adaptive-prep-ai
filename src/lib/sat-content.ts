@@ -209,11 +209,32 @@ export function hasDomainOnlyVisualSignal(question: Question): boolean {
   return !EXPLICIT_VISUAL_RE.test(source) && DOMAIN_HINT_RE.test(source);
 }
 
-/** Math serialization is malformed when speech tokens survive normalization. */
+/** A converted script body must be a number or a single variable. */
+const SCRIPT_BODY_RE = /[\^_]\(([^)]*)\)/g;
+const VALID_SCRIPT_BODY_RE = /^-?(?:\d+(?:\.\d+)?|[A-Za-z]\d?)$/;
+
+/**
+ * Math serialization is malformed when speech tokens survive normalization, or
+ * when a `Superscript`/`Subscript` marker in the source converted into a
+ * nonsensical body (e.g. swallowing prose because the `Baseline` terminator
+ * was lost during import).
+ */
 export function validateMathSerialization(question: Question): string[] {
-  const normalized = normalizeSatText(questionSource(question));
+  const raw = questionSource(question);
+  const normalized = normalizeSatText(raw);
   const reasons: string[] = [];
-  if (RAW_MATH_TOKEN_RE.test(normalized)) reasons.push("math_serialization_invalid");
+  if (RAW_MATH_TOKEN_RE.test(normalized)) {
+    reasons.push("math_serialization_invalid");
+    return reasons;
+  }
+  if (RAW_MATH_TOKEN_RE.test(raw)) {
+    for (const [, body] of normalized.matchAll(SCRIPT_BODY_RE)) {
+      if (!VALID_SCRIPT_BODY_RE.test(body.trim())) {
+        reasons.push("math_serialization_invalid");
+        break;
+      }
+    }
+  }
   return reasons;
 }
 
