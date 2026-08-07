@@ -152,3 +152,130 @@ export function isQuestionDeliverable(question: Question): boolean {
   const source = [question.stimulus, question.text].filter(Boolean).join("\n");
   return !hadRawVisualMarkup(source) && !hasVisualReference(source);
 }
+
+/* ------------------------------------------------------------------ *
+ * Visual requirement derivation + question validation / quarantine
+ * ------------------------------------------------------------------ */
+
+export type VisualRequirement = "none" | "optional" | "required";
+export type DeliveryStatus = "deliverable" | "degraded" | "quarantined" | "needs_review";
+
+export interface QuestionMediaRecord {
+  media_type?: "image" | "svg" | "table" | "text";
+  /** Primary asset URL. */
+  src?: string;
+  /** Structured source data (table). */
+  data?: QuestionTable;
+  alt?: string;
+  /** Self-contained textual equivalent of the visual. */
+  text_equivalent?: string;
+  /** Checksum or asset version for cache-busting / integrity. */
+  checksum?: string;
+}
+
+/** Explicit prose references that unambiguously require a visual. */
+const EXPLICIT_VISUAL_RE = new RegExp(
+  [
+    String.raw`\bin the (?:graph|table|figure|chart|diagram|scatterplot|histogram)\b`,
+    String.raw`\b(?:graph|table|figure|chart|diagram)\s+(?:above|below|shown)\b`,
+    String.raw`\bas shown\b`,
+    String.raw`\bthe graph of\b(?!\s+(?:this|the|the given)\s+equation)`,
+    String.raw`\bscatterplot\b`,
+    String.raw`\bbar (?:graph|chart)\b`,
+    String.raw`\bshown in the\s+(?:graph|table|figure|chart|diagram)\b`,
+    String.raw`\bthe (?:following|given) (?:graph|table|figure|chart|diagram)\b`,
+  ].join("|"),
+  "i"
+);
+
+/** Domain hints that suggest — but must never force — a visual. */
+const DOMAIN_HINT_RE = /\b(?:data set|dataset|frequency|distribution|quantitative evidence|percent of respondents|survey)\b/i;
+
+/** Raw math serialization tokens that must never survive normalization. */
+const RAW_MATH_TOKEN_RE = /\b(?:Superscript|Subscript|Baseline|StartFraction|EndFraction|StartRoot|EndRoot|StartAbsoluteValue)\b/i;
+
+function questionSource(question: Question): string {
+  return [question.stimulus, question.text].filter(Boolean).join("\n");
+}
+
+/** Derives the visual requirement purely from explicit content references. */
+export function deriveVisualRequirement(question: Question): VisualRequirement {
+  const source = questionSource(question);
+  if (EXPLICIT_VISUAL_RE.test(source)) return "required";
+  if (question.figure || question.table || question.media?.data || question.media?.src) return "optional";
+  return "none";
+}
+
+/** True when only domain-level signals hint at a visual (needs a human decision). */
+export function hasDomainOnlyVisualSignal(question: Question): boolean {
+  const source = questionSource(question);
+  return !EXPLICIT_VISUAL_RE.test(source) && DOMAIN_HINT_RE.test(source);
+}
+
+/** Math serialization is malformed when speech tokens survive normalization. */
+export function validateMathSerialization(question: Question): string[] {
+  const normalized = normalizeSatText(questionSource(question));
+  const reasons: string[] = [];
+  if (RAW_MATH_TOKEN_RE.test(normalized)) reasons.push("math_serialization_invalid");
+  return reasons;
+}
+
+/** A text equivalent only counts if it can actually stand in for the visual. */
+export function isUsableTextEquivalent(text: string | undefined): boolean {
+  if (!text || text.trim().length < 120) return false;
+  return (text.match(/-?\d+(?:\.\d+)?/g) || []).length >= 2;
+}
+
+export interface QuestionValidationResult {
+  visual_requirement: VisualRequirement;
+  delivery_status: DeliveryStatus;
+  media_type?: string;
+  fallback_used?: "structured" | "text";
+  failure_reasons: string[];
+}
+
+/**
+ * Single source of truth for whether a question may enter the delivery pool.
+ * Mirrors the rules stored in `public.question_validation_state`.
+ */
+export function validateQuestion(question: Question, hasRecoveredTable = false): QuestionValidationResult {
+  const failure_reasons: string[] = [...validateMathSerialization(question)];
+  const visual_requirement = deriveVisualRequirement(question);
+
+  const media = question.media;
+  const figure = question.figure ?? (question.image_url
+    ? ({ type: "image", src: question.image_url, alt: question.image_alt || "" } as QuestionFigure)
+    : undefined);
+  const structured = question.table ?? media?.data;
+
+  const figureOk = isPotentiallyRenderableFigure(figure);
+  const mediaUrlOk = typeof media?.src === "string" && /^(https?:|data:image\/)/i.test(media.src);
+  const structuredOk = isValidTable(structured) || hasRecoveredTable;
+  const textOk = isUsableTextEquivalent(media?.text_equivalent);
+
+  const media_type = figureOk ? figure!.type : mediaUrlOk ? "image" : structuredOk ? "table" : textOk ? "text" : undefined;
+  let fallback_used: "structured" | "text" | undefined;
+
+  if (question.visual_unavailable) failure_reasons.push("flagged_visual_unavailable");
+  if (figure && !figureOk) failure_reasons.push("asset_invalid");
+  if (question.table && !isValidTable(question.table)) failure_reasons.push("structured_data_invalid");
+  if (hadRawVisualMarkup(questionSource(question))) failure_reasons.push("raw_markup_in_text");
+
+  if (visual_requirement === "required") {
+    const hasPrimary = figureOk || mediaUrlOk;
+    if (!hasPrimary && !structuredOk && !textOk) {
+      failure_reasons.push(figure || media ? "asset_unreachable_no_fallback" : "required_visual_missing_media");
+    } else if (!hasPrimary) {
+      fallback_used = structuredOk ? "structured" : "text";
+    }
+  }
+
+  let delivery_status: DeliveryStatus = "deliverable";
+  if (failure_reasons.length > 0) delivery_status = "quarantined";
+  else if (fallback_used) delivery_status = "degraded";
+  else if (visual_requirement === "none" && hasDomainOnlyVisualSignal(question) && !structuredOk && !figureOk) {
+    delivery_status = "needs_review";
+  }
+
+  return { visual_requirement, delivery_status, media_type, fallback_used, failure_reasons };
+}
