@@ -146,7 +146,7 @@ export function shouldShowVisualFallback(question: Question, promptText: string,
  * while carrying no renderable figure and no structured table.
  */
 export function isQuestionDeliverable(question: Question): boolean {
-  if (question.visual_unavailable) return true === false;
+  if (question.visual_unavailable) return false;
   if (question.figure && isPotentiallyRenderableFigure(question.figure)) return true;
   if (question.table && isValidTable(question.table)) return true;
   const source = [question.stimulus, question.text].filter(Boolean).join("\n");
