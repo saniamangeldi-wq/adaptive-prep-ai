@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { isQuestionDeliverable } from "@/lib/sat-content";
 
 export interface QuestionTable {
   headers: string[];
