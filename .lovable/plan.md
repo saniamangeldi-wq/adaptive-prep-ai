@@ -1,63 +1,81 @@
-# Lesson Journey Map
+# SAT Question Visual Pipeline Audit
 
-Turn `/dashboard/lessons` from a flat catalog into a Duolingo-style visual journey. Each SAT domain becomes its own mini-path; students must pass each lesson's quiz at ≥70% to unlock the next node.
+## Findings
 
-## Structure
+**1. Where questions are generated and stored**
+- Bulk import: `supabase/functions/process-sat-pdf/index.ts` (PDF text extraction + AI structuring) writes into the `sat_tests` table.
+- Single-question generation: `supabase/functions/generate-sat-question/index.ts`.
+- Repair/backfill: `supabase/functions/restructure-sat-media/index.ts` (Gemini reconstructs `table` and inline `<svg>` `figure` from flattened prose), triggered from `src/pages/admin/UploadTests.tsx`.
+- Storage model: questions live as a JSONB array in `sat_tests.questions`. There is **no separate questions table and no media table**.
 
-Two subjects (Math, Verbal), each split into domain paths:
+**2. Current schema (relevant)**
+- `sat_tests`: 16 columns; `questions jsonb`, `is_official`, `section`, `difficulty`, RLS-protected, `is_official` forced false for non-service-role by trigger `enforce_sat_tests_is_official`.
+- `test_modules`, `module_attempts`, `test_attempts` reference tests/attempts; none carry media.
+- Storage buckets: `portfolios`, `conversation-uploads`, `generated-documents`. **No bucket holds SAT question images.**
 
-- **Math**: Algebra → Advanced Math → Problem Solving & Data → Geometry & Trig
-- **Verbal**: Information & Ideas → Craft & Structure → Expression of Ideas → Standard English Conventions
+**3. Measured data state (live DB)**
+- 1,768 stored questions total.
+- 1 question has a `figure`; 1 has a `table`; 0 have `image_url`; 0 have `visual_unavailable = true`.
+- 191 questions contain a visual reference phrase ("the graph", "the table above", etc.).
+- 29 questions still contain verbalized math tokens like `Superscript` / `Baseline`.
 
-Within a domain, lessons are strictly sequential. Between domains, the next domain unlocks after the previous domain's final lesson is passed. No skip-ahead for v1.
+So ~190 questions reference a visual that was never captured, which exactly matches the "every visual question shows Source visual unavailable" report.
 
-## Unlock rule
+**4. Where visual metadata is created**
+Only inside the AI prompt output of `process-sat-pdf` (`figure`, `table`, `stimulus` fields) and `restructure-sat-media`. The PDF extractor is text-only — it never rasterizes or crops page images, so figures from the source PDF are structurally lost at import time.
 
-- Node states: `locked`, `unlocked` (current), `completed`
-- A lesson node unlocks only when the previous node in its domain is `completed`
-- `completed` = quiz score ≥ 70% (already stored on `student_lesson_progress.quiz_score`)
-- First lesson of the first domain (Algebra / Information & Ideas) is always unlocked
-- First lesson of a later domain unlocks when the previous domain is 100% complete
+**5. Where questions are selected for delivery**
+`src/lib/test-generator.ts` (assembly, dedup, normalization) consumed by `src/pages/TakeTest.tsx` and `src/pages/TakeSATTest.tsx`. Selection does not filter or flag questions with missing visuals.
 
-## Visual — journey map
+**6. Where "Source visual unavailable" is rendered**
+`src/components/test/QuestionMedia.tsx` → `VisualFallback()` (line ~70). It is triggered by `shouldShowVisualFallback()` in `src/lib/sat-content.ts` (line ~106), whose final clause fires whenever the text mentions a visual and no `figure`/`table` exists. Given the data above, this fires for essentially all visual questions.
 
-Duolingo-style vertical winding path per domain. Each domain is a section with its own header banner and a column of nodes zig-zagging left/right down the page.
+**7. Math storage and rendering**
+Stored as raw strings in `question.text` / `stimulus` / `options`. Normalization: `normalizeMathTokens()` in `src/lib/sat-content.ts`; rendering: `src/components/MathRenderer.tsx` (KaTeX with `throwOnError: false`) and `src/components/ai/MarkdownMath.tsx`. The normalizer covers `left parenthesis`, `equals`, `squared`, `cubed`, `StartFraction` — but **not** the MathML-speech family: `Superscript`, `Baseline`, `Subscript`, `StartRoot ... EndRoot` variants with `Baseline`, `negative`. Hence `x Superscript negative 2 Baseline` leaks through.
 
-```text
-        (1) ─┐
-             │
-        ┌─ (2)
-        │
-        (3) ─┐
-             │
-        ┌─ (4) 🔒
-```
+**8. Edge functions for validation / bug reporting**
+- `supabase/functions/report-bug/index.ts` exists and already creates GitHub issues (`searchGitHubIssues` / create issue, repo `saniamangeldi-wq/adaptive-prep-ai`), deduping by title. UI entry: `src/components/ReportIssueButton.tsx`.
+- **No question-validation edge function exists.**
 
-Node visuals:
-- Completed: filled teal circle + check icon
-- Current: teal ring, pulsing glow, "Start" label
-- Locked: muted gray circle + lock icon, not clickable
+**9. GitHub issue creation**
+Yes — implemented in `report-bug`, but it requires `GITHUB_TOKEN`, which is **not present in the project secrets**, so issue creation currently throws.
 
-Between domains: a "domain gate" banner showing progress `7/12` and the next domain grayed until unlocked. Tapping a node opens the existing `LessonPlayer`; tapping a locked node shows a toast explaining what to finish first.
+**10. Does the frontend verify media actually loads?**
+Partially. `QuestionMedia.tsx` has an `onError` handler on `<img>` that flips to the fallback, and validates SVG shape before injecting. There is no verification of URL reachability before delivery and no telemetry when a fallback renders.
 
-## Data
+**11. RLS on reporting tables**
+No reporting table exists (`question_reports`, `question_issues` both absent). Any new table will need explicit `GRANT`s plus RLS policies.
 
-Reuses existing tables — no schema changes:
-- `prebuilt_lessons.order_index` already defines sequence within a domain (`section` column groups domains)
-- `student_lesson_progress.status` + `quiz_score` drives node state
-- Progress-write happens at the end of the quiz; if score ≥ 70 mark `completed`, else keep `in_progress` and let the student retry
+## Relevant Files
 
-## UI changes
+- `src/components/test/QuestionMedia.tsx` — fallback + figure/table rendering
+- `src/lib/sat-content.ts` — normalization, `shouldShowVisualFallback`, table validation
+- `src/lib/question-table.ts` — flattened-table recovery
+- `src/lib/test-generator.ts` — `Question` type, selection/assembly
+- `src/components/MathRenderer.tsx` — KaTeX rendering
+- `src/components/test/QuestionCard.tsx`, `src/components/test/sat/SATQuestionCard.tsx` — question UI
+- `supabase/functions/process-sat-pdf/index.ts` — import pipeline (root of data loss)
+- `supabase/functions/restructure-sat-media/index.ts` — figure/table reconstruction
+- `supabase/functions/report-bug/index.ts`, `src/components/ReportIssueButton.tsx`
+- `src/pages/admin/UploadTests.tsx` — backfill trigger
+- Tables: `sat_tests`, `test_modules`, `test_attempts`, `module_attempts`
 
-- Replace the current tabs+grid layout in `src/pages/VideoLessons.tsx` (or the current lessons page) with a `LessonJourney` component
-- New components:
-  - `LessonJourney.tsx` — subject switcher (Math/Verbal) + list of `DomainPath` sections
-  - `DomainPath.tsx` — header, progress bar, vertical node column
-  - `LessonNode.tsx` — the circle button with state styling
-- Keep `LessonPlayer.tsx` and quiz flow unchanged; on quiz submit, upsert progress with pass/fail
+## Root Cause Hypotheses
 
-## Out of scope
+1. **Primary — data, not rendering.** The PDF import path never captured images or structured tables, so ~190 of 1,768 questions reference visuals that do not exist in the record. The renderer is behaving correctly; it has nothing to draw. The `restructure-sat-media` backfill has effectively not been applied at scale (1 figure, 1 table across the corpus).
+2. **Secondary — over-broad fallback.** `shouldShowVisualFallback` triggers on prose phrases alone ("in the table above"), so even questions that are answerable without a visual, or whose data is recoverable from text, get a discouraging grey box.
+3. **Math tokens.** `normalizeMathTokens` lacks rules for the `Superscript/Subscript/Baseline/negative` speech family used by the OpenSAT source.
 
-- Skip-ahead placement test
-- Rewards / streak animations on the map (keeps existing gamification untouched)
-- Reordering lessons per student
+## Proposed Minimal Fix
+
+1. Extend `normalizeMathTokens` in `src/lib/sat-content.ts` to convert `Superscript X Baseline` → `^{X}`, `Subscript X Baseline` → `_{X}`, and `negative N` → `-N`, with regression tests. (Cheap, fully deterministic.)
+2. Run `restructure-sat-media` across the full corpus in batches from `src/pages/admin/UploadTests.tsx`, and mark questions it cannot reconstruct with `visual_unavailable = true`.
+3. Filter at delivery: in `src/lib/test-generator.ts`, deprioritize/exclude questions where `visual_unavailable` is true, so practice sets stop serving unanswerable items.
+4. Only if 1-3 leave gaps: add a lightweight `question_reports` table (with GRANTs + RLS: users insert their own rows, admins read all) and log fallback renders, plus set `GITHUB_TOKEN` so `report-bug` works again.
+
+## Risks and Questions
+
+- Reconstructing geometry diagrams with an LLM risks producing *wrong* figures; safer to mark those `visual_unavailable` and filter them than to render a plausible-but-incorrect diagram.
+- Filtering ~190 questions shrinks the usable pool; is that acceptable, or should we re-ingest from source PDFs with real image extraction?
+- Do you still have the original OpenSAT PDFs? Real image cropping at import (page render → crop → upload to a new public `sat-media` bucket) is the only fully correct fix, but it is a larger job.
+- `GITHUB_TOKEN` is not configured — should reporting go to GitHub, or to a database table only?
