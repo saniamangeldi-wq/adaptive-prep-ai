@@ -1,6 +1,16 @@
 import { supabase } from "@/integrations/supabase/client";
 import { isQuestionDeliverable } from "@/lib/sat-content";
 
+/** Question ids whose recorded state blocks delivery (quarantined / needs review). */
+export async function fetchQuarantinedQuestionIds(): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("question_validation_state")
+    .select("question_id")
+    .in("delivery_status", ["quarantined", "needs_review"]);
+  if (error || !data) return new Set();
+  return new Set(data.map((r) => r.question_id as string));
+}
+
 export interface QuestionTable {
   headers: string[];
   rows: string[][];
