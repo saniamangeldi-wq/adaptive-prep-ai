@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeSatText, isValidTable, shouldShowVisualFallback, isQuestionDeliverable } from "@/lib/sat-content";
+import { normalizeSatText, isValidTable, shouldShowVisualFallback, isQuestionDeliverable, validateQuestion } from "@/lib/sat-content";
 import type { Question } from "@/lib/test-generator";
 
 const baseQuestion: Question = {
@@ -61,5 +61,63 @@ describe("question deliverability", () => {
 
   it("accepts plain algebra questions", () => {
     expect(isQuestionDeliverable(baseQuestion)).toBe(true);
+  });
+});
+
+describe("visual requirement + quarantine validation", () => {
+  const required = { ...baseQuestion, text: "In the graph above, what is the value of y?" };
+
+  it("A. required visual with null media is quarantined", () => {
+    const r = validateQuestion(required);
+    expect(r.visual_requirement).toBe("required");
+    expect(r.delivery_status).toBe("quarantined");
+    expect(r.failure_reasons).toContain("required_visual_missing_media");
+    expect(isQuestionDeliverable(required)).toBe(false);
+  });
+
+  it("B. required visual with broken URL but valid structured data is degraded", () => {
+    const q: Question = {
+      ...required,
+      media: { media_type: "image", src: "not-a-url", data: { headers: ["x", "y"], rows: [["1", "2"]] } },
+    };
+    const r = validateQuestion(q);
+    expect(r.delivery_status).toBe("degraded");
+    expect(r.fallback_used).toBe("structured");
+    expect(isQuestionDeliverable(q)).toBe(true);
+  });
+
+  it("C. required visual with broken URL and no fallback is quarantined", () => {
+    const q: Question = { ...required, media: { media_type: "image", src: "not-a-url" } };
+    const r = validateQuestion(q);
+    expect(r.delivery_status).toBe("quarantined");
+    expect(r.failure_reasons).toContain("asset_unreachable_no_fallback");
+  });
+
+  it("D. optional visual with no renderable media is deliverable", () => {
+    const q: Question = { ...baseQuestion, media: { media_type: "table", data: { headers: ["x", "y"], rows: [["1", "2"]] } } };
+    const r = validateQuestion(q);
+    expect(r.visual_requirement).toBe("optional");
+    expect(r.delivery_status).toBe("deliverable");
+  });
+
+  it("E. no visual required is deliverable", () => {
+    const r = validateQuestion(baseQuestion);
+    expect(r.visual_requirement).toBe("none");
+    expect(r.delivery_status).toBe("deliverable");
+  });
+
+  it("F. surviving Superscript/Baseline math tokens quarantine the question", () => {
+    const q: Question = { ...baseQuestion, text: "Solve x Superscript for the value." };
+    const r = validateQuestion(q);
+    expect(r.failure_reasons).toContain("math_serialization_invalid");
+    expect(r.delivery_status).toBe("quarantined");
+  });
+
+  it("domain-only signals are flagged for review, never forced to required", () => {
+    const q: Question = { ...baseQuestion, text: "The data set of survey responses has a frequency of 12 and 18." };
+    const r = validateQuestion(q);
+    expect(r.visual_requirement).toBe("none");
+    expect(r.delivery_status).toBe("needs_review");
+    expect(isQuestionDeliverable(q)).toBe(false);
   });
 });
