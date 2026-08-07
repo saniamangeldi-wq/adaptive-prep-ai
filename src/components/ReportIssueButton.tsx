@@ -26,7 +26,7 @@ export function ReportIssueButton({
   const [freeText, setFreeText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const supabase = useSupabaseClient();
+  
   const { toast } = useToast();
 
   const handleSubmit = async () => {
