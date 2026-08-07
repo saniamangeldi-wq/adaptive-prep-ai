@@ -35,6 +35,12 @@ export interface Question {
   figure?: QuestionFigure;
   /** Set during import when a referenced visual was missing or malformed. */
   visual_unavailable?: boolean;
+  /** Whether this question can be answered without a visual. Derived at validation time. */
+  visual_requirement?: import("@/lib/sat-content").VisualRequirement;
+  /** Recorded delivery status from `question_validation_state`. */
+  delivery_status?: import("@/lib/sat-content").DeliveryStatus;
+  /** Unified media record (asset URL, structured data, alt, text equivalent, checksum). */
+  media?: import("@/lib/sat-content").QuestionMediaRecord;
   /** Legacy shorthand: image URL. Mapped to figure at render time. */
   image_url?: string;
   /** Legacy shorthand: alt text for image_url. */
