@@ -36,7 +36,9 @@ export function normalizeMathTokens(input: string): string {
     // "greater than or equals 0" degrades into "greater than or = 0".
     .replace(/\bgreater than or equal(?:s| to)\b/gi, "≥")
     .replace(/\bless than or equal(?:s| to)\b/gi, "≤")
-    .replace(/\bis greater than or =\b/gi, "≥")
+    .replace(/\bgreater than or\s*=/gi, "≥")
+    .replace(/\bless than or\s*=/gi, "≤")
+
     .replace(/\bnot equal to\b/gi, "≠")
     .replace(/\bequals(?: sign)?\b/gi, "=")
     .replace(/\bplus(?: sign)?\b/gi, "+")
