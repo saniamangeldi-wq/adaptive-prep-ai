@@ -24,11 +24,14 @@ export function normalizeMathTokens(input: string): string {
       .replace(/\s*\bSubscript\b\s+([\s\S]*?)\s*\bBaseline\b/gi, (_m, body) => `_{${normalizeScriptBody(body)}}`);
     if (out === before) break;
   }
-  // Trailing Superscript/Subscript with no Baseline terminator: take the next token.
+  // Trailing Superscript/Subscript with no Baseline terminator: take the next token,
+  // but only when that token is a plausible exponent/index (a number or single letter).
+  // Anything else is genuine corruption and must survive so validation can quarantine it.
   out = out
-    .replace(/\s*\bSuperscript\b\s+(negative\s+)?([A-Za-z0-9.]+)/gi, (_m, neg, tok) => `^{${neg ? "-" : ""}${tok}}`)
-    .replace(/\s*\bSubscript\b\s+([A-Za-z0-9.]+)/gi, (_m, tok) => `_{${tok}}`)
-    .replace(/\s*\bBaseline\b/gi, "");
+    .replace(/\s*\bSuperscript\b\s+(negative\s+)?(\d+(?:\.\d+)?|[A-Za-z])\b/g, (_m, neg, tok) => `^{${neg ? "-" : ""}${tok}}`)
+    .replace(/\s*\bSubscript\b\s+(\d+(?:\.\d+)?|[A-Za-z])\b/g, (_m, tok) => `_{${tok}}`)
+    .replace(/\s*\bBaseline\b/g, "");
+
 
   return out
     .replace(/\bnegative\s+([0-9.]+)/gi, "-$1")
