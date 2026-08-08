@@ -13,35 +13,45 @@ export function normalizeMathTokens(input: string): string {
     .replace(/\bright bracket\b/gi, "]");
 
   // MathML-speech superscripts/subscripts:
-  //   "x Superscript negative 2 Baseline"  -> "x^(-2)"
-  //   "a Subscript n Baseline"             -> "a_(n)"
-  // The exponent body runs up to the closing "Baseline" marker.
+  //   "x Superscript negative 2 Baseline"  -> "x^{-2}"
+  //   "a Subscript n Baseline"             -> "a_{n}"
+  // The exponent body runs up to the closing "Baseline" marker. LaTeX brace
+  // form is emitted so KaTeX can typeset the result directly.
   for (let i = 0; i < 5; i++) {
     const before = out;
     out = out
-      .replace(/\s*\bSuperscript\b\s+([\s\S]*?)\s*\bBaseline\b/gi, (_m, body) => `^(${normalizeScriptBody(body)})`)
-      .replace(/\s*\bSubscript\b\s+([\s\S]*?)\s*\bBaseline\b/gi, (_m, body) => `_(${normalizeScriptBody(body)})`);
+      .replace(/\s*\bSuperscript\b\s+([\s\S]*?)\s*\bBaseline\b/gi, (_m, body) => `^{${normalizeScriptBody(body)}}`)
+      .replace(/\s*\bSubscript\b\s+([\s\S]*?)\s*\bBaseline\b/gi, (_m, body) => `_{${normalizeScriptBody(body)}}`);
     if (out === before) break;
   }
-  // Trailing Superscript/Subscript with no Baseline terminator: take the next token.
+  // Trailing Superscript/Subscript with no Baseline terminator: take the next token,
+  // but only when that token is a plausible exponent/index (a number or single letter).
+  // Anything else is genuine corruption and must survive so validation can quarantine it.
   out = out
-    .replace(/\s*\bSuperscript\b\s+(negative\s+)?([A-Za-z0-9.]+)/gi, (_m, neg, tok) => `^(${neg ? "-" : ""}${tok})`)
-    .replace(/\s*\bSubscript\b\s+([A-Za-z0-9.]+)/gi, (_m, tok) => `_(${tok})`)
-    .replace(/\s*\bBaseline\b/gi, "");
+    .replace(/\s*\bSuperscript\b\s+(negative\s+)?(\d+(?:\.\d+)?|[A-Za-z])\b/g, (_m, neg, tok) => `^{${neg ? "-" : ""}${tok}}`)
+    .replace(/\s*\bSubscript\b\s+(\d+(?:\.\d+)?|[A-Za-z])\b/g, (_m, tok) => `_{${tok}}`)
+    .replace(/\s*\bBaseline\b/g, "");
+
 
   return out
     .replace(/\bnegative\s+([0-9.]+)/gi, "-$1")
+    // Comparison phrases must be handled before the bare "equals" rule, or
+    // "greater than or equals 0" degrades into "greater than or = 0".
+    .replace(/\bgreater than or equal(?:s| to)\b/gi, "≥")
+    .replace(/\bless than or equal(?:s| to)\b/gi, "≤")
+    .replace(/\bgreater than or\s*=/gi, "≥")
+    .replace(/\bless than or\s*=/gi, "≤")
+
+    .replace(/\bnot equal to\b/gi, "≠")
     .replace(/\bequals(?: sign)?\b/gi, "=")
     .replace(/\bplus(?: sign)?\b/gi, "+")
     .replace(/\bminus(?: sign)?\b/gi, "−")
     .replace(/\btimes(?: sign)?\b/gi, "×")
-    .replace(/\bgreater than or equal to\b/gi, "≥")
-    .replace(/\bless than or equal to\b/gi, "≤")
-    .replace(/\bnot equal to\b/gi, "≠")
     .replace(/\b([A-Za-z])\s+\(/g, "$1(")
     .replace(/[ \t]+([),.;:?])/g, "$1")
     .replace(/([([])[ \t]+/g, "$1")
     .replace(/[ \t]{2,}/g, " ");
+
 }
 
 /** Normalizes the inside of a Superscript/Subscript body ("negative 2" -> "-2"). */

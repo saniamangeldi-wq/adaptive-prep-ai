@@ -38,11 +38,11 @@ describe("SAT content normalization", () => {
 });
 describe("MathML-speech token normalization", () => {
   it("converts Superscript/Baseline exponents", () => {
-    expect(normalizeSatText("x Superscript negative 2 Baseline equals 4")).toBe("x^(-2) = 4");
+    expect(normalizeSatText("x Superscript negative 2 Baseline equals 4")).toBe("x^{-2} = 4");
   });
 
   it("converts Subscript/Baseline indices", () => {
-    expect(normalizeSatText("a Subscript n Baseline")).toBe("a_(n)");
+    expect(normalizeSatText("a Subscript n Baseline")).toBe("a_{n}");
   });
 
   it("converts standalone negative numbers", () => {

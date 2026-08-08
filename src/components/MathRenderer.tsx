@@ -68,10 +68,75 @@ function normalizeVerbalMath(input: string): string {
   s = s.replace(/\b([A-Za-z0-9\)\]\}])\s+to the (fourth|fifth|sixth|seventh|eighth|ninth|tenth)(?:\s+power)?\b/gi,
     (_m, base, ord) => `${base}^{${ordinals[ord.toLowerCase()]}}`);
 
-  // Wrap the whole normalized run in $...$ delimiters if it clearly became LaTeX
-  // but only if it isn't already delimited — we let the splitter pick it up.
-  return s;
+  // Wrap bare math runs (e.g. "33(0.4)^{x}") in $...$ so the splitter below
+  // hands them to KaTeX instead of leaking the raw notation into the page.
+  return wrapMathRuns(s);
 }
+
+const MATH_MARKER_RE = /[\^_]\{/;
+const MATH_TOKEN_RE = /^[A-Za-z0-9().,[\]{}^_+\-*/=×−≥≤≠|]+$/;
+const PROSE_TOKEN_RE = /^[A-Za-z]{2,}$/;
+const FUNCTION_TOKEN_RE = /^(?:sin|cos|tan|log|ln|sqrt)$/i;
+
+/** Converts unicode operators to LaTeX so KaTeX can typeset the run. */
+function toLatexOperators(run: string): string {
+  return run
+    .replace(/−/g, "-")
+    .replace(/×/g, "\\times ")
+    .replace(/≥/g, "\\ge ")
+    .replace(/≤/g, "\\le ")
+    .replace(/≠/g, "\\ne ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function isMathToken(token: string): boolean {
+  if (!token) return false;
+  if (!MATH_TOKEN_RE.test(token)) return false;
+  if (PROSE_TOKEN_RE.test(token) && !FUNCTION_TOKEN_RE.test(token)) return false;
+  return true;
+}
+
+/**
+ * Finds contiguous runs of math-like tokens that contain a LaTeX script marker
+ * and wraps them in inline math delimiters. Prose around the run is untouched.
+ */
+export function wrapMathRuns(input: string): string {
+  if (!input || input.includes("$")) return input;
+
+  return input
+    .split("\n")
+    .map((line) => {
+      const parts = line.split(/(\s+)/);
+      const isWord = (i: number) => i % 2 === 0;
+      const out = [...parts];
+      let i = 0;
+
+      while (i < parts.length) {
+        if (!isWord(i) || !MATH_MARKER_RE.test(parts[i]) || !isMathToken(parts[i])) {
+          i += 1;
+          continue;
+        }
+        let start = i;
+        while (start - 2 >= 0 && isMathToken(parts[start - 2])) start -= 2;
+        let end = i;
+        while (end + 2 < parts.length && isMathToken(parts[end + 2])) end += 2;
+
+        const run = parts.slice(start, end + 1).join("");
+        const trailing = run.match(/[.,;:?]+$/)?.[0] ?? "";
+        const body = trailing ? run.slice(0, -trailing.length) : run;
+        if (body) {
+          out[start] = `$${toLatexOperators(body)}$${trailing}`;
+          for (let k = start + 1; k <= end; k++) out[k] = "";
+        }
+        i = end + 2;
+      }
+
+      return out.join("");
+    })
+    .join("\n");
+}
+
 
 function isStandaloneMathExpression(value: string) {
   const trimmed = value.trim();
