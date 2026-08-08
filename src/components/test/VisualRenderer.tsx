@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { resolveFigureUrl } from "@/lib/figure-url";
 import DOMPurify from "dompurify";
 import { AlertTriangle, CheckCircle2, Info, Loader2 } from "lucide-react";
 import { MathRenderer } from "@/components/MathRenderer";
@@ -91,10 +92,39 @@ interface VisualRendererProps {
  * A non-empty media URL is never treated as proof that the asset is healthy.
  */
 export function VisualRenderer({ question, onBlocked }: VisualRendererProps) {
-  const plan = useMemo(() => buildVisualPlan(question), [question]);
+  const basePlan = useMemo(() => buildVisualPlan(question), [question]);
+
+  // Durable assets live in a private bucket: resolve `figure_id` into a
+  // short-lived signed URL before the asset probe can run.
+  const needsSigning = Boolean(question.figure_id) && !basePlan.svg && !basePlan.imageSrc;
+  const [signedSrc, setSignedSrc] = useState<string | undefined>(undefined);
+  const [signing, setSigning] = useState(needsSigning);
+
+  useEffect(() => {
+    if (!needsSigning) {
+      setSigning(false);
+      setSignedSrc(undefined);
+      return;
+    }
+    let cancelled = false;
+    setSigning(true);
+    resolveFigureUrl(question.figure_id!).then((url) => {
+      if (cancelled) return;
+      setSignedSrc(url ?? undefined);
+      setSigning(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [question.figure_id, needsSigning]);
+
+  const plan = useMemo(
+    () => (signedSrc && !basePlan.imageSrc ? { ...basePlan, imageSrc: signedSrc } : basePlan),
+    [basePlan, signedSrc]
+  );
   const probe = useAssetProbe(plan.imageSrc);
   const assetOk = probe === "checking" ? null : probe === "loaded";
-  const status = resolveVisualStatus(plan, assetOk);
+  const status: VisualRenderStatus = signing ? "checking" : resolveVisualStatus(plan, assetOk);
   const safeSvg = useMemo(() => (plan.svg ? themeSvg(sanitizeSvg(plan.svg)) : ""), [plan.svg]);
 
   // When the table IS the primary visual (no image/SVG asset), status resolves

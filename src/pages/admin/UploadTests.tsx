@@ -22,6 +22,14 @@ import {
 import { cn } from "@/lib/utils";
 import { PageSeo } from "@/components/seo/PageSeo";
 import { QuestionFigureAttacher } from "@/components/admin/QuestionFigureAttacher";
+import {
+  PDF_MIME,
+  SAT_SOURCE_BUCKET,
+  sha256Hex,
+  sourcePdfPath,
+  validatePdfFile,
+} from "@/lib/sat-source-files";
+import { Link } from "react-router-dom";
 
 
 interface UploadedFile {
@@ -93,35 +101,82 @@ export default function UploadTests() {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  /**
+   * Archive-first ingestion: the original PDF is stored and checksummed
+   * before any parsing happens, so a failed run never loses the source file.
+   */
   const processFile = async (fileIndex: number) => {
     const uploadedFile = files[fileIndex];
     if (!uploadedFile || uploadedFile.status !== "pending") return;
 
-    setFiles(prev => prev.map((f, i) => 
+    const validation = validatePdfFile(uploadedFile.file);
+    if (!validation.valid) {
+      setFiles(prev => prev.map((f, i) =>
+        i === fileIndex ? { ...f, status: "error", progress: 0, error: validation.error } : f
+      ));
+      toast({ title: "Invalid file", description: validation.error, variant: "destructive" });
+      return;
+    }
+
+    setFiles(prev => prev.map((f, i) =>
       i === fileIndex ? { ...f, status: "processing", progress: 10 } : f
     ));
 
     try {
-      // Get session for auth
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      // Convert file to base64
-      const base64 = await fileToBase64(uploadedFile.file);
+      const bytes = await uploadedFile.file.arrayBuffer();
+      const checksum = await sha256Hex(bytes);
 
-      setFiles(prev => prev.map((f, i) => 
-        i === fileIndex ? { ...f, progress: 30 } : f
-      ));
+      setFiles(prev => prev.map((f, i) => i === fileIndex ? { ...f, progress: 25 } : f));
 
-      // Call edge function to process PDF
+      // Same bytes uploaded before -> reuse the archived record instead of
+      // storing a duplicate.
+      const { data: existing } = await supabase
+        .from("sat_source_pdfs")
+        .select("id, original_filename")
+        .eq("checksum_sha256", checksum)
+        .maybeSingle();
+
+      let sourcePdfId = existing?.id as string | undefined;
+
+      if (!sourcePdfId) {
+        const id = crypto.randomUUID();
+        const path = sourcePdfPath(id, uploadedFile.file.name);
+        const { error: uploadError } = await supabase.storage
+          .from(SAT_SOURCE_BUCKET)
+          .upload(path, uploadedFile.file, { contentType: PDF_MIME, upsert: true });
+        if (uploadError) throw new Error(`Could not archive PDF: ${uploadError.message}`);
+
+        const { error: insertError } = await supabase.from("sat_source_pdfs").insert({
+          id,
+          original_filename: uploadedFile.file.name,
+          storage_bucket: SAT_SOURCE_BUCKET,
+          storage_path: path,
+          file_size: uploadedFile.file.size,
+          mime_type: PDF_MIME,
+          checksum_sha256: checksum,
+          uploaded_by: user?.id ?? null,
+          processing_status: "pending",
+        });
+        if (insertError) throw new Error(`Could not record PDF: ${insertError.message}`);
+        sourcePdfId = id;
+      } else {
+        toast({
+          title: "PDF already archived",
+          description: "Reusing the stored copy of this file.",
+        });
+      }
+
+      setFiles(prev => prev.map((f, i) => i === fileIndex ? { ...f, progress: 45 } : f));
+
       const { data, error } = await supabase.functions.invoke("process-sat-pdf", {
-        body: {
-          fileName: uploadedFile.file.name,
-          fileBase64: base64,
-        },
+        body: { sourcePdfId },
       });
 
       if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       setFiles(prev => prev.map((f, i) => 
         i === fileIndex ? { 
@@ -134,7 +189,7 @@ export default function UploadTests() {
 
       toast({
         title: "Test processed successfully!",
-        description: `Added "${data.testName}" with ${data.questionsCount} questions.`,
+        description: `Added "${data.testName}" with ${data.questionsCount} questions and ${data.figuresCount ?? 0} stored figures.`,
       });
     } catch (error) {
       console.error("Error processing file:", error);
@@ -154,6 +209,7 @@ export default function UploadTests() {
       });
     }
   };
+
 
   const processAllPending = async () => {
     const pendingIndices = files
@@ -261,8 +317,11 @@ export default function UploadTests() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Upload SAT Tests</h1>
           <p className="text-muted-foreground mt-1">
-            Upload PDF practice tests to extract questions for students
+            Upload PDF practice tests to extract questions for students. Originals are archived permanently.
           </p>
+          <Button variant="outline" size="sm" className="mt-3" asChild>
+            <Link to="/admin/pdf-archive">View PDF archive</Link>
+          </Button>
         </div>
 
         {/* Upload Zone */}

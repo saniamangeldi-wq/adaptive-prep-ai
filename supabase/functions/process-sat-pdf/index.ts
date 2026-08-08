@@ -34,6 +34,8 @@ interface Question {
   stimulus?: string;
   table?: QuestionTable;
   figure?: QuestionFigure;
+  /** Durable reference to a verified row in public.sat_figures. */
+  figure_id?: string;
   visual_unavailable?: boolean;
 }
 
@@ -82,6 +84,190 @@ interface ParsedTest {
   questions: Question[];
 }
 
+const SOURCE_BUCKET = "sat-source-files";
+
+interface SourcePdfRow {
+  id: string;
+  original_filename: string;
+  storage_bucket: string;
+  storage_path: string;
+  current_version: number;
+}
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function sanitizeFilename(name: string): string {
+  return (name || "file.pdf")
+    .replace(/[\\/]/g, "_")
+    .replace(/[^A-Za-z0-9._-]/g, "_")
+    .replace(/_{2,}/g, "_")
+    .slice(-120);
+}
+
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function decodeDataUrl(src: string): { bytes: Uint8Array; mime: string } | null {
+  const match = /^data:([^;,]+);base64,(.+)$/i.exec(src);
+  if (!match) return null;
+  try {
+    return { mime: match[1], bytes: Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0)) };
+  } catch {
+    return null;
+  }
+}
+
+function extensionForMime(mime: string): string {
+  if (mime.includes("svg")) return "svg";
+  if (mime.includes("jpeg") || mime.includes("jpg")) return "jpg";
+  if (mime.includes("webp")) return "webp";
+  return "png";
+}
+
+/**
+ * Uploads every extractable visual to the private source bucket, verifies the
+ * stored object by checksum, records it in `sat_figures`, and links it to its
+ * question. Deterministic ids + checksum lookup keep reprocessing idempotent.
+ * Questions whose required visual could not be verified are quarantined.
+ */
+// deno-lint-ignore no-explicit-any
+async function persistFigures(
+  admin: any,
+  sourcePdfId: string,
+  jobId: string | null,
+  testId: string,
+  questions: Question[]
+): Promise<number> {
+  let verifiedCount = 0;
+
+  for (const q of questions) {
+    const fig = q.figure;
+    if (!fig) continue;
+
+    let bytes: Uint8Array | null = null;
+    let mime = "image/png";
+
+    if (fig.type === "svg" && fig.svg) {
+      bytes = new TextEncoder().encode(fig.svg);
+      mime = "image/svg+xml";
+    } else if (fig.type === "image" && fig.src?.startsWith("data:")) {
+      const decoded = decodeDataUrl(fig.src);
+      if (decoded) {
+        bytes = decoded.bytes;
+        mime = decoded.mime;
+      }
+    }
+
+    if (!bytes) {
+      // Nothing durable to store. A required visual without structured data
+      // must not reach students.
+      if (!q.table) q.visual_unavailable = true;
+      continue;
+    }
+
+    const checksum = await sha256Hex(bytes);
+    const { data: existing } = await admin
+      .from("sat_figures")
+      .select("*")
+      .eq("source_pdf_id", sourcePdfId)
+      .eq("checksum_sha256", checksum)
+      .maybeSingle();
+
+    let record = existing;
+
+    if (!record) {
+      const figureId = crypto.randomUUID();
+      const path = `tests/${sourcePdfId}/figures/${figureId}.${extensionForMime(mime)}`;
+      const upload = await admin.storage
+        .from(SOURCE_BUCKET)
+        .upload(path, bytes, { contentType: mime, upsert: true });
+
+      if (upload.error) {
+        console.error("[persistFigures] upload failed", upload.error);
+        await admin.from("sat_figures").insert({
+          id: figureId,
+          source_pdf_id: sourcePdfId,
+          job_id: jobId,
+          test_id: testId,
+          question_id: q.id,
+          storage_bucket: SOURCE_BUCKET,
+          storage_path: path,
+          mime_type: mime,
+          checksum_sha256: checksum,
+          alt_text: fig.alt,
+          extraction_status: "failed",
+        });
+        if (!q.table) q.visual_unavailable = true;
+        continue;
+      }
+
+      const inserted = await admin
+        .from("sat_figures")
+        .insert({
+          id: figureId,
+          source_pdf_id: sourcePdfId,
+          job_id: jobId,
+          test_id: testId,
+          question_id: q.id,
+          storage_bucket: SOURCE_BUCKET,
+          storage_path: path,
+          mime_type: mime,
+          checksum_sha256: checksum,
+          alt_text: fig.alt,
+          text_equivalent: fig.caption ?? null,
+          extraction_status: "uploaded",
+        })
+        .select()
+        .single();
+      record = inserted.data;
+    } else {
+      // Same asset from an earlier run: relink instead of duplicating.
+      await admin
+        .from("sat_figures")
+        .update({ job_id: jobId, test_id: testId, question_id: q.id })
+        .eq("id", record.id);
+    }
+
+    if (!record) {
+      if (!q.table) q.visual_unavailable = true;
+      continue;
+    }
+
+    // Verification: the object must exist and its bytes must match.
+    let verified = false;
+    const download = await admin.storage.from(SOURCE_BUCKET).download(record.storage_path);
+    if (download.data) {
+      const storedBytes = new Uint8Array(await download.data.arrayBuffer());
+      verified = (await sha256Hex(storedBytes)) === checksum;
+    }
+
+    await admin
+      .from("sat_figures")
+      .update({ extraction_status: verified ? "verified" : "failed" })
+      .eq("id", record.id);
+
+    if (verified) {
+      q.figure_id = record.id;
+      q.visual_unavailable = false;
+      verifiedCount++;
+    } else if (!q.table) {
+      q.visual_unavailable = true;
+    }
+  }
+
+  return verifiedCount;
+}
+
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -126,18 +312,111 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get request body
-    const { fileName, fileBase64 } = await req.json();
+    // Service-role client: archives source files and publishes official tests.
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
-    if (!fileName || !fileBase64) {
-      return new Response(
-        JSON.stringify({ error: "Missing fileName or fileBase64" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const body = await req.json().catch(() => ({}));
+    const sourcePdfId: string | undefined = body?.sourcePdfId;
+    const fileBase64: string | undefined = body?.fileBase64;
+    let fileName: string = body?.fileName ?? "";
+
+    let sourceRow: SourcePdfRow | null = null;
+    let pdfBytes: Uint8Array;
+
+    if (sourcePdfId) {
+      const { data, error } = await supabaseAdmin
+        .from("sat_source_pdfs")
+        .select("*")
+        .eq("id", sourcePdfId)
+        .maybeSingle();
+      if (error || !data) return jsonResponse({ error: "Source PDF not found" }, 404);
+      sourceRow = data as SourcePdfRow;
+      fileName = sourceRow.original_filename;
+      const dl = await supabaseAdmin.storage.from(SOURCE_BUCKET).download(sourceRow.storage_path);
+      if (dl.error || !dl.data) {
+        return jsonResponse({ error: "Archived PDF could not be read from storage" }, 404);
+      }
+      pdfBytes = new Uint8Array(await dl.data.arrayBuffer());
+    } else if (fileName && fileBase64) {
+      // Legacy direct-upload path: archive the PDF before doing any work.
+      pdfBytes = Uint8Array.from(atob(fileBase64), (c) => c.charCodeAt(0));
+      const checksum = await sha256Hex(pdfBytes);
+      const { data: dup } = await supabaseAdmin
+        .from("sat_source_pdfs")
+        .select("*")
+        .eq("checksum_sha256", checksum)
+        .maybeSingle();
+      if (dup) {
+        sourceRow = dup as SourcePdfRow;
+      } else {
+        const id = crypto.randomUUID();
+        const path = `tests/${id}/source/${sanitizeFilename(fileName)}`;
+        const up = await supabaseAdmin.storage
+          .from(SOURCE_BUCKET)
+          .upload(path, pdfBytes, { contentType: "application/pdf", upsert: true });
+        if (up.error) return jsonResponse({ error: `Failed to archive PDF: ${up.error.message}` }, 500);
+        const { data: inserted, error: insErr } = await supabaseAdmin
+          .from("sat_source_pdfs")
+          .insert({
+            id,
+            original_filename: fileName,
+            storage_bucket: SOURCE_BUCKET,
+            storage_path: path,
+            file_size: pdfBytes.byteLength,
+            mime_type: "application/pdf",
+            checksum_sha256: checksum,
+            uploaded_by: user.id,
+            processing_status: "pending",
+          })
+          .select()
+          .single();
+        if (insErr || !inserted) {
+          return jsonResponse({ error: `Failed to record source PDF: ${insErr?.message}` }, 500);
+        }
+        sourceRow = inserted as SourcePdfRow;
+      }
+    } else {
+      return jsonResponse({ error: "Missing sourcePdfId (or fileName + fileBase64)" }, 400);
     }
 
-    // Decode base64 to get PDF content
-    const pdfBytes = Uint8Array.from(atob(fileBase64), c => c.charCodeAt(0));
+    // Open a processing job (one row per attempt = one version).
+    const version = (sourceRow.current_version ?? 0) + 1;
+    const { data: job } = await supabaseAdmin
+      .from("sat_processing_jobs")
+      .insert({
+        source_pdf_id: sourceRow.id,
+        version,
+        status: "running",
+        stage: "extract",
+        progress: 10,
+        started_by: user.id,
+      })
+      .select()
+      .single();
+    const jobId: string | null = job?.id ?? null;
+
+    await supabaseAdmin
+      .from("sat_source_pdfs")
+      .update({ processing_status: "processing", processing_error: null })
+      .eq("id", sourceRow.id);
+
+    const failJob = async (message: string) => {
+      if (jobId) {
+        await supabaseAdmin
+          .from("sat_processing_jobs")
+          .update({ status: "failed", error: message, finished_at: new Date().toISOString() })
+          .eq("id", jobId);
+      }
+      // The archived PDF is always preserved so the run can be retried.
+      await supabaseAdmin
+        .from("sat_source_pdfs")
+        .update({ processing_status: "failed", processing_error: message })
+        .eq("id", sourceRow!.id);
+    };
+
     const pdfText = await extractPdfText(pdfBytes);
 
     // Use Lovable AI Gateway to parse the questions
@@ -145,12 +424,14 @@ Deno.serve(async (req) => {
 
     // FIX 5: AI returned an error object instead of questions
     if ("error" in parseResult) {
-      return new Response(
-        JSON.stringify({
+      await failJob("AI could not parse the PDF: " + parseResult.error);
+      return jsonResponse(
+        {
           error: "AI could not parse the PDF: " + parseResult.error,
           suggestion: "Please ensure the PDF contains readable SAT question content.",
-        }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          sourcePdfId: sourceRow.id,
+        },
+        422
       );
     }
 
@@ -165,28 +446,20 @@ Deno.serve(async (req) => {
       if (valid) {
         validQuestions.push(q);
       } else {
-        console.warn(
-          `[validate] Rejected question ${i + 1}:`,
-          errors,
-          q.text?.slice(0, 80)
-        );
+        console.warn(`[validate] Rejected question ${i + 1}:`, errors, q.text?.slice(0, 80));
         rejectedQuestions.push({ question: q, errors });
       }
     }
 
     if (validQuestions.length < 5) {
-      return new Response(
-        JSON.stringify({
-          error:
-            "Too many invalid questions generated. Only " +
-            validQuestions.length +
-            " of " +
-            parsed.questions.length +
-            " passed validation.",
-          rejected: rejectedQuestions,
-        }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      const message =
+        "Too many invalid questions generated. Only " +
+        validQuestions.length +
+        " of " +
+        parsed.questions.length +
+        " passed validation.";
+      await failJob(message);
+      return jsonResponse({ error: message, rejected: rejectedQuestions, sourcePdfId: sourceRow.id }, 422);
     }
 
     parsed.questions = validQuestions;
@@ -200,12 +473,6 @@ Deno.serve(async (req) => {
       ids.add(q.id);
       return q;
     });
-
-    // Store in database using service role for inserting official tests
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     let testType = "combined";
     if (parsed.testType === "math") testType = "math";
@@ -227,23 +494,67 @@ Deno.serve(async (req) => {
       .select()
       .single();
 
-    if (insertError) {
+    if (insertError || !test) {
       console.error("Error inserting test:", insertError);
-      return new Response(
-        JSON.stringify({ error: "Failed to save test to database", details: insertError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      await failJob(`Failed to save test: ${insertError?.message}`);
+      return jsonResponse({ error: "Failed to save test to database", details: insertError?.message }, 500);
     }
 
-    return new Response(
-      JSON.stringify({
-        testId: test.id,
-        testName: parsed.testName,
-        questionsCount: parsed.questions.length,
-        rejectedCount: rejectedQuestions.length,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // Persist and verify every extracted visual, then link it to its question.
+    if (jobId) {
+      await supabaseAdmin
+        .from("sat_processing_jobs")
+        .update({ stage: "figures", progress: 70 })
+        .eq("id", jobId);
+    }
+
+    const figureCount = await persistFigures(
+      supabaseAdmin,
+      sourceRow.id,
+      jobId,
+      test.id,
+      parsed.questions
     );
+
+    // Question JSON now carries durable figure ids / quarantine flags.
+    await supabaseAdmin.from("sat_tests").update({ questions: parsed.questions }).eq("id", test.id);
+
+    if (jobId) {
+      await supabaseAdmin
+        .from("sat_processing_jobs")
+        .update({
+          status: "succeeded",
+          stage: "publish",
+          progress: 100,
+          questions_created: parsed.questions.length,
+          figures_created: figureCount,
+          test_id: test.id,
+          finished_at: new Date().toISOString(),
+        })
+        .eq("id", jobId);
+    }
+
+    await supabaseAdmin
+      .from("sat_source_pdfs")
+      .update({
+        processing_status: "succeeded",
+        processing_error: null,
+        question_count: parsed.questions.length,
+        figure_count: figureCount,
+        latest_test_id: test.id,
+        current_version: version,
+      })
+      .eq("id", sourceRow.id);
+
+    return jsonResponse({
+      testId: test.id,
+      testName: parsed.testName,
+      questionsCount: parsed.questions.length,
+      figuresCount: figureCount,
+      rejectedCount: rejectedQuestions.length,
+      sourcePdfId: sourceRow.id,
+      version,
+    });
   } catch (error: unknown) {
     console.error("Error processing PDF:", error);
     const errorMessage = error instanceof Error ? error.message : "Failed to process PDF";

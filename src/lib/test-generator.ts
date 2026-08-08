@@ -43,6 +43,8 @@ export interface Question {
   table?: QuestionTable;
   /** Optional figure (image URL or inline SVG). */
   figure?: QuestionFigure;
+  /** Durable id of a verified asset in `sat_figures`; resolved to a signed URL at render time. */
+  figure_id?: string;
   /** Set during import when a referenced visual was missing or malformed. */
   visual_unavailable?: boolean;
   /** Whether this question can be answered without a visual. Derived at validation time. */
