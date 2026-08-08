@@ -367,6 +367,10 @@ export default function UploadTests() {
           </div>
         </Card>
 
+        {/* Manual figure attachment */}
+        <QuestionFigureAttacher />
+
+
 
 
 
