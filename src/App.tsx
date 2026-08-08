@@ -37,6 +37,7 @@ import DigitalSATScoreCalculator from "./pages/DigitalSATScoreCalculator";
 // School admin pages
 import CreateSchool from "./pages/school/CreateSchool";
 import UploadTests from "./pages/admin/UploadTests";
+import PdfArchive from "./pages/admin/PdfArchive";
 import SchoolOverview from "./pages/school/SchoolOverview";
 import SchoolTeachers from "./pages/school/SchoolTeachers";
 import SchoolStudents from "./pages/school/SchoolStudents";
@@ -160,6 +161,7 @@ function AppRoutes() {
       
       {/* Admin routes */}
       <Route path="/admin/upload-tests" element={<ProtectedRoute><UploadTests /></ProtectedRoute>} />
+      <Route path="/admin/pdf-archive" element={<ProtectedRoute><PdfArchive /></ProtectedRoute>} />
       
       {/* School admin routes */}
       <Route path="/dashboard/school" element={<ProtectedRoute><SchoolOverview /></ProtectedRoute>} />

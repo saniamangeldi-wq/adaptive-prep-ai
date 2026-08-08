@@ -1591,6 +1591,228 @@ export type Database = {
           },
         ]
       }
+      sat_figures: {
+        Row: {
+          alt_text: string | null
+          bbox: Json | null
+          checksum_sha256: string
+          created_at: string
+          extraction_status: string
+          height: number | null
+          id: string
+          job_id: string | null
+          mime_type: string
+          page_number: number | null
+          question_id: string | null
+          source_pdf_id: string
+          storage_bucket: string
+          storage_path: string
+          test_id: string | null
+          text_equivalent: string | null
+          updated_at: string
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          bbox?: Json | null
+          checksum_sha256: string
+          created_at?: string
+          extraction_status?: string
+          height?: number | null
+          id?: string
+          job_id?: string | null
+          mime_type: string
+          page_number?: number | null
+          question_id?: string | null
+          source_pdf_id: string
+          storage_bucket?: string
+          storage_path: string
+          test_id?: string | null
+          text_equivalent?: string | null
+          updated_at?: string
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          bbox?: Json | null
+          checksum_sha256?: string
+          created_at?: string
+          extraction_status?: string
+          height?: number | null
+          id?: string
+          job_id?: string | null
+          mime_type?: string
+          page_number?: number | null
+          question_id?: string | null
+          source_pdf_id?: string
+          storage_bucket?: string
+          storage_path?: string
+          test_id?: string | null
+          text_equivalent?: string | null
+          updated_at?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sat_figures_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "sat_processing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sat_figures_source_pdf_id_fkey"
+            columns: ["source_pdf_id"]
+            isOneToOne: false
+            referencedRelation: "sat_source_pdfs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sat_figures_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "sat_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sat_processing_jobs: {
+        Row: {
+          created_at: string
+          error: string | null
+          figures_created: number
+          finished_at: string | null
+          id: string
+          progress: number
+          questions_created: number
+          source_pdf_id: string
+          stage: string | null
+          started_at: string
+          started_by: string
+          status: string
+          test_id: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          figures_created?: number
+          finished_at?: string | null
+          id?: string
+          progress?: number
+          questions_created?: number
+          source_pdf_id: string
+          stage?: string | null
+          started_at?: string
+          started_by: string
+          status?: string
+          test_id?: string | null
+          updated_at?: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          figures_created?: number
+          finished_at?: string | null
+          id?: string
+          progress?: number
+          questions_created?: number
+          source_pdf_id?: string
+          stage?: string | null
+          started_at?: string
+          started_by?: string
+          status?: string
+          test_id?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sat_processing_jobs_source_pdf_id_fkey"
+            columns: ["source_pdf_id"]
+            isOneToOne: false
+            referencedRelation: "sat_source_pdfs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sat_processing_jobs_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "sat_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sat_source_pdfs: {
+        Row: {
+          checksum_sha256: string
+          created_at: string
+          current_version: number
+          figure_count: number
+          file_size: number
+          id: string
+          latest_test_id: string | null
+          mime_type: string
+          original_filename: string
+          processing_error: string | null
+          processing_status: string
+          question_count: number
+          storage_bucket: string
+          storage_path: string
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          checksum_sha256: string
+          created_at?: string
+          current_version?: number
+          figure_count?: number
+          file_size: number
+          id?: string
+          latest_test_id?: string | null
+          mime_type?: string
+          original_filename: string
+          processing_error?: string | null
+          processing_status?: string
+          question_count?: number
+          storage_bucket?: string
+          storage_path: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          checksum_sha256?: string
+          created_at?: string
+          current_version?: number
+          figure_count?: number
+          file_size?: number
+          id?: string
+          latest_test_id?: string | null
+          mime_type?: string
+          original_filename?: string
+          processing_error?: string | null
+          processing_status?: string
+          question_count?: number
+          storage_bucket?: string
+          storage_path?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sat_source_pdfs_latest_test_id_fkey"
+            columns: ["latest_test_id"]
+            isOneToOne: false
+            referencedRelation: "sat_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sat_tests: {
         Row: {
           created_at: string
