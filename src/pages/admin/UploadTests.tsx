@@ -41,6 +41,9 @@ export default function UploadTests() {
   const [isDragging, setIsDragging] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
   const [backfillResult, setBackfillResult] = useState<string | null>(null);
+  const [repairing, setRepairing] = useState(false);
+  const [repairResult, setRepairResult] = useState<string | null>(null);
+
 
   // Check if user is admin (for now, check if role is school_admin)
   const isAdmin = profile?.role === "school_admin";
