@@ -339,6 +339,36 @@ export default function UploadTests() {
           </div>
         </Card>
 
+        {/* Multi-model math & data repair */}
+        <Card className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+            <div>
+              <h4 className="font-medium text-foreground">Repair math & verify answers (multi-model)</h4>
+              <p className="text-sm text-muted-foreground mt-1">
+                Rewrites speech-serialized math into LaTeX and un-flattens table data, then has a second
+                model independently re-solve each question. Disagreements are marked needs_review and kept
+                out of live tests. Processes up to 25 questions per run.
+              </p>
+              {repairResult && <p className="text-sm text-primary mt-2">{repairResult}</p>}
+            </div>
+            <Button onClick={runRepair} disabled={repairing} variant="outline" className="shrink-0">
+              {repairing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-4 h-4" />
+                  Run repair
+                </>
+              )}
+            </Button>
+          </div>
+        </Card>
+
+
+
 
 
         {/* File List */}
