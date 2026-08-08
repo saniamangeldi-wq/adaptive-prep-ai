@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, Info, Loader2 } from "lucide-react";
 import { MathRenderer } from "@/components/MathRenderer";
 import type { Question, QuestionTable } from "@/lib/test-generator";
 import { logVisualHealthEvent } from "@/lib/visual-health";
+import { themeSvg } from "@/lib/svg-theme";
 import {
   buildVisualPlan,
   resolveVisualStatus,
@@ -94,7 +95,7 @@ export function VisualRenderer({ question, onBlocked }: VisualRendererProps) {
   const probe = useAssetProbe(plan.imageSrc);
   const assetOk = probe === "checking" ? null : probe === "loaded";
   const status = resolveVisualStatus(plan, assetOk);
-  const safeSvg = useMemo(() => (plan.svg ? sanitizeSvg(plan.svg) : ""), [plan.svg]);
+  const safeSvg = useMemo(() => (plan.svg ? themeSvg(sanitizeSvg(plan.svg)) : ""), [plan.svg]);
 
   // When the table IS the primary visual (no image/SVG asset), status resolves
   // to "ok" — it must still be rendered, otherwise the badge reports "Visual OK"
@@ -144,11 +145,11 @@ export function VisualRenderer({ question, onBlocked }: VisualRendererProps) {
     <div className="space-y-2">
       {status === "ok" && plan.svg ? (
         <figure className="my-4 flex flex-col items-center">
-          <div className="flex justify-center p-5 rounded-xl bg-background border border-border shadow-sm">
+          <div className="flex justify-center p-5 rounded-xl bg-card border border-border shadow-sm">
             <div
               role="img"
               aria-label={plan.alt}
-              className="max-w-full [&>svg]:max-h-[420px] [&>svg]:w-auto"
+              className="max-w-full text-foreground [&>svg]:max-h-[420px] [&>svg]:w-auto [&_text]:fill-current [&_text]:![font-family:inherit]"
               dangerouslySetInnerHTML={{ __html: safeSvg }}
             />
           </div>
@@ -156,7 +157,7 @@ export function VisualRenderer({ question, onBlocked }: VisualRendererProps) {
         </figure>
       ) : status === "ok" && plan.imageSrc ? (
         <figure className="my-4 flex flex-col items-center">
-          <div className="flex justify-center p-5 rounded-xl bg-background border border-border shadow-sm">
+          <div className="flex justify-center p-5 rounded-xl bg-[hsl(var(--figure-paper))] border border-border shadow-sm">
             <img src={plan.imageSrc} alt={plan.alt || "Question figure"} className="max-w-full max-h-[420px] object-contain" />
           </div>
           {plan.caption && <figcaption className="mt-2 text-xs text-muted-foreground text-center">{plan.caption}</figcaption>}
