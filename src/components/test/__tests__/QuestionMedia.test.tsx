@@ -76,6 +76,20 @@ describe("VisualRenderer states", () => {
     expect(screen.getByText("2020")).toBeInTheDocument();
   });
 
+  it("renders a table recovered from question text even when no visual is formally required", () => {
+    const flattened: Question = {
+      ...question,
+      id: "opensat-math-mcq-96",
+      text:
+        "Time (years)\nTotal amount (dollars)\n\n0\n604.00\n\n1\n606.42\n\n2\n608.84\n\n" +
+        "Rosa opened a savings account at a bank. The table shows the exponential relationship " +
+        "between the time t, in years, since Rosa opened the account and the total amount n, in dollars, in the account.",
+    };
+    render(<QuestionMedia question={flattened} />);
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByText("606.42")).toBeInTheDocument();
+  });
+
   it("sanitizes unsafe SVG markup", () => {
     const raw = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><script>alert(1)</script><rect width='10' height='10'/></svg>";
     expect(sanitizeSvg(raw)).not.toContain("<script");

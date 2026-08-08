@@ -96,6 +96,10 @@ export function VisualRenderer({ question, onBlocked }: VisualRendererProps) {
   const status = resolveVisualStatus(plan, assetOk);
   const safeSvg = useMemo(() => (plan.svg ? sanitizeSvg(plan.svg) : ""), [plan.svg]);
 
+  // When the table IS the primary visual (no image/SVG asset), status resolves
+  // to "ok" — it must still be rendered, otherwise the badge reports "Visual OK"
+  // over an empty visual area.
+  const tableIsPrimary = status === "ok" && !plan.svg && !plan.imageSrc && Boolean(plan.table);
   const blocked = status === "broken_quarantined";
   useEffect(() => {
     onBlocked?.(blocked);
@@ -158,6 +162,8 @@ export function VisualRenderer({ question, onBlocked }: VisualRendererProps) {
           {plan.caption && <figcaption className="mt-2 text-xs text-muted-foreground text-center">{plan.caption}</figcaption>}
         </figure>
       ) : null}
+
+      {tableIsPrimary && plan.table && <DataTable table={plan.table} caption={plan.caption} />}
 
       {status === "degraded_re_render" && plan.table && (
         <>
