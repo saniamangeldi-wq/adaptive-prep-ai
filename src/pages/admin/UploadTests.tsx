@@ -221,6 +221,34 @@ export default function UploadTests() {
     }
   };
 
+  const runRepair = async () => {
+    setRepairing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("repair-sat-questions", {
+        body: { limit: 25 },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const d = data as any;
+      setRepairResult(
+        `Flagged ${d?.flagged ?? 0}, repaired ${d?.repaired ?? 0}, verified ${d?.verified ?? 0}, disputed ${d?.disputed ?? 0}, unrecoverable ${d?.unrecoverable ?? 0}.`
+      );
+      toast({
+        title: (d?.repaired ?? 0) > 0 ? "Repair batch complete" : "Nothing left to repair",
+        description:
+          (d?.repaired ?? 0) > 0
+            ? `Repaired ${d.repaired} question${d.repaired === 1 ? "" : "s"}. Run again to continue.`
+            : "No questions with speech-math or flattened data were found.",
+      });
+    } catch (e: any) {
+      setRepairResult(null);
+      toast({ title: "Repair failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setRepairing(false);
+    }
+  };
+
+
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8">
