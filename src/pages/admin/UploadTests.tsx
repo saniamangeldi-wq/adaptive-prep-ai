@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { QuestionFigureAttacher } from "@/components/admin/QuestionFigureAttacher";
+
 
 interface UploadedFile {
   file: File;
@@ -366,6 +368,10 @@ export default function UploadTests() {
             </Button>
           </div>
         </Card>
+
+        {/* Manual figure attachment */}
+        <QuestionFigureAttacher />
+
 
 
 
