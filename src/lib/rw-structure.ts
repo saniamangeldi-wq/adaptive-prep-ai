@@ -145,16 +145,21 @@ function attemptParse(tokens: string[], columns: number): QuestionTable | null {
       values.push(tokens[i]);
       i += 1;
     }
-    // Lowercase text cells such as "not detected" can complete the row.
-    let lowerCount = 0;
-    while (i + lowerCount < tokens.length && /^[a-z]/.test(tokens[i + lowerCount])) lowerCount += 1;
+    // Lowercase text cells such as "not detected" or a merged "yesno" run.
+    const textAtoms: string[] = [];
+    let consumedTextTokens = 0;
+    while (i + consumedTextTokens < tokens.length && /^[a-z]/.test(tokens[i + consumedTextTokens])) {
+      textAtoms.push(...splitWordCells(tokens[i + consumedTextTokens]));
+      consumedTextTokens += 1;
+    }
 
-    const textCells = values.length < need ? Math.min(lowerCount, need - values.length) : 0;
+    const capacity = values.length < need ? Math.min(textAtoms.length, need - Math.min(values.length, 1)) : 0;
+    const textCells = capacity;
     const fromValues = need - textCells;
 
     let cells: string[];
     if (values.length === fromValues) {
-      cells = values;
+      cells = [...values];
     } else if (values.length === 1) {
       const split = splitNumberBlob(values[0], fromValues);
       if (!split) return null;
@@ -163,10 +168,17 @@ function attemptParse(tokens: string[], columns: number): QuestionTable | null {
       return null;
     }
 
-    for (let t = 0; t < textCells; t++) {
-      cells.push(tokens[i]);
-      i += 1;
+    // Consume only the source tokens whose atoms were actually used.
+    let used = 0;
+    let tokenCursor = 0;
+    while (used < textCells) {
+      const atoms = splitWordCells(tokens[i + tokenCursor]);
+      cells.push(...atoms.slice(0, textCells - used));
+      used += atoms.length;
+      tokenCursor += 1;
     }
+    i += tokenCursor;
+
 
     if (cells.length !== need) return null;
     rows.push([label, ...cells]);
