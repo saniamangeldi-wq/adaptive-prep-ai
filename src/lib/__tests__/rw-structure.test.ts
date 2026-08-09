@@ -83,6 +83,18 @@ describe("concatenated Reading & Writing tables", () => {
     expect(parts.text).toBe(text);
   });
 
+  it("removes an unrecoverable data block and flags it instead of showing the jumble", () => {
+    const parts = resolveQuestionParts(
+      q(
+        "Attendance and Cost of Hosting for Past Four US World\u2019s Fairs\n\nWorld\u2019s fairs held in the USCost (in US dollars)Number of visitorsCentury 21 Exposition (1962)$47 million9.60 millionHemisFair \u201968$156 million6.40 million\n\nWhich choice most effectively uses data from the table?"
+      )
+    );
+    expect(parts.table).toBeUndefined();
+    expect(parts.dataBlockUnrecoverable).toBe(true);
+    expect(parts.text).not.toContain("HemisFair");
+    expect(parts.text).toContain("Which choice most effectively uses data");
+  });
+
   it("splits digit runs preferring a total column", () => {
     expect(splitNumberBlob("91322", 3)).toEqual(["9", "13", "22"]);
     expect(splitNumberBlob("0.50.04", 2)).toEqual(["0.5", "0.04"]);
