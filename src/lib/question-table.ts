@@ -74,6 +74,8 @@ export function parseFlattenedTable(rawText: string): ParsedQuestionText {
  */
 export function resolveQuestionParts(question: Question): {
   table?: QuestionTable;
+  /** A flattened data block was found but could not be turned into a table. */
+  dataBlockUnrecoverable?: boolean;
   text: string;
 } {
   if (isValidTable(question.table)) return { table: question.table, text: normalizeSatText(question.text) };
@@ -82,7 +84,7 @@ export function resolveQuestionParts(question: Question): {
   if (extracted.table) return extracted;
 
   const concatenated = extractConcatenatedTableBlock(question.text);
-  if (concatenated.table) return concatenated;
+  if (concatenated.table || concatenated.dataBlockUnrecoverable) return concatenated;
 
   return parseFlattenedTable(question.text);
 }
