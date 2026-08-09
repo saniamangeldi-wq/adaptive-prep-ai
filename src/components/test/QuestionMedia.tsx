@@ -18,7 +18,12 @@ interface QuestionMediaProps {
  */
 export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProps) {
   const { table } = resolveQuestionParts(question);
-  if (!question.stimulus && !table && !question.figure && !question.image_url && !question.media) return null;
+  // A question that requires a visual must still reach VisualRenderer even
+  // when no media field exists — that is exactly the quarantined case.
+  const requiresVisual = deriveVisualRequirement(question) === "required";
+  if (!question.stimulus && !table && !question.figure && !question.image_url && !question.media && !requiresVisual)
+    return null;
+
 
   return (
     <div className="space-y-4">
