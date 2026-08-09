@@ -259,7 +259,7 @@ export function extractConcatenatedTableBlock(rawText: string): ExtractedBlock {
     if (!rest) return { text: normalizeSatText(source) };
     // An unrecoverable data block is removed from the prompt: students must
     // never be shown the concatenated jumble.
-    return { table, dataBlockUnrecoverable: isDataBlock || undefined, text: normalizeSatText(rest) };
+    return { table: table ?? undefined, dataBlockUnrecoverable: isDataBlock || undefined, text: normalizeSatText(rest) };
   }
 
   return { text: normalizeSatText(source) };
