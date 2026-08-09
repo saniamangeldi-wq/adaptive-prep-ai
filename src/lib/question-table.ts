@@ -1,5 +1,6 @@
 import type { Question, QuestionTable } from "@/lib/test-generator";
 import { extractEmbeddedChartTable, isValidTable, normalizeSatText } from "@/lib/sat-content";
+import { extractConcatenatedTableBlock } from "@/lib/rw-structure";
 
 const MAX_CELL_LEN = 60;
 
@@ -79,6 +80,9 @@ export function resolveQuestionParts(question: Question): {
 
   const extracted = extractEmbeddedChartTable(question.text);
   if (extracted.table) return extracted;
+
+  const concatenated = extractConcatenatedTableBlock(question.text);
+  if (concatenated.table) return concatenated;
 
   return parseFlattenedTable(question.text);
 }

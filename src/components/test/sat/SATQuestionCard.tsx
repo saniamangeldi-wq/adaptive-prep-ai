@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { MathRenderer } from "@/components/MathRenderer";
 import { QuestionMedia } from "@/components/test/QuestionMedia";
+import { PassageSections } from "@/components/test/PassageSections";
 import { resolveQuestionParts } from "@/lib/question-table";
 import type { Question } from "@/lib/test-generator";
 
@@ -36,22 +37,16 @@ export function SATQuestionCard({
       <div className="space-y-4">
         {promptText && promptText.length > 300 && (
           <div className="p-6 rounded-xl bg-muted/50 border border-border/50">
-            <MathRenderer
-              as="div"
-              className="text-foreground leading-relaxed whitespace-pre-line"
+            <PassageSections
               text={promptText}
               questionId={question.id}
+              className="text-foreground leading-relaxed whitespace-pre-line"
             />
           </div>
         )}
 
         {promptText && promptText.length <= 300 && (
-          <MathRenderer
-            as="div"
-            className="text-lg text-foreground leading-relaxed"
-            text={promptText}
-            questionId={question.id}
-          />
+          <PassageSections text={promptText} questionId={question.id} />
         )}
       </div>
 

@@ -137,7 +137,7 @@ export function extractEmbeddedChartTable(rawText: string): { table?: QuestionTa
   if (!remainder) return { text: rawText };
 
   return {
-    table: { headers: ["Category", ...seriesOrder], rows },
+    table: { headers: ["Category", ...seriesOrder], rows, chart: "bar" },
     text: normalizeSatText(remainder),
   };
 }
