@@ -1,6 +1,7 @@
 import { MathRenderer } from "@/components/MathRenderer";
 import type { Question } from "@/lib/test-generator";
 import { resolveQuestionParts } from "@/lib/question-table";
+import { deriveVisualRequirement } from "@/lib/sat-content";
 import { VisualRenderer } from "@/components/test/VisualRenderer";
 
 export { sanitizeSvg, DataTable } from "@/components/test/VisualRenderer";
