@@ -206,6 +206,18 @@ export function parseConcatenatedTable(blob: string): QuestionTable | null {
 }
 
 const CONCAT_SIGNATURE = /[a-z%)][A-Z]|[A-Za-z]\d|\d[A-Za-z]/;
+const CONCAT_BOUNDARY_RE = /[a-z%)][A-Z]|[A-Za-z]\d|\d[A-Za-z]/g;
+
+/**
+ * A flattened data block: many lost cell boundaries and plenty of digits, with
+ * none of the punctuation of ordinary prose.
+ */
+function looksLikeFlattenedData(block: string): boolean {
+  if (block.length < 60 || /[.?!]\s/.test(block)) return false;
+  const boundaries = block.match(CONCAT_BOUNDARY_RE)?.length ?? 0;
+  const digits = (block.match(/\d/g)?.length ?? 0) / block.length;
+  return boundaries >= 4 && digits > 0.05;
+}
 
 function looksLikeTitle(block: string): boolean {
   const t = block.trim();
@@ -214,6 +226,8 @@ function looksLikeTitle(block: string): boolean {
 
 export interface ExtractedBlock {
   table?: QuestionTable;
+  /** True when a flattened data block was found but could not be recovered. */
+  dataBlockUnrecoverable?: boolean;
   /** Question text with the flattened data block (and its title) removed. */
   text: string;
 }
@@ -232,17 +246,20 @@ export function extractConcatenatedTableBlock(rawText: string): ExtractedBlock {
     if (block.includes("\n") || block.length < 20) continue;
     if (!CONCAT_SIGNATURE.test(block)) continue;
     const table = parseConcatenatedTable(block);
-    if (!table) continue;
+    const isDataBlock = !table && looksLikeFlattenedData(block);
+    if (!table && !isDataBlock) continue;
 
     const titleIndex = i > 0 && looksLikeTitle(blocks[i - 1]) ? i - 1 : -1;
-    if (titleIndex >= 0) table.caption = blocks[titleIndex].trim();
+    if (table && titleIndex >= 0) table.caption = blocks[titleIndex].trim();
 
     const rest = blocks
       .filter((_, idx) => idx !== i && idx !== titleIndex)
       .join("\n\n")
       .trim();
     if (!rest) return { text: normalizeSatText(source) };
-    return { table, text: normalizeSatText(rest) };
+    // An unrecoverable data block is removed from the prompt: students must
+    // never be shown the concatenated jumble.
+    return { table, dataBlockUnrecoverable: isDataBlock || undefined, text: normalizeSatText(rest) };
   }
 
   return { text: normalizeSatText(source) };
