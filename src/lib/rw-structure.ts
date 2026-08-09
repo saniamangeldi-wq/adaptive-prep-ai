@@ -17,32 +17,50 @@ import { normalizeSatText } from "@/lib/sat-content";
 
 const SEP = "\u0000";
 
-/** A single value cell candidate: 12, 0.04, 59.1%, 100% */
-const NUMBER_RE = /^\d+(?:\.\d+)?%?$/;
+/** A single value cell candidate: 12, 0.04, 59.1%, 100%, −1.3, 600,000 */
+const NUMBER_RE = /^[−-]?\d[\d,]*(?:\.\d+)?%?$/;
+
+/** Words that appear as whole table cells and can be re-split when merged. */
+const WORD_CELLS = ["not detected", "not applicable", "none", "unknown", "detected", "yes", "no", "n/a", "true", "false"];
 
 /** Splits the flattened block into label / value tokens. */
 export function tokenizeConcatenatedBlock(blob: string): string[] {
   return blob
     .replace(/([a-z%).\u2019])([A-Z])/g, `$1${SEP}$2`) // wordEnd -> NextWord
     .replace(/([A-Z]{2,})([a-z])/g, `$1${SEP}$2`) // ACRONYM -> word
-    .replace(/([A-Za-z)])(\d)/g, `$1${SEP}$2`) // letter -> digit
+    .replace(/([A-Za-z)])([−-]?\d)/g, `$1${SEP}$2`) // letter -> (signed) digit
     .replace(/([\d%])([A-Za-z])/g, `$1${SEP}$2`) // digit/percent -> letter
+    .replace(/([\d%])([−-](?=[\d.]))/g, `$1${SEP}$2`) // number -> next negative number
     .replace(/%(?=[\d.])/g, `%${SEP}`) // percent -> next number
     .split(SEP)
     .map((t) => t.trim())
     .filter(Boolean);
 }
 
-const isValueToken = (t: string) => /^[\d.]/.test(t);
+const isValueToken = (t: string) => /^[−-]?[\d.]/.test(t);
 const isSingleNumber = (t: string) => NUMBER_RE.test(t);
+
+/** Splits a merged run of word cells ("yesno") back into its cells. */
+export function splitWordCells(token: string): string[] {
+  const atoms: string[] = [];
+  let rest = token.trim();
+  while (rest.length > 0) {
+    const match = WORD_CELLS.find((w) => rest.toLowerCase().startsWith(w));
+    if (!match) return atoms.length > 1 ? [...atoms, rest] : [token];
+    atoms.push(rest.slice(0, match.length));
+    rest = rest.slice(match.length).trim();
+  }
+  return atoms.length > 0 ? atoms : [token];
+}
 
 function validPart(part: string): boolean {
   if (!NUMBER_RE.test(part)) return false;
-  const digits = part.replace(/%$/, "");
+  const digits = part.replace(/^[−-]/, "").replace(/%$/, "");
   // Reject leading zeros ("05") but allow "0" and "0.5"
   if (/^0\d/.test(digits)) return false;
   return true;
 }
+
 
 function variance(lengths: number[]): number {
   const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
