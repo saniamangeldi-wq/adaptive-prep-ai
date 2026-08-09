@@ -15,6 +15,8 @@ export interface QuestionTable {
   headers: string[];
   rows: string[][];
   caption?: string;
+  /** Set when the data was recovered from a chart; rendered as a chart too. */
+  chart?: "bar";
 }
 
 export interface QuestionFigure {

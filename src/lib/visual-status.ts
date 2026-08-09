@@ -93,7 +93,7 @@ export interface VisualPlan {
 /** Collects every representation available for a question's visual. */
 export function buildVisualPlan(question: Question): VisualPlan {
   const figure = resolveFigure(question);
-  const { table: recovered } = resolveQuestionParts(question);
+  const { table: recovered, dataBlockUnrecoverable } = resolveQuestionParts(question);
   const structured = isValidTable(question.table)
     ? question.table
     : isValidTable(question.media?.data)
@@ -101,8 +101,11 @@ export function buildVisualPlan(question: Question): VisualPlan {
       : recovered;
 
   const renderable = isPotentiallyRenderableFigure(figure);
+  const derived = deriveVisualRequirement(question);
   return {
-    requirement: deriveVisualRequirement(question),
+    // A data block that could not be recovered always requires a visual: the
+    // question cannot be answered from the remaining prose alone.
+    requirement: dataBlockUnrecoverable && !structured ? "required" : derived,
     svg: renderable && figure?.type === "svg" ? figure.svg : undefined,
     imageSrc: renderable && figure?.type === "image" ? figure.src : undefined,
     alt: figure?.alt,

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { resolveFigureUrl } from "@/lib/figure-url";
 import DOMPurify from "dompurify";
 import { AlertTriangle, CheckCircle2, Info, Loader2 } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MathRenderer } from "@/components/MathRenderer";
 import type { Question, QuestionTable } from "@/lib/test-generator";
 import { logVisualHealthEvent } from "@/lib/visual-health";
@@ -27,9 +28,48 @@ export function sanitizeSvg(raw: string): string {
   });
 }
 
+/** Bar chart for tables recovered from a flattened chart, using recharts. */
+export function DataChart({ table }: { table: QuestionTable }) {
+  const series = table.headers.slice(1);
+  const data = table.rows.map((row) => {
+    const point: Record<string, string | number> = { name: row[0] };
+    series.forEach((key, i) => {
+      const value = Number(String(row[i + 1] ?? "").replace(/[%,]/g, ""));
+      if (Number.isFinite(value)) point[key] = value;
+    });
+    return point;
+  });
+  if (data.length === 0) return null;
+
+  return (
+    <div className="my-4 h-64 w-full" data-testid="question-chart">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+          <Tooltip
+            contentStyle={{
+              background: "hsl(var(--card))",
+              border: "1px solid hsl(var(--border))",
+              borderRadius: 8,
+              color: "hsl(var(--foreground))",
+            }}
+          />
+          <Legend />
+          {series.map((key, i) => (
+            <Bar key={key} dataKey={key} fill={`hsl(var(--chart-${(i % 5) + 1}, var(--primary)))`} radius={[4, 4, 0, 0]} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 export function DataTable({ table, caption }: { table: QuestionTable; caption?: string }) {
   return (
     <figure className="my-4 flex flex-col items-center overflow-x-auto">
+      {table.chart === "bar" && <DataChart table={table} />}
       <table className="min-w-[240px] max-w-full border-separate border-spacing-0 rounded-lg overflow-hidden border border-border bg-card text-sm shadow-sm">
         <thead className="bg-muted">
           <tr>
@@ -118,10 +158,15 @@ export function VisualRenderer({ question, onBlocked }: VisualRendererProps) {
     };
   }, [question.figure_id, needsSigning]);
 
-  const plan = useMemo(
-    () => (signedSrc && !basePlan.imageSrc ? { ...basePlan, imageSrc: signedSrc } : basePlan),
-    [basePlan, signedSrc]
-  );
+  const plan = useMemo(() => {
+    const withAsset = signedSrc && !basePlan.imageSrc ? { ...basePlan, imageSrc: signedSrc } : basePlan;
+    // An SVG that sanitizes to nothing renders nothing: drop it so the status
+    // never reports "Visual OK" over an empty area.
+    if (withAsset.svg && !themeSvg(sanitizeSvg(withAsset.svg)).includes("<svg")) {
+      return { ...withAsset, svg: undefined };
+    }
+    return withAsset;
+  }, [basePlan, signedSrc]);
   const probe = useAssetProbe(plan.imageSrc);
   const assetOk = probe === "checking" ? null : probe === "loaded";
   const status: VisualRenderStatus = signing ? "checking" : resolveVisualStatus(plan, assetOk);

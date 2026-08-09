@@ -1,6 +1,7 @@
 import { MathRenderer } from "@/components/MathRenderer";
 import type { Question } from "@/lib/test-generator";
 import { resolveQuestionParts } from "@/lib/question-table";
+import { deriveVisualRequirement } from "@/lib/sat-content";
 import { VisualRenderer } from "@/components/test/VisualRenderer";
 
 export { sanitizeSvg, DataTable } from "@/components/test/VisualRenderer";
@@ -17,8 +18,13 @@ interface QuestionMediaProps {
  * The prompt text and options are rendered by the caller.
  */
 export function QuestionMedia({ question, stimulusClassName }: QuestionMediaProps) {
-  const { table } = resolveQuestionParts(question);
-  if (!question.stimulus && !table && !question.figure && !question.image_url && !question.media) return null;
+  const { table, dataBlockUnrecoverable } = resolveQuestionParts(question);
+  // A question that requires a visual must still reach VisualRenderer even
+  // when no media field exists — that is exactly the quarantined case.
+  const requiresVisual = dataBlockUnrecoverable || deriveVisualRequirement(question) === "required";
+  if (!question.stimulus && !table && !question.figure && !question.image_url && !question.media && !requiresVisual)
+    return null;
+
 
   return (
     <div className="space-y-4">
