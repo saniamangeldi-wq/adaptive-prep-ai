@@ -24,7 +24,10 @@ export const VISUAL_COPY = {
   broken: "This practice item is temporarily unavailable because its required visual could not be loaded.",
   structuredFallback: "The original visual could not be displayed. Showing an accessible equivalent instead.",
   mathFallback: "A formatting issue was detected in this mathematical expression. A readable fallback is being shown.",
+  rawFallback: "Showing the original source image (unstyled) while visual delivery is being fixed.",
+  missingSource: "The original image for this question is missing from storage.",
 } as const;
+
 
 /** Resolves the figure a question intends to show, from any legacy field. */
 export function resolveFigure(question: Question) {

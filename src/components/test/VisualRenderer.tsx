@@ -205,16 +205,37 @@ export function VisualRenderer({ question, onBlocked }: VisualRendererProps) {
   }
 
   if (blocked) {
+    // TEMPORARY: prefer showing the original source image, unstyled, over an
+    // "unavailable" placeholder. Only when no source exists at all do we say so.
+    const rawSrc =
+      plan.imageSrc ||
+      signedSrc ||
+      question.image_url ||
+      question.media?.src ||
+      (question.figure && question.figure.type === "image" ? question.figure.src : undefined);
+
+    if (rawSrc) {
+      return (
+        <div className="my-4" data-testid="raw-image-fallback">
+          <img src={rawSrc} alt={plan.alt || "Original question figure"} />
+          <p className="mt-2 text-xs text-muted-foreground">{VISUAL_COPY.rawFallback}</p>
+          <p className="text-xs text-muted-foreground">{VISUAL_COPY.broken}</p>
+        </div>
+      );
+    }
+
     return (
       <div role="alert" className="my-4 rounded-lg border border-destructive/40 bg-destructive/10 px-6 py-6 text-center">
         <AlertTriangle className="mx-auto mb-2 h-5 w-5 text-destructive" aria-hidden="true" />
-        <p className="text-sm font-medium text-foreground">{VISUAL_COPY.broken}</p>
+        <p className="text-sm font-medium text-foreground">{VISUAL_COPY.missingSource}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{VISUAL_COPY.broken}</p>
         <div className="mt-3 flex justify-center">
           <VisualHealthBadge status={status} />
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="space-y-2">
