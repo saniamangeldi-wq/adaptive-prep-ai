@@ -110,3 +110,25 @@ describe("practice set scan", () => {
     expect(scan.ok + scan.degraded).toBe(2);
   });
 });
+
+describe("temporary raw image fallback", () => {
+  it("shows the original image when a required visual fails to render", async () => {
+    imageOutcome = "error";
+    render(<QuestionMedia question={{ ...question, figure: { type: "image", alt: "Graph", src: IMG } }} />);
+    const img = await screen.findByAltText("Graph");
+    expect(img).toHaveAttribute("src", IMG);
+    expect(screen.getByText(VISUAL_COPY.rawFallback)).toBeInTheDocument();
+    expect(screen.getByText(VISUAL_COPY.broken)).toBeInTheDocument();
+  });
+
+  it("shows a missing-file message when no source image exists", () => {
+    render(<QuestionMedia question={question} />);
+    expect(screen.getByText(VISUAL_COPY.missingSource)).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
+  it("leaves a text-only question untouched", () => {
+    const { container } = render(<QuestionMedia question={plainQuestion} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});
