@@ -6,7 +6,7 @@ import { QuestionCard } from "@/components/test/QuestionCard";
 import { QuestionNav } from "@/components/test/QuestionNav";
 import { TestTimer } from "@/components/test/TestTimer";
 import { DesmosCalculator } from "@/components/test/DesmosCalculator";
-import { ChevronLeft, ChevronRight, Send, AlertTriangle } from "lucide-react";
+import { Calculator as CalculatorIcon, ChevronLeft, ChevronRight, Send, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-generator";
@@ -307,6 +307,9 @@ export default function TakeTest() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {showCalculator && currentQuestion.section === "math" && (
+        <DesmosCalculator onClose={() => setShowCalculator(false)} />
+      )}
     </DashboardLayout>
   );
 }
