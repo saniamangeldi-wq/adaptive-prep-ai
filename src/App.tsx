@@ -38,6 +38,7 @@ import DigitalSATScoreCalculator from "./pages/DigitalSATScoreCalculator";
 import CreateSchool from "./pages/school/CreateSchool";
 import UploadTests from "./pages/admin/UploadTests";
 import PdfArchive from "./pages/admin/PdfArchive";
+import SearchConsole from "./pages/admin/SearchConsole";
 import SchoolOverview from "./pages/school/SchoolOverview";
 import SchoolTeachers from "./pages/school/SchoolTeachers";
 import SchoolStudents from "./pages/school/SchoolStudents";
