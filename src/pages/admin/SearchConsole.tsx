@@ -109,7 +109,7 @@ export default function SearchConsole() {
   if (!isAdmin) {
     return (
       <DashboardLayout>
-        <PageSeo title="Search Console" noindex />
+        <PageSeo title="Search Console" description="Google Search Console performance for AdaptivePrep" path="/admin/search-console" />
         <div className="p-6">
           <Card className="p-6">
             <p className="text-sm text-muted-foreground">This page is available to administrators only.</p>
@@ -123,7 +123,7 @@ export default function SearchConsole() {
 
   return (
     <DashboardLayout>
-      <PageSeo title="Search Console" noindex />
+      <PageSeo title="Search Console" description="Google Search Console performance for AdaptivePrep" path="/admin/search-console" />
       <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div>
