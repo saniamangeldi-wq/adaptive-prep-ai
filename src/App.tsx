@@ -162,7 +162,7 @@ function AppRoutes() {
       
       {/* Admin routes */}
       <Route path="/admin/upload-tests" element={<ProtectedRoute><UploadTests /></ProtectedRoute>} />
-      <Route path="/admin/pdf-archive" element={<ProtectedRoute><PdfArchive /></ProtectedRoute>} />
+      <Route path="/admin/search-console" element={<ProtectedRoute><SearchConsole /></ProtectedRoute>} />
       
       {/* School admin routes */}
       <Route path="/dashboard/school" element={<ProtectedRoute><SchoolOverview /></ProtectedRoute>} />
