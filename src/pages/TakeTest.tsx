@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { QuestionCard } from "@/components/test/QuestionCard";
 import { QuestionNav } from "@/components/test/QuestionNav";
 import { TestTimer } from "@/components/test/TestTimer";
-import { ChevronLeft, ChevronRight, Send, AlertTriangle } from "lucide-react";
+import { DesmosCalculator } from "@/components/test/DesmosCalculator";
+import { Calculator as CalculatorIcon, ChevronLeft, ChevronRight, Send, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-generator";
@@ -37,6 +38,7 @@ export default function TakeTest() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<string>>(new Set());
   const [isPaused, setIsPaused] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
@@ -198,6 +200,16 @@ export default function TakeTest() {
                 onTogglePause={() => setIsPaused(!isPaused)}
               />
             )}
+            {currentQuestion.section === "math" && (
+              <Button
+                variant="outline"
+                onClick={() => setShowCalculator((v) => !v)}
+                aria-pressed={showCalculator}
+              >
+                <CalculatorIcon className="w-4 h-4" />
+                Calculator
+              </Button>
+            )}
             <Button
               variant="hero"
               onClick={() => setShowSubmitDialog(true)}
@@ -295,6 +307,9 @@ export default function TakeTest() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {showCalculator && currentQuestion.section === "math" && (
+        <DesmosCalculator onClose={() => setShowCalculator(false)} />
+      )}
     </DashboardLayout>
   );
 }
