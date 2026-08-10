@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SATQuestionCard } from "./SATQuestionCard";
 import { SATTimer } from "./SATTimer";
+import { DesmosCalculator } from "@/components/test/DesmosCalculator";
 import { SATQuestionNav } from "./SATQuestionNav";
 import type { Question } from "@/lib/test-generator";
 
@@ -195,22 +196,10 @@ export function SATTestInterface({
         )}
       </div>
 
-      {/* Calculator Modal (placeholder) */}
       {showCalculator && section === "math" && (
-        <div className="fixed bottom-4 right-4 w-96 h-[500px] bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-50">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted">
-            <span className="font-medium text-sm">Desmos Calculator</span>
-            <Button variant="ghost" size="sm" onClick={() => setShowCalculator(false)}>
-              ✕
-            </Button>
-          </div>
-          <iframe
-            src="https://www.desmos.com/calculator"
-            className="w-full h-[calc(100%-40px)]"
-            title="Desmos Calculator"
-          />
-        </div>
+        <DesmosCalculator onClose={() => setShowCalculator(false)} />
       )}
+
     </div>
   );
 }
