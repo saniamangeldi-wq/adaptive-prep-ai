@@ -148,6 +148,6 @@ describe("line chart rendering", () => {
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Algeria" })).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: "1970" })).toBeInTheDocument();
-    expect(screen.queryByText(VISUAL_COPY.unavailableTitle)).not.toBeInTheDocument();
+    expect(screen.queryByText(VISUAL_COPY.broken)).not.toBeInTheDocument();
   });
 });
