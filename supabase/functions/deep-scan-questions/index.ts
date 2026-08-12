@@ -4,7 +4,6 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const MAINTENANCE_TOKEN = Deno.env.get("SAT_MEDIA_MAINTENANCE_TOKEN") ?? "";
-const ONE_SHOT = "tmp-deepscan-3f9a2c";
 
 /**
  * Deterministic deep scan + repair of the SAT question corpus.
@@ -140,7 +139,7 @@ Deno.serve(async (req) => {
     if (!token) return json({ error: "Unauthorized" }, 401);
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-    let authorized = token === SERVICE_ROLE || token === ONE_SHOT || (!!MAINTENANCE_TOKEN && token === MAINTENANCE_TOKEN);
+    let authorized = token === SERVICE_ROLE || (!!MAINTENANCE_TOKEN && token === MAINTENANCE_TOKEN);
     if (!authorized) {
       const { data: userRes } = await admin.auth.getUser(token);
       const uid = userRes?.user?.id;
