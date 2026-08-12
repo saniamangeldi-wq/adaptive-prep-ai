@@ -48,6 +48,7 @@ import SchoolBilling from "./pages/school/SchoolBilling";
  
 // Tutor pages
 import TutorInvite from "./pages/tutor/TutorInvite";
+import StudentProgressDetail from "./pages/StudentProgressDetail";
 import TutorLeaderboard from "./pages/tutor/TutorLeaderboard";
 
 // Teacher pages
