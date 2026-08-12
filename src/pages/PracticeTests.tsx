@@ -78,6 +78,7 @@ export default function PracticeTests() {
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const { user, profile, refreshProfile } = useAuth();
   const [isToppingUp, setIsToppingUp] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const availableTopics: { section: "math" | "reading_writing"; label: string; topic: string }[] = (() => {
     const groups: { section: "math" | "reading_writing"; label: string; topic: string }[] = [];
