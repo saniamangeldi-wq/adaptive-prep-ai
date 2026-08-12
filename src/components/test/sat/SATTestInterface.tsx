@@ -19,6 +19,10 @@ interface SATTestInterfaceProps {
   onToggleFlag: (questionId: string) => void;
   onTimeUp: () => void;
   onReview: () => void;
+  /** Question to open on (used when resuming an interrupted test). */
+  initialQuestionIndex?: number;
+  /** Reports navigation so the session snapshot can restore the exact question. */
+  onQuestionIndexChange?: (index: number) => void;
 }
 
 export function SATTestInterface({
@@ -32,10 +36,18 @@ export function SATTestInterface({
   onToggleFlag,
   onTimeUp,
   onReview,
+  initialQuestionIndex = 0,
+  onQuestionIndexChange,
 }: SATTestInterfaceProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(
+    Math.min(Math.max(0, initialQuestionIndex), Math.max(0, questions.length - 1))
+  );
   const [showCalculator, setShowCalculator] = useState(false);
   const [showNav, setShowNav] = useState(false);
+
+  useEffect(() => {
+    onQuestionIndexChange?.(currentIndex);
+  }, [currentIndex, onQuestionIndexChange]);
 
   const currentQuestion = questions[currentIndex];
 
