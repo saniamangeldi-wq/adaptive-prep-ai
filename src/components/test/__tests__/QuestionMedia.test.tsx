@@ -132,3 +132,22 @@ describe("temporary raw image fallback", () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+describe("line chart rendering", () => {
+  const lineTable = {
+    headers: ["Year", "Algeria", "France"],
+    rows: [["1970", "39.5", "71.1"], ["1980", "43.5", "73.3"]],
+    chart: "line" as const,
+    caption: "Urban Population of Algeria and France",
+  };
+
+  it("renders a line chart plus the accessible data table", async () => {
+    render(<QuestionMedia question={{ ...question, id: "q-line", table: lineTable }} />);
+    await waitFor(() => expect(screen.getByText("Urban Population of Algeria and France")).toBeInTheDocument());
+    // Accessible table fallback is always rendered underneath the chart.
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Algeria" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "1970" })).toBeInTheDocument();
+    expect(screen.queryByText(VISUAL_COPY.unavailableTitle)).not.toBeInTheDocument();
+  });
+});
