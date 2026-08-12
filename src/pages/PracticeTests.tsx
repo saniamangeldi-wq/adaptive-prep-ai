@@ -151,6 +151,21 @@ export default function PracticeTests() {
         return;
       }
 
+      // Unfinished tests left behind were just flagged as abandoned.
+      if (test.abandonNotice) {
+        const { abandoned, deducted, warning } = test.abandonNotice;
+        toast({
+          title: warning
+            ? "Warning: unfinished test detected"
+            : "Questions deducted for an unfinished test",
+          description: warning
+            ? `You left ${abandoned} test${abandoned > 1 ? "s" : ""} unfinished. It won't count towards your progress. Next time, every question served in an abandoned test is deducted from your bank.`
+            : `${deducted} question${deducted === 1 ? "" : "s"} were deducted because you left ${abandoned} test${abandoned > 1 ? "s" : ""} unfinished. Your tutor or teacher has been notified.`,
+          variant: warning ? "default" : "destructive",
+        });
+        refreshProfile?.();
+      }
+
       // Detect if the official test was padded (some questions repeat because the bank is short)
       if (testMode === "official") {
         const rwUnique = new Set(
