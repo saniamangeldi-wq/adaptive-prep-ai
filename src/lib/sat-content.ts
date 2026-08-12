@@ -178,7 +178,12 @@ export function extractLineGraphTable(rawText: string): { table?: QuestionTable;
 
     const seriesHeader = line.match(SERIES_HEADER_RE);
     if (seriesHeader) {
-      current = seriesHeader[1].trim();
+      const name = seriesHeader[1].trim();
+      // Legend entries may carry an article the block header drops
+      // ("the Philippines" vs "The Philippines line:").
+      current =
+        series.find((s) => s.toLowerCase() === name.toLowerCase() || s.toLowerCase().endsWith(` ${name.toLowerCase()}`)) ??
+        name;
       if (!points.has(current)) points.set(current, new Map());
       lastDataIdx = i;
       continue;
