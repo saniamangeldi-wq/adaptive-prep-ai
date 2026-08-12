@@ -192,6 +192,8 @@ export function TeacherDashboard() {
           </div>
         </div>
       </div>
+
+      <AbandonedTestsPanel role="teacher" />
     </div>
   );
 }
