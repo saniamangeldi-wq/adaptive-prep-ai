@@ -249,11 +249,18 @@ export function extractGraphCaption(preamble: string, series: string[] = []): st
     .filter((part) => part.split(/\s+/).length >= 3)
     .sort((a, b) => b.length - a.length)[0];
   if (!candidate || candidate.length < 20 || candidate.length > 180) return undefined;
-  // Un-glue words the PDF extractor ran together ("Salesin Four" -> "Sales in Four").
-  return candidate
-    .replace(/([a-z]{3,})(in|from|of|and|for|by|to|with)(?=[A-Z ])/g, "$1 $2")
-    .replace(/[,\s]+$/, "")
-    .trim();
+  const MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December";
+  return (
+    candidate
+      // Month tick labels glue onto the title the same way numbers do.
+      .replace(new RegExp(`^.*(?:${MONTHS})(?=[A-Z])`), "")
+      // Un-glue words the extractor ran together ("Salesin Four" -> "Sales in Four").
+      .replace(/([a-z]{3,})(in|from|of|and|for|by|with)(?=[A-Z ])/g, "$1 $2")
+      .replace(/\b(in|from|of|and|for|by|to|with)(?=[A-Z])/g, "$1 ")
+      .replace(/[,\s]+$/, "")
+      .replace(/\s+(in|from|of|and|for|by|to|with)$/, "")
+      .trim()
+  );
 }
 
 /** The x-axis title is glued right before the legend names in the preamble. */
