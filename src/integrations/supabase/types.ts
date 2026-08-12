@@ -1405,6 +1405,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          abandon_warnings: number
           avatar_url: string | null
           cognitive_baseline_completed: boolean
           created_at: string
@@ -1447,6 +1448,7 @@ export type Database = {
           vak_visual_pct: number | null
         }
         Insert: {
+          abandon_warnings?: number
           avatar_url?: string | null
           cognitive_baseline_completed?: boolean
           created_at?: string
@@ -1489,6 +1491,7 @@ export type Database = {
           vak_visual_pct?: number | null
         }
         Update: {
+          abandon_warnings?: number
           avatar_url?: string | null
           cognitive_baseline_completed?: boolean
           created_at?: string
@@ -1529,6 +1532,42 @@ export type Database = {
           vak_sub_type?: string | null
           vak_tier_taken?: string | null
           vak_visual_pct?: number | null
+        }
+        Relationships: []
+      }
+      question_topups: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          id: string
+          questions_granted: number
+          status: string
+          stripe_session_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          questions_granted?: number
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          questions_granted?: number
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2442,12 +2481,15 @@ export type Database = {
       }
       test_attempts: {
         Row: {
+          abandoned: boolean
+          abandoned_at: string | null
           answers: Json
           completed_at: string | null
           correct_answers: number | null
           created_at: string
           feedback: Json | null
           id: string
+          penalty_questions: number
           score: number | null
           served_question_ids: string[]
           started_at: string
@@ -2457,12 +2499,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          abandoned?: boolean
+          abandoned_at?: string | null
           answers?: Json
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string
           feedback?: Json | null
           id?: string
+          penalty_questions?: number
           score?: number | null
           served_question_ids?: string[]
           started_at?: string
@@ -2472,12 +2517,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          abandoned?: boolean
+          abandoned_at?: string | null
           answers?: Json
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string
           feedback?: Json | null
           id?: string
+          penalty_questions?: number
           score?: number | null
           served_question_ids?: string[]
           started_at?: string

@@ -1,3 +1,4 @@
+import { AbandonedTestsPanel } from "@/components/dashboard/AbandonedTestsPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   Users, 
@@ -103,6 +104,8 @@ export function TutorDashboard() {
           color="from-blue-500 to-blue-400"
         />
       </div>
+
+      <AbandonedTestsPanel role="tutor" />
 
       {/* Recent activity */}
       <div className="p-6 rounded-2xl bg-card border border-border/50">

@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { 
@@ -75,7 +76,9 @@ export default function PracticeTests() {
   const [isStarting, setIsStarting] = useState(false);
   const [view, setView] = useState<"menu" | "config">("menu");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
+  const [isToppingUp, setIsToppingUp] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const availableTopics: { section: "math" | "reading_writing"; label: string; topic: string }[] = (() => {
     const groups: { section: "math" | "reading_writing"; label: string; topic: string }[] = [];
@@ -100,6 +103,51 @@ export default function PracticeTests() {
   const selectedLength = { id: length, label: baseTestLengths.find(l => l.id === length)?.label || "", ...getLengthMeta(length, testType) };
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
   const isTier0 = profile?.tier === "tier_0";
+
+  // One-off top-up: $1 / ₸500 for 98 questions (44 Math + 54 Reading & Writing).
+  const handleTopUp = async (currency: "usd" | "kzt") => {
+    if (isToppingUp) return;
+    setIsToppingUp(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-question-topup", {
+        body: { currency },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url as string;
+    } catch (e) {
+      toast({
+        title: "Couldn't start checkout",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsToppingUp(false);
+    }
+  };
+
+  useEffect(() => {
+    const status = searchParams.get("topup");
+    const sessionId = searchParams.get("session_id");
+    if (status !== "success" || !sessionId) return;
+
+    (async () => {
+      const { data } = await supabase.functions.invoke("verify-question-topup", {
+        body: { session_id: sessionId },
+      });
+      if (data?.granted) {
+        toast({
+          title: "Questions added",
+          description: `${data.questions ?? 98} questions were added to your bank.`,
+        });
+        refreshProfile?.();
+      }
+      searchParams.delete("topup");
+      searchParams.delete("session_id");
+      setSearchParams(searchParams, { replace: true });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
 
   const handleStartTest = async () => {
     if (!user || isStarting) return;
@@ -149,6 +197,21 @@ export default function PracticeTests() {
         });
         setIsStarting(false);
         return;
+      }
+
+      // Unfinished tests left behind were just flagged as abandoned.
+      if (test.abandonNotice) {
+        const { abandoned, deducted, warning } = test.abandonNotice;
+        toast({
+          title: warning
+            ? "Warning: unfinished test detected"
+            : "Questions deducted for an unfinished test",
+          description: warning
+            ? `You left ${abandoned} test${abandoned > 1 ? "s" : ""} unfinished. It won't count towards your progress. Next time, every question served in an abandoned test is deducted from your bank.`
+            : `${deducted} question${deducted === 1 ? "" : "s"} were deducted because you left ${abandoned} test${abandoned > 1 ? "s" : ""} unfinished. Your tutor or teacher has been notified.`,
+          variant: warning ? "default" : "destructive",
+        });
+        refreshProfile?.();
       }
 
       // Detect if the official test was padded (some questions repeat because the bank is short)
@@ -264,6 +327,36 @@ export default function PracticeTests() {
                     </Link>
                   </Button>
                 )}
+              </div>
+            )}
+
+            {/* One-off top-up */}
+            {!isTier0 && (
+              <div className="p-4 rounded-xl bg-card border border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="text-foreground font-medium">Top up 98 questions</div>
+                  <p className="text-sm text-muted-foreground">
+                    One full-length test — 44 Math + 54 Reading &amp; Writing. Added instantly after payment.
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isToppingUp}
+                    onClick={() => handleTopUp("usd")}
+                  >
+                    $1
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isToppingUp}
+                    onClick={() => handleTopUp("kzt")}
+                  >
+                    ₸500
+                  </Button>
+                </div>
               </div>
             )}
 

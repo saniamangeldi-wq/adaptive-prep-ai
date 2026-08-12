@@ -137,6 +137,13 @@ export interface GeneratedTest {
   poolSize: number;
   /** User-facing warning when the bank is too small to deliver a full test. */
   poolWarning?: string;
+  /** Set when unfinished attempts were flagged as abandoned before this test started. */
+  abandonNotice?: {
+    abandoned: number;
+    deducted: number;
+    warning: boolean;
+    questionsRemaining?: number;
+  };
 }
 
 // Unbiased Fisher-Yates shuffle (replaces the biased `.sort(() => Math.random() - 0.5)` pattern).
@@ -236,6 +243,20 @@ function fillToTarget(
 
 export async function generateTest(config: TestConfig, userId: string): Promise<GeneratedTest | null> {
   const targetQuestions = getTargetQuestions(config);
+
+  // Starting a new test closes out any unfinished one: it is flagged as
+  // abandoned (never counted in progress), the student's tutor/teacher is
+  // notified, and after the first warning every served question is deducted
+  // from their bank. Failures here must never block starting a test.
+  let abandonNotice: GeneratedTest["abandonNotice"];
+  try {
+    const { data: flagged } = await supabase.functions.invoke("flag-abandoned-tests");
+    if (flagged && (flagged as { abandoned?: number }).abandoned) {
+      abandonNotice = flagged as GeneratedTest["abandonNotice"];
+    }
+  } catch (e) {
+    console.warn("[generateTest] abandonment check failed", e);
+  }
 
   // Respect the user's explicit difficulty choice. Adaptive override is disabled
   // because users expect the difficulty they picked.

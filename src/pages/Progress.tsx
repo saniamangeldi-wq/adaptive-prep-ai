@@ -76,6 +76,7 @@ export default function Progress() {
         .from("test_attempts")
         .select("id, score, correct_answers, total_questions, completed_at, feedback, created_at")
         .eq("user_id", user.id)
+        .eq("abandoned", false)
         .order("created_at", { ascending: true });
 
       if (error) throw error;

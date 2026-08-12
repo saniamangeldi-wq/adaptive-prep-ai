@@ -45,6 +45,7 @@ interface TestFeedback {
         .select("score, correct_answers, total_questions, completed_at, feedback")
          .eq("user_id", user.id)
          .not("completed_at", "is", null)
+         .eq("abandoned", false)
          .order("created_at", { ascending: true });
        
        if (error) throw error;

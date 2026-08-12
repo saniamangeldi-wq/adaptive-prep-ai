@@ -1,3 +1,4 @@
+import { AbandonedTestsPanel } from "@/components/dashboard/AbandonedTestsPanel";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -192,6 +193,8 @@ export function TeacherDashboard() {
           </div>
         </div>
       </div>
+
+      <AbandonedTestsPanel role="teacher" />
     </div>
   );
 }
