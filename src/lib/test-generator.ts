@@ -451,8 +451,10 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
       test_id: rawTests[0].id,
       answers: [],
       total_questions: selectedQuestions.length,
+      served_question_ids: selectedQuestions.map((q) => q.id.replace(/__rep\d+$/, "")),
       started_at: new Date().toISOString(),
     })
+
     .select()
     .single();
 
