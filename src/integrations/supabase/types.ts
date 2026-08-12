@@ -2449,6 +2449,7 @@ export type Database = {
           feedback: Json | null
           id: string
           score: number | null
+          served_question_ids: string[]
           started_at: string
           test_id: string
           time_spent_seconds: number | null
@@ -2463,6 +2464,7 @@ export type Database = {
           feedback?: Json | null
           id?: string
           score?: number | null
+          served_question_ids?: string[]
           started_at?: string
           test_id: string
           time_spent_seconds?: number | null
@@ -2477,6 +2479,7 @@ export type Database = {
           feedback?: Json | null
           id?: string
           score?: number | null
+          served_question_ids?: string[]
           started_at?: string
           test_id?: string
           time_spent_seconds?: number | null
