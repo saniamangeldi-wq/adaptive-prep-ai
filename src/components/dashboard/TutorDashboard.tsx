@@ -139,20 +139,37 @@ export function TutorDashboard() {
 
       <AbandonedTestsPanel role="tutor" />
 
-      {/* Recent activity */}
+      {/* Roster */}
       <div className="p-6 rounded-2xl bg-card border border-border/50">
-        <h3 className="font-semibold text-foreground mb-4">Recent Student Activity</h3>
-        <div className="text-center py-8 text-muted-foreground">
-          <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No students added yet</p>
-          <p className="text-sm mt-1">Add students to start tracking their progress</p>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link to="/dashboard/students/add">
-              <UserPlus className="w-4 h-4" />
-              Add Your First Student
-            </Link>
-          </Button>
-        </div>
+        <h3 className="font-semibold text-foreground mb-4">Your Students</h3>
+        {roster && roster.length > 0 ? (
+          <div className="space-y-2">
+            {roster.map((s: { user_id: string; full_name: string | null; email: string | null }) => (
+              <Link
+                key={s.user_id}
+                to={`/dashboard/students/${s.user_id}`}
+                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/30 border border-border/40 hover:border-primary/40 transition-colors"
+              >
+                <span className="text-sm text-foreground truncate">
+                  {s.full_name || s.email || "Student"}
+                </span>
+                <span className="text-xs text-primary shrink-0">View progress</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>No students added yet</p>
+            <p className="text-sm mt-1">Add students to start tracking their progress</p>
+            <Button variant="outline" className="mt-4" asChild>
+              <Link to="/dashboard/students/add">
+                <UserPlus className="w-4 h-4" />
+                Add Your First Student
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
