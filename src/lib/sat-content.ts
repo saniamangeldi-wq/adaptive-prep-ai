@@ -142,7 +142,111 @@ export function extractEmbeddedChartTable(rawText: string): { table?: QuestionTa
   };
 }
 
-export function shouldShowVisualFallback(question: Question, promptText: string, hasRecoveredTable = false): boolean {
+const LINE_HEADER_RE = /^The following (\d+) lines are shown:\s*$/i;
+const SERIES_HEADER_RE = /^The (.+?) line:\s*$/i;
+const POINT_RE =
+  /^(?:Begins at|(?:Rises|Falls)(?: sharply| gradually)? to|Remains level to|Ends at)\s+(.+?),\s*([^,]*\d[^,]*)$/i;
+
+function cleanNumberWord(value: string): string {
+  return value.trim().replace(/^negative\s+/i, "−");
+}
+
+/**
+ * Recovers a real multi-series dataset from imported SAT questions whose line
+ * graph was flattened into the stem as a screen-reader narration
+ * ("The following 4 lines are shown: ... Begins at X, Y / Rises sharply to X, Y").
+ * The glued axis/legend preamble before the narration is discarded and only the
+ * real prose after it is kept.
+ */
+export function extractLineGraphTable(rawText: string): { table?: QuestionTable; text: string } {
+  if (!rawText || !/The following \d+ lines are shown:/i.test(rawText)) return { text: rawText };
+
+  const lines = rawText.split(/\r?\n/);
+  const headerIdx = lines.findIndex((l) => LINE_HEADER_RE.test(l.trim()));
+  if (headerIdx === -1) return { text: rawText };
+
+  const series: string[] = [];
+  const points = new Map<string, Map<string, string>>();
+  const xOrder: string[] = [];
+  let current: string | null = null;
+  let i = headerIdx + 1;
+  let lastDataIdx = headerIdx;
+
+  for (; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const seriesHeader = line.match(SERIES_HEADER_RE);
+    if (seriesHeader) {
+      current = seriesHeader[1].trim();
+      if (!points.has(current)) points.set(current, new Map());
+      lastDataIdx = i;
+      continue;
+    }
+
+    const point = line.match(POINT_RE);
+    if (point && current) {
+      const x = cleanNumberWord(point[1]);
+      const y = cleanNumberWord(point[2]);
+      if (!xOrder.includes(x)) xOrder.push(x);
+      points.get(current)!.set(x, y);
+      lastDataIdx = i;
+      continue;
+    }
+
+    // Legend names listed before the first series block.
+    if (!current && line.length <= 60 && !/[.?!]$/.test(line)) {
+      series.push(line);
+      lastDataIdx = i;
+      continue;
+    }
+    break; // first real prose line ends the narration block
+  }
+
+  const names = [...points.keys()];
+  if (names.length < 1 || xOrder.length < 2) return { text: rawText };
+
+  const prose = lines.slice(lastDataIdx + 1).join("\n").trim();
+  if (prose.length < 40) return { text: rawText };
+
+  const ordered = series.filter((s) => points.has(s)).concat(names.filter((n) => !series.includes(n)));
+  const rows = xOrder.map((x) => [x, ...ordered.map((s) => points.get(s)!.get(x) ?? "")]);
+
+  const preamble = lines.slice(0, headerIdx).join(" ");
+  const caption = extractGraphCaption(preamble);
+  const xLabel = extractAxisLabel(preamble, ordered) ?? "";
+
+  return {
+    table: {
+      headers: [xLabel, ...ordered],
+      rows,
+      chart: "line",
+      ...(caption ? { caption } : {}),
+    },
+    text: normalizeSatText(prose),
+  };
+}
+
+/** Best-effort chart title out of the glued axis/legend preamble. */
+export function extractGraphCaption(preamble: string): string | undefined {
+  const matches = preamble.match(/([A-Z][A-Za-z'’-]*(?: [A-Za-z0-9'’,\-–—()%]+){3,})/g);
+  const best = matches?.sort((a, b) => b.length - a.length)[0]?.trim();
+  return best && best.length >= 20 && best.length <= 180 ? best : undefined;
+}
+
+/** The x-axis title is glued right before the legend names in the preamble. */
+function extractAxisLabel(preamble: string, series: string[]): string | undefined {
+  let head = preamble;
+  for (const name of series) {
+    const idx = head.indexOf(name);
+    if (idx > 0) head = head.slice(0, idx);
+  }
+  const match = head.trim().match(/([A-Z][a-z]+(?: [a-z]+){0,3})$/);
+  const label = match?.[1]?.trim();
+  return label && label.length <= 40 ? label : undefined;
+}
+
+
   if (hasRecoveredTable) return false;
   if (question.visual_unavailable) return true;
   if (question.figure && !isPotentiallyRenderableFigure(question.figure)) return true;
