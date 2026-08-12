@@ -153,27 +153,28 @@ export function StudentDashboard() {
         <StatCard
           icon={Trophy}
           label={t("dashboard.sat_score")}
-          value={hasProgress ? totalSATScore.toString() : "--"}
-          subtext={hasProgress ? t("dashboard.scale_400_1600") : t("dashboard.no_tests_yet")}
+          value={totalSATScore === null ? "--" : totalSATScore.toString()}
+          subtext={totalSATScore !== null ? t("dashboard.scale_400_1600") : t("dashboard.no_tests_yet")}
           color="from-yellow-500 to-amber-400"
           tooltip={t("dashboard.tooltip_sat_score")}
         />
         <StatCard
           icon={Calculator}
           label={t("dashboard.math")}
-          value={hasProgress ? mathScore.toString() : "--"}
-          subtext={hasProgress ? t("dashboard.range_200_800") : t("dashboard.start_practicing")}
+          value={mathScore === null ? "--" : mathScore.toString()}
+          subtext={mathScore !== null ? t("dashboard.range_200_800") : t("dashboard.start_practicing")}
           color="from-primary to-teal-400"
           tooltip={t("dashboard.tooltip_math")}
         />
         <StatCard
           icon={PenLine}
           label={t("dashboard.reading_writing")}
-          value={hasProgress ? rwScore.toString() : "--"}
-          subtext={hasProgress ? t("dashboard.range_200_800") : t("dashboard.start_practicing")}
+          value={rwScore === null ? "--" : rwScore.toString()}
+          subtext={rwScore !== null ? t("dashboard.range_200_800") : t("dashboard.start_practicing")}
           color="from-purple-500 to-pink-400"
           tooltip={t("dashboard.tooltip_rw")}
         />
+
         <StatCard
           icon={Flame}
           label={t("dashboard.streak")}
@@ -243,7 +244,7 @@ export function StudentDashboard() {
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-yellow-400" />
               <span className="text-muted-foreground">{t("dashboard.sat_score")}:</span>
-              <span className="font-semibold text-foreground">{hasProgress ? totalSATScore : "—"}</span>
+              <span className="font-semibold text-foreground">{totalSATScore === null ? "—" : totalSATScore}</span>
             </div>
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />

@@ -39,10 +39,8 @@ import { Link } from "react-router-dom";
 import { PageSeo } from "@/components/seo/PageSeo";
 import { toast } from "sonner";
 
-// Convert raw accuracy (0-100%) to SAT scaled score (200-800)
-function toSATScore(accuracy: number): number {
-  return Math.round(200 + (accuracy / 100) * 600);
-}
+import { sectionScore, totalScore } from "@/lib/sat-score";
+
 
 interface SectionFeedback {
   correct: number;
@@ -102,22 +100,19 @@ export default function Progress() {
   for (const attempt of completedAttempts) {
     const feedback = attempt.feedback as TestFeedback | null;
     if (feedback?.bySection) {
-      if (feedback.bySection.math) {
-        totalMathCorrect += feedback.bySection.math.correct;
-        totalMathQuestions += feedback.bySection.math.total;
-        perTestMath.push(
-          toSATScore((feedback.bySection.math.correct / feedback.bySection.math.total) * 100)
-        );
+      const m = feedback.bySection.math;
+      if (m && m.total > 0) {
+        totalMathCorrect += m.correct;
+        totalMathQuestions += m.total;
+        const s = sectionScore(m.correct, m.total, "math");
+        if (s !== null) perTestMath.push(s);
       }
-      if (feedback.bySection.reading_writing) {
-        totalRWCorrect += feedback.bySection.reading_writing.correct;
-        totalRWQuestions += feedback.bySection.reading_writing.total;
-        perTestRW.push(
-          toSATScore(
-            (feedback.bySection.reading_writing.correct / feedback.bySection.reading_writing.total) *
-              100
-          )
-        );
+      const rw = feedback.bySection.reading_writing;
+      if (rw && rw.total > 0) {
+        totalRWCorrect += rw.correct;
+        totalRWQuestions += rw.total;
+        const s = sectionScore(rw.correct, rw.total, "reading_writing");
+        if (s !== null) perTestRW.push(s);
       }
     }
   }
@@ -125,9 +120,11 @@ export default function Progress() {
   const mathAccuracy = totalMathQuestions > 0 ? (totalMathCorrect / totalMathQuestions) * 100 : 0;
   const rwAccuracy = totalRWQuestions > 0 ? (totalRWCorrect / totalRWQuestions) * 100 : 0;
 
-  const mathScore = hasProgress ? toSATScore(mathAccuracy) : 0;
-  const rwScore = hasProgress ? toSATScore(rwAccuracy) : 0;
-  const totalSATScore = hasProgress ? mathScore + rwScore : 0;
+  // null = the section was never attempted, so there is no score to report.
+  const mathScore = sectionScore(totalMathCorrect, totalMathQuestions, "math");
+  const rwScore = sectionScore(totalRWCorrect, totalRWQuestions, "reading_writing");
+  const totalSATScore = totalScore(mathScore, rwScore);
+
 
   const avgAccuracy = hasProgress
     ? Math.round(
@@ -154,40 +151,33 @@ export default function Progress() {
   // Format progress data for chart
   const progressData = completedAttempts.map((attempt, index) => {
     const feedback = attempt.feedback as TestFeedback | null;
-    let testMathAcc = 0;
-    let testRWAcc = 0;
+    const m = feedback?.bySection?.math;
+    const rw = feedback?.bySection?.reading_writing;
 
-    if (feedback?.bySection) {
-      if (feedback.bySection.math && feedback.bySection.math.total > 0) {
-        testMathAcc = (feedback.bySection.math.correct / feedback.bySection.math.total) * 100;
-      }
-      if (feedback.bySection.reading_writing && feedback.bySection.reading_writing.total > 0) {
-        testRWAcc =
-          (feedback.bySection.reading_writing.correct / feedback.bySection.reading_writing.total) *
-          100;
-      }
-    }
-
-    const testMathScore = toSATScore(testMathAcc);
-    const testRWScore = toSATScore(testRWAcc);
+    // Sections the test never covered stay null so recharts draws a gap
+    // instead of plotting a fake 200.
+    const testMathScore = m ? sectionScore(m.correct, m.total, "math") : null;
+    const testRWScore = rw ? sectionScore(rw.correct, rw.total, "reading_writing") : null;
 
     return {
       date: `Test ${index + 1}`,
-      score: testMathScore + testRWScore,
+      score: totalScore(testMathScore, testRWScore),
       math: testMathScore,
       rw: testRWScore,
       target: targetScore,
     };
   });
 
-  // Projected score line: extrapolate the last 2 data points forward
+
+  // Projected score line: extrapolate the last 2 scored data points forward.
   const chartDataWithProjection = [...progressData];
-  if (progressData.length >= 2) {
-    const last = progressData[progressData.length - 1];
-    const prev = progressData[progressData.length - 2];
-    const trend = last.score - prev.score;
-    const projected1 = Math.min(1600, Math.max(400, last.score + trend));
-    const projected2 = Math.min(1600, Math.max(400, last.score + trend * 2));
+  const scoredPoints = progressData.filter((p) => p.score !== null);
+  if (scoredPoints.length >= 2) {
+    const last = scoredPoints[scoredPoints.length - 1];
+    const prev = scoredPoints[scoredPoints.length - 2];
+    const trend = (last.score as number) - (prev.score as number);
+    const projected1 = Math.min(1600, Math.max(400, (last.score as number) + trend));
+    const projected2 = Math.min(1600, Math.max(400, (last.score as number) + trend * 2));
     chartDataWithProjection.push(
       { date: "Next", score: null as any, math: null as any, rw: null as any, target: targetScore, projected: projected1 } as any,
       { date: "Next+1", score: null as any, math: null as any, rw: null as any, target: targetScore, projected: projected2 } as any
@@ -199,6 +189,7 @@ export default function Progress() {
     // Connect: set last real point's projected to its score
     (chartDataWithProjection[progressData.length - 1] as any).projected = last.score;
   }
+
 
   // Motivational insight
   const getMotivationalInsight = (): string => {
@@ -313,10 +304,10 @@ export default function Progress() {
               <span className="text-xs font-medium text-muted-foreground">400–1600 scale</span>
             </div>
             <div className="text-2xl font-bold text-foreground">
-              {hasProgress ? totalSATScore : "—"}
+              {totalSATScore ?? "—"}
             </div>
             <div className="text-sm text-muted-foreground">Total SAT Score</div>
-            {hasProgress && (
+            {totalSATScore !== null && (
               <>
                 <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
                   <div
@@ -329,6 +320,7 @@ export default function Progress() {
                 </p>
               </>
             )}
+
             {hasSetTarget && (
               <button
                 onClick={() => setShowTargetInput(!showTargetInput)}
@@ -370,7 +362,7 @@ export default function Progress() {
               <TrendArrow trend={mathTrend} />
             </div>
             <div className="text-2xl font-bold text-foreground">
-              {hasProgress ? mathScore : "—"}
+              {mathScore ?? "—"}
             </div>
             <div className="text-sm text-muted-foreground">Math</div>
           </div>
@@ -382,7 +374,7 @@ export default function Progress() {
               <TrendArrow trend={rwTrend} />
             </div>
             <div className="text-2xl font-bold text-foreground">
-              {hasProgress ? rwScore : "—"}
+              {rwScore ?? "—"}
             </div>
             <div className="text-sm text-muted-foreground">Reading & Writing</div>
           </div>

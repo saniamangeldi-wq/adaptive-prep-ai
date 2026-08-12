@@ -1,12 +1,9 @@
  import { useAuth } from "@/contexts/AuthContext";
  import { supabase } from "@/integrations/supabase/client";
  import { useQuery } from "@tanstack/react-query";
+ import { sectionScore, totalScore } from "@/lib/sat-score";
  
-// Convert raw accuracy (0-100%) to SAT scaled score (200-800)
-function toSATScore(accuracy: number): number {
-  // Linear approximation: 0% = 200, 100% = 800
-  return Math.round(200 + (accuracy / 100) * 600);
-}
+
 
 interface SectionFeedback {
   correct: number;
@@ -21,17 +18,19 @@ interface TestFeedback {
 }
 
  export interface DashboardStats {
-   bestScore: number;
+   /** null when no completed attempt yields a usable score. */
+   bestScore: number | null;
    avgAccuracy: number;
    testsTaken: number;
    scoreChange: number;
    hasProgress: boolean;
    isLoading: boolean;
-  // SAT-style scores
-  mathScore: number;
-  rwScore: number;
-  totalSATScore: number;
+  // SAT-style scores. null = section never attempted (render "—", not 200).
+  mathScore: number | null;
+  rwScore: number | null;
+  totalSATScore: number | null;
  }
+
  
  export function useDashboardStats(): DashboardStats {
    const { user } = useAuth();
@@ -93,15 +92,23 @@ interface TestFeedback {
     }
   }
 
-  const mathAccuracy = totalMathQuestions > 0 ? (totalMathCorrect / totalMathQuestions) * 100 : 0;
-  const rwAccuracy = totalRWQuestions > 0 ? (totalRWCorrect / totalRWQuestions) * 100 : 0;
-  
-  const mathScore = hasProgress ? toSATScore(mathAccuracy) : 0;
-  const rwScore = hasProgress ? toSATScore(rwAccuracy) : 0;
-  const totalSATScore = hasProgress ? mathScore + rwScore : 0;
-  
-  // Best score is now based on SAT total
+  // A section with no attempted questions has NO score — it must stay null so
+  // the UI renders "—" instead of the misleading 200 floor.
+  const mathScore = sectionScore(totalMathCorrect, totalMathQuestions, "math");
+  const rwScore = sectionScore(totalRWCorrect, totalRWQuestions, "reading_writing");
+
+  // Older attempts predate per-section feedback: fall back to the overall
+  // correct/total so those students still see a real total instead of "—".
+  let totalSATScore = totalScore(mathScore, rwScore);
+  if (totalSATScore === null && hasProgress) {
+    const overallCorrect = completedAttempts.reduce((s, a) => s + (a.correct_answers || 0), 0);
+    const overallTotal = completedAttempts.reduce((s, a) => s + (a.total_questions || 0), 0);
+    const projected = sectionScore(overallCorrect, overallTotal, "math");
+    totalSATScore = projected === null ? null : Math.min(1600, projected * 2);
+  }
+
   const bestScore = totalSATScore;
+
 
    return {
      bestScore,
