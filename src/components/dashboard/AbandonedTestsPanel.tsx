@@ -25,12 +25,10 @@ export function AbandonedTestsPanel({ role }: { role: "tutor" | "teacher" }) {
     queryFn: async (): Promise<Row[]> => {
       if (!user?.id) return [];
 
-      const linkTable = role === "tutor" ? "tutor_students" : "teacher_students";
-      const ownerCol = role === "tutor" ? "tutor_id" : "teacher_id";
-      const { data: links } = await supabase
-        .from(linkTable)
-        .select("student_id")
-        .eq(ownerCol, user.id);
+      const links =
+        role === "tutor"
+          ? (await supabase.from("tutor_students").select("student_id").eq("tutor_id", user.id)).data
+          : (await supabase.from("teacher_students").select("student_id").eq("teacher_id", user.id)).data;
 
       const studentIds = (links ?? []).map((l: { student_id: string }) => l.student_id);
       if (studentIds.length === 0) return [];
