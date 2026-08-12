@@ -245,8 +245,7 @@ function extractAxisLabel(preamble: string, series: string[]): string | undefine
   const label = match?.[1]?.trim();
   return label && label.length <= 40 ? label : undefined;
 }
-
-
+export function shouldShowVisualFallback(question: Question, promptText: string, hasRecoveredTable = false): boolean {
   if (hasRecoveredTable) return false;
   if (question.visual_unavailable) return true;
   if (question.figure && !isPotentiallyRenderableFigure(question.figure)) return true;
