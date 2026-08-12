@@ -217,7 +217,11 @@ export function extractLineGraphTable(rawText: string): { table?: QuestionTable;
   const ordered = series.filter((s) => points.has(s)).concat(names.filter((n) => !series.includes(n)));
   const rows = xOrder.map((x) => [x, ...ordered.map((s) => points.get(s)!.get(x) ?? "")]);
 
-  const preamble = lines.slice(0, headerIdx).join(" ");
+  // Narration notes ("All values are approximate.") are not part of the axes.
+  const preamble = lines
+    .slice(0, headerIdx)
+    .filter((l) => !/^[A-Z][^.]{4,80}\.$/.test(l.trim()))
+    .join(" ");
   const caption = extractGraphCaption(preamble, ordered);
   const xLabel = extractAxisLabel(preamble, ordered) ?? "";
 
@@ -254,8 +258,7 @@ export function extractGraphCaption(preamble: string, series: string[] = []): st
 
 /** The x-axis title is glued right before the legend names in the preamble. */
 function stripLegend(preamble: string, series: string[]): string {
-  // Narration notes ("All values are approximate.") are not part of the axes.
-  let head = preamble.replace(/(?:^|\s)[A-Z][^.]{5,80}\.\s*$/g, "").trim();
+  let head = preamble.trim();
   let changed = true;
   while (changed) {
     changed = false;
