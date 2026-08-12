@@ -80,6 +80,9 @@ export function resolveQuestionParts(question: Question): {
 } {
   if (isValidTable(question.table)) return { table: question.table, text: normalizeSatText(question.text) };
 
+  const lineGraph = extractLineGraphTable(question.text);
+  if (lineGraph.table) return lineGraph;
+
   const extracted = extractEmbeddedChartTable(question.text);
   if (extracted.table) return extracted;
 
