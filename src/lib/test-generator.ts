@@ -137,6 +137,13 @@ export interface GeneratedTest {
   poolSize: number;
   /** User-facing warning when the bank is too small to deliver a full test. */
   poolWarning?: string;
+  /** Set when unfinished attempts were flagged as abandoned before this test started. */
+  abandonNotice?: {
+    abandoned: number;
+    deducted: number;
+    warning: boolean;
+    questionsRemaining?: number;
+  };
 }
 
 // Unbiased Fisher-Yates shuffle (replaces the biased `.sort(() => Math.random() - 0.5)` pattern).
