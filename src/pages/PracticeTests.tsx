@@ -103,6 +103,51 @@ export default function PracticeTests() {
   const tierLimits = getTierLimits(profile?.tier as PricingTier);
   const isTier0 = profile?.tier === "tier_0";
 
+  // One-off top-up: $1 / ₸500 for 98 questions (44 Math + 54 Reading & Writing).
+  const handleTopUp = async (currency: "usd" | "kzt") => {
+    if (isToppingUp) return;
+    setIsToppingUp(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-question-topup", {
+        body: { currency },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url as string;
+    } catch (e) {
+      toast({
+        title: "Couldn't start checkout",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsToppingUp(false);
+    }
+  };
+
+  useEffect(() => {
+    const status = searchParams.get("topup");
+    const sessionId = searchParams.get("session_id");
+    if (status !== "success" || !sessionId) return;
+
+    (async () => {
+      const { data } = await supabase.functions.invoke("verify-question-topup", {
+        body: { session_id: sessionId },
+      });
+      if (data?.granted) {
+        toast({
+          title: "Questions added",
+          description: `${data.questions ?? 98} questions were added to your bank.`,
+        });
+        refreshProfile?.();
+      }
+      searchParams.delete("topup");
+      searchParams.delete("session_id");
+      setSearchParams(searchParams, { replace: true });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+
   const handleStartTest = async () => {
     if (!user || isStarting) return;
 
