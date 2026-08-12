@@ -1,3 +1,4 @@
+import { AbandonedTestsPanel } from "@/components/dashboard/AbandonedTestsPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   Users, 
