@@ -77,7 +77,7 @@ export function parseFlattenedBarChart(text: string): { table: Table; text: stri
   // The pre-marker preamble is the glued axis/legend jumble; the trailing part
   // of its first line usually still holds a readable chart title.
   const preamble = lines.slice(0, markerIdx).join(" ");
-  const caption = extractCaption(preamble);
+  const caption = extractCaption(preamble, categories);
 
   return {
     table: { headers: ["", ...categories], rows, chart: "bar", ...(caption ? { caption } : {}) },
@@ -86,11 +86,39 @@ export function parseFlattenedBarChart(text: string): { table: Table; text: stri
 }
 
 /** Best-effort chart title out of the glued axis preamble. */
-function extractCaption(preamble: string): string | undefined {
-  const match = preamble.match(/([A-Z][A-Za-z'’\-]*(?: [A-Za-z0-9'’,\-–—()%]+){3,})/g);
-  if (!match) return undefined;
-  const best = match.sort((a, b) => b.length - a.length)[0]?.trim();
-  return best && best.length >= 20 && best.length <= 180 ? best : undefined;
+function stripLegend(preamble: string, series: string[]): string {
+  let head = preamble.trim();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const name of series) {
+      if (head.toLowerCase().endsWith(name.toLowerCase())) {
+        head = head.slice(0, head.length - name.length).trim();
+        changed = true;
+      }
+    }
+  }
+  return head;
+}
+
+function extractCaption(preamble: string, series: string[] = []): string | undefined {
+  let head = stripLegend(preamble, series);
+  const axis = head.match(/([A-Z][a-z]+(?: [a-z]+){0,3})$/)?.[1]?.trim();
+  if (axis && axis.length <= 40 && head.endsWith(axis)) head = head.slice(0, head.length - axis.length);
+  const candidate = head
+    .split(/[\d,.]{2,}/)
+    .map((part) => part.trim().replace(/^[^A-Za-z]+/, ""))
+    .filter((part) => part.split(/\s+/).length >= 3)
+    .sort((a, b) => b.length - a.length)[0];
+  if (!candidate || candidate.length < 20 || candidate.length > 180) return undefined;
+  const MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December";
+  return candidate
+    .replace(new RegExp(`^.*(?:${MONTHS})(?=[A-Z])`), "")
+    .replace(/([a-z]{3,})(in|from|of|and|for|by|with)(?=[A-Z ]|$)/g, "$1 $2")
+    .replace(/\b(in|from|of|and|for|by|to|with)(?=[A-Z])/g, "$1 ")
+    .replace(/[,\s]+$/, "")
+    .replace(/\s+(in|from|of|and|for|by|to|with)$/, "")
+    .trim();
 }
 
 
@@ -163,7 +191,7 @@ export function parseLineGraph(rawText: string): { table: Table; text: string } 
   const rows = xOrder.map((x) => [x, ...ordered.map((s) => points.get(s)!.get(x) ?? "")]);
 
   const preamble = lines.slice(0, headerIdx).join(" ");
-  const caption = extractCaption(preamble);
+  const caption = extractCaption(preamble, ordered);
   const xLabel = extractAxisLabel(preamble, ordered) ?? "";
 
   return {
