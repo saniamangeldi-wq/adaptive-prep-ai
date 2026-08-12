@@ -234,18 +234,28 @@ export function extractLineGraphTable(rawText: string): { table?: QuestionTable;
 
 /** Best-effort chart title out of the glued axis/legend preamble. */
 export function extractGraphCaption(preamble: string, series: string[] = []): string | undefined {
-  const head = stripLegend(preamble, series);
-  // Titles follow the numeric axis ticks: take the trailing capitalised run.
-  const title = head.match(/\d\s*([A-Z][A-Za-z0-9'’(),.%\- –—]{15,})$/)?.[1]?.trim();
-  const candidate = title ?? head.match(/([A-Z][A-Za-z'’-]*(?: [A-Za-z0-9'’,\-–—()%]+){3,})/g)?.sort((a, b) => b.length - a.length)[0]?.trim();
+  let head = stripLegend(preamble, series);
+  const axis = extractAxisLabel(preamble, series);
+  if (axis && head.endsWith(axis)) head = head.slice(0, head.length - axis.length);
+  // Axis tick numbers glue the title to the rest: the longest alphabetic run
+  // between numeric groups is the chart title.
+  const candidate = head
+    .split(/[\d,.]{2,}/)
+    .map((part) => part.trim().replace(/^[^A-Za-z]+/, ""))
+    .filter((part) => part.split(/\s+/).length >= 3)
+    .sort((a, b) => b.length - a.length)[0];
   if (!candidate || candidate.length < 20 || candidate.length > 180) return undefined;
   // Un-glue words the PDF extractor ran together ("Salesin Four" -> "Sales in Four").
-  return candidate.replace(/([a-z]{3,})(in|from|of|and|for|by|to|with)(?=[A-Z ])/g, "$1 $2").trim();
+  return candidate
+    .replace(/([a-z]{3,})(in|from|of|and|for|by|to|with)(?=[A-Z ])/g, "$1 $2")
+    .replace(/[,\s]+$/, "")
+    .trim();
 }
 
 /** The x-axis title is glued right before the legend names in the preamble. */
 function stripLegend(preamble: string, series: string[]): string {
-  let head = preamble.trim();
+  // Narration notes ("All values are approximate.") are not part of the axes.
+  let head = preamble.replace(/(?:^|\s)[A-Z][^.]{5,80}\.\s*$/g, "").trim();
   let changed = true;
   while (changed) {
     changed = false;
