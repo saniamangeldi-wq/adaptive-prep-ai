@@ -104,6 +104,8 @@ export function TutorDashboard() {
         />
       </div>
 
+      <AbandonedTestsPanel role="tutor" />
+
       {/* Recent activity */}
       <div className="p-6 rounded-2xl bg-card border border-border/50">
         <h3 className="font-semibold text-foreground mb-4">Recent Student Activity</h3>
