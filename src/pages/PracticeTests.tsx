@@ -75,7 +75,8 @@ export default function PracticeTests() {
   const [isStarting, setIsStarting] = useState(false);
   const [view, setView] = useState<"menu" | "config">("menu");
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
+  const [isToppingUp, setIsToppingUp] = useState(false);
 
   const availableTopics: { section: "math" | "reading_writing"; label: string; topic: string }[] = (() => {
     const groups: { section: "math" | "reading_writing"; label: string; topic: string }[] = [];
