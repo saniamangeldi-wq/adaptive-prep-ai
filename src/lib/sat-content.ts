@@ -145,7 +145,7 @@ export function extractEmbeddedChartTable(rawText: string): { table?: QuestionTa
 const LINE_HEADER_RE = /^The following (\d+) lines are shown:\s*$/i;
 const SERIES_HEADER_RE = /^The (.+?) line:\s*$/i;
 const POINT_RE =
-  /^(?:Begins at|(?:Rises|Falls)(?: sharply| gradually)? to|Remains level to|Ends at)\s+(.+?),\s*([^,]*\d[^,]*)$/i;
+  /^(?:Begins at|(?:Rises|Falls)(?: sharply| gradually)? to|Remains level to|Ends at)\s+(.+?),\s*((?:negative\s+)?[−–-]?[\d,]+(?:\.\d+)?(?:\s*[A-Za-z%][A-Za-z%\s.]*)?)$/i;
 
 function cleanNumberWord(value: string): string {
   return value.trim().replace(/^negative\s+/i, "−");
