@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { resolveFigureUrl } from "@/lib/figure-url";
 import DOMPurify from "dompurify";
 import { AlertTriangle, CheckCircle2, Info, Loader2 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MathRenderer } from "@/components/MathRenderer";
 import type { Question, QuestionTable } from "@/lib/test-generator";
 import { logVisualHealthEvent } from "@/lib/visual-health";
@@ -87,7 +87,7 @@ export function DataChart({ table }: { table: QuestionTable }) {
 export function DataTable({ table, caption }: { table: QuestionTable; caption?: string }) {
   return (
     <figure className="my-4 flex flex-col items-center overflow-x-auto">
-      {table.chart === "bar" && <DataChart table={table} />}
+      {(table.chart === "bar" || table.chart === "line") && <DataChart table={table} />}
       <table className="min-w-[240px] max-w-full border-separate border-spacing-0 rounded-lg overflow-hidden border border-border bg-card text-sm shadow-sm">
         <thead className="bg-muted">
           <tr>
