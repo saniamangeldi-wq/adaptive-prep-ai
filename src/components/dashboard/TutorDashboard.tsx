@@ -1,5 +1,8 @@
 import { AbandonedTestsPanel } from "@/components/dashboard/AbandonedTestsPanel";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useRosterStats } from "@/hooks/useRosterStats";
 import { 
   Users, 
   TrendingUp, 
@@ -8,7 +11,7 @@ import {
   UserPlus,
   BarChart3,
   Clock,
-  Star,
+  Target,
   Info
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -17,7 +20,26 @@ import { Link } from "react-router-dom";
 
 
 export function TutorDashboard() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const stats = useRosterStats("tutor");
+
+  const { data: roster } = useQuery({
+    queryKey: ["tutor-roster", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data: links } = await supabase
+        .from("tutor_students")
+        .select("student_id")
+        .eq("tutor_id", user!.id);
+      const ids = (links ?? []).map((l: { student_id: string }) => l.student_id);
+      if (ids.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", ids);
+      return profiles ?? [];
+    },
+  });
 
   return (
     <div className="space-y-8">
@@ -39,38 +61,48 @@ export function TutorDashboard() {
         </Button>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats cards — all values come from completed, non-abandoned attempts */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={Users}
           label="Active Students"
-          value="0"
+          value={stats.isLoading ? "—" : String(stats.activeStudents)}
           subtext="enrolled"
           color="from-primary to-teal-400"
         />
         <StatCard
           icon={TrendingUp}
           label="Avg. Improvement"
-          value="--"
-          subtext="points"
+          value={
+            stats.avgImprovement == null
+              ? "—"
+              : `${stats.avgImprovement > 0 ? "+" : ""}${stats.avgImprovement}`
+          }
+          subtext={
+            stats.improvementSample > 0
+              ? `${stats.improvementSample} student${stats.improvementSample === 1 ? "" : "s"}`
+              : "needs 2+ tests"
+          }
           color="from-green-500 to-emerald-400"
+          tooltip="Latest score minus first score, averaged over students who have completed at least two scored tests."
         />
         <StatCard
           icon={Clock}
-          label="Sessions This Week"
-          value="0"
+          label="Tests This Week"
+          value={stats.isLoading ? "—" : String(stats.sessionsThisWeek)}
           subtext="completed"
           color="from-purple-500 to-pink-400"
         />
         <StatCard
-          icon={Star}
-          label="Student Satisfaction"
-          value="--"
-          subtext="rating"
+          icon={Target}
+          label="Avg. Accuracy"
+          value={stats.avgAccuracy == null ? "—" : `${stats.avgAccuracy}%`}
+          subtext="all tests"
           color="from-accent to-orange-400"
-          tooltip="Calculated from student session ratings. Students rate each AI session 1–5 stars after completing it."
+          tooltip="Correct answers divided by questions served, averaged across every completed test on your roster."
         />
       </div>
+
 
 
       {/* Quick actions */}
@@ -107,20 +139,37 @@ export function TutorDashboard() {
 
       <AbandonedTestsPanel role="tutor" />
 
-      {/* Recent activity */}
+      {/* Roster */}
       <div className="p-6 rounded-2xl bg-card border border-border/50">
-        <h3 className="font-semibold text-foreground mb-4">Recent Student Activity</h3>
-        <div className="text-center py-8 text-muted-foreground">
-          <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No students added yet</p>
-          <p className="text-sm mt-1">Add students to start tracking their progress</p>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link to="/dashboard/students/add">
-              <UserPlus className="w-4 h-4" />
-              Add Your First Student
-            </Link>
-          </Button>
-        </div>
+        <h3 className="font-semibold text-foreground mb-4">Your Students</h3>
+        {roster && roster.length > 0 ? (
+          <div className="space-y-2">
+            {roster.map((s: { user_id: string; full_name: string | null; email: string | null }) => (
+              <Link
+                key={s.user_id}
+                to={`/dashboard/students/${s.user_id}`}
+                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/30 border border-border/40 hover:border-primary/40 transition-colors"
+              >
+                <span className="text-sm text-foreground truncate">
+                  {s.full_name || s.email || "Student"}
+                </span>
+                <span className="text-xs text-primary shrink-0">View progress</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>No students added yet</p>
+            <p className="text-sm mt-1">Add students to start tracking their progress</p>
+            <Button variant="outline" className="mt-4" asChild>
+              <Link to="/dashboard/students/add">
+                <UserPlus className="w-4 h-4" />
+                Add Your First Student
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

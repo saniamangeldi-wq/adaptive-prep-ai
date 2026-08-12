@@ -48,6 +48,7 @@ import SchoolBilling from "./pages/school/SchoolBilling";
  
 // Tutor pages
 import TutorInvite from "./pages/tutor/TutorInvite";
+import StudentProgressDetail from "./pages/StudentProgressDetail";
 import TutorLeaderboard from "./pages/tutor/TutorLeaderboard";
 
 // Teacher pages
@@ -178,6 +179,7 @@ function AppRoutes() {
       {/* Tutor/Teacher routes */}
       <Route path="/dashboard/students" element={<ProtectedRoute><SchoolStudents /></ProtectedRoute>} />
       <Route path="/dashboard/students/add" element={<ProtectedRoute><TutorInvite /></ProtectedRoute>} />
+      <Route path="/dashboard/students/:studentId" element={<ProtectedRoute><StudentProgressDetail /></ProtectedRoute>} />
       <Route path="/dashboard/analytics" element={<ProtectedRoute><SchoolAnalytics /></ProtectedRoute>} />
       <Route path="/dashboard/classroom" element={<ProtectedRoute><SchoolStudents /></ProtectedRoute>} />
       <Route path="/dashboard/classroom/add" element={<ProtectedRoute><SchoolInvite /></ProtectedRoute>} />

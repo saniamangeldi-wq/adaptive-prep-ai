@@ -2492,9 +2492,12 @@ export type Database = {
           created_at: string
           feedback: Json | null
           id: string
+          module_deadline_at: string | null
           penalty_questions: number
           score: number | null
           served_question_ids: string[]
+          session_saved_at: string | null
+          session_state: Json | null
           started_at: string
           test_id: string
           time_spent_seconds: number | null
@@ -2510,9 +2513,12 @@ export type Database = {
           created_at?: string
           feedback?: Json | null
           id?: string
+          module_deadline_at?: string | null
           penalty_questions?: number
           score?: number | null
           served_question_ids?: string[]
+          session_saved_at?: string | null
+          session_state?: Json | null
           started_at?: string
           test_id: string
           time_spent_seconds?: number | null
@@ -2528,9 +2534,12 @@ export type Database = {
           created_at?: string
           feedback?: Json | null
           id?: string
+          module_deadline_at?: string | null
           penalty_questions?: number
           score?: number | null
           served_question_ids?: string[]
+          session_saved_at?: string | null
+          session_state?: Json | null
           started_at?: string
           test_id?: string
           time_spent_seconds?: number | null
