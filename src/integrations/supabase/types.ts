@@ -1641,9 +1641,10 @@ export type Database = {
           id: string
           job_id: string | null
           mime_type: string
+          origin: string
           page_number: number | null
           question_id: string | null
-          source_pdf_id: string
+          source_pdf_id: string | null
           storage_bucket: string
           storage_path: string
           test_id: string | null
@@ -1661,9 +1662,10 @@ export type Database = {
           id?: string
           job_id?: string | null
           mime_type: string
+          origin?: string
           page_number?: number | null
           question_id?: string | null
-          source_pdf_id: string
+          source_pdf_id?: string | null
           storage_bucket?: string
           storage_path: string
           test_id?: string | null
@@ -1681,9 +1683,10 @@ export type Database = {
           id?: string
           job_id?: string | null
           mime_type?: string
+          origin?: string
           page_number?: number | null
           question_id?: string | null
-          source_pdf_id?: string
+          source_pdf_id?: string | null
           storage_bucket?: string
           storage_path?: string
           test_id?: string | null

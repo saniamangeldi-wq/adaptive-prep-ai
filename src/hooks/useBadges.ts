@@ -92,13 +92,16 @@ export function useBadges() {
   // Check and award badges based on current stats
   const checkAndAwardBadges = async (stats: {
     testsTaken: number;
-    totalSATScore: number;
+    /** null when no scored section exists yet — no score badges are awarded. */
+    totalSATScore: number | null;
     hasPerfectScore: boolean;
     streakDays: number;
     flashcardDecks: number;
     aiConversations: number;
   }) => {
     const earned = new Set(earnedBadges.map(b => b.badge_type));
+    const satScore = stats.totalSATScore ?? 0;
+
 
     if (stats.testsTaken >= 1 && !earned.has("first_test")) {
       awardBadge.mutate({ badgeType: "first_test" });
@@ -127,15 +130,16 @@ export function useBadges() {
     if (stats.aiConversations >= 10 && !earned.has("ai_explorer")) {
       awardBadge.mutate({ badgeType: "ai_explorer" });
     }
-    if (stats.totalSATScore >= 1000 && !earned.has("score_1000")) {
+    if (satScore >= 1000 && !earned.has("score_1000")) {
       awardBadge.mutate({ badgeType: "score_1000" });
     }
-    if (stats.totalSATScore >= 1200 && !earned.has("score_1200")) {
+    if (satScore >= 1200 && !earned.has("score_1200")) {
       awardBadge.mutate({ badgeType: "score_1200" });
     }
-    if (stats.totalSATScore >= 1400 && !earned.has("score_1400")) {
+    if (satScore >= 1400 && !earned.has("score_1400")) {
       awardBadge.mutate({ badgeType: "score_1400" });
     }
+
   };
 
   return {
