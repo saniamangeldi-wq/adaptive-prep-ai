@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { resolveFigureUrl } from "@/lib/figure-url";
 import DOMPurify from "dompurify";
 import { AlertTriangle, CheckCircle2, Info, Loader2 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MathRenderer } from "@/components/MathRenderer";
 import type { Question, QuestionTable } from "@/lib/test-generator";
 import { logVisualHealthEvent } from "@/lib/visual-health";
@@ -28,48 +28,66 @@ export function sanitizeSvg(raw: string): string {
   });
 }
 
-/** Bar chart for tables recovered from a flattened chart, using recharts. */
+/** Bar/line chart for tables recovered from a flattened chart, using recharts. */
 export function DataChart({ table }: { table: QuestionTable }) {
   const series = table.headers.slice(1);
   const data = table.rows.map((row) => {
     const point: Record<string, string | number> = { name: row[0] };
     series.forEach((key, i) => {
-      const value = Number(String(row[i + 1] ?? "").replace(/[%,]/g, ""));
-      if (Number.isFinite(value)) point[key] = value;
+      const value = Number(String(row[i + 1] ?? "").replace(/[%,]/g, "").replace(/[−–]/g, "-").replace(/[^0-9.\-]/g, ""));
+      if (Number.isFinite(value) && String(row[i + 1] ?? "").trim() !== "") point[key] = value;
     });
     return point;
   });
   if (data.length === 0) return null;
 
+  const isLine = table.chart === "line";
+  const color = (i: number) => `hsl(var(--chart-${(i % 5) + 1}, var(--primary)))`;
+  const axes = (
+    <>
+      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+      <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+      <Tooltip
+        contentStyle={{
+          background: "hsl(var(--card))",
+          border: "1px solid hsl(var(--border))",
+          borderRadius: 8,
+          color: "hsl(var(--foreground))",
+        }}
+      />
+      <Legend />
+    </>
+  );
+
   return (
-    <div className="my-4 h-64 w-full" data-testid="question-chart">
+    <div className="my-4 h-64 w-full" data-testid={isLine ? "question-line-chart" : "question-chart"}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-          <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-          <Tooltip
-            contentStyle={{
-              background: "hsl(var(--card))",
-              border: "1px solid hsl(var(--border))",
-              borderRadius: 8,
-              color: "hsl(var(--foreground))",
-            }}
-          />
-          <Legend />
-          {series.map((key, i) => (
-            <Bar key={key} dataKey={key} fill={`hsl(var(--chart-${(i % 5) + 1}, var(--primary)))`} radius={[4, 4, 0, 0]} />
-          ))}
-        </BarChart>
+        {isLine ? (
+          <LineChart data={data}>
+            {axes}
+            {series.map((key, i) => (
+              <Line key={key} type="monotone" dataKey={key} stroke={color(i)} strokeWidth={2} dot={{ r: 3 }} connectNulls />
+            ))}
+          </LineChart>
+        ) : (
+          <BarChart data={data}>
+            {axes}
+            {series.map((key, i) => (
+              <Bar key={key} dataKey={key} fill={color(i)} radius={[4, 4, 0, 0]} />
+            ))}
+          </BarChart>
+        )}
       </ResponsiveContainer>
     </div>
   );
 }
 
+
 export function DataTable({ table, caption }: { table: QuestionTable; caption?: string }) {
   return (
     <figure className="my-4 flex flex-col items-center overflow-x-auto">
-      {table.chart === "bar" && <DataChart table={table} />}
+      {(table.chart === "bar" || table.chart === "line") && <DataChart table={table} />}
       <table className="min-w-[240px] max-w-full border-separate border-spacing-0 rounded-lg overflow-hidden border border-border bg-card text-sm shadow-sm">
         <thead className="bg-muted">
           <tr>

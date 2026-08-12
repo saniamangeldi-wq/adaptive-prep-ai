@@ -142,6 +142,149 @@ export function extractEmbeddedChartTable(rawText: string): { table?: QuestionTa
   };
 }
 
+const LINE_HEADER_RE = /^The following (\d+) lines are shown:\s*$/i;
+const SERIES_HEADER_RE = /^The (.+?) line:\s*$/i;
+const POINT_RE =
+  /^(?:Begins at|(?:Rises|Falls)(?: sharply| gradually)? to|Remains level to|Ends at)\s+(.+?),\s*((?:negative\s+)?[−–-]?[\d,]+(?:\.\d+)?(?:\s*[A-Za-z%][A-Za-z%\s.]*)?)$/i;
+
+function cleanNumberWord(value: string): string {
+  return value.trim().replace(/^negative\s+/i, "−");
+}
+
+/**
+ * Recovers a real multi-series dataset from imported SAT questions whose line
+ * graph was flattened into the stem as a screen-reader narration
+ * ("The following 4 lines are shown: ... Begins at X, Y / Rises sharply to X, Y").
+ * The glued axis/legend preamble before the narration is discarded and only the
+ * real prose after it is kept.
+ */
+export function extractLineGraphTable(rawText: string): { table?: QuestionTable; text: string } {
+  if (!rawText || !/The following \d+ lines are shown:/i.test(rawText)) return { text: rawText };
+
+  const lines = rawText.split(/\r?\n/);
+  const headerIdx = lines.findIndex((l) => LINE_HEADER_RE.test(l.trim()));
+  if (headerIdx === -1) return { text: rawText };
+
+  const series: string[] = [];
+  const points = new Map<string, Map<string, string>>();
+  const xOrder: string[] = [];
+  let current: string | null = null;
+  let i = headerIdx + 1;
+  let lastDataIdx = headerIdx;
+
+  for (; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const seriesHeader = line.match(SERIES_HEADER_RE);
+    if (seriesHeader) {
+      const name = seriesHeader[1].trim();
+      // Legend entries may carry an article the block header drops
+      // ("the Philippines" vs "The Philippines line:").
+      current =
+        series.find((s) => s.toLowerCase() === name.toLowerCase() || s.toLowerCase().endsWith(` ${name.toLowerCase()}`)) ??
+        name;
+      if (!points.has(current)) points.set(current, new Map());
+      lastDataIdx = i;
+      continue;
+    }
+
+    const point = line.match(POINT_RE);
+    if (point && current) {
+      const x = cleanNumberWord(point[1]);
+      const y = cleanNumberWord(point[2]);
+      if (!xOrder.includes(x)) xOrder.push(x);
+      points.get(current)!.set(x, y);
+      lastDataIdx = i;
+      continue;
+    }
+
+    // Legend names listed before the first series block.
+    if (!current && line.length <= 60 && !/[.?!]$/.test(line)) {
+      series.push(line);
+      lastDataIdx = i;
+      continue;
+    }
+    break; // first real prose line ends the narration block
+  }
+
+  const names = [...points.keys()];
+  if (names.length < 1 || xOrder.length < 2) return { text: rawText };
+
+  const prose = lines.slice(lastDataIdx + 1).join("\n").trim();
+  if (prose.length < 40) return { text: rawText };
+
+  const ordered = series.filter((s) => points.has(s)).concat(names.filter((n) => !series.includes(n)));
+  const rows = xOrder.map((x) => [x, ...ordered.map((s) => points.get(s)!.get(x) ?? "")]);
+
+  // Narration notes ("All values are approximate.") are not part of the axes.
+  const preamble = lines
+    .slice(0, headerIdx)
+    .filter((l) => !/^[A-Z][^.]{4,80}\.$/.test(l.trim()))
+    .join(" ");
+  const caption = extractGraphCaption(preamble, ordered);
+  const xLabel = extractAxisLabel(preamble, ordered) ?? "";
+
+  return {
+    table: {
+      headers: [xLabel, ...ordered],
+      rows,
+      chart: "line",
+      ...(caption ? { caption } : {}),
+    },
+    text: normalizeSatText(prose),
+  };
+}
+
+/** Best-effort chart title out of the glued axis/legend preamble. */
+export function extractGraphCaption(preamble: string, series: string[] = []): string | undefined {
+  let head = stripLegend(preamble, series);
+  const axis = extractAxisLabel(preamble, series);
+  if (axis && head.endsWith(axis)) head = head.slice(0, head.length - axis.length);
+  // Axis tick numbers glue the title to the rest: the longest alphabetic run
+  // between numeric groups is the chart title.
+  const candidate = head
+    .split(/[\d,.]{2,}/)
+    .map((part) => part.trim().replace(/^[^A-Za-z]+/, ""))
+    .filter((part) => part.split(/\s+/).length >= 3)
+    .sort((a, b) => b.length - a.length)[0];
+  if (!candidate || candidate.length < 20 || candidate.length > 180) return undefined;
+  const MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December";
+  return (
+    candidate
+      // Month tick labels glue onto the title the same way numbers do.
+      .replace(new RegExp(`^.*(?:${MONTHS})(?=[A-Z])`), "")
+      // Un-glue words the extractor ran together ("Salesin Four" -> "Sales in Four").
+      .replace(/([a-z]{3,})(in|from|of|and|for|by|with)(?=[A-Z ]|$)/g, "$1 $2")
+      .replace(/\b(in|from|of|and|for|by|to|with)(?=[A-Z])/g, "$1 ")
+      .replace(/[,\s]+$/, "")
+      .replace(/\s+(in|from|of|and|for|by|to|with)$/, "")
+      .trim()
+  );
+}
+
+/** The x-axis title is glued right before the legend names in the preamble. */
+function stripLegend(preamble: string, series: string[]): string {
+  let head = preamble.trim();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const name of series) {
+      if (head.toLowerCase().endsWith(name.toLowerCase())) {
+        head = head.slice(0, head.length - name.length).trim();
+        changed = true;
+      }
+    }
+  }
+  return head;
+}
+
+function extractAxisLabel(preamble: string, series: string[]): string | undefined {
+  const head = stripLegend(preamble, series);
+  const label = head.match(/([A-Z][a-z]+(?: [a-z]+){0,3})$/)?.[1]?.trim();
+  return label && label.length <= 40 ? label : undefined;
+}
+
 export function shouldShowVisualFallback(question: Question, promptText: string, hasRecoveredTable = false): boolean {
   if (hasRecoveredTable) return false;
   if (question.visual_unavailable) return true;

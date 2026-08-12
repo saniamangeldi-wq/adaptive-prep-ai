@@ -1,5 +1,5 @@
 import type { Question, QuestionTable } from "@/lib/test-generator";
-import { extractEmbeddedChartTable, isValidTable, normalizeSatText } from "@/lib/sat-content";
+import { extractEmbeddedChartTable, extractLineGraphTable, isValidTable, normalizeSatText } from "@/lib/sat-content";
 import { extractConcatenatedTableBlock } from "@/lib/rw-structure";
 
 const MAX_CELL_LEN = 60;
@@ -79,6 +79,9 @@ export function resolveQuestionParts(question: Question): {
   text: string;
 } {
   if (isValidTable(question.table)) return { table: question.table, text: normalizeSatText(question.text) };
+
+  const lineGraph = extractLineGraphTable(question.text);
+  if (lineGraph.table) return lineGraph;
 
   const extracted = extractEmbeddedChartTable(question.text);
   if (extracted.table) return extracted;
