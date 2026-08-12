@@ -1,5 +1,5 @@
 import type { Question, QuestionTable } from "@/lib/test-generator";
-import { extractEmbeddedChartTable, isValidTable, normalizeSatText } from "@/lib/sat-content";
+import { extractEmbeddedChartTable, extractLineGraphTable, isValidTable, normalizeSatText } from "@/lib/sat-content";
 import { extractConcatenatedTableBlock } from "@/lib/rw-structure";
 
 const MAX_CELL_LEN = 60;
