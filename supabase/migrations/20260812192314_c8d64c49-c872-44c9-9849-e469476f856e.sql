@@ -1,0 +1,1 @@
+ALTER TABLE public.test_attempts ADD COLUMN IF NOT EXISTS served_question_ids text[] NOT NULL DEFAULT '{}'::text[];

@@ -286,11 +286,13 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   );
 
 
-  // Build the "already seen" set across recent attempts (kept as-is — strips __repN
-  // so legacy padded ids still map back to their base id for cross-session tracking).
+  // Build the "already seen" set across recent attempts. We count a question as
+  // seen the moment it was SERVED (served_question_ids, written at attempt
+  // creation) — not only when it was answered — so abandoned or unfinished
+  // tests no longer hand back the same questions next time.
   const { data: recentAttempts } = await supabase
     .from("test_attempts")
-    .select("answers, created_at")
+    .select("answers, served_question_ids, created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(500);
@@ -300,18 +302,24 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   const lastSeenAt = new Map<string, number>();
   if (recentAttempts) {
     for (const attempt of recentAttempts) {
-      const answers = attempt.answers as Record<string, string> | unknown[] | null;
       const ts = attempt.created_at ? new Date(attempt.created_at).getTime() : 0;
+      const markSeen = (id: string) => {
+        const base = id.replace(/__rep\d+$/, "");
+        seenQuestionIds.add(base);
+        // recentAttempts is ordered desc, so the first write is the most recent.
+        if (!lastSeenAt.has(base)) lastSeenAt.set(base, ts);
+      };
+
+      const served = (attempt as { served_question_ids?: string[] | null }).served_question_ids;
+      if (Array.isArray(served)) served.forEach(markSeen);
+
+      const answers = attempt.answers as Record<string, string> | unknown[] | null;
       if (answers && typeof answers === "object" && !Array.isArray(answers)) {
-        Object.keys(answers).forEach((id) => {
-          const base = id.replace(/__rep\d+$/, "");
-          seenQuestionIds.add(base);
-          // Keep the most recent timestamp (recentAttempts is ordered desc, so first write wins).
-          if (!lastSeenAt.has(base)) lastSeenAt.set(base, ts);
-        });
+        Object.keys(answers).forEach(markSeen);
       }
     }
   }
+
 
   const difficultyRank: Record<string, number> = { easy: 0, normal: 1, hard: 2 };
   const preferredRank = difficultyRank[adaptedDifficulty] ?? 1;
@@ -443,8 +451,10 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
       test_id: rawTests[0].id,
       answers: [],
       total_questions: selectedQuestions.length,
+      served_question_ids: selectedQuestions.map((q) => q.id.replace(/__rep\d+$/, "")),
       started_at: new Date().toISOString(),
     })
+
     .select()
     .single();
 
