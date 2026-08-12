@@ -330,6 +330,36 @@ export default function PracticeTests() {
               </div>
             )}
 
+            {/* One-off top-up */}
+            {!isTier0 && (
+              <div className="p-4 rounded-xl bg-card border border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="text-foreground font-medium">Top up 98 questions</div>
+                  <p className="text-sm text-muted-foreground">
+                    One full-length test — 44 Math + 54 Reading &amp; Writing. Added instantly after payment.
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isToppingUp}
+                    onClick={() => handleTopUp("usd")}
+                  >
+                    $1
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isToppingUp}
+                    onClick={() => handleTopUp("kzt")}
+                  >
+                    ₸500
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Test Mode Selection */}
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-foreground">Test Mode</h2>
