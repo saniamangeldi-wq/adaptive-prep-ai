@@ -255,7 +255,7 @@ export function extractGraphCaption(preamble: string, series: string[] = []): st
       // Month tick labels glue onto the title the same way numbers do.
       .replace(new RegExp(`^.*(?:${MONTHS})(?=[A-Z])`), "")
       // Un-glue words the extractor ran together ("Salesin Four" -> "Sales in Four").
-      .replace(/([a-z]{3,})(in|from|of|and|for|by|with)(?=[A-Z ])/g, "$1 $2")
+      .replace(/([a-z]{3,})(in|from|of|and|for|by|with)(?=[A-Z ]|$)/g, "$1 $2")
       .replace(/\b(in|from|of|and|for|by|to|with)(?=[A-Z])/g, "$1 ")
       .replace(/[,\s]+$/, "")
       .replace(/\s+(in|from|of|and|for|by|to|with)$/, "")
