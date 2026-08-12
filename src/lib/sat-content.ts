@@ -218,7 +218,7 @@ export function extractLineGraphTable(rawText: string): { table?: QuestionTable;
   const rows = xOrder.map((x) => [x, ...ordered.map((s) => points.get(s)!.get(x) ?? "")]);
 
   const preamble = lines.slice(0, headerIdx).join(" ");
-  const caption = extractGraphCaption(preamble);
+  const caption = extractGraphCaption(preamble, ordered);
   const xLabel = extractAxisLabel(preamble, ordered) ?? "";
 
   return {
@@ -233,23 +233,38 @@ export function extractLineGraphTable(rawText: string): { table?: QuestionTable;
 }
 
 /** Best-effort chart title out of the glued axis/legend preamble. */
-export function extractGraphCaption(preamble: string): string | undefined {
-  const matches = preamble.match(/([A-Z][A-Za-z'’-]*(?: [A-Za-z0-9'’,\-–—()%]+){3,})/g);
-  const best = matches?.sort((a, b) => b.length - a.length)[0]?.trim();
-  return best && best.length >= 20 && best.length <= 180 ? best : undefined;
+export function extractGraphCaption(preamble: string, series: string[] = []): string | undefined {
+  const head = stripLegend(preamble, series);
+  // Titles follow the numeric axis ticks: take the trailing capitalised run.
+  const title = head.match(/\d\s*([A-Z][A-Za-z0-9'’(),.%\- –—]{15,})$/)?.[1]?.trim();
+  const candidate = title ?? head.match(/([A-Z][A-Za-z'’-]*(?: [A-Za-z0-9'’,\-–—()%]+){3,})/g)?.sort((a, b) => b.length - a.length)[0]?.trim();
+  if (!candidate || candidate.length < 20 || candidate.length > 180) return undefined;
+  // Un-glue words the PDF extractor ran together ("Salesin Four" -> "Sales in Four").
+  return candidate.replace(/([a-z]{3,})(in|from|of|and|for|by|to|with)(?=[A-Z ])/g, "$1 $2").trim();
 }
 
 /** The x-axis title is glued right before the legend names in the preamble. */
-function extractAxisLabel(preamble: string, series: string[]): string | undefined {
-  let head = preamble;
-  for (const name of series) {
-    const idx = head.indexOf(name);
-    if (idx > 0) head = head.slice(0, idx);
+function stripLegend(preamble: string, series: string[]): string {
+  let head = preamble.trim();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const name of series) {
+      if (head.toLowerCase().endsWith(name.toLowerCase())) {
+        head = head.slice(0, head.length - name.length).trim();
+        changed = true;
+      }
+    }
   }
-  const match = head.trim().match(/([A-Z][a-z]+(?: [a-z]+){0,3})$/);
-  const label = match?.[1]?.trim();
+  return head;
+}
+
+function extractAxisLabel(preamble: string, series: string[]): string | undefined {
+  const head = stripLegend(preamble, series);
+  const label = head.match(/([A-Z][a-z]+(?: [a-z]+){0,3})$/)?.[1]?.trim();
   return label && label.length <= 40 ? label : undefined;
 }
+
 export function shouldShowVisualFallback(question: Question, promptText: string, hasRecoveredTable = false): boolean {
   if (hasRecoveredTable) return false;
   if (question.visual_unavailable) return true;
