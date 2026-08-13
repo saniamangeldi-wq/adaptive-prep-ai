@@ -329,15 +329,8 @@ serve(async (req) => {
       }
     }
 
-    // Deduct credits
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ credits_remaining: profile.credits_remaining - creditCost })
-      .eq("user_id", userId);
+    // Credits were already deducted atomically before the analysis started.
 
-    if (updateError) {
-      console.error("Failed to deduct credits:", updateError);
-    }
 
     // Build system prompt with all gathered data
     const systemPrompt = getAdminAnalyticsPrompt(schoolData, teacherPerformance, projections);
