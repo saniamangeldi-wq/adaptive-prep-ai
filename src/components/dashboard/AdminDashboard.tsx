@@ -238,13 +238,13 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Student Seats</span>
               <span className="font-medium text-foreground">
-                0 / {profile?.tier === "tier_3" ? "Unlimited" : profile?.tier === "tier_2" ? "100" : "25"}
+                {stats.totalStudents} / {profile?.tier === "tier_3" ? "Unlimited" : profile?.tier === "tier_2" ? "100" : "25"}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Teacher Seats</span>
               <span className="font-medium text-foreground">
-                0 / {profile?.tier === "tier_3" ? "Unlimited" : profile?.tier === "tier_2" ? "20" : "5"}
+                {stats.totalTeachers} / {profile?.tier === "tier_3" ? "Unlimited" : profile?.tier === "tier_2" ? "20" : "5"}
               </span>
             </div>
           </div>
