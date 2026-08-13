@@ -128,37 +128,48 @@ export function TeacherDashboard() {
         </Button>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats cards — all values come from completed, non-abandoned attempts */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={Users}
           label="Students"
-          value="0"
+          value={stats.isLoading ? "—" : String(stats.activeStudents)}
           subtext="in class"
           color="from-primary to-teal-400"
         />
         <StatCard
-          icon={FileText}
-          label="Tests Assigned"
-          value="0"
-          subtext="this month"
+          icon={TrendingUp}
+          label="Avg. Improvement"
+          value={
+            stats.avgImprovement == null
+              ? "—"
+              : `${stats.avgImprovement > 0 ? "+" : ""}${stats.avgImprovement}`
+          }
+          subtext={
+            stats.improvementSample > 0
+              ? `${stats.improvementSample} student${stats.improvementSample === 1 ? "" : "s"}`
+              : "needs 2+ tests"
+          }
+          color="from-green-500 to-emerald-400"
+          tooltip="Latest score minus first score, averaged over students who have completed at least two scored tests."
+        />
+        <StatCard
+          icon={Clock}
+          label="Tests This Week"
+          value={stats.isLoading ? "—" : String(stats.sessionsThisWeek)}
+          subtext="completed"
           color="from-purple-500 to-pink-400"
         />
         <StatCard
-          icon={TrendingUp}
-          label="Class Average"
-          value="--"
-          subtext="score"
-          color="from-green-500 to-emerald-400"
-        />
-        <StatCard
-          icon={Award}
-          label="Top Performer"
-          value="--"
-          subtext="this week"
+          icon={Target}
+          label="Avg. Accuracy"
+          value={stats.avgAccuracy == null ? "—" : `${stats.avgAccuracy}%`}
+          subtext="all tests"
           color="from-accent to-orange-400"
+          tooltip="Correct answers divided by questions served, averaged across every completed test in your class."
         />
       </div>
+
 
       {/* Quick actions */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
