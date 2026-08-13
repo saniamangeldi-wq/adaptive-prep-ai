@@ -18,12 +18,16 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { DuplicateAccountsPanel } from "./DuplicateAccountsPanel";
+import { useSchoolStats } from "@/hooks/useSchoolStats";
+
 
 export function AdminDashboard() {
   const { profile } = useAuth();
+  const stats = useSchoolStats();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [schoolName, setSchoolName] = useState<string | null>(null);
+
 
   useEffect(() => {
     const fetchSchoolInfo = async () => {
@@ -102,37 +106,42 @@ export function AdminDashboard() {
         </Button>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats cards — real counts and scores from active school members */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={GraduationCap}
           label="Total Students"
-          value="0"
+          value={stats.isLoading ? "—" : String(stats.totalStudents)}
           subtext="enrolled"
           color="from-primary to-teal-400"
         />
         <StatCard
           icon={Users}
           label="Teachers"
-          value="0"
+          value={stats.isLoading ? "—" : String(stats.totalTeachers)}
           subtext="active"
           color="from-purple-500 to-pink-400"
         />
         <StatCard
           icon={TrendingUp}
           label="School Average"
-          value="--"
-          subtext="SAT score"
+          value={stats.avgScore == null ? "—" : String(stats.avgScore)}
+          subtext={stats.scoreSample > 0 ? `${stats.scoreSample} scored` : "no tests yet"}
           color="from-green-500 to-emerald-400"
         />
         <StatCard
           icon={BarChart3}
           label="Improvement"
-          value="--"
-          subtext="avg. points"
+          value={
+            stats.avgImprovement == null
+              ? "—"
+              : `${stats.avgImprovement > 0 ? "+" : ""}${stats.avgImprovement}`
+          }
+          subtext={stats.improvementSample > 0 ? `${stats.improvementSample} students` : "needs 2+ tests"}
           color="from-accent to-orange-400"
         />
       </div>
+
 
       {/* Quick actions */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -229,13 +238,13 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Student Seats</span>
               <span className="font-medium text-foreground">
-                0 / {profile?.tier === "tier_3" ? "Unlimited" : profile?.tier === "tier_2" ? "100" : "25"}
+                {stats.totalStudents} / {profile?.tier === "tier_3" ? "Unlimited" : profile?.tier === "tier_2" ? "100" : "25"}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Teacher Seats</span>
               <span className="font-medium text-foreground">
-                0 / {profile?.tier === "tier_3" ? "Unlimited" : profile?.tier === "tier_2" ? "20" : "5"}
+                {stats.totalTeachers} / {profile?.tier === "tier_3" ? "Unlimited" : profile?.tier === "tier_2" ? "20" : "5"}
               </span>
             </div>
           </div>
@@ -253,16 +262,62 @@ export function AdminDashboard() {
 
       {/* Performance overview */}
       <div className="p-6 rounded-2xl bg-card border border-border/50">
-        <h3 className="font-semibold text-foreground mb-4">Department Performance</h3>
-        <div className="text-center py-8 text-muted-foreground">
-          <School className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No data yet</p>
-          <p className="text-sm mt-1">Invite teachers and students to start tracking performance</p>
-        </div>
+        <h3 className="font-semibold text-foreground mb-4">School Performance</h3>
+        {stats.totalStudents === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <School className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p className="text-foreground font-medium">No students enrolled yet</p>
+            <p className="text-sm mt-1">Share your invite code to bring teachers and students in.</p>
+            <Button variant="hero" className="mt-4" asChild>
+              <Link to="/dashboard/school/invite">
+                <UserPlus className="w-4 h-4" />
+                Invite Your First Members
+              </Link>
+            </Button>
+          </div>
+        ) : stats.scoreSample === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <School className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p className="text-foreground font-medium">No completed tests yet</p>
+            <p className="text-sm mt-1">
+              {stats.totalStudents} student{stats.totalStudents === 1 ? "" : "s"} enrolled — performance appears once they finish a test.
+            </p>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-3 gap-4">
+            <SummaryTile label="Students scored" value={String(stats.scoreSample)} />
+            <SummaryTile label="Average latest score" value={String(stats.avgScore)} />
+            <SummaryTile
+              label="Average improvement"
+              value={
+                stats.avgImprovement == null
+                  ? "—"
+                  : `${stats.avgImprovement > 0 ? "+" : ""}${stats.avgImprovement}`
+              }
+            />
+          </div>
+        )}
+        <Button variant="outline" className="w-full mt-4" asChild>
+          <Link to="/dashboard/school/analytics">
+            <BarChart3 className="w-4 h-4" />
+            View Full Analytics
+          </Link>
+        </Button>
       </div>
+
     </div>
   );
 }
+
+function SummaryTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="p-4 rounded-xl bg-muted/30 border border-border/40">
+      <div className="text-2xl font-bold text-foreground">{value}</div>
+      <div className="text-sm text-muted-foreground mt-1">{label}</div>
+    </div>
+  );
+}
+
 
 function StatCard({ 
   icon: Icon, 

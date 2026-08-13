@@ -2,6 +2,8 @@ import { AbandonedTestsPanel } from "@/components/dashboard/AbandonedTestsPanel"
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { useRosterStats } from "@/hooks/useRosterStats";
 import { 
   Users, 
   TrendingUp, 
@@ -9,10 +11,13 @@ import {
   BookOpen,
   BarChart3,
   FileText,
-  Award,
+  Clock,
+  Target,
   MessageSquare,
-  Building2
+  Building2,
+  Info
 } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
@@ -26,6 +31,26 @@ export function TeacherDashboard() {
   const { profile, user } = useAuth();
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const stats = useRosterStats("teacher");
+
+  const { data: roster } = useQuery({
+    queryKey: ["teacher-roster", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data: links } = await supabase
+        .from("teacher_students")
+        .select("student_id")
+        .eq("teacher_id", user!.id);
+      const ids = (links ?? []).map((l: { student_id: string }) => l.student_id);
+      if (ids.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", ids);
+      return profiles ?? [];
+    },
+  });
+
 
   useEffect(() => {
     async function loadSchoolInfo() {
@@ -103,37 +128,48 @@ export function TeacherDashboard() {
         </Button>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats cards — all values come from completed, non-abandoned attempts */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={Users}
           label="Students"
-          value="0"
+          value={stats.isLoading ? "—" : String(stats.activeStudents)}
           subtext="in class"
           color="from-primary to-teal-400"
         />
         <StatCard
-          icon={FileText}
-          label="Tests Assigned"
-          value="0"
-          subtext="this month"
+          icon={TrendingUp}
+          label="Avg. Improvement"
+          value={
+            stats.avgImprovement == null
+              ? "—"
+              : `${stats.avgImprovement > 0 ? "+" : ""}${stats.avgImprovement}`
+          }
+          subtext={
+            stats.improvementSample > 0
+              ? `${stats.improvementSample} student${stats.improvementSample === 1 ? "" : "s"}`
+              : "needs 2+ tests"
+          }
+          color="from-green-500 to-emerald-400"
+          tooltip="Latest score minus first score, averaged over students who have completed at least two scored tests."
+        />
+        <StatCard
+          icon={Clock}
+          label="Tests This Week"
+          value={stats.isLoading ? "—" : String(stats.sessionsThisWeek)}
+          subtext="completed"
           color="from-purple-500 to-pink-400"
         />
         <StatCard
-          icon={TrendingUp}
-          label="Class Average"
-          value="--"
-          subtext="score"
-          color="from-green-500 to-emerald-400"
-        />
-        <StatCard
-          icon={Award}
-          label="Top Performer"
-          value="--"
-          subtext="this week"
+          icon={Target}
+          label="Avg. Accuracy"
+          value={stats.avgAccuracy == null ? "—" : `${stats.avgAccuracy}%`}
+          subtext="all tests"
           color="from-accent to-orange-400"
+          tooltip="Correct answers divided by questions served, averaged across every completed test in your class."
         />
       </div>
+
 
       {/* Quick actions */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -167,32 +203,42 @@ export function TeacherDashboard() {
         />
       </div>
 
-      {/* Class performance */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="p-6 rounded-2xl bg-card border border-border/50">
-          <h3 className="font-semibold text-foreground mb-4">Students Needing Attention</h3>
+      {/* Class roster */}
+      <div className="p-6 rounded-2xl bg-card border border-border/50">
+        <h3 className="font-semibold text-foreground mb-4">Your Students</h3>
+        {roster && roster.length > 0 ? (
+          <div className="space-y-2">
+            {roster.map((s: { user_id: string; full_name: string | null; email: string | null }) => (
+              <Link
+                key={s.user_id}
+                to={`/dashboard/students/${s.user_id}`}
+                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/30 border border-border/40 hover:border-primary/40 transition-colors"
+              >
+                <span className="text-sm text-foreground truncate">
+                  {s.full_name || s.email || "Student"}
+                </span>
+                <span className="text-xs text-primary shrink-0">View progress</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
           <div className="text-center py-8 text-muted-foreground">
             <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No students in your class yet</p>
-            <p className="text-sm mt-1">Students are assigned by your school admin</p>
+            <p>No students assigned to you yet</p>
+            <p className="text-sm mt-1">
+              {schoolInfo
+                ? "Your school admin assigns students to your classes."
+                : "Join your school with an invite code to get your class roster."}
+            </p>
+            {!schoolInfo && (
+              <div className="mt-4 flex justify-center">
+                <JoinCodeEntry userRole="teacher" />
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-card border border-border/50">
-          <h3 className="font-semibold text-foreground mb-4">Recent Test Results</h3>
-          <div className="text-center py-8 text-muted-foreground">
-            <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No tests assigned yet</p>
-            <p className="text-sm mt-1">Create an assignment to get started</p>
-            <Button variant="outline" className="mt-4" asChild>
-              <Link to="/dashboard/manage-assignments">
-                <ClipboardList className="w-4 h-4" />
-                Create Assignment
-              </Link>
-            </Button>
-          </div>
-        </div>
+        )}
       </div>
+
 
       <AbandonedTestsPanel role="teacher" />
     </div>
@@ -204,13 +250,15 @@ function StatCard({
   label, 
   value, 
   subtext,
-  color 
+  color,
+  tooltip
 }: { 
   icon: React.ElementType; 
   label: string; 
   value: string; 
   subtext: string;
   color: string;
+  tooltip?: string;
 }) {
   return (
     <div className="p-5 rounded-xl bg-card border border-border/50">
@@ -223,9 +271,22 @@ function StatCard({
       </div>
       <div className="text-2xl font-bold text-foreground">{value}</div>
       <div className="flex items-center justify-between mt-1">
-        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="text-sm text-muted-foreground flex items-center gap-1">
+          {label}
+          {tooltip && (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-muted-foreground/60 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[240px] text-xs bg-[hsl(228,20%,12%)] border-[hsl(220,15%,25%)] text-white rounded-lg p-2">
+                {tooltip}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </span>
         <span className="text-xs text-muted-foreground/70">{subtext}</span>
       </div>
+
     </div>
   );
 }

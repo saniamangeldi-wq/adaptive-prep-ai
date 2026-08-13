@@ -193,12 +193,12 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
     } catch (err: any) {
       console.error("Error generating matches:", err);
       
-      // If no universities in database, show helpful message
       toast({
-        title: "Coming soon",
-        description: "University matching is being set up. Check back soon!",
-        variant: "default"
+        title: "Couldn't generate matches",
+        description: "Something went wrong while building your list. Please try again in a moment.",
+        variant: "destructive"
       });
+
     } finally {
       setGenerating(false);
     }

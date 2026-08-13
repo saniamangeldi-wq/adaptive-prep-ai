@@ -334,18 +334,23 @@ export default function SATVerbal() {
         </div>
       );
     }
+    const ordered = [...topics].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
     return (
       <div className="grid gap-3 md:grid-cols-2">
-        {topics.map((topic) => {
+        {ordered.map((topic, i) => {
           const isCompleted = completedTopicIds.has(topic.id);
-          const isLocked = topic.order_index !== 1;
+          const prev = i > 0 ? ordered[i - 1] : null;
+          const isLocked = !!prev && !completedTopicIds.has(prev.id);
           return (
             <Card
               key={topic.id}
               className={`transition-colors ${isLocked ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:border-primary/40"}`}
               onClick={() => {
                 if (isLocked) {
-                  toast({ title: "Locked 🔒", description: "This lesson is part of the full curriculum — coming soon." });
+                  toast({
+                    title: "Locked 🔒",
+                    description: `Finish "${prev?.title}" first to unlock this lesson.`,
+                  });
                   return;
                 }
                 setSelectedTopicId(topic.id);
@@ -366,10 +371,13 @@ export default function SATVerbal() {
                     )}
                     <div className="flex items-center gap-2 mt-2">
                       {isLocked ? (
-                        <Badge variant="outline" className="text-xs">Coming soon</Badge>
+                        <Badge variant="outline" className="text-xs">Locked</Badge>
+                      ) : isCompleted ? (
+                        <Badge variant="secondary" className="text-xs">Completed</Badge>
                       ) : (
                         <Badge variant="secondary" className="text-xs">Available now</Badge>
                       )}
+
                       {topic.category && (
                         <Badge variant="outline" className="text-xs capitalize">
                           {topic.category.replace("_", " ")}
