@@ -211,7 +211,7 @@ export function TeacherDashboard() {
             {roster.map((s: { user_id: string; full_name: string | null; email: string | null }) => (
               <Link
                 key={s.user_id}
-                to={`/dashboard/students/${s.user_id}`}
+                to={`/dashboard/classroom/${s.user_id}`}
                 className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/30 border border-border/40 hover:border-primary/40 transition-colors"
               >
                 <span className="text-sm text-foreground truncate">

@@ -184,6 +184,7 @@ function AppRoutes() {
       <Route path="/dashboard/classroom" element={<ProtectedRoute><SchoolStudents /></ProtectedRoute>} />
       <Route path="/dashboard/classroom/add" element={<ProtectedRoute><SchoolInvite /></ProtectedRoute>} />
       <Route path="/dashboard/classroom/assign" element={<ProtectedRoute><PracticeTests /></ProtectedRoute>} />
+      <Route path="/dashboard/classroom/:studentId" element={<ProtectedRoute><StudentProgressDetail /></ProtectedRoute>} />
       <Route path="/dashboard/manage-assignments" element={<ProtectedRoute><ManageAssignments /></ProtectedRoute>} />
       <Route path="/dashboard/leaderboard" element={<ProtectedRoute><TutorLeaderboard /></ProtectedRoute>} />
       <Route path="/dashboard/schedule" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />

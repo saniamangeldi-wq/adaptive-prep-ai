@@ -14,6 +14,7 @@ import {
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { PageSeo } from "@/components/seo/PageSeo";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { formatScore } from "@/lib/sat-score";
 
@@ -40,6 +41,9 @@ interface TopicStat {
  */
 export default function StudentProgressDetail() {
   const { studentId } = useParams<{ studentId: string }>();
+  const { profile: viewer } = useAuth();
+  const isTeacher = viewer?.role === "teacher";
+  const backHref = isTeacher ? "/dashboard/classroom" : "/dashboard/students";
 
   const { data, isLoading } = useQuery({
     queryKey: ["student-progress-detail", studentId],
@@ -111,7 +115,7 @@ export default function StudentProgressDetail() {
       <div className="space-y-6 max-w-5xl mx-auto">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/dashboard/students">
+            <Link to={backHref}>
               <ArrowLeft className="w-4 h-4" />
               Back
             </Link>
