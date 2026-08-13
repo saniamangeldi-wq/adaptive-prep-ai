@@ -368,12 +368,15 @@ function StudentBillingView() {
                   </CardDescription>
                 </div>
               </div>
-              {isTrialUser && (
-                <Badge variant="outline" className="border-yellow-500/50 text-yellow-400">
-                  <Clock className="w-3 h-3 mr-1" />
-                  Trial Active
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {isTrialUser && (
+                  <Badge variant="outline" className="border-yellow-500/50 text-yellow-400">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Trial Active
+                  </Badge>
+                )}
+                {profile?.tier && profile.tier !== "tier_0" && <CancelSubscriptionDialog />}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
