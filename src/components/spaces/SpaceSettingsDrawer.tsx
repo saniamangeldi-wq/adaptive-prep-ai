@@ -156,10 +156,16 @@ export function SpaceSettingsDrawer({ space, open, onClose, onSave, onDelete, sp
                 <input type="radio" name="visibility" checked readOnly className="accent-primary" />
                 {t("spaces.private")}
               </label>
-              <label className="flex items-center gap-2 text-sm text-muted-foreground/50 cursor-not-allowed">
+              <label
+                className="flex items-center gap-2 text-sm text-muted-foreground/50 cursor-not-allowed"
+                title="Shared spaces are not available on this plan. Every space stays private to your account."
+              >
                 <input type="radio" name="visibility" disabled className="accent-primary" />
-                {t("spaces.shared")} <span className="text-xs">({t("common.comingSoon")})</span>
+                {t("spaces.shared")} <span className="text-xs">(unavailable)</span>
               </label>
+              <p className="text-[11px] text-muted-foreground/60">
+                Sharing is disabled — spaces stay private to your account.
+              </p>
             </div>
           </div>
 

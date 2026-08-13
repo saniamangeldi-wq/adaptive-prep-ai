@@ -269,13 +269,13 @@ export default function SchoolStudents() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="text-right hidden sm:block">
-                      <p className="text-sm text-muted-foreground">Progress</p>
-                      <p className="font-medium text-foreground flex items-center gap-1">
-                        <TrendingUp className="w-4 h-4 text-green-500" />
-                        --
-                      </p>
-                    </div>
+                    <Link
+                      to={`${detailBase}/${student.user_id}`}
+                      className="text-sm text-primary hover:underline flex items-center gap-1"
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      View progress
+                    </Link>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       student.status === "active" 
                         ? "bg-green-500/20 text-green-400" 
