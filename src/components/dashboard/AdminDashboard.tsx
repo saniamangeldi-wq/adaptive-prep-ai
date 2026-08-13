@@ -309,6 +309,16 @@ export function AdminDashboard() {
   );
 }
 
+function SummaryTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="p-4 rounded-xl bg-muted/30 border border-border/40">
+      <div className="text-2xl font-bold text-foreground">{value}</div>
+      <div className="text-sm text-muted-foreground mt-1">{label}</div>
+    </div>
+  );
+}
+
+
 function StatCard({ 
   icon: Icon, 
   label, 
