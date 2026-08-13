@@ -102,37 +102,42 @@ export function AdminDashboard() {
         </Button>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats cards — real counts and scores from active school members */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={GraduationCap}
           label="Total Students"
-          value="0"
+          value={stats.isLoading ? "—" : String(stats.totalStudents)}
           subtext="enrolled"
           color="from-primary to-teal-400"
         />
         <StatCard
           icon={Users}
           label="Teachers"
-          value="0"
+          value={stats.isLoading ? "—" : String(stats.totalTeachers)}
           subtext="active"
           color="from-purple-500 to-pink-400"
         />
         <StatCard
           icon={TrendingUp}
           label="School Average"
-          value="--"
-          subtext="SAT score"
+          value={stats.avgScore == null ? "—" : String(stats.avgScore)}
+          subtext={stats.scoreSample > 0 ? `${stats.scoreSample} scored` : "no tests yet"}
           color="from-green-500 to-emerald-400"
         />
         <StatCard
           icon={BarChart3}
           label="Improvement"
-          value="--"
-          subtext="avg. points"
+          value={
+            stats.avgImprovement == null
+              ? "—"
+              : `${stats.avgImprovement > 0 ? "+" : ""}${stats.avgImprovement}`
+          }
+          subtext={stats.improvementSample > 0 ? `${stats.improvementSample} students` : "needs 2+ tests"}
           color="from-accent to-orange-400"
         />
       </div>
+
 
       {/* Quick actions */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
