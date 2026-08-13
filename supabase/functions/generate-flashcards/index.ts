@@ -223,7 +223,7 @@ Always ensure the question requires the learner to recall information from memor
     return new Response(JSON.stringify({ 
       cards,
       topic,
-      creditsRemaining: profile.credits_remaining - 1
+      creditsRemaining: remainingCredits
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
