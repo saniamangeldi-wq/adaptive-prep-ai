@@ -2,6 +2,8 @@ import { AbandonedTestsPanel } from "@/components/dashboard/AbandonedTestsPanel"
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { useRosterStats } from "@/hooks/useRosterStats";
 import { 
   Users, 
   TrendingUp, 
@@ -9,10 +11,13 @@ import {
   BookOpen,
   BarChart3,
   FileText,
-  Award,
+  Clock,
+  Target,
   MessageSquare,
-  Building2
+  Building2,
+  Info
 } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { JoinCodeEntry } from "@/components/invite/JoinCodeEntry";
@@ -26,6 +31,26 @@ export function TeacherDashboard() {
   const { profile, user } = useAuth();
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const stats = useRosterStats("teacher");
+
+  const { data: roster } = useQuery({
+    queryKey: ["teacher-roster", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data: links } = await supabase
+        .from("teacher_students")
+        .select("student_id")
+        .eq("teacher_id", user!.id);
+      const ids = (links ?? []).map((l: { student_id: string }) => l.student_id);
+      if (ids.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", ids);
+      return profiles ?? [];
+    },
+  });
+
 
   useEffect(() => {
     async function loadSchoolInfo() {
