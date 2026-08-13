@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-export type EliteModel = "gemini-pro" | "perplexity-pro" | "gpt-4o";
+export type EliteModel = "gemini-pro" | "perplexity-pro" | "gpt-5";
 
 interface ModelSelectorProps {
   value: EliteModel;
@@ -19,7 +19,7 @@ interface ModelSelectorProps {
 const models: { value: EliteModel; label: string; disabled?: boolean; badge?: string }[] = [
   { value: "gemini-pro", label: "Gemini 2.5 Pro" },
   { value: "perplexity-pro", label: "Perplexity Sonar Pro" },
-  { value: "gpt-4o", label: "GPT-4o", disabled: true, badge: "Unavailable" },
+  { value: "gpt-5", label: "GPT-5.6" },
 ];
 
 export function ModelSelector({ value, onChange, className }: ModelSelectorProps) {
