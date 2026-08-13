@@ -614,28 +614,37 @@ serve(async (req) => {
       }
     }
 
-    // Check credits after potential reset
-    if (currentCredits <= 0) {
-      return new Response(JSON.stringify({ 
+    const { messages, taskType, subject: explicitSubject, modelOverride } = await req.json();
+
+    // Atomically check-and-deduct 1 credit (prevents concurrent double-spend)
+    const creditAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: remainingCredits, error: creditError } = await creditAdmin.rpc("consume_ai_credits", {
+      _user_id: userId,
+      _cost: 1,
+    });
+
+    if (creditError) {
+      console.error("Failed to deduct credit:", creditError);
+      return new Response(JSON.stringify({ error: "Could not verify credits" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (typeof remainingCredits !== "number" || remainingCredits < 0) {
+      return new Response(JSON.stringify({
         error: "No credits remaining. Please upgrade your plan for more credits.",
-        credits_remaining: 0 
+        credits_remaining: 0
       }), {
         status: 402,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    currentCredits = remainingCredits;
 
-    const { messages, taskType, subject: explicitSubject, modelOverride } = await req.json();
-
-    // Deduct 1 credit
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ credits_remaining: currentCredits - 1 })
-      .eq("user_id", userId);
-
-    if (updateError) {
-      console.error("Failed to deduct credit:", updateError);
-    }
 
     // Ensure messages alternate correctly for API compatibility
     // Perplexity requires: starts with user, alternating user/assistant, ends with user

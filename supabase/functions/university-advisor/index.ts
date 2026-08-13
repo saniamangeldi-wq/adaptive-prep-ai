@@ -158,26 +158,31 @@ serve(async (req) => {
          .eq("user_id", effectiveStudentId);
      }
  
-     // Check if user has enough credits
-     if (currentCredits < ADVISOR_CREDIT_COST) {
+     // Atomically check-and-deduct credits (prevents concurrent double-spend)
+     const { data: remainingCredits, error: creditError } = await supabase.rpc("consume_ai_credits", {
+       _user_id: effectiveStudentId,
+       _cost: ADVISOR_CREDIT_COST,
+     });
+
+     if (creditError) {
+       console.error("Failed to deduct credits:", creditError);
        return new Response(
-         JSON.stringify({ 
+         JSON.stringify({ error: "Could not verify credits" }),
+         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+       );
+     }
+
+     if (typeof remainingCredits !== "number" || remainingCredits < 0) {
+       return new Response(
+         JSON.stringify({
            error: `Not enough credits. University advisor requires ${ADVISOR_CREDIT_COST} credits per message.`,
            credits_remaining: currentCredits
          }),
          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
        );
      }
- 
-     // Deduct credits
-     const { error: updateError } = await supabase
-       .from("profiles")
-       .update({ credits_remaining: currentCredits - ADVISOR_CREDIT_COST })
-       .eq("user_id", effectiveStudentId);
- 
-     if (updateError) {
-       console.error("Failed to deduct credits:", updateError);
-     }
+     currentCredits = remainingCredits;
+
  
     // Get student's matches
      const { data: matches } = await supabase

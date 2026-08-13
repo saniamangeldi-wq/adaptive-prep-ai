@@ -35,31 +35,6 @@ serve(async (req) => {
       });
     }
 
-    // Get user profile for credits
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("credits_remaining")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return new Response(JSON.stringify({ error: "Profile not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Check credits
-    if (profile.credits_remaining <= 0) {
-      return new Response(JSON.stringify({ 
-        error: "No credits remaining",
-        cards: [] 
-      }), {
-        status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const { topic, cardCount, sourceType, customContent } = await req.json();
 
     if (!topic) {
@@ -69,11 +44,34 @@ serve(async (req) => {
       });
     }
 
-    // Deduct 1 credit
-    await supabase
-      .from("profiles")
-      .update({ credits_remaining: profile.credits_remaining - 1 })
-      .eq("user_id", user.id);
+    // Atomically check-and-deduct 1 credit (prevents concurrent double-spend)
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: remainingCredits, error: creditError } = await admin.rpc("consume_ai_credits", {
+      _user_id: user.id,
+      _cost: 1,
+    });
+
+    if (creditError) {
+      console.error("Credit deduction failed:", creditError);
+      return new Response(JSON.stringify({ error: "Could not verify credits", cards: [] }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (typeof remainingCredits !== "number" || remainingCredits < 0) {
+      return new Response(JSON.stringify({
+        error: "No credits remaining",
+        cards: []
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -225,7 +223,7 @@ Always ensure the question requires the learner to recall information from memor
     return new Response(JSON.stringify({ 
       cards,
       topic,
-      creditsRemaining: profile.credits_remaining - 1
+      creditsRemaining: remainingCredits
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
