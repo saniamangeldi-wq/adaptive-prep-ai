@@ -415,16 +415,13 @@ function StudentBillingView() {
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
                 <p className="text-xs text-muted-foreground mb-1">AI Model</p>
                 <p className="text-xl font-bold text-foreground">
-                  {currentTierLimits.aiProvider === "perplexity" 
-                    ? (currentTierLimits.aiModel === "gpt-5-all" ? "Perplexity All" : "Perplexity Pro")
-                    : currentTierLimits.aiModel === "gpt-4o" ? "GPT-4o" 
-                    : "Gemini Flash"}
+                  {currentTierLimits.aiModelLabel}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  {currentTierLimits.aiProvider === "perplexity" 
-                    ? "Multi-AI Search" 
-                    : currentTierLimits.aiProvider === "openai" 
-                      ? "OpenAI" 
+                  {currentTierLimits.aiProvider === "perplexity"
+                    ? "Perplexity"
+                    : currentTierLimits.aiProvider === "openai"
+                      ? "OpenAI"
                       : "Google Gemini"}
                 </p>
               </div>
