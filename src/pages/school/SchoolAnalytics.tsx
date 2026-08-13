@@ -25,6 +25,16 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageSeo } from "@/components/seo/PageSeo";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip as RTooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
 
 interface UserActivity {
   user_id: string;
@@ -105,6 +115,26 @@ export default function SchoolAnalytics() {
   });
 
   const users = activityData?.users || [];
+
+  const SCORE_BANDS: Array<[string, number, number]> = [
+    ["400–800", 400, 800],
+    ["800–1000", 800, 1000],
+    ["1000–1200", 1000, 1200],
+    ["1200–1400", 1200, 1400],
+    ["1400–1600", 1400, 1601],
+  ];
+  const scoreBuckets = SCORE_BANDS.map(([range, lo, hi]) => ({
+    range,
+    students: users.filter((u) => u.best_score > 0 && u.best_score >= lo && u.best_score < hi).length,
+  }));
+
+  const engagementBuckets = [
+    { label: "Active", students: users.filter((u) => getDaysSinceActive(u.last_active) <= 1).length },
+    { label: "Recent", students: users.filter((u) => { const d = getDaysSinceActive(u.last_active); return d > 1 && d <= 3; }).length },
+    { label: "Fading", students: users.filter((u) => { const d = getDaysSinceActive(u.last_active); return d > 3 && d <= 7; }).length },
+    { label: "Inactive", students: users.filter((u) => getDaysSinceActive(u.last_active) > 7).length },
+  ];
+
 
   const sortedUsers = [...users].sort((a, b) => {
     let cmp = 0;
