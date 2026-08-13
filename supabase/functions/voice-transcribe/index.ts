@@ -1,6 +1,12 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+const adminClient = () => createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  { auth: { persistSession: false } }
+);
+
 async function requireUser(req: Request) {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return null;
@@ -14,6 +20,36 @@ async function requireUser(req: Request) {
   return data.user;
 }
 
+const monthKey = () => new Date().toISOString().slice(0, 7);
+
+async function getQuota(userId: string) {
+  const admin = adminClient();
+  const { data: profile } = await admin
+    .from('profiles').select('tier').eq('user_id', userId).maybeSingle();
+  if (!profile) return null;
+  const limitSeconds = profile.tier === 'tier_3' ? 200 * 60 : 5 * 60;
+  const { data: usage } = await admin
+    .from('voice_usage').select('seconds_used')
+    .eq('user_id', userId).eq('month_year', monthKey()).maybeSingle();
+  return { limitSeconds, used: usage?.seconds_used ?? 0 };
+}
+
+async function recordUsage(userId: string, seconds: number) {
+  const admin = adminClient();
+  const month = monthKey();
+  const { data: existing } = await admin
+    .from('voice_usage').select('id, seconds_used')
+    .eq('user_id', userId).eq('month_year', month).maybeSingle();
+  if (existing) {
+    await admin.from('voice_usage')
+      .update({ seconds_used: existing.seconds_used + seconds, updated_at: new Date().toISOString() })
+      .eq('id', existing.id);
+  } else {
+    await admin.from('voice_usage')
+      .insert({ user_id: userId, seconds_used: seconds, month_year: month });
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -24,6 +60,21 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
+
+  const quota = await getQuota(user.id);
+  if (!quota) {
+    return new Response(JSON.stringify({ error: 'Profile not found' }), {
+      status: 403,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  if (quota.used >= quota.limitSeconds) {
+    return new Response(JSON.stringify({ error: 'Voice minutes exhausted for this month' }), {
+      status: 403,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
 
   try {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -93,9 +144,13 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
+    // Estimate duration from encoded audio size (~4 KB/s for typical compressed speech)
+    const estimatedSeconds = Math.min(600, Math.max(1, Math.ceil(file.size / 4000)));
+    await recordUsage(user.id, estimatedSeconds);
     return new Response(JSON.stringify({ text: data.text ?? '' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (err) {
     console.error('voice-transcribe error:', err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
