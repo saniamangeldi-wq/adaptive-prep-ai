@@ -266,15 +266,8 @@ serve(async (req) => {
       }
     }
 
-    // Deduct credits
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ credits_remaining: profile.credits_remaining - creditCost })
-      .eq("user_id", userId);
+    // Credits were already deducted atomically before generating the report.
 
-    if (updateError) {
-      console.error("Failed to deduct credit:", updateError);
-    }
 
     // Build system prompt
     const systemPrompt = profile.role === "school_admin" 
