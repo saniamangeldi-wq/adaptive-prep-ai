@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { getStripeLink } from "@/lib/stripe-links";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { CancelSubscriptionDialog } from "@/components/billing/CancelSubscriptionDialog";
 
 // Tutor plan definitions
 const tutorPlans = [
@@ -129,7 +130,7 @@ function TutorBillingView() {
                   <CardDescription>${currentPrice}/month</CardDescription>
                 </div>
               </div>
-              <Button variant="outline">Manage Payment</Button>
+              <CancelSubscriptionDialog />
             </div>
           </CardHeader>
         </Card>
