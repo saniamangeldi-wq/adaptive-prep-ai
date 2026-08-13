@@ -242,7 +242,12 @@ export default function UniversityMatch() {
       await loadMatches();
       toast({ title: "Matches generated!", description: "Your recommendations are ready." });
     } catch {
-      toast({ title: "Coming soon", description: "University matching is being set up." });
+      toast({
+        title: "Couldn't generate matches",
+        description: "Something went wrong on our side. Please try again in a moment.",
+        variant: "destructive",
+      });
+
     } finally {
       setGenerating(false);
     }
