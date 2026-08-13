@@ -443,24 +443,37 @@ async function callLovableAI(
     throw new Error("LOVABLE_API_KEY is not configured");
   }
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const buildBody = (m: string) => JSON.stringify({
+    model: m,
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...messages,
+    ],
+    stream: true,
+    // GPT-5.6 models on chat completions must disable reasoning explicitly
+    ...(m.startsWith("openai/gpt-5.6") ? { reasoning_effort: "none" } : {}),
+  });
+
+  const send = (m: string) => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${LOVABLE_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
-      stream: true,
-    }),
+    body: buildBody(m),
   });
+
+  let response = await send(model);
+
+  // Fall back from the flagship GPT-5.6 model if it is unavailable
+  if (!response.ok && model === "openai/gpt-5.6-sol" && response.status !== 429 && response.status !== 402) {
+    console.warn(`gpt-5.6-sol failed (${response.status}), falling back to gpt-5.6-terra`);
+    response = await send("openai/gpt-5.6-terra");
+  }
 
   return response;
 }
+
 
 // Transform stream to strip <think>...</think> blocks from SSE content deltas
 function stripThinkTagsFromStream(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
