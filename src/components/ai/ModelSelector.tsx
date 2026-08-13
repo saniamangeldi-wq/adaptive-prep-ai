@@ -17,9 +17,9 @@ interface ModelSelectorProps {
 }
 
 const models: { value: EliteModel; label: string; disabled?: boolean; badge?: string }[] = [
-  { value: "gemini-pro", label: "Gemini 2.5 Pro" },
+  { value: "gemini-pro", label: "Gemini 3.1 Pro" },
   { value: "perplexity-pro", label: "Perplexity Sonar Pro" },
-  { value: "gpt-5", label: "GPT-5.6" },
+  { value: "gpt-5", label: "GPT-5.6 Sol" },
 ];
 
 export function ModelSelector({ value, onChange, className }: ModelSelectorProps) {

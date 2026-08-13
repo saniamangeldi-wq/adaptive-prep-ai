@@ -15,7 +15,8 @@ export interface TierLimits {
   flashcardsPerDay: number;
   hasVoiceChat: boolean;
   hasUniversityMatch: boolean;
-  aiModel: "gemini-flash-lite" | "gpt-4o" | "gpt-5" | "gpt-5-all";
+  aiModel: "gemini-flash-lite" | "gemini-flash" | "perplexity-pro" | "gpt-5.6-sol";
+  aiModelLabel: string;
   aiProvider: "gemini" | "openai" | "perplexity";
   features: string[];
 }
@@ -32,12 +33,13 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     hasVoiceChat: false,
     hasUniversityMatch: false,
     aiModel: "gemini-flash-lite",
+    aiModelLabel: "Gemini 3.1 Flash Lite",
     aiProvider: "gemini",
     features: [
       "15 AI credits/day",
       "10 SAT questions/day",
       "No practice tests",
-      "Basic AI Coach (Gemini Flash)",
+      "Basic AI Coach (Gemini 3.1 Flash Lite)",
       "Progress dashboard",
       "3 flashcards/day",
     ],
@@ -52,13 +54,14 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     flashcardsPerDay: 15,
     hasVoiceChat: false,
     hasUniversityMatch: false,
-    aiModel: "gpt-4o",
-    aiProvider: "openai",
+    aiModel: "gemini-flash",
+    aiModelLabel: "Gemini 3.6 Flash",
+    aiProvider: "gemini",
     features: [
       "30 AI questions/day",
       "20 quizzes/month",
       "Progress tracking",
-      "AI Study Coach",
+      "AI Study Coach (Gemini 3.6 Flash)",
       "No voice",
     ],
   },
@@ -72,13 +75,14 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     flashcardsPerDay: 30,
     hasVoiceChat: false,
     hasUniversityMatch: false,
-    aiModel: "gpt-5",
+    aiModel: "perplexity-pro",
+    aiModelLabel: "Perplexity Sonar Pro",
     aiProvider: "perplexity",
     features: [
       "100 AI questions/day",
       "300 practice questions/month",
       "Everything in Basic",
-      "Perplexity Pro AI models",
+      "Perplexity Sonar Pro AI",
       "Listen to AI responses",
       "Priority support",
       "30 flashcards/day",
@@ -94,14 +98,15 @@ export const TIER_LIMITS: Record<PricingTier, TierLimits> = {
     flashcardsPerDay: -1, // Unlimited
     hasVoiceChat: VOICE_CHAT_ENABLED,
     hasUniversityMatch: true,
-    aiModel: "gpt-5-all",
-    aiProvider: "perplexity",
+    aiModel: "gpt-5.6-sol",
+    aiModelLabel: "GPT-5.6 Sol",
+    aiProvider: "openai",
     features: [
       "200 AI credits/day",
       "1000 practice questions/month",
       "Everything in Pro",
-      "All Perplexity Pro models",
-      "Deep Research + Reasoning Pro",
+      "GPT-5.6 Sol (frontier model)",
+      "Perplexity Deep Research + Reasoning Pro",
       "Unlimited flashcards",
       "1-on-1 coaching session",
     ],
