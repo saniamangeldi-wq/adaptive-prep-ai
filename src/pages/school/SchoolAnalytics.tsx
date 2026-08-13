@@ -280,41 +280,79 @@ export default function SchoolAnalytics() {
           )}
         </div>
 
-        {/* Charts placeholder */}
+        {/* Charts — derived from the same activity data shown in the table */}
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="p-6 rounded-2xl bg-card border border-border/50">
-            <h3 className="font-semibold text-foreground mb-4">Score Distribution</h3>
-            <div className="h-64 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <span className="text-4xl mb-3 block">📊</span>
-                <p className="font-medium text-foreground">
-                  {users.length === 0 ? "No analytics yet — add your first student to get started" : "Score distribution chart coming soon"}
-                </p>
-                {users.length === 0 && (
-                  <Button variant="hero" size="sm" className="mt-4" asChild>
-                    <Link to={studentsHref}><UserPlus className="w-4 h-4" />Add Student</Link>
-                  </Button>
-                )}
-              </div>
+            <h3 className="font-semibold text-foreground mb-1">Score Distribution</h3>
+            <p className="text-xs text-muted-foreground mb-4">Best SAT score per student</p>
+            <div className="h-64">
+              {scoreBuckets.some((b) => b.students > 0) ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={scoreBuckets}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="range" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                    <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                    <RTooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Bar dataKey="students" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-center text-muted-foreground">
+                  <div>
+                    <p className="font-medium text-foreground">No scored tests yet</p>
+                    <p className="text-sm mt-1">This fills in once students complete a test.</p>
+                    {users.length === 0 && (
+                      <Button variant="hero" size="sm" className="mt-4" asChild>
+                        <Link to={studentsHref}><UserPlus className="w-4 h-4" />Add Student</Link>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="p-6 rounded-2xl bg-card border border-border/50">
-            <h3 className="font-semibold text-foreground mb-4">Weekly Activity</h3>
-            <div className="h-64 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <span className="text-4xl mb-3 block">📊</span>
-                <p className="font-medium text-foreground">
-                  {users.length === 0 ? "No analytics yet — add your first student to get started" : "Weekly activity chart coming soon"}
-                </p>
-                {users.length === 0 && (
-                  <Button variant="hero" size="sm" className="mt-4" asChild>
-                    <Link to={studentsHref}><UserPlus className="w-4 h-4" />Add Student</Link>
-                  </Button>
-                )}
-              </div>
+            <h3 className="font-semibold text-foreground mb-1">Engagement</h3>
+            <p className="text-xs text-muted-foreground mb-4">Students by how recently they were active</p>
+            <div className="h-64">
+              {users.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={engagementBuckets}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                    <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                    <RTooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Bar dataKey="students" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-center text-muted-foreground">
+                  <div>
+                    <p className="font-medium text-foreground">No students yet</p>
+                    <Button variant="hero" size="sm" className="mt-4" asChild>
+                      <Link to={studentsHref}><UserPlus className="w-4 h-4" />Add Student</Link>
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
+
       </div>
     </DashboardLayout>
   );
