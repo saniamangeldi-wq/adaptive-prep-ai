@@ -2399,6 +2399,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_cancellations: {
+        Row: {
+          access_until: string | null
+          created_at: string
+          email: string | null
+          feedback: string | null
+          id: string
+          reason: string
+          stripe_error: string | null
+          stripe_subscription_id: string | null
+          tier: Database["public"]["Enums"]["pricing_tier"] | null
+          user_id: string
+        }
+        Insert: {
+          access_until?: string | null
+          created_at?: string
+          email?: string | null
+          feedback?: string | null
+          id?: string
+          reason: string
+          stripe_error?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["pricing_tier"] | null
+          user_id: string
+        }
+        Update: {
+          access_until?: string | null
+          created_at?: string
+          email?: string | null
+          feedback?: string | null
+          id?: string
+          reason?: string
+          stripe_error?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["pricing_tier"] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
