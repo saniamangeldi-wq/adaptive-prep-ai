@@ -203,32 +203,42 @@ export function TeacherDashboard() {
         />
       </div>
 
-      {/* Class performance */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="p-6 rounded-2xl bg-card border border-border/50">
-          <h3 className="font-semibold text-foreground mb-4">Students Needing Attention</h3>
+      {/* Class roster */}
+      <div className="p-6 rounded-2xl bg-card border border-border/50">
+        <h3 className="font-semibold text-foreground mb-4">Your Students</h3>
+        {roster && roster.length > 0 ? (
+          <div className="space-y-2">
+            {roster.map((s: { user_id: string; full_name: string | null; email: string | null }) => (
+              <Link
+                key={s.user_id}
+                to={`/dashboard/students/${s.user_id}`}
+                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/30 border border-border/40 hover:border-primary/40 transition-colors"
+              >
+                <span className="text-sm text-foreground truncate">
+                  {s.full_name || s.email || "Student"}
+                </span>
+                <span className="text-xs text-primary shrink-0">View progress</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
           <div className="text-center py-8 text-muted-foreground">
             <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No students in your class yet</p>
-            <p className="text-sm mt-1">Students are assigned by your school admin</p>
+            <p>No students assigned to you yet</p>
+            <p className="text-sm mt-1">
+              {schoolInfo
+                ? "Your school admin assigns students to your classes."
+                : "Join your school with an invite code to get your class roster."}
+            </p>
+            {!schoolInfo && (
+              <div className="mt-4 flex justify-center">
+                <JoinCodeEntry userRole="teacher" />
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-card border border-border/50">
-          <h3 className="font-semibold text-foreground mb-4">Recent Test Results</h3>
-          <div className="text-center py-8 text-muted-foreground">
-            <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No tests assigned yet</p>
-            <p className="text-sm mt-1">Create an assignment to get started</p>
-            <Button variant="outline" className="mt-4" asChild>
-              <Link to="/dashboard/manage-assignments">
-                <ClipboardList className="w-4 h-4" />
-                Create Assignment
-              </Link>
-            </Button>
-          </div>
-        </div>
+        )}
       </div>
+
 
       <AbandonedTestsPanel role="teacher" />
     </div>
