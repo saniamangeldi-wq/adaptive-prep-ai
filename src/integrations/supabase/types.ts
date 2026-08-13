@@ -3271,6 +3271,10 @@ export type Database = {
     }
     Functions: {
       check_trial_expiration: { Args: never; Returns: undefined }
+      consume_ai_credits: {
+        Args: { _cost: number; _user_id: string }
+        Returns: number
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
