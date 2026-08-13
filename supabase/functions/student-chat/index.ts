@@ -693,8 +693,16 @@ serve(async (req) => {
           qualityNote: "Provide detailed, well-sourced responses with citations. You have access to premium search and reasoning.",
         };
       }
-      // gpt-4o is "coming soon" — ignored if sent
+      } else if (modelOverride === "gpt-5") {
+        modelConfig = {
+          provider: "openai",
+          model: "openai/gpt-5.6-sol",
+          displayName: "GPT-5.6",
+          qualityNote: "You have access to frontier reasoning. Provide precise, rigorous, well-structured explanations.",
+        };
+      }
     }
+
     
     const profileCtx: StudentProfileContext = {
       learningStyle: profile.learning_style,
