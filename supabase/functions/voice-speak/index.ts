@@ -130,9 +130,13 @@ Deno.serve(async (req) => {
     }
 
     const audio = await response.arrayBuffer();
+    // ~15 chars/sec of speech, adjusted for playback speed
+    const estimatedSeconds = Math.max(1, Math.ceil(capped.length / 15 / (Number(speed) || 1)));
+    await recordUsage(user.id, estimatedSeconds);
     return new Response(audio, {
       headers: { ...corsHeaders, 'Content-Type': 'audio/mpeg' },
     });
+
   } catch (err) {
     console.error('voice-speak error:', err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
