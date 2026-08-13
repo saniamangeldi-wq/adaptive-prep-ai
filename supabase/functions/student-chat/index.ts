@@ -188,10 +188,11 @@ function needsResearch(message: string): boolean {
 
 function getAIModelForTier(tier: string, taskType?: string, message?: string): AIModelConfig {
   switch (tier) {
+    // Elite / Premium — GPT-5.6 Sol by default, Perplexity for research/deep reasoning
     case "tier_3": {
       const needsAdvancedReasoning = message && isComplexReasoning(message);
       const needsResearchMode = message && needsResearch(message);
-      
+
       if (needsResearchMode || taskType === "research") {
         return {
           provider: "perplexity",
@@ -200,7 +201,7 @@ function getAIModelForTier(tier: string, taskType?: string, message?: string): A
           qualityNote: "You have access to expert-level research capabilities. Provide comprehensive, well-sourced responses with citations.",
         };
       }
-      
+
       if (needsAdvancedReasoning || taskType === 'study_plan') {
         return {
           provider: "perplexity",
@@ -209,43 +210,46 @@ function getAIModelForTier(tier: string, taskType?: string, message?: string): A
           qualityNote: "You have access to advanced chain-of-thought reasoning. Break down complex problems into clear steps with strategic insights.",
         };
       }
-      
+
       return {
-        provider: "perplexity",
-        model: "sonar-pro",
-        displayName: "Perplexity Pro",
-        qualityNote: "Provide detailed, in-depth explanations with multiple examples. You have access to premium AI capabilities.",
+        provider: "openai",
+        model: "openai/gpt-5.6-sol",
+        displayName: "GPT-5.6 Sol",
+        qualityNote: "You have access to frontier reasoning. Provide precise, rigorous, well-structured explanations with worked examples.",
       };
     }
+    // Pro — Perplexity Sonar Pro
     case "tier_2": {
       const needsResearchMode = message && needsResearch(message);
-      
+
       return {
         provider: "perplexity",
         model: "sonar-pro",
-        displayName: "Perplexity Pro",
+        displayName: "Perplexity Sonar Pro",
         qualityNote: needsResearchMode 
           ? "Provide well-researched, factual responses with citations."
           : "Provide clear explanations with good depth and enhanced reasoning.",
       };
     }
+    // Basic / starter — Gemini
     case "tier_1":
       return {
-        provider: "openai",
-        model: "openai/gpt-5-mini",
-        displayName: "GPT-4o",
+        provider: "gemini",
+        model: "google/gemini-3.6-flash",
+        displayName: "Gemini 3.6 Flash",
         qualityNote: "Provide clear, focused explanations with good detail.",
       };
     case "tier_0":
     default:
       return {
         provider: "gemini",
-        model: "google/gemini-2.5-flash-lite",
-        displayName: "Gemini Flash",
+        model: "google/gemini-3.1-flash-lite",
+        displayName: "Gemini 3.1 Flash Lite",
         qualityNote: "Provide concise, focused explanations.",
       };
   }
 }
+
 
 interface StudentProfileContext {
   learningStyle: string | null;
