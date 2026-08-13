@@ -166,7 +166,25 @@ serve(async (req) => {
       creditCost = profile.role === "school_admin" ? 10 : 5;
     }
 
-    if (profile.credits_remaining < creditCost) {
+    // Atomically check-and-deduct credits (prevents concurrent double-spend)
+    const creditAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: remainingCredits, error: creditError } = await creditAdmin.rpc("consume_ai_credits", {
+      _user_id: userId,
+      _cost: creditCost,
+    });
+
+    if (creditError) {
+      console.error("Failed to deduct credits:", creditError);
+      return new Response(JSON.stringify({ error: "Could not verify credits" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (typeof remainingCredits !== "number" || remainingCredits < 0) {
       return new Response(JSON.stringify({ 
         error: `Insufficient credits. This action requires ${creditCost} credits.`,
         credits_remaining: profile.credits_remaining,
@@ -176,6 +194,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
