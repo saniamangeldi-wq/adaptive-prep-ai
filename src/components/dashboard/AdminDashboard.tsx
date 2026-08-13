@@ -18,12 +18,16 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { DuplicateAccountsPanel } from "./DuplicateAccountsPanel";
+import { useSchoolStats } from "@/hooks/useSchoolStats";
+
 
 export function AdminDashboard() {
   const { profile } = useAuth();
+  const stats = useSchoolStats();
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [schoolName, setSchoolName] = useState<string | null>(null);
+
 
   useEffect(() => {
     const fetchSchoolInfo = async () => {
