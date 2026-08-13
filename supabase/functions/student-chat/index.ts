@@ -698,8 +698,8 @@ serve(async (req) => {
       if (modelOverride === "gemini-pro") {
         modelConfig = {
           provider: "gemini",
-          model: "google/gemini-2.5-pro",
-          displayName: "Gemini 2.5 Pro",
+          model: "google/gemini-3.1-pro-preview",
+          displayName: "Gemini 3.1 Pro",
           qualityNote: "You have access to premium AI capabilities with deep reasoning. Provide detailed, in-depth explanations.",
         };
       } else if (modelOverride === "perplexity-pro") {
