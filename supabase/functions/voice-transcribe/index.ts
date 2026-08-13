@@ -144,9 +144,13 @@ Deno.serve(async (req) => {
     }
 
     const data = await response.json();
+    // Estimate duration from encoded audio size (~4 KB/s for typical compressed speech)
+    const estimatedSeconds = Math.min(600, Math.max(1, Math.ceil(file.size / 4000)));
+    await recordUsage(user.id, estimatedSeconds);
     return new Response(JSON.stringify({ text: data.text ?? '' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (err) {
     console.error('voice-transcribe error:', err);
     return new Response(JSON.stringify({ error: (err as Error).message }), {
