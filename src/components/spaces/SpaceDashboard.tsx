@@ -474,7 +474,9 @@ export function SpaceDashboard({ space, onSelectConversation, onNewConversation,
                 <Calendar className="w-3.5 h-3.5" />
                 Scheduled Tasks
               </div>
-              <p className="text-[11px] text-muted-foreground/50">Coming soon</p>
+              <p className="text-[11px] text-muted-foreground/50">
+                Not available — schedule study sessions from the Calendar instead.
+              </p>
             </div>
           </div>
         </ScrollArea>
