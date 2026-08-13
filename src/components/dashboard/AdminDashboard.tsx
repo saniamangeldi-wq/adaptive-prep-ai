@@ -262,13 +262,49 @@ export function AdminDashboard() {
 
       {/* Performance overview */}
       <div className="p-6 rounded-2xl bg-card border border-border/50">
-        <h3 className="font-semibold text-foreground mb-4">Department Performance</h3>
-        <div className="text-center py-8 text-muted-foreground">
-          <School className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No data yet</p>
-          <p className="text-sm mt-1">Invite teachers and students to start tracking performance</p>
-        </div>
+        <h3 className="font-semibold text-foreground mb-4">School Performance</h3>
+        {stats.totalStudents === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <School className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p className="text-foreground font-medium">No students enrolled yet</p>
+            <p className="text-sm mt-1">Share your invite code to bring teachers and students in.</p>
+            <Button variant="hero" className="mt-4" asChild>
+              <Link to="/dashboard/school/invite">
+                <UserPlus className="w-4 h-4" />
+                Invite Your First Members
+              </Link>
+            </Button>
+          </div>
+        ) : stats.scoreSample === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <School className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p className="text-foreground font-medium">No completed tests yet</p>
+            <p className="text-sm mt-1">
+              {stats.totalStudents} student{stats.totalStudents === 1 ? "" : "s"} enrolled — performance appears once they finish a test.
+            </p>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-3 gap-4">
+            <SummaryTile label="Students scored" value={String(stats.scoreSample)} />
+            <SummaryTile label="Average latest score" value={String(stats.avgScore)} />
+            <SummaryTile
+              label="Average improvement"
+              value={
+                stats.avgImprovement == null
+                  ? "—"
+                  : `${stats.avgImprovement > 0 ? "+" : ""}${stats.avgImprovement}`
+              }
+            />
+          </div>
+        )}
+        <Button variant="outline" className="w-full mt-4" asChild>
+          <Link to="/dashboard/school/analytics">
+            <BarChart3 className="w-4 h-4" />
+            View Full Analytics
+          </Link>
+        </Button>
       </div>
+
     </div>
   );
 }
