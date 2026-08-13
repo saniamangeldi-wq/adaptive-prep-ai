@@ -705,7 +705,6 @@ serve(async (req) => {
           displayName: "Perplexity Sonar Pro",
           qualityNote: "Provide detailed, well-sourced responses with citations. You have access to premium search and reasoning.",
         };
-      }
       } else if (modelOverride === "gpt-5") {
         modelConfig = {
           provider: "openai",
