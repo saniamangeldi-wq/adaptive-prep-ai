@@ -40,6 +40,9 @@ interface TopicStat {
  */
 export default function StudentProgressDetail() {
   const { studentId } = useParams<{ studentId: string }>();
+  const { profile: viewer } = useAuth();
+  const isTeacher = viewer?.role === "teacher";
+  const backHref = isTeacher ? "/dashboard/classroom" : "/dashboard/students";
 
   const { data, isLoading } = useQuery({
     queryKey: ["student-progress-detail", studentId],
