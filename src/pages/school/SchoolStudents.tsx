@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { Link } from "react-router-dom";
 
 interface Student {
   id: string;
@@ -181,6 +182,7 @@ export default function SchoolStudents() {
   }
 
   const inviteHref = isTutor ? "/dashboard/students/add" : "/dashboard/school/invite";
+  const detailBase = profile?.role === "teacher" ? "/dashboard/classroom" : "/dashboard/students";
 
   return (
     <DashboardLayout>
