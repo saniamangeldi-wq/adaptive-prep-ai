@@ -139,6 +139,8 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
+      <Route path="/terms" element={<Terms />} />
+
       <Route path="/blog/free-ai-sat-prep" element={<FreeAiSatPrep />} />
       <Route path="/blog/northeastern-acceptance-rate" element={<NortheasternAcceptanceRate />} />
       <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
