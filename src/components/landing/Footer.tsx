@@ -20,7 +20,7 @@ const footerLinks = {
     { label: "Careers", href: "#" },
     { label: "Contact", href: "#" },
     { label: "Privacy", href: "#" },
-    { label: "Terms", href: "#" },
+    { label: "Terms", href: "/terms" },
   ],
 };
 

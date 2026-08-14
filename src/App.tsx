@@ -9,6 +9,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 
 import Index from "./pages/Index";
+import Terms from "./pages/Terms";
+
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -137,6 +139,8 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
+      <Route path="/terms" element={<Terms />} />
+
       <Route path="/blog/free-ai-sat-prep" element={<FreeAiSatPrep />} />
       <Route path="/blog/northeastern-acceptance-rate" element={<NortheasternAcceptanceRate />} />
       <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />

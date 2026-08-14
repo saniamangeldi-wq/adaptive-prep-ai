@@ -703,7 +703,12 @@ function StudentBillingView() {
         <Card className="border-border/60">
           <CardHeader>
             <CardTitle className="text-base">Billing & refund policy</CardTitle>
-            <CardDescription>Please read before subscribing</CardDescription>
+            <CardDescription>
+              Please read before subscribing —{" "}
+              <a href="/terms" className="text-primary hover:underline">
+                full Terms of Service
+              </a>
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground leading-relaxed">
             <p>
