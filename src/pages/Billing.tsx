@@ -697,8 +697,36 @@ function StudentBillingView() {
                </div>
              </div>
            </CardContent>
-         </Card>
-      </div>
+          </Card>
+
+        {/* Billing & refund policy */}
+        <Card className="border-border/60">
+          <CardHeader>
+            <CardTitle className="text-base">Billing & refund policy</CardTitle>
+            <CardDescription>Please read before subscribing</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground leading-relaxed">
+            <p>
+              Subscriptions renew automatically until cancelled. You can cancel at any time from this
+              page — cancelling stops all future charges immediately.
+            </p>
+            <p>
+              <span className="text-foreground font-medium">All payments are final and non-refundable</span>,
+              including partial billing periods. When you cancel, you keep full access for the rest of the
+              period you have already paid for, and no refund or proration is issued for unused time.
+            </p>
+            <p>
+              Free trials are never charged if cancelled before the trial ends. Questions about a charge?
+              Email{" "}
+              <a href="mailto:hello@adaptiveprep.org" className="text-primary hover:underline">
+                hello@adaptiveprep.org
+              </a>
+              .
+            </p>
+          </CardContent>
+        </Card>
+       </div>
+
     </DashboardLayout>
   );
 }

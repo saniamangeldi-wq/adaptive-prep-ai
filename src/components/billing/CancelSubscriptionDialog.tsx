@@ -106,6 +106,13 @@ export function CancelSubscriptionDialog({ trigger }: Props) {
               </DialogDescription>
             </DialogHeader>
 
+            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground leading-relaxed">
+              <span className="text-foreground font-medium">No refunds.</span> Payments already made are
+              final and non-refundable, including for partial periods. You will not be charged again, and
+              unused time is not refunded or prorated.
+            </div>
+
+
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Why are you cancelling?</Label>
