@@ -232,12 +232,36 @@ export function useAIChat(conversationId?: string | null) {
 
     } catch (error) {
       console.error("AI chat error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to get AI response");
-      // Remove the user message if it failed
-      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+      const msg = error instanceof Error ? error.message : "Failed to get AI response";
+      toast.error(msg);
+      // Keep the user's message and any partial answer — never reset the chat.
+      setMessages(prev => {
+        if (assistantId) {
+          return prev.map(m =>
+            m.id === assistantId
+              ? {
+                  ...m,
+                  content: assistantContent
+                    ? `${assistantContent}\n\n_Response interrupted: ${msg}_`
+                    : `_Something went wrong: ${msg}. Your message is saved — try sending again._`,
+                }
+              : m
+          );
+        }
+        return [
+          ...prev,
+          {
+            id: `error-${Date.now()}`,
+            role: "assistant" as const,
+            content: `_Something went wrong: ${msg}. Your message is saved — try sending again._`,
+            timestamp: new Date(),
+          },
+        ];
+      });
     } finally {
       setIsLoading(false);
     }
+
   }, [messages, isLoading, refreshProfile, saveMessages]);
 
   const clearMessages = useCallback(() => {
