@@ -260,7 +260,7 @@ function StudentBillingView() {
         "15 AI credits/day",
         "10 SAT questions/day",
         "No practice tests",
-        "Basic AI Coach (Gemini Flash)",
+        "Basic AI Coach (Gemini 3.1 Flash Lite)",
         "Progress dashboard",
         "3 flashcards/day",
       ],
@@ -569,24 +569,25 @@ function StudentBillingView() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Free</p>
-                <p className="font-medium text-sm text-foreground">Gemini Flash</p>
+                <p className="font-medium text-sm text-foreground">Gemini 3.1 Flash Lite</p>
                 <p className="text-xs text-muted-foreground mt-1">Fast & efficient</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <p className="text-xs text-muted-foreground mb-1">Basic</p>
-                <p className="font-medium text-sm text-foreground">GPT-4o</p>
+                <p className="font-medium text-sm text-foreground">Gemini 3.6 Flash</p>
                 <p className="text-xs text-muted-foreground mt-1">Balanced quality</p>
               </div>
               <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
                 <p className="text-xs text-primary mb-1">Pro</p>
-                <p className="font-medium text-sm text-foreground">Perplexity Pro</p>
+                <p className="font-medium text-sm text-foreground">Perplexity Sonar Pro</p>
                 <p className="text-xs text-muted-foreground mt-1">Multi-AI Search</p>
               </div>
               <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
                 <p className="text-xs text-yellow-400 mb-1">Elite</p>
-                <p className="font-medium text-sm text-foreground">Perplexity + All</p>
+                <p className="font-medium text-sm text-foreground">GPT-5.6 Sol</p>
                 <p className="text-xs text-muted-foreground mt-1">Deep Research + Reasoning</p>
               </div>
+
             </div>
           </CardContent>
         </Card>
