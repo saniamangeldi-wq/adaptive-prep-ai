@@ -111,25 +111,30 @@ export function useAIChat(conversationId?: string | null) {
           /* non-JSON error body */
         }
 
-        if (response.status === 402) {
-          toast.error(errorData.error || "Insufficient credits");
-          setIsLoading(false);
-          return;
-        }
-
-        if (response.status === 429) {
-          toast.error("Rate limit exceeded. Please try again in a moment.");
-          setIsLoading(false);
-          return;
-        }
-
-        if (response.status === 403) {
-          toast.error(errorData.error || "Access denied");
+        if (response.status === 402 || response.status === 429 || response.status === 403) {
+          const friendly =
+            response.status === 402
+              ? errorData.error || "You're out of AI credits for today."
+              : response.status === 429
+                ? "Rate limit exceeded. Please try again in a moment."
+                : errorData.error || "Access denied";
+          toast.error(friendly);
+          // Keep the user's message visible and explain what happened inline.
+          setMessages(prev => [
+            ...prev,
+            {
+              id: `error-${Date.now()}`,
+              role: "assistant" as const,
+              content: `_${friendly}_`,
+              timestamp: new Date(),
+            },
+          ]);
           setIsLoading(false);
           return;
         }
 
         throw new Error(errorData.error || "Failed to get response");
+
       }
 
 
