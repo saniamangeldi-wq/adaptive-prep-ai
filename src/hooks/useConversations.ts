@@ -105,6 +105,39 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
     }
   }, [user, loadSpaces, loadConversations, selectedSpaceId]);
 
+  // Keep every mounted instance of this hook in sync (sidebar + chat page)
+  useEffect(() => {
+    const onChanged = () => {
+      loadSpaces();
+      loadConversations(selectedSpaceId);
+    };
+    window.addEventListener("adaptiveprep:conversations-changed", onChanged);
+    return () => window.removeEventListener("adaptiveprep:conversations-changed", onChanged);
+  }, [loadSpaces, loadConversations, selectedSpaceId]);
+
+  // Remove conversations that were created but never used
+  const deleteEmptyConversations = useCallback(async (exceptId?: string | null) => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("ai_conversations")
+      .select("id, messages")
+      .eq("user_id", user.id)
+      .eq("coach_type", coachType);
+
+    const emptyIds = (data || [])
+      .filter(c => {
+        const msgs = c.messages as unknown;
+        return (!Array.isArray(msgs) || msgs.length === 0) && c.id !== exceptId;
+      })
+      .map(c => c.id);
+
+    if (emptyIds.length === 0) return;
+
+    await supabase.from("ai_conversations").delete().in("id", emptyIds);
+    setConversations(prev => prev.filter(c => !emptyIds.includes(c.id)));
+  }, [user, coachType]);
+
+
   const createSpace = useCallback(async (
     name: string,
     description?: string,
