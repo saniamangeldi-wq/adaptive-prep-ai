@@ -140,17 +140,18 @@ export function useAIChat(conversationId?: string | null) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let textBuffer = "";
-      let assistantContent = "";
       let streamDone = false;
 
       // Create initial assistant message
-      const assistantId = (Date.now() + 1).toString();
+      assistantId = (Date.now() + 1).toString();
+      const activeAssistantId = assistantId;
       setMessages(prev => [...prev, {
-        id: assistantId,
+        id: activeAssistantId,
         role: "assistant",
         content: "",
         timestamp: new Date(),
       }]);
+
 
       while (!streamDone) {
         const { done, value } = await reader.read();
