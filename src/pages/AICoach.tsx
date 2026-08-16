@@ -56,7 +56,7 @@ export default function AICoach() {
   );
   const isElite = profile?.tier === "tier_3";
   const coachType = (profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") ? "tutor" : "student";
-  const { spaces, createConversation } = useConversations(coachType);
+  const { spaces, createConversation, deleteEmptyConversations } = useConversations(coachType);
 
   // Persist model preference when changed
   const handleModelChange = useCallback(async (model: EliteModel) => {
@@ -73,19 +73,27 @@ export default function AICoach() {
   const spaceId = searchParams.get("space");
   const activeSpace = spaceId ? spaces.find((s) => s.id === spaceId) || null : null;
 
+  // "New Chat" simply resets to a blank chat. The conversation row is created
+  // lazily on the first message (see ensureConversation), so unused chats never
+  // pollute the history list.
   const handleNewConversation = async (initialMessage?: string) => {
-    const conv = await createConversation(undefined, spaceId);
-    if (conv) {
-      setCurrentConversation(conv);
-      // If initialMessage provided, it will be sent by the chat component via the empty state
-      if (initialMessage) {
-        // Store the initial message to pass to the coach
-        setInitialMessage(initialMessage);
-      }
-    }
+    setCurrentConversation(null);
+    setInitialMessage(initialMessage || null);
+    setShowHistory(false);
+    // Clean up any previously created but never-used conversations
+    deleteEmptyConversations().catch(() => {});
+    window.dispatchEvent(new CustomEvent("adaptiveprep:new-chat"));
   };
 
+
   const [initialMessage, setInitialMessage] = useState<string | null>(null);
+
+  // Sweep away leftover empty conversations from previous sessions
+  useEffect(() => {
+    deleteEmptyConversations(currentConversation?.id).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deleteEmptyConversations]);
+
 
   const ensureConversation = async (): Promise<string | null> => {
     if (currentConversation) return currentConversation.id;

@@ -40,11 +40,34 @@ export function useAIChat(conversationId?: string | null) {
     const convId = conversationIdRef.current;
     if (!convId) return;
     const dbMessages = msgs.map(m => ({ role: m.role, content: m.content }));
-    await supabase
-      .from("ai_conversations")
-      .update({ messages: dbMessages, updated_at: new Date().toISOString() })
-      .eq("id", convId);
+
+    const updates: Record<string, unknown> = {
+      messages: dbMessages,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Auto-title the conversation from the first user message
+    const firstUser = msgs.find(m => m.role === "user" && !m.hidden);
+    if (firstUser) {
+      const { data: existing } = await supabase
+        .from("ai_conversations")
+        .select("title")
+        .eq("id", convId)
+        .maybeSingle();
+
+      const currentTitle = (existing?.title || "").trim();
+      if (!currentTitle || currentTitle === "New Conversation" || currentTitle === "Untitled") {
+        const raw = (firstUser.visibleText || firstUser.content).replace(/\s+/g, " ").trim();
+        if (raw) {
+          updates.title = raw.length > 32 ? `${raw.slice(0, 32).trim()}...` : raw;
+        }
+      }
+    }
+
+    await supabase.from("ai_conversations").update(updates).eq("id", convId);
+    window.dispatchEvent(new CustomEvent("adaptiveprep:conversations-changed"));
   }, []);
+
 
   const streamChat = useCallback(async (
     userInput: string,
