@@ -88,6 +88,13 @@ export default function AICoach() {
 
   const [initialMessage, setInitialMessage] = useState<string | null>(null);
 
+  // Sweep away leftover empty conversations from previous sessions
+  useEffect(() => {
+    deleteEmptyConversations(currentConversation?.id).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deleteEmptyConversations]);
+
+
   const ensureConversation = async (): Promise<string | null> => {
     if (currentConversation) return currentConversation.id;
     const conv = await createConversation(undefined, spaceId);
