@@ -281,6 +281,8 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
     createConversation,
     updateConversation,
     deleteConversation,
+    deleteEmptyConversations,
+
     togglePin,
     archiveConversation,
     moveToSpace,
