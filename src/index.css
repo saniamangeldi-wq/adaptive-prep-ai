@@ -441,7 +441,40 @@
   .ai-prose-perplexity th {
     @apply bg-muted/30 font-semibold;
   }
+
+  /* Math (KaTeX) readability inside AI chat */
+  .ai-prose-perplexity .katex,
+  .ai-prose .katex {
+    font-size: 1.15em;
+    line-height: 1.5;
+    color: hsl(var(--foreground));
+  }
+
+  .ai-prose-perplexity .katex-display,
+  .ai-prose .katex-display {
+    @apply my-4 py-2 px-3 rounded-lg bg-muted/25 overflow-x-auto overflow-y-hidden;
+    max-width: 100%;
+  }
+
+  .ai-prose-perplexity .katex-display > .katex,
+  .ai-prose .katex-display > .katex {
+    font-size: 1.28em;
+    white-space: nowrap;
+  }
+
+  /* Avoid clipped fraction bars / radicals */
+  .ai-prose-perplexity .katex .mfrac .frac-line,
+  .ai-prose .katex .mfrac .frac-line {
+    border-bottom-width: 0.055em;
+  }
+
+  /* Inline math should not inherit the small code styling */
+  .ai-prose-perplexity .katex .mord,
+  .ai-prose .katex .mord {
+    letter-spacing: normal;
+  }
 }
+
 
 /* LOCKED - DO NOT MODIFY */
 .dashboard-sidebar-locked {

@@ -99,14 +99,19 @@ export function useAIChat(conversationId?: string | null) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        
+        let errorData: { error?: string } = {};
+        try {
+          errorData = await response.json();
+        } catch {
+          /* non-JSON error body */
+        }
+
         if (response.status === 402) {
           toast.error(errorData.error || "Insufficient credits");
           setIsLoading(false);
           return;
         }
-        
+
         if (response.status === 429) {
           toast.error("Rate limit exceeded. Please try again in a moment.");
           setIsLoading(false);
@@ -121,6 +126,7 @@ export function useAIChat(conversationId?: string | null) {
 
         throw new Error(errorData.error || "Failed to get response");
       }
+
 
       if (!response.body) {
         throw new Error("No response body");
