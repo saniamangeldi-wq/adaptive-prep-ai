@@ -68,7 +68,12 @@ export function useAIChat(conversationId?: string | null) {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
+    // Tracked outside the try so error handling can preserve partial output
+    let assistantId: string | null = null;
+    let assistantContent = "";
+
     try {
+
       // Get user's session token for authorization
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
@@ -99,28 +104,39 @@ export function useAIChat(conversationId?: string | null) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        
-        if (response.status === 402) {
-          toast.error(errorData.error || "Insufficient credits");
-          setIsLoading(false);
-          return;
-        }
-        
-        if (response.status === 429) {
-          toast.error("Rate limit exceeded. Please try again in a moment.");
-          setIsLoading(false);
-          return;
+        let errorData: { error?: string } = {};
+        try {
+          errorData = await response.json();
+        } catch {
+          /* non-JSON error body */
         }
 
-        if (response.status === 403) {
-          toast.error(errorData.error || "Access denied");
+        if (response.status === 402 || response.status === 429 || response.status === 403) {
+          const friendly =
+            response.status === 402
+              ? errorData.error || "You're out of AI credits for today."
+              : response.status === 429
+                ? "Rate limit exceeded. Please try again in a moment."
+                : errorData.error || "Access denied";
+          toast.error(friendly);
+          // Keep the user's message visible and explain what happened inline.
+          setMessages(prev => [
+            ...prev,
+            {
+              id: `error-${Date.now()}`,
+              role: "assistant" as const,
+              content: `_${friendly}_`,
+              timestamp: new Date(),
+            },
+          ]);
           setIsLoading(false);
           return;
         }
 
         throw new Error(errorData.error || "Failed to get response");
+
       }
+
 
       if (!response.body) {
         throw new Error("No response body");
@@ -129,17 +145,18 @@ export function useAIChat(conversationId?: string | null) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let textBuffer = "";
-      let assistantContent = "";
       let streamDone = false;
 
       // Create initial assistant message
-      const assistantId = (Date.now() + 1).toString();
+      assistantId = (Date.now() + 1).toString();
+      const activeAssistantId = assistantId;
       setMessages(prev => [...prev, {
-        id: assistantId,
+        id: activeAssistantId,
         role: "assistant",
         content: "",
         timestamp: new Date(),
       }]);
+
 
       while (!streamDone) {
         const { done, value } = await reader.read();
@@ -220,12 +237,36 @@ export function useAIChat(conversationId?: string | null) {
 
     } catch (error) {
       console.error("AI chat error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to get AI response");
-      // Remove the user message if it failed
-      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+      const msg = error instanceof Error ? error.message : "Failed to get AI response";
+      toast.error(msg);
+      // Keep the user's message and any partial answer — never reset the chat.
+      setMessages(prev => {
+        if (assistantId) {
+          return prev.map(m =>
+            m.id === assistantId
+              ? {
+                  ...m,
+                  content: assistantContent
+                    ? `${assistantContent}\n\n_Response interrupted: ${msg}_`
+                    : `_Something went wrong: ${msg}. Your message is saved — try sending again._`,
+                }
+              : m
+          );
+        }
+        return [
+          ...prev,
+          {
+            id: `error-${Date.now()}`,
+            role: "assistant" as const,
+            content: `_Something went wrong: ${msg}. Your message is saved — try sending again._`,
+            timestamp: new Date(),
+          },
+        ];
+      });
     } finally {
       setIsLoading(false);
     }
+
   }, [messages, isLoading, refreshProfile, saveMessages]);
 
   const clearMessages = useCallback(() => {
@@ -246,8 +287,10 @@ export function useAIChat(conversationId?: string | null) {
         content: m.content,
         timestamp: new Date(),
       }));
-      setMessages(loaded);
+      // Never wipe an in-progress chat with an empty/stale server copy
+      setMessages(prev => (loaded.length === 0 && prev.length > 0 ? prev : loaded));
     }
+
   }, []);
 
   return {
