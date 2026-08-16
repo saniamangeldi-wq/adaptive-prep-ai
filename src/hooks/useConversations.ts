@@ -209,8 +209,10 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
 
     const transformed = transformConversation(data as unknown as Record<string, unknown>);
     setConversations(prev => [transformed, ...prev]);
+    window.dispatchEvent(new CustomEvent("adaptiveprep:conversations-changed"));
     return transformed;
-  }, [user, selectedSpaceId]);
+  }, [user, selectedSpaceId, coachType]);
+
 
   const updateConversation = useCallback(async (
     conversationId: string,
