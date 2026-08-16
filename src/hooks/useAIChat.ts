@@ -287,8 +287,10 @@ export function useAIChat(conversationId?: string | null) {
         content: m.content,
         timestamp: new Date(),
       }));
-      setMessages(loaded);
+      // Never wipe an in-progress chat with an empty/stale server copy
+      setMessages(prev => (loaded.length === 0 && prev.length > 0 ? prev : loaded));
     }
+
   }, []);
 
   return {
