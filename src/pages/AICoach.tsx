@@ -56,7 +56,7 @@ export default function AICoach() {
   );
   const isElite = profile?.tier === "tier_3";
   const coachType = (profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") ? "tutor" : "student";
-  const { spaces, createConversation } = useConversations(coachType);
+  const { spaces, createConversation, deleteEmptyConversations } = useConversations(coachType);
 
   // Persist model preference when changed
   const handleModelChange = useCallback(async (model: EliteModel) => {
