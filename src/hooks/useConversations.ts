@@ -245,8 +245,10 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
     }
 
     setConversations(prev => prev.filter(c => c.id !== conversationId));
+    window.dispatchEvent(new CustomEvent("adaptiveprep:conversations-changed"));
     toast.success("Conversation deleted");
   }, []);
+
 
   const togglePin = useCallback(async (conversationId: string) => {
     const conv = conversations.find(c => c.id === conversationId);
