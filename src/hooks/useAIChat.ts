@@ -68,7 +68,12 @@ export function useAIChat(conversationId?: string | null) {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
+    // Tracked outside the try so error handling can preserve partial output
+    let assistantId: string | null = null;
+    let assistantContent = "";
+
     try {
+
       // Get user's session token for authorization
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
