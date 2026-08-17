@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 
-const SITE_URL = "https://adaptiveprep.org";
+const SITE_URL = "https://adaptivetestprep.org";
 
 interface PageSeoProps {
   title: string;

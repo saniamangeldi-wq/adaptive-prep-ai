@@ -47,4 +47,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: https://adaptiveprep.org/sitemap.xml
+Sitemap: https://adaptivetestprep.org/sitemap.xml
