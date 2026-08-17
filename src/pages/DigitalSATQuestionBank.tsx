@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PageSeo } from "@/components/seo/PageSeo";
 import { Calculator, BookOpen, FileText, ArrowRight, Check } from "lucide-react";
 
-const SITE_URL = "https://adaptiveprep.org";
+const SITE_URL = "https://adaptivetestprep.org";
 const PATH = "/digital-sat-question-bank";
 
 const jsonLd = {

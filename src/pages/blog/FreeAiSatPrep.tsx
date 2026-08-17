@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PageSeo } from "@/components/seo/PageSeo";
 import { Brain, Sparkles, Target, BarChart3, BookOpen, ArrowRight, Check } from "lucide-react";
 
-const SITE_URL = "https://adaptiveprep.org";
+const SITE_URL = "https://adaptivetestprep.org";
 
 const articleJsonLd = {
   "@context": "https://schema.org",

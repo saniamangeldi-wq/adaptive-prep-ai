@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PageSeo } from "@/components/seo/PageSeo";
 import { GraduationCap, Target, TrendingUp, BookOpen, ArrowRight, Check } from "lucide-react";
 
-const SITE_URL = "https://adaptiveprep.org";
+const SITE_URL = "https://adaptivetestprep.org";
 const PATH = "/blog/northeastern-acceptance-rate";
 
 const articleJsonLd = {
