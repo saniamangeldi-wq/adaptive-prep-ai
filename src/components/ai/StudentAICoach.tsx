@@ -128,8 +128,25 @@ interface StudentAICoachProps {
 
 const SUBJECTS = ["SAT", "Math", "English", "Science", "History", "General"];
 
+const DRAFT_KEY = "adaptiveprep:coach-draft";
+
 export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [], activeSpace = null, modelOverride, subject = "SAT", onSubjectChange }: StudentAICoachProps) {
-  const [input, setInput] = useState("");
+  // Draft survives reloads / tab restores so nothing typed is ever lost.
+  const [input, setInput] = useState(() => {
+    try {
+      return sessionStorage.getItem(DRAFT_KEY) || "";
+    } catch {
+      return "";
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (input.trim()) sessionStorage.setItem(DRAFT_KEY, input);
+      else sessionStorage.removeItem(DRAFT_KEY);
+    } catch { /* storage unavailable */ }
+  }, [input]);
+
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
