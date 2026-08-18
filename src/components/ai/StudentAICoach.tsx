@@ -132,6 +132,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
+  const [showImageDialog, setShowImageDialog] = useState(false);
   const [showReferences, setShowReferences] = useState(false);
   const skipNextLoad = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -563,6 +564,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
           </div>
         </div>
       </div>
+
+      <GenerateImageDialog open={showImageDialog} onOpenChange={setShowImageDialog} />
     </div>
   );
 }
