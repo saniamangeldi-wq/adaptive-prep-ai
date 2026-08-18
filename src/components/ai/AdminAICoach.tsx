@@ -543,11 +543,19 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  onPaste={(e) => {
+                    const imgs = getImagesFromDataTransfer(e.clipboardData);
+                    if (!imgs.length) return;
+                    e.preventDefault();
+                    setShowAttachments(true);
+                    imgs.forEach((f) => uploadFile(namePastedImage(f), "image"));
+                  }}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                   placeholder={noCredits ? "No credits remaining..." : "Ask about projections, performance, or strategy..."}
                   disabled={noCredits}
                   className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm h-10"
                 />
+
 
                 {isTier3 && (
                   <VoiceChat 
