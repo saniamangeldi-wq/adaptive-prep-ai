@@ -39,7 +39,13 @@ export function useAIChat(conversationId?: string | null) {
   const saveMessages = useCallback(async (msgs: Message[]) => {
     const convId = conversationIdRef.current;
     if (!convId) return;
-    const dbMessages = msgs.map(m => ({ role: m.role, content: m.content }));
+    const dbMessages = msgs.map(m => ({
+      role: m.role,
+      content: m.content,
+      ...(m.visibleText ? { visibleText: m.visibleText } : {}),
+      ...(m.hidden ? { hidden: true } : {}),
+      ...(m.attachmentMeta?.length ? { attachmentMeta: m.attachmentMeta } : {}),
+    }));
 
     const updates: Record<string, unknown> = {
       messages: dbMessages,
@@ -304,11 +310,20 @@ export function useAIChat(conversationId?: string | null) {
       .eq("id", convId)
       .single();
     if (data?.messages && Array.isArray(data.messages)) {
-      const loaded = (data.messages as Array<{ role: string; content: string }>).map((m, i) => ({
+      const loaded = (data.messages as Array<{
+        role: string;
+        content: string;
+        visibleText?: string;
+        hidden?: boolean;
+        attachmentMeta?: Message["attachmentMeta"];
+      }>).map((m, i) => ({
         id: `loaded-${i}`,
         role: m.role as "user" | "assistant",
         content: m.content,
         timestamp: new Date(),
+        visibleText: m.visibleText,
+        hidden: m.hidden,
+        attachmentMeta: m.attachmentMeta,
       }));
       // Never wipe an in-progress chat with an empty/stale server copy
       setMessages(prev => (loaded.length === 0 && prev.length > 0 ? prev : loaded));
