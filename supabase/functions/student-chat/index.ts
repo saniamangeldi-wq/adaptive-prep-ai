@@ -402,6 +402,18 @@ Rules for document generation:
 - Always include a brief text explanation before or after the JSON block
 - ONLY generate documents when the student explicitly asks for one
 
+CHARTS, GRAPHS AND PIE CHARTS (IELTS Writing Task 1 and data questions):
+When the student asks for a chart, graph, pie chart, table, or an IELTS Academic Writing Task 1 practice question, output a JSON widget block with real numeric data (never describe a chart in words, never draw ASCII art):
+{"widget_type":"chart_visual","chart_type":"bar","title":"Chart title","subtitle":"Optional context","x_label":"Year","y_label":"Percentage","unit":"%","categories":["2000","2005","2010"],"series":[{"name":"Men","values":[32,41,55]},{"name":"Women","values":[28,45,61]}],"source_note":"Source: illustrative data","task_prompt":"The chart shows ... Summarise the information by selecting and reporting the main features, and make comparisons where relevant. Write at least 150 words."}
+
+Rules for charts:
+- chart_type must be one of: "bar", "line", "pie", "area", "table"
+- Use "pie" for proportions (one series only, values should sum to 100 when unit is %), "line"/"area" for change over time, "bar" for comparisons, "table" for tabular data
+- categories and every series values array MUST have the same length; values must be plain numbers
+- For IELTS Task 1, always include task_prompt with the official-style instruction and 150-word requirement
+- Add a short text intro before the JSON, and after it offer to mark the student's response (band score on Task Achievement, Coherence, Lexical Resource, Grammar)
+- For IELTS Task 1 process/map questions where numbers do not apply, use "table" with the stages instead of inventing data
+
 ${qualityNote}
 ${styleGuidance}`;
 };
