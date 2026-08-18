@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import { sanitizeAIResponse } from "@/utils/sanitizeAIResponse";
 import { QuestionWidget } from "./QuestionWidget";
 import { DocumentWidget } from "./DocumentWidget";
+import { ChartWidget } from "./ChartWidget";
 import { AISuggestions } from "./AISuggestions";
 import { GenerateImageDialog } from "./GenerateImageDialog";
 
@@ -671,7 +672,7 @@ function parseMessageContent(content: string, isStreaming = false) {
       } catch { /* still bad */ }
     }
 
-    if (parsed && (parsed.widget_type === 'interactive_quiz' || parsed.widget_type === 'document_generator')) {
+    if (parsed && (parsed.widget_type === 'interactive_quiz' || parsed.widget_type === 'document_generator' || parsed.widget_type === 'chart_visual')) {
       const textBefore = cleaned.slice(lastIndex, braceStart).trim();
       if (textBefore) parts.push({ type: 'text', content: textBefore });
       parts.push({ type: 'widget', data: parsed });
@@ -778,6 +779,9 @@ function PerplexityMessage({ message, isTier3, isLast, isStreaming, onRetry, onS
           if (part.type === 'widget') {
             if (part.data.widget_type === 'document_generator') {
               return <DocumentWidget key={i} type={part.data.doc_type} title={part.data.title} content={part.data.content} summary={part.data.summary} />;
+            }
+            if (part.data.widget_type === 'chart_visual') {
+              return <ChartWidget key={i} data={part.data} />;
             }
             return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSendSilent(payload)} onNextQuestion={() => onSendSilent("Next question please — give me another interactive quiz question on the same topic.")} />;
           }
