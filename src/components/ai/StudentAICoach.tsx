@@ -497,10 +497,20 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             </div>
           )}
 
-          <div className={cn(
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              const imgs = getImagesFromDataTransfer(e.dataTransfer);
+              if (!imgs.length) return;
+              e.preventDefault();
+              setShowAttachments(true);
+              imgs.forEach((f) => uploadFile(namePastedImage(f), "image"));
+            }}
+            className={cn(
             "relative flex items-center gap-2 rounded-2xl border border-border/30 bg-muted/30 backdrop-blur-sm px-3 py-2 transition-all duration-200",
             "focus-within:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.35)] focus-within:border-primary/50"
           )}>
+
             {/* Attach button */}
             <button
               onClick={() => { setShowAttachments(!showAttachments); setShowReferences(false); }}
