@@ -30,6 +30,7 @@ import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
+import { getImagesFromDataTransfer, namePastedImage } from "@/lib/paste-images";
 import { useReferences, type Reference } from "@/hooks/useReferences";
 import { ReferencesPanel } from "./ReferencesPanel";
 import { ReferencesBadge } from "./ReferencesBadge";
