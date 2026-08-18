@@ -141,6 +141,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const { messages, isLoading, streamChat, clearMessages, loadConversationMessages } = useAIChat(activeConvId);
   const isTier3 = profile?.tier === "tier_3";
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
+  const canGenerateImages = profile?.tier === "tier_2" || profile?.tier === "tier_3";
 
   const handleSendRef = useRef<(text: string) => void>(() => {});
   const [isCleaningSTT, setIsCleaningSTT] = useState(false);
