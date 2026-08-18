@@ -743,7 +743,7 @@ function PerplexityMessage({ message, isTier3, isLast, isStreaming, onRetry, onS
         {/* Attachment previews */}
         {message.attachmentMeta?.map((att, i) => (
           att.type === 'image' && att.preview ? (
-            <img key={i} src={att.preview} alt="User uploaded image attachment" width="200" height="200" loading="lazy" className="max-w-[200px] rounded-lg mb-2 border border-border/20" />
+            <img key={i} src={att.preview} alt={att.name || "User uploaded image attachment"} width="200" height="200" loading="lazy" className="max-w-[200px] rounded-lg mb-2 border border-border/20 object-contain bg-muted/20" onError={(e) => { const el = e.currentTarget; el.style.display = "none"; const chip = document.createElement("div"); chip.className = "inline-flex items-center gap-1.5 px-3 py-1.5 mb-2 mr-2 rounded-lg border border-border/30 bg-muted/30 text-xs text-muted-foreground"; chip.textContent = att.name || "Image attachment (preview expired)"; el.parentElement?.appendChild(chip); }} />
           ) : (
             <div key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-2 mr-2 rounded-lg border border-border/30 bg-muted/30 text-xs text-muted-foreground">
               📄 {att.name}
