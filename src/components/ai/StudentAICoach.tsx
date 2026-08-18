@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import { sanitizeAIResponse } from "@/utils/sanitizeAIResponse";
 import { QuestionWidget } from "./QuestionWidget";
 import { DocumentWidget } from "./DocumentWidget";
+import { ChartWidget } from "./ChartWidget";
 import { AISuggestions } from "./AISuggestions";
 import { GenerateImageDialog } from "./GenerateImageDialog";
 
