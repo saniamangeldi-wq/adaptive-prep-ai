@@ -30,6 +30,7 @@ import { VoiceChat } from "./VoiceChat";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
+import { getImagesFromDataTransfer, namePastedImage } from "@/lib/paste-images";
 import { useReferences, type Reference } from "@/hooks/useReferences";
 import { ReferencesPanel } from "./ReferencesPanel";
 import { ReferencesBadge } from "./ReferencesBadge";
@@ -493,11 +494,19 @@ export function TeacherAICoach({ conversationId, onEnsureConversation, chatMode 
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  onPaste={(e) => {
+                    const imgs = getImagesFromDataTransfer(e.clipboardData);
+                    if (!imgs.length) return;
+                    e.preventDefault();
+                    setShowAttachments(true);
+                    imgs.forEach((f) => uploadFile(namePastedImage(f), "image"));
+                  }}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                   placeholder={noCredits ? "No credits remaining..." : "Ask about your students or teaching strategies..."}
                   disabled={noCredits}
                   className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm h-10"
                 />
+
 
                 {isTier3 && (
                   <VoiceChat 

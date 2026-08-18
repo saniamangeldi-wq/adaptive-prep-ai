@@ -35,6 +35,7 @@ import { useBrowserSTT } from "@/hooks/useBrowserSTT";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
+import { getImagesFromDataTransfer, namePastedImage } from "@/lib/paste-images";
 import { useReferences, type Reference } from "@/hooks/useReferences";
 import { ReferencesPanel } from "./ReferencesPanel";
 import { ReferencesBadge } from "./ReferencesBadge";
@@ -496,10 +497,20 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             </div>
           )}
 
-          <div className={cn(
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              const imgs = getImagesFromDataTransfer(e.dataTransfer);
+              if (!imgs.length) return;
+              e.preventDefault();
+              setShowAttachments(true);
+              imgs.forEach((f) => uploadFile(namePastedImage(f), "image"));
+            }}
+            className={cn(
             "relative flex items-center gap-2 rounded-2xl border border-border/30 bg-muted/30 backdrop-blur-sm px-3 py-2 transition-all duration-200",
             "focus-within:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.35)] focus-within:border-primary/50"
           )}>
+
             {/* Attach button */}
             <button
               onClick={() => { setShowAttachments(!showAttachments); setShowReferences(false); }}
@@ -534,12 +545,20 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                   e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
                 }
               }}
+              onPaste={(e) => {
+                const imgs = getImagesFromDataTransfer(e.clipboardData);
+                if (!imgs.length) return;
+                e.preventDefault();
+                setShowAttachments(true);
+                imgs.forEach((f) => uploadFile(namePastedImage(f), "image"));
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
                 }
               }}
+
               placeholder={isSTTRecording ? "Listening..." : isCleaningSTT ? "Cleaning up..." : noCredits ? "No credits remaining..." : "Ask anything..."}
               disabled={noCredits || isSTTRecording}
               className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm min-h-[40px] max-h-[160px] resize-none py-2"

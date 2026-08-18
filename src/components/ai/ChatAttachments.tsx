@@ -1,4 +1,4 @@
- import { useRef, useEffect, useState } from "react";
+ import { useRef, useState } from "react";
  import { Button } from "@/components/ui/button";
  import {
    Popover,
@@ -44,27 +44,9 @@
    const [urlValue, setUrlValue] = useState("");
    const [searchValue, setSearchValue] = useState("");
  
-   // Handle paste events for images and URLs
-   useEffect(() => {
-     const handlePaste = async (e: ClipboardEvent) => {
-       if (disabled) return;
-       const items = e.clipboardData?.items;
-       if (!items) return;
- 
-       for (const item of items) {
-         if (item.type.startsWith("image/")) {
-           e.preventDefault();
-           const file = item.getAsFile();
-           if (file) {
-             onUploadFile(file, "image");
-           }
-         }
-       }
-     };
- 
-     document.addEventListener("paste", handlePaste);
-     return () => document.removeEventListener("paste", handlePaste);
-   }, [disabled, onUploadFile]);
+  // Paste handling lives on the chat input itself (see paste-images.ts)
+  // so images are captured whether or not this panel is open.
+
  
    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
      const files = Array.from(e.target.files || []);
