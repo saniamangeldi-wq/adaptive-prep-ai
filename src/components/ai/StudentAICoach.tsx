@@ -671,7 +671,7 @@ function parseMessageContent(content: string, isStreaming = false) {
       } catch { /* still bad */ }
     }
 
-    if (parsed && (parsed.widget_type === 'interactive_quiz' || parsed.widget_type === 'document_generator')) {
+    if (parsed && (parsed.widget_type === 'interactive_quiz' || parsed.widget_type === 'document_generator' || parsed.widget_type === 'chart_visual')) {
       const textBefore = cleaned.slice(lastIndex, braceStart).trim();
       if (textBefore) parts.push({ type: 'text', content: textBefore });
       parts.push({ type: 'widget', data: parsed });
