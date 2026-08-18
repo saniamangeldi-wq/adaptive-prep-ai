@@ -185,16 +185,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Proactively refresh the session when the tab becomes visible again
     // (covers cases where the browser throttles timers on idle tabs).
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        supabase.auth.getSession().then(({ data }) => {
-          if (data.session) {
-            supabase.auth.refreshSession().catch(() => {
-              // Silent: keep existing session if refresh fails transiently
-            });
-          }
+      if (document.visibilityState !== "visible") return;
+      supabase.auth.getSession().then(({ data }) => {
+        const current = data.session;
+        if (!current) return;
+        // Only refresh when the token is actually close to expiring. Refreshing
+        // on every tab focus churned auth state and disrupted in-progress work.
+        const expiresAt = (current.expires_at ?? 0) * 1000;
+        if (expiresAt - Date.now() > 5 * 60 * 1000) return;
+        supabase.auth.refreshSession().catch(() => {
+          // Silent: keep existing session if refresh fails transiently
         });
-      }
+      });
     };
+
     document.addEventListener("visibilitychange", handleVisibility);
 
     // Check for existing session - don't block on getUser validation
