@@ -20,7 +20,8 @@ import {
   Crown,
   BookOpen,
   Mic,
-  MicOff
+  MicOff,
+  Image as ImageIcon
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ import { sanitizeAIResponse } from "@/utils/sanitizeAIResponse";
 import { QuestionWidget } from "./QuestionWidget";
 import { DocumentWidget } from "./DocumentWidget";
 import { AISuggestions } from "./AISuggestions";
+import { GenerateImageDialog } from "./GenerateImageDialog";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
@@ -488,6 +490,18 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
             >
               <Paperclip className="w-4 h-4" />
             </button>
+
+            {/* Generate picture (Pro and above) */}
+            {canGenerateImages && (
+              <button
+                onClick={() => setShowImageDialog(true)}
+                disabled={noCredits || isLoading}
+                className="flex-shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors disabled:opacity-40"
+                title="Generate a picture"
+              >
+                <ImageIcon className="w-4 h-4" />
+              </button>
+            )}
 
             {/* Text input */}
               <textarea
