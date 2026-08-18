@@ -894,6 +894,30 @@ export type Database = {
           },
         ]
       }
+      generated_images: {
+        Row: {
+          created_at: string
+          id: string
+          prompt: string
+          theme: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prompt: string
+          theme?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prompt?: string
+          theme?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       grades: {
         Row: {
           assignment_id: string | null
