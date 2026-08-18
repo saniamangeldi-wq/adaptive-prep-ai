@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     mcpPlugin(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       injectRegister: null,
       filename: "app-sw.js",
       includeAssets: ["favicon.ico", "pwa-icon-192.png", "pwa-icon-512.png"],
@@ -58,8 +58,10 @@ export default defineConfig(({ mode }) => ({
         navigateFallback: null,
         navigateFallbackDenylist: [/^\/~oauth/],
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
+        // Never hijack a live tab: a new build activates on the next full
+        // navigation instead of swapping caches under an open session.
+        skipWaiting: false,
+        clientsClaim: false,
         runtimeCaching: [
           {
             urlPattern: ({ request, url }) =>
