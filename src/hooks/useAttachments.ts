@@ -96,12 +96,14 @@ async function extractPDFText(file: File): Promise<{ text: string; pageCount: nu
  
        if (uploadError) throw uploadError;
  
-       // Get public URL
-       const { data: urlData } = supabase.storage
-         .from("conversation-uploads")
-         .getPublicUrl(fileName);
- 
-       const fileUrl = urlData.publicUrl;
+        // Bucket is private — use a long-lived signed URL so previews actually load
+        const { data: signedData } = await supabase.storage
+          .from("conversation-uploads")
+          .createSignedUrl(fileName, 60 * 60 * 24 * 365);
+
+        const fileUrl =
+          signedData?.signedUrl ??
+          supabase.storage.from("conversation-uploads").getPublicUrl(fileName).data.publicUrl;
  
        // Process file based on type
        let extractedText = "";
