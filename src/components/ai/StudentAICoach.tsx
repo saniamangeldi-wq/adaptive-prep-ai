@@ -545,12 +545,20 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                   e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
                 }
               }}
+              onPaste={(e) => {
+                const imgs = getImagesFromDataTransfer(e.clipboardData);
+                if (!imgs.length) return;
+                e.preventDefault();
+                setShowAttachments(true);
+                imgs.forEach((f) => uploadFile(namePastedImage(f), "image"));
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
                 }
               }}
+
               placeholder={isSTTRecording ? "Listening..." : isCleaningSTT ? "Cleaning up..." : noCredits ? "No credits remaining..." : "Ask anything..."}
               disabled={noCredits || isSTTRecording}
               className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm min-h-[40px] max-h-[160px] resize-none py-2"
