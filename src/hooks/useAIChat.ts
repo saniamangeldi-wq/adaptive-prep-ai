@@ -39,7 +39,13 @@ export function useAIChat(conversationId?: string | null) {
   const saveMessages = useCallback(async (msgs: Message[]) => {
     const convId = conversationIdRef.current;
     if (!convId) return;
-    const dbMessages = msgs.map(m => ({ role: m.role, content: m.content }));
+    const dbMessages = msgs.map(m => ({
+      role: m.role,
+      content: m.content,
+      ...(m.visibleText ? { visibleText: m.visibleText } : {}),
+      ...(m.hidden ? { hidden: true } : {}),
+      ...(m.attachmentMeta?.length ? { attachmentMeta: m.attachmentMeta } : {}),
+    }));
 
     const updates: Record<string, unknown> = {
       messages: dbMessages,
