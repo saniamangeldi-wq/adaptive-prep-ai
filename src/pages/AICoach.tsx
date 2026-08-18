@@ -52,15 +52,28 @@ export default function AICoach() {
   const [chatMode, setChatMode] = useState<"text" | "voice">("text");
   const [selectedSubject, setSelectedSubject] = useState("SAT");
   const [eliteModel, setEliteModel] = useState<EliteModel>(
-    (profile?.preferred_ai_model as EliteModel) || "perplexity-pro"
+    (profile?.preferred_ai_model as EliteModel) ||
+      (localStorage.getItem("adaptiveprep:preferred_ai_model") as EliteModel) ||
+      "perplexity-pro"
   );
   const isElite = profile?.tier === "tier_3";
   const coachType = (profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") ? "tutor" : "student";
   const { spaces, createConversation, deleteEmptyConversations } = useConversations(coachType);
 
+  // Profile loads asynchronously — adopt the saved model once it arrives so the
+  // selection sticks across reloads instead of falling back to the default.
+  useEffect(() => {
+    const saved = profile?.preferred_ai_model as EliteModel | undefined;
+    if (saved) {
+      setEliteModel(saved);
+      localStorage.setItem("adaptiveprep:preferred_ai_model", saved);
+    }
+  }, [profile?.preferred_ai_model]);
+
   // Persist model preference when changed
   const handleModelChange = useCallback(async (model: EliteModel) => {
     setEliteModel(model);
+    localStorage.setItem("adaptiveprep:preferred_ai_model", model);
     if (profile?.user_id) {
       await supabase
         .from("profiles")
@@ -68,6 +81,7 @@ export default function AICoach() {
         .eq("user_id", profile.user_id);
     }
   }, [profile?.user_id]);
+
 
   // Check if we're inside a space
   const spaceId = searchParams.get("space");
