@@ -55,31 +55,39 @@
      fetchRoles();
    }, [fetchRoles]);
  
-   const addRole = async (role: UserRole) => {
-     if (!user?.id) return false;
-     
-     // Check if role already exists
-     if (roles.includes(role)) {
-       toast.info(`You already have the ${role.replace("_", " ")} role`);
-       return false;
-     }
- 
-     try {
-       const { error } = await supabase
-         .from("user_roles")
-         .insert({ user_id: user.id, role });
- 
-       if (error) throw error;
- 
-       setRoles((prev) => [...prev, role]);
-       toast.success(`Added ${role.replace("_", " ")} role to your account`);
-       return true;
-     } catch (error: any) {
-       console.error("Error adding role:", error);
-       toast.error(error.message || "Failed to add role");
-       return false;
-     }
-   };
+  const addRole = async (role: UserRole) => {
+    if (!user?.id) return false;
+
+    // Check if role already exists
+    if (roles.includes(role)) {
+      toast.info(`You already have the ${role.replace("_", " ")} role`);
+      return false;
+    }
+
+    // Only the baseline student role can be self-assigned. Tutor, teacher and
+    // school admin roles must be granted by an approver.
+    if (role !== "student") {
+      toast.error(
+        "This role is granted by a school admin or a tutor invite — it can't be added to your own account."
+      );
+      return false;
+    }
+
+    try {
+      const { error } = await supabase.rpc("assign_self_student_role");
+
+      if (error) throw error;
+
+      setRoles((prev) => [...prev, role]);
+      toast.success("Added student role to your account");
+      return true;
+    } catch (error: any) {
+      console.error("Error adding role:", error);
+      toast.error(error.message || "Failed to add role");
+      return false;
+    }
+  };
+
  
    const switchRole = async (role: UserRole) => {
      if (!user?.id) return false;
