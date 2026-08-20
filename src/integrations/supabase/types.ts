@@ -3333,6 +3333,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_self_student_role: { Args: never; Returns: undefined }
       check_trial_expiration: { Args: never; Returns: undefined }
       consume_ai_credits: {
         Args: { _cost: number; _user_id: string }
@@ -3349,6 +3350,10 @@ export type Database = {
       }
       get_founding_member_count: { Args: never; Returns: number }
       get_school_invite_code: { Args: { _school_id: string }; Returns: string }
+      grant_teacher_role: {
+        Args: { _school_id: string; _user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]

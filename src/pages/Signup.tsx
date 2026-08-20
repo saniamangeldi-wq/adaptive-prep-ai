@@ -88,12 +88,12 @@ export default function Signup() {
             if (error) console.error("Profile update error:", error);
           });
 
-        supabase
-          .from("user_roles")
-          .insert({ user_id: data.user.id, role: selectedRole })
-          .then(({ error }) => {
-            if (error) console.error("Role insert error:", error);
-          });
+        // Everyone gets the baseline student role record; elevated roles
+        // (tutor / teacher / school admin) are granted by an approver.
+        supabase.rpc("assign_self_student_role").then(({ error }) => {
+          if (error) console.error("Role insert error:", error);
+        });
+
 
         // Navigate immediately - don't wait for DB operations
         navigate("/onboarding");
