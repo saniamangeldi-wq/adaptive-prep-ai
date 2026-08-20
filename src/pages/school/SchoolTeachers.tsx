@@ -158,11 +158,13 @@ export default function SchoolTeachers() {
 
       if (assignError) throw assignError;
 
-      // Add user_roles entry
-      await supabase.from("user_roles").insert({
-        user_id: request.student_user_id,
-        role: "teacher"
+      // Add user_roles entry (school-admin-only server-side grant)
+      const { error: roleError } = await supabase.rpc("grant_teacher_role", {
+        _user_id: request.student_user_id,
+        _school_id: schoolId,
       });
+      if (roleError) throw roleError;
+
 
       // Update join request status
       await supabase
