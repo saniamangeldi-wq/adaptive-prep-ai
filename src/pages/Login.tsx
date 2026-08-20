@@ -56,13 +56,13 @@ export default function Login() {
             if (error) console.error("Error updating active role:", error);
           });
 
-        // Ensure the role exists in user_roles table
-        supabase
-          .from("user_roles")
-          .upsert({ user_id: data.user.id, role: selectedRole }, { onConflict: "user_id,role" })
-          .then(({ error }) => {
-            if (error) console.error("Error ensuring role in user_roles:", error);
-          });
+        // Ensure the baseline student role record exists. Elevated roles
+        // (tutor / teacher / school admin) are granted by an approver, not
+        // self-claimed from the login role picker.
+        supabase.rpc("assign_self_student_role").then(({ error }) => {
+          if (error) console.error("Error ensuring role in user_roles:", error);
+        });
+
 
         // Navigate immediately based on role - don't wait for DB
         if (nextPath) {
