@@ -448,6 +448,51 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   const seenQuestions = [...seenMatch, ...seenOther];
 
   let selectedQuestions: Question[];
+
+  // ---- Explicit practice modes -------------------------------------------
+  // Only used when the caller asks for one (custom practice sessions). The
+  // official-SAT path below is untouched. A mode can never leave the student
+  // with an empty session: every mode except "incorrect" falls back to the
+  // full section pool.
+  const practiceMode = config.practiceMode;
+  if (practiceMode) {
+    // Weakest first: missed → skipped/least-recently-seen → everything else.
+    const reviewRanked = [...topicFiltered]
+      .filter((q) => seenQuestionIds.has(baseQuestionId(q.id)))
+      .sort((a, b) => {
+        const rank = (q: Question) => (isMissed(q, history) ? 0 : 1);
+        const r = rank(a) - rank(b);
+        if (r !== 0) return r;
+        return (lastSeenAt.get(baseQuestionId(a.id)) ?? 0) - (lastSeenAt.get(baseQuestionId(b.id)) ?? 0);
+      });
+
+    let candidates: Question[];
+    if (practiceMode === "new") {
+      candidates = shuffle(topicFiltered.filter((q) => !seenQuestionIds.has(baseQuestionId(q.id))));
+    } else if (practiceMode === "incorrect") {
+      candidates = shuffle(topicFiltered.filter((q) => isMissed(q, history)));
+    } else if (practiceMode === "all") {
+      candidates = shuffle(topicFiltered);
+    } else {
+      // smart: unattempted first, then weakness-ranked review questions.
+      candidates = [
+        ...shuffle(topicFiltered.filter((q) => !seenQuestionIds.has(baseQuestionId(q.id)))),
+        ...reviewRanked,
+      ];
+    }
+
+    // THE fallback: never hand back an empty session because everything was seen.
+    if (candidates.length === 0 && practiceMode !== "incorrect") {
+      candidates = shuffle(topicFiltered);
+    }
+
+    selectedQuestions = candidates
+      .slice(0, Math.min(targetQuestions, candidates.length))
+      .map((q) => (seenQuestionIds.has(baseQuestionId(q.id)) ? shuffleChoices(q) : q));
+
+    if (selectedQuestions.length === 0) return null;
+  } else if (config.testType === "combined") {
+
   if (config.testType === "combined") {
     const isFullOfficial = config.length === "full";
     const rwTarget = isFullOfficial ? 54 : Math.floor(targetQuestions / 2);
