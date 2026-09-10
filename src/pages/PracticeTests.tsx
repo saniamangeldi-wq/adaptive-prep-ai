@@ -856,3 +856,38 @@ function TestTypeCard({
     </button>
   );
 }
+
+function PracticeModeCard({
+  icon: Icon,
+  title,
+  description,
+  selected,
+  disabled,
+  onClick,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  selected: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "w-full p-4 rounded-xl border-2 text-left transition-all duration-200 flex gap-3 items-start",
+        selected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50",
+        disabled && "opacity-50 cursor-not-allowed hover:border-border"
+      )}
+    >
+      <Icon className={cn("w-5 h-5 mt-0.5 shrink-0", selected ? "text-primary" : "text-muted-foreground")} />
+      <span className="min-w-0">
+        <span className="block font-semibold text-foreground">{title}</span>
+        <span className="block text-xs text-muted-foreground mt-1">{description}</span>
+      </span>
+    </button>
+  );
+}
