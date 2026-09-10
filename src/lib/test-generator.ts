@@ -71,6 +71,10 @@ export interface TestConfig {
   sortOrder?: SortOrder;
   /** Canonical SAT domain filter (see SAT_TOPICS). Empty/undefined = all. */
   topics?: string[];
+  /** Custom practice sessions: how questions are picked. Omit for official SAT. */
+  practiceMode?: PracticeMode;
+
+
 }
 
 /** Canonical SAT domains per section. Kept in sync with the College Board's Digital SAT specification. */
@@ -155,6 +159,86 @@ function shuffle<T>(arr: T[]): T[] {
   }
   return a;
 }
+
+/** How a practice session picks its questions. */
+export type PracticeMode = "smart" | "new" | "incorrect" | "all";
+
+export interface AttemptHistory {
+  /** Every question id the student has been served before. */
+  seenQuestionIds: Set<string>;
+  /** Most recent time (ms) each question was served. */
+  lastSeenAt: Map<string, number>;
+  /** Latest submitted answer per question; null when it was served but skipped. */
+  latestAnswer: Map<string, string | null>;
+}
+
+const baseQuestionId = (id: string) => id.replace(/__rep\d+$/, "");
+
+/**
+ * Reads the student's recent attempts and derives per-question history.
+ * Attempts are never mutated or removed here — retakes simply add new rows.
+ */
+export async function fetchAttemptHistory(userId: string): Promise<AttemptHistory> {
+  const { data: recentAttempts } = await supabase
+    .from("test_attempts")
+    .select("answers, served_question_ids, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const seenQuestionIds = new Set<string>();
+  const lastSeenAt = new Map<string, number>();
+  const latestAnswer = new Map<string, string | null>();
+
+  for (const attempt of recentAttempts ?? []) {
+    const ts = attempt.created_at ? new Date(attempt.created_at).getTime() : 0;
+    const answers = attempt.answers as Record<string, string> | unknown[] | null;
+    const answerMap =
+      answers && typeof answers === "object" && !Array.isArray(answers)
+        ? (answers as Record<string, string>)
+        : {};
+
+    const markSeen = (id: string) => {
+      const base = baseQuestionId(id);
+      seenQuestionIds.add(base);
+      // recentAttempts is ordered desc, so the first write is the most recent.
+      if (!lastSeenAt.has(base)) lastSeenAt.set(base, ts);
+      if (!latestAnswer.has(base)) {
+        const given = answerMap[id] ?? answerMap[base];
+        latestAnswer.set(base, given ?? null);
+      }
+    };
+
+    const served = (attempt as { served_question_ids?: string[] | null }).served_question_ids;
+    if (Array.isArray(served)) served.forEach(markSeen);
+    Object.keys(answerMap).forEach(markSeen);
+  }
+
+  return { seenQuestionIds, lastSeenAt, latestAnswer };
+}
+
+/** True when the student's latest attempt at this question was wrong or skipped. */
+export function isMissed(q: Question, history: AttemptHistory): boolean {
+  const id = baseQuestionId(q.id);
+  if (!history.seenQuestionIds.has(id)) return false;
+  const given = history.latestAnswer.get(id);
+  if (given === undefined || given === null || given === "") return true;
+  return given.toLowerCase().trim() !== (q.correct_answer || "").toLowerCase().trim();
+}
+
+/**
+ * Randomizes answer choices without breaking the correct-answer mapping.
+ * Answers are stored as the option text, so shuffling is safe as long as the
+ * recorded correct answer is one of the options.
+ */
+function shuffleChoices(q: Question): Question {
+  if (q.type !== "multiple_choice" || !Array.isArray(q.options) || q.options.length < 2) return q;
+  const correct = (q.correct_answer || "").trim().toLowerCase();
+  const matches = q.options.some((o) => (o || "").trim().toLowerCase() === correct);
+  if (!matches) return q; // letter-keyed or malformed — leave order untouched
+  return { ...q, options: shuffle(q.options) };
+}
+
 
 function getTargetQuestions(config: TestConfig): number {
   if (config.length === "quick") return 10;
@@ -311,35 +395,9 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   // seen the moment it was SERVED (served_question_ids, written at attempt
   // creation) — not only when it was answered — so abandoned or unfinished
   // tests no longer hand back the same questions next time.
-  const { data: recentAttempts } = await supabase
-    .from("test_attempts")
-    .select("answers, served_question_ids, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(500);
+  const history = await fetchAttemptHistory(userId);
+  const { seenQuestionIds, lastSeenAt } = history;
 
-  const seenQuestionIds = new Set<string>();
-  // Track most-recent-seen timestamp per question id so we can sort least-recently-seen first.
-  const lastSeenAt = new Map<string, number>();
-  if (recentAttempts) {
-    for (const attempt of recentAttempts) {
-      const ts = attempt.created_at ? new Date(attempt.created_at).getTime() : 0;
-      const markSeen = (id: string) => {
-        const base = id.replace(/__rep\d+$/, "");
-        seenQuestionIds.add(base);
-        // recentAttempts is ordered desc, so the first write is the most recent.
-        if (!lastSeenAt.has(base)) lastSeenAt.set(base, ts);
-      };
-
-      const served = (attempt as { served_question_ids?: string[] | null }).served_question_ids;
-      if (Array.isArray(served)) served.forEach(markSeen);
-
-      const answers = attempt.answers as Record<string, string> | unknown[] | null;
-      if (answers && typeof answers === "object" && !Array.isArray(answers)) {
-        Object.keys(answers).forEach(markSeen);
-      }
-    }
-  }
 
 
   const difficultyRank: Record<string, number> = { easy: 0, normal: 1, hard: 2 };
@@ -394,7 +452,51 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   const seenQuestions = [...seenMatch, ...seenOther];
 
   let selectedQuestions: Question[];
-  if (config.testType === "combined") {
+
+  // ---- Explicit practice modes -------------------------------------------
+  // Only used when the caller asks for one (custom practice sessions). The
+  // official-SAT path below is untouched. A mode can never leave the student
+  // with an empty session: every mode except "incorrect" falls back to the
+  // full section pool.
+  const practiceMode = config.practiceMode;
+  if (practiceMode) {
+    // Weakest first: missed → skipped/least-recently-seen → everything else.
+    const reviewRanked = [...topicFiltered]
+      .filter((q) => seenQuestionIds.has(baseQuestionId(q.id)))
+      .sort((a, b) => {
+        const rank = (q: Question) => (isMissed(q, history) ? 0 : 1);
+        const r = rank(a) - rank(b);
+        if (r !== 0) return r;
+        return (lastSeenAt.get(baseQuestionId(a.id)) ?? 0) - (lastSeenAt.get(baseQuestionId(b.id)) ?? 0);
+      });
+
+    let candidates: Question[];
+    if (practiceMode === "new") {
+      candidates = shuffle(topicFiltered.filter((q) => !seenQuestionIds.has(baseQuestionId(q.id))));
+    } else if (practiceMode === "incorrect") {
+      candidates = shuffle(topicFiltered.filter((q) => isMissed(q, history)));
+    } else if (practiceMode === "all") {
+      candidates = shuffle(topicFiltered);
+    } else {
+      // smart: unattempted first, then weakness-ranked review questions.
+      candidates = [
+        ...shuffle(topicFiltered.filter((q) => !seenQuestionIds.has(baseQuestionId(q.id)))),
+        ...reviewRanked,
+      ];
+    }
+
+    // THE fallback: never hand back an empty session because everything was seen.
+    if (candidates.length === 0 && practiceMode !== "incorrect") {
+      candidates = shuffle(topicFiltered);
+    }
+
+    selectedQuestions = candidates
+      .slice(0, Math.min(targetQuestions, candidates.length))
+      .map((q) => (seenQuestionIds.has(baseQuestionId(q.id)) ? shuffleChoices(q) : q));
+
+    if (selectedQuestions.length === 0) return null;
+  } else if (config.testType === "combined") {
+
     const isFullOfficial = config.length === "full";
     const rwTarget = isFullOfficial ? 54 : Math.floor(targetQuestions / 2);
     const mathTarget = isFullOfficial ? 44 : targetQuestions - rwTarget;
@@ -533,4 +635,65 @@ export function calculateScore(questions: Question[], answers: Record<string, st
   const score = total > 0 ? Math.round((correct / total) * 100) : 0;
 
   return { score, correct, total, byTopic, bySection };
+}
+
+export interface SectionPracticeStats {
+  /** Deliverable questions in this section (after the topic filter). */
+  total: number;
+  /** Never served to this student. */
+  unattempted: number;
+  /** Latest attempt was wrong or skipped. */
+  incorrect: number;
+  /** Already served at least once. */
+  attempted: number;
+}
+
+/**
+ * Counts what is available for each practice mode in a section, so the UI can
+ * show "Redo Mistakes — 6" and the completion state instead of a dead end.
+ */
+export async function getSectionPracticeStats(
+  userId: string,
+  testType: "math" | "reading_writing" | "combined",
+  topics: string[] = []
+): Promise<SectionPracticeStats> {
+  const empty: SectionPracticeStats = { total: 0, unattempted: 0, incorrect: 0, attempted: 0 };
+  const testTypes = testType === "combined" ? ["math", "reading_writing"] : [testType];
+
+  const { data: rawTests, error } = await supabase
+    .from("sat_tests")
+    .select("id, questions, difficulty, test_type")
+    .in("test_type", testTypes)
+    .eq("is_official", true);
+  if (error || !rawTests) return empty;
+
+  const seenIds = new Set<string>();
+  const flattened: Question[] = rawTests
+    .flatMap((t) => {
+      const qs = (t.questions as unknown as Question[]) || [];
+      return qs.map((q) => ({ ...q, difficulty: q.difficulty || (t.difficulty as Question["difficulty"]) }));
+    })
+    .filter((q) => {
+      if (!q?.id || seenIds.has(q.id)) return false;
+      seenIds.add(q.id);
+      return true;
+    });
+
+  const quarantinedIds = await fetchQuarantinedQuestionIds();
+  let pool = flattened.filter((q) => !quarantinedIds.has(q.id) && isQuestionDeliverable(q));
+
+  const topicFilter = topics.filter(Boolean);
+  if (topicFilter.length) {
+    pool = pool.filter((q) => topicFilter.includes(mapToCanonicalTopic(q.topic, q.section)));
+  }
+
+  const history = await fetchAttemptHistory(userId);
+  let unattempted = 0;
+  let incorrect = 0;
+  for (const q of pool) {
+    if (!history.seenQuestionIds.has(q.id.replace(/__rep\d+$/, ""))) unattempted++;
+    else if (isMissed(q, history)) incorrect++;
+  }
+
+  return { total: pool.length, unattempted, incorrect, attempted: pool.length - unattempted };
 }

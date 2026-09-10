@@ -19,11 +19,21 @@ import {
   Layers,
   HelpCircle,
   ArrowLeft,
-  X
+  X,
+  RefreshCw,
+  Target,
+  CheckCircle2,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { generateTest, SAT_TOPICS } from "@/lib/test-generator";
+import {
+  generateTest,
+  SAT_TOPICS,
+  getSectionPracticeStats,
+  type PracticeMode,
+  type SectionPracticeStats,
+} from "@/lib/test-generator";
 import { useToast } from "@/hooks/use-toast";
 import { getTierLimits, PricingTier } from "@/lib/tier-limits";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
@@ -79,6 +89,31 @@ export default function PracticeTests() {
   const { user, profile, refreshProfile } = useAuth();
   const [isToppingUp, setIsToppingUp] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>("smart");
+  const [stats, setStats] = useState<SectionPracticeStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  // Availability counts for the selected section, so the completion state and
+  // "Redo Mistakes — N" label reflect real data instead of a dead end.
+  useEffect(() => {
+    if (!user || view !== "config" || testMode !== "practice") return;
+    let cancelled = false;
+    setStatsLoading(true);
+    getSectionPracticeStats(user.id, testType, selectedTopics)
+      .then((s) => {
+        if (!cancelled) setStats(s);
+      })
+      .catch(() => {
+        if (!cancelled) setStats(null);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, view, testMode, testType, selectedTopics]);
+
 
   const availableTopics: { section: "math" | "reading_writing"; label: string; topic: string }[] = (() => {
     const groups: { section: "math" | "reading_writing"; label: string; topic: string }[] = [];
@@ -181,7 +216,7 @@ export default function PracticeTests() {
     // selector isn't undermined by an ordering pass.
     const effectiveConfig = testMode === "official"
       ? { testType: "combined" as TestType, length: "full" as TestLength, difficulty, timerEnabled, sortOrder }
-      : { testType, length, difficulty, timerEnabled, sortOrder: "mixed" as SortOrder, topics: selectedTopics };
+      : { testType, length, difficulty, timerEnabled, sortOrder: "mixed" as SortOrder, topics: selectedTopics, practiceMode };
 
     try {
       const test = await generateTest(
@@ -191,13 +226,18 @@ export default function PracticeTests() {
 
       if (!test) {
         toast({
-          title: "Error",
-          description: "Failed to generate test. Please try again.",
-          variant: "destructive",
+          title: practiceMode === "incorrect" && testMode === "practice"
+            ? "No mistakes to review"
+            : "Error",
+          description: practiceMode === "incorrect" && testMode === "practice"
+            ? "Great work — you have no mistakes to review in this section yet. Try Redo Section instead."
+            : "Failed to generate test. Please try again.",
+          variant: practiceMode === "incorrect" && testMode === "practice" ? "default" : "destructive",
         });
         setIsStarting(false);
         return;
       }
+
 
       // Unfinished tests left behind were just flagged as abandoned.
       if (test.abandonNotice) {
@@ -453,6 +493,92 @@ export default function PracticeTests() {
                 />
               </div>
             </div>
+
+            {/* Practice Mode */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Practice Mode</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {statsLoading
+                    ? "Checking what's available in this section..."
+                    : stats
+                    ? `${stats.unattempted} new • ${stats.attempted} already practiced • ${stats.incorrect} to review`
+                    : "Choose how questions are picked for this session"}
+                </p>
+              </div>
+
+              {/* Completion state — shown instead of a dead end when every question was seen */}
+              {stats && stats.total > 0 && stats.unattempted === 0 && (
+                <div className="p-5 rounded-xl bg-primary/10 border border-primary/20 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                    <h3 className="font-semibold text-foreground">
+                      You've completed all new questions in this section
+                    </h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Keep improving by reviewing mistakes or retaking the section. Your earlier
+                    results stay saved.
+                  </p>
+                  {stats.incorrect === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Great work — you have no mistakes to review in this section yet.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                <PracticeModeCard
+                  icon={Sparkles}
+                  title="Continue Practice"
+                  description="New questions first, then review what you struggled with."
+                  selected={practiceMode === "smart"}
+                  onClick={() => setPracticeMode("smart")}
+                />
+                <PracticeModeCard
+                  icon={Target}
+                  title={
+                    stats ? `Redo Mistakes — ${stats.incorrect}` : "Redo Mistakes"
+                  }
+                  description="Review only questions you got wrong or skipped."
+                  selected={practiceMode === "incorrect"}
+                  disabled={!!stats && stats.incorrect === 0}
+                  onClick={() => setPracticeMode("incorrect")}
+                />
+                <PracticeModeCard
+                  icon={RefreshCw}
+                  title="Redo Section"
+                  description="Retake every question in this section, reshuffled."
+                  selected={practiceMode === "all"}
+                  onClick={() => setPracticeMode("all")}
+                />
+                <PracticeModeCard
+                  icon={FileText}
+                  title="Only New Questions"
+                  description="Strictly questions you've never seen before."
+                  selected={practiceMode === "new"}
+                  disabled={!!stats && stats.unattempted === 0}
+                  onClick={() => setPracticeMode("new")}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/dashboard/progress">
+                    <LineChartIcon className="w-4 h-4" />
+                    Review Results
+                  </Link>
+                </Button>
+                {practiceMode !== "smart" && (
+                  <span className="text-xs text-primary font-medium">
+                    Review session — these are questions you've seen before.
+                  </span>
+                )}
+              </div>
+            </div>
+
+
 
             {/* Test Length */}
             <div className="space-y-4">
@@ -732,6 +858,41 @@ function TestTypeCard({
       )} />
       <div className="font-semibold text-foreground">{title}</div>
       <div className="text-xs text-muted-foreground mt-1">{description}</div>
+    </button>
+  );
+}
+
+function PracticeModeCard({
+  icon: Icon,
+  title,
+  description,
+  selected,
+  disabled,
+  onClick,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  selected: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "w-full p-4 rounded-xl border-2 text-left transition-all duration-200 flex gap-3 items-start",
+        selected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50",
+        disabled && "opacity-50 cursor-not-allowed hover:border-border"
+      )}
+    >
+      <Icon className={cn("w-5 h-5 mt-0.5 shrink-0", selected ? "text-primary" : "text-muted-foreground")} />
+      <span className="min-w-0">
+        <span className="block font-semibold text-foreground">{title}</span>
+        <span className="block text-xs text-muted-foreground mt-1">{description}</span>
+      </span>
     </button>
   );
 }
