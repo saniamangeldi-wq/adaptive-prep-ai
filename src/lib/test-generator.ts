@@ -71,6 +71,9 @@ export interface TestConfig {
   sortOrder?: SortOrder;
   /** Canonical SAT domain filter (see SAT_TOPICS). Empty/undefined = all. */
   topics?: string[];
+  /** Custom practice sessions: how questions are picked. Omit for official SAT. */
+  practiceMode?: import("@/lib/test-generator").PracticeMode;
+
 }
 
 /** Canonical SAT domains per section. Kept in sync with the College Board's Digital SAT specification. */
