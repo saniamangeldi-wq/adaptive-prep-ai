@@ -226,13 +226,18 @@ export default function PracticeTests() {
 
       if (!test) {
         toast({
-          title: "Error",
-          description: "Failed to generate test. Please try again.",
-          variant: "destructive",
+          title: practiceMode === "incorrect" && testMode === "practice"
+            ? "No mistakes to review"
+            : "Error",
+          description: practiceMode === "incorrect" && testMode === "practice"
+            ? "Great work — you have no mistakes to review in this section yet. Try Redo Section instead."
+            : "Failed to generate test. Please try again.",
+          variant: practiceMode === "incorrect" && testMode === "practice" ? "default" : "destructive",
         });
         setIsStarting(false);
         return;
       }
+
 
       // Unfinished tests left behind were just flagged as abandoned.
       if (test.abandonNotice) {
