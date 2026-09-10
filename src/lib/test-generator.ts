@@ -493,7 +493,6 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     if (selectedQuestions.length === 0) return null;
   } else if (config.testType === "combined") {
 
-  if (config.testType === "combined") {
     const isFullOfficial = config.length === "full";
     const rwTarget = isFullOfficial ? 54 : Math.floor(targetQuestions / 2);
     const mathTarget = isFullOfficial ? 44 : targetQuestions - rwTarget;
