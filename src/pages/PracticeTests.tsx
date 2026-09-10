@@ -489,6 +489,92 @@ export default function PracticeTests() {
               </div>
             </div>
 
+            {/* Practice Mode */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Practice Mode</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {statsLoading
+                    ? "Checking what's available in this section..."
+                    : stats
+                    ? `${stats.unattempted} new • ${stats.attempted} already practiced • ${stats.incorrect} to review`
+                    : "Choose how questions are picked for this session"}
+                </p>
+              </div>
+
+              {/* Completion state — shown instead of a dead end when every question was seen */}
+              {stats && stats.total > 0 && stats.unattempted === 0 && (
+                <div className="p-5 rounded-xl bg-primary/10 border border-primary/20 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                    <h3 className="font-semibold text-foreground">
+                      You've completed all new questions in this section
+                    </h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Keep improving by reviewing mistakes or retaking the section. Your earlier
+                    results stay saved.
+                  </p>
+                  {stats.incorrect === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Great work — you have no mistakes to review in this section yet.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                <PracticeModeCard
+                  icon={Sparkles}
+                  title="Continue Practice"
+                  description="New questions first, then review what you struggled with."
+                  selected={practiceMode === "smart"}
+                  onClick={() => setPracticeMode("smart")}
+                />
+                <PracticeModeCard
+                  icon={Target}
+                  title={
+                    stats ? `Redo Mistakes — ${stats.incorrect}` : "Redo Mistakes"
+                  }
+                  description="Review only questions you got wrong or skipped."
+                  selected={practiceMode === "incorrect"}
+                  disabled={!!stats && stats.incorrect === 0}
+                  onClick={() => setPracticeMode("incorrect")}
+                />
+                <PracticeModeCard
+                  icon={RefreshCw}
+                  title="Redo Section"
+                  description="Retake every question in this section, reshuffled."
+                  selected={practiceMode === "all"}
+                  onClick={() => setPracticeMode("all")}
+                />
+                <PracticeModeCard
+                  icon={FileText}
+                  title="Only New Questions"
+                  description="Strictly questions you've never seen before."
+                  selected={practiceMode === "new"}
+                  disabled={!!stats && stats.unattempted === 0}
+                  onClick={() => setPracticeMode("new")}
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/dashboard/progress">
+                    <LineChartIcon className="w-4 h-4" />
+                    Review Results
+                  </Link>
+                </Button>
+                {practiceMode !== "smart" && (
+                  <span className="text-xs text-primary font-medium">
+                    Review session — these are questions you've seen before.
+                  </span>
+                )}
+              </div>
+            </div>
+
+
+
             {/* Test Length */}
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-foreground">Test Length</h2>
