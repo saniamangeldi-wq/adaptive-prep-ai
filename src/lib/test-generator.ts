@@ -156,6 +156,86 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+/** How a practice session picks its questions. */
+export type PracticeMode = "smart" | "new" | "incorrect" | "all";
+
+export interface AttemptHistory {
+  /** Every question id the student has been served before. */
+  seenQuestionIds: Set<string>;
+  /** Most recent time (ms) each question was served. */
+  lastSeenAt: Map<string, number>;
+  /** Latest submitted answer per question; null when it was served but skipped. */
+  latestAnswer: Map<string, string | null>;
+}
+
+const baseQuestionId = (id: string) => id.replace(/__rep\d+$/, "");
+
+/**
+ * Reads the student's recent attempts and derives per-question history.
+ * Attempts are never mutated or removed here — retakes simply add new rows.
+ */
+export async function fetchAttemptHistory(userId: string): Promise<AttemptHistory> {
+  const { data: recentAttempts } = await supabase
+    .from("test_attempts")
+    .select("answers, served_question_ids, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const seenQuestionIds = new Set<string>();
+  const lastSeenAt = new Map<string, number>();
+  const latestAnswer = new Map<string, string | null>();
+
+  for (const attempt of recentAttempts ?? []) {
+    const ts = attempt.created_at ? new Date(attempt.created_at).getTime() : 0;
+    const answers = attempt.answers as Record<string, string> | unknown[] | null;
+    const answerMap =
+      answers && typeof answers === "object" && !Array.isArray(answers)
+        ? (answers as Record<string, string>)
+        : {};
+
+    const markSeen = (id: string) => {
+      const base = baseQuestionId(id);
+      seenQuestionIds.add(base);
+      // recentAttempts is ordered desc, so the first write is the most recent.
+      if (!lastSeenAt.has(base)) lastSeenAt.set(base, ts);
+      if (!latestAnswer.has(base)) {
+        const given = answerMap[id] ?? answerMap[base];
+        latestAnswer.set(base, given ?? null);
+      }
+    };
+
+    const served = (attempt as { served_question_ids?: string[] | null }).served_question_ids;
+    if (Array.isArray(served)) served.forEach(markSeen);
+    Object.keys(answerMap).forEach(markSeen);
+  }
+
+  return { seenQuestionIds, lastSeenAt, latestAnswer };
+}
+
+/** True when the student's latest attempt at this question was wrong or skipped. */
+export function isMissed(q: Question, history: AttemptHistory): boolean {
+  const id = baseQuestionId(q.id);
+  if (!history.seenQuestionIds.has(id)) return false;
+  const given = history.latestAnswer.get(id);
+  if (given === undefined || given === null || given === "") return true;
+  return given.toLowerCase().trim() !== (q.correct_answer || "").toLowerCase().trim();
+}
+
+/**
+ * Randomizes answer choices without breaking the correct-answer mapping.
+ * Answers are stored as the option text, so shuffling is safe as long as the
+ * recorded correct answer is one of the options.
+ */
+function shuffleChoices(q: Question): Question {
+  if (q.type !== "multiple_choice" || !Array.isArray(q.options) || q.options.length < 2) return q;
+  const correct = (q.correct_answer || "").trim().toLowerCase();
+  const matches = q.options.some((o) => (o || "").trim().toLowerCase() === correct);
+  if (!matches) return q; // letter-keyed or malformed — leave order untouched
+  return { ...q, options: shuffle(q.options) };
+}
+
+
 function getTargetQuestions(config: TestConfig): number {
   if (config.length === "quick") return 10;
   if (config.length === "short") return 25;
@@ -311,35 +391,9 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   // seen the moment it was SERVED (served_question_ids, written at attempt
   // creation) — not only when it was answered — so abandoned or unfinished
   // tests no longer hand back the same questions next time.
-  const { data: recentAttempts } = await supabase
-    .from("test_attempts")
-    .select("answers, served_question_ids, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(500);
+  const history = await fetchAttemptHistory(userId);
+  const { seenQuestionIds, lastSeenAt } = history;
 
-  const seenQuestionIds = new Set<string>();
-  // Track most-recent-seen timestamp per question id so we can sort least-recently-seen first.
-  const lastSeenAt = new Map<string, number>();
-  if (recentAttempts) {
-    for (const attempt of recentAttempts) {
-      const ts = attempt.created_at ? new Date(attempt.created_at).getTime() : 0;
-      const markSeen = (id: string) => {
-        const base = id.replace(/__rep\d+$/, "");
-        seenQuestionIds.add(base);
-        // recentAttempts is ordered desc, so the first write is the most recent.
-        if (!lastSeenAt.has(base)) lastSeenAt.set(base, ts);
-      };
-
-      const served = (attempt as { served_question_ids?: string[] | null }).served_question_ids;
-      if (Array.isArray(served)) served.forEach(markSeen);
-
-      const answers = attempt.answers as Record<string, string> | unknown[] | null;
-      if (answers && typeof answers === "object" && !Array.isArray(answers)) {
-        Object.keys(answers).forEach(markSeen);
-      }
-    }
-  }
 
 
   const difficultyRank: Record<string, number> = { easy: 0, normal: 1, hard: 2 };
