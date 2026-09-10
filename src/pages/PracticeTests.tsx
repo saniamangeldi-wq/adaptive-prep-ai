@@ -89,6 +89,31 @@ export default function PracticeTests() {
   const { user, profile, refreshProfile } = useAuth();
   const [isToppingUp, setIsToppingUp] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>("smart");
+  const [stats, setStats] = useState<SectionPracticeStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  // Availability counts for the selected section, so the completion state and
+  // "Redo Mistakes — N" label reflect real data instead of a dead end.
+  useEffect(() => {
+    if (!user || view !== "config" || testMode !== "practice") return;
+    let cancelled = false;
+    setStatsLoading(true);
+    getSectionPracticeStats(user.id, testType, selectedTopics)
+      .then((s) => {
+        if (!cancelled) setStats(s);
+      })
+      .catch(() => {
+        if (!cancelled) setStats(null);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, view, testMode, testType, selectedTopics]);
+
 
   const availableTopics: { section: "math" | "reading_writing"; label: string; topic: string }[] = (() => {
     const groups: { section: "math" | "reading_writing"; label: string; topic: string }[] = [];
