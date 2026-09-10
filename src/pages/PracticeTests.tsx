@@ -19,11 +19,21 @@ import {
   Layers,
   HelpCircle,
   ArrowLeft,
-  X
+  X,
+  RefreshCw,
+  Target,
+  CheckCircle2,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { generateTest, SAT_TOPICS } from "@/lib/test-generator";
+import {
+  generateTest,
+  SAT_TOPICS,
+  getSectionPracticeStats,
+  type PracticeMode,
+  type SectionPracticeStats,
+} from "@/lib/test-generator";
 import { useToast } from "@/hooks/use-toast";
 import { getTierLimits, PricingTier } from "@/lib/tier-limits";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
