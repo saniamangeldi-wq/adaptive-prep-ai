@@ -636,3 +636,64 @@ export function calculateScore(questions: Question[], answers: Record<string, st
 
   return { score, correct, total, byTopic, bySection };
 }
+
+export interface SectionPracticeStats {
+  /** Deliverable questions in this section (after the topic filter). */
+  total: number;
+  /** Never served to this student. */
+  unattempted: number;
+  /** Latest attempt was wrong or skipped. */
+  incorrect: number;
+  /** Already served at least once. */
+  attempted: number;
+}
+
+/**
+ * Counts what is available for each practice mode in a section, so the UI can
+ * show "Redo Mistakes — 6" and the completion state instead of a dead end.
+ */
+export async function getSectionPracticeStats(
+  userId: string,
+  testType: "math" | "reading_writing" | "combined",
+  topics: string[] = []
+): Promise<SectionPracticeStats> {
+  const empty: SectionPracticeStats = { total: 0, unattempted: 0, incorrect: 0, attempted: 0 };
+  const testTypes = testType === "combined" ? ["math", "reading_writing"] : [testType];
+
+  const { data: rawTests, error } = await supabase
+    .from("sat_tests")
+    .select("id, questions, difficulty, test_type")
+    .in("test_type", testTypes)
+    .eq("is_official", true);
+  if (error || !rawTests) return empty;
+
+  const seenIds = new Set<string>();
+  const flattened: Question[] = rawTests
+    .flatMap((t) => {
+      const qs = (t.questions as unknown as Question[]) || [];
+      return qs.map((q) => ({ ...q, difficulty: q.difficulty || (t.difficulty as Question["difficulty"]) }));
+    })
+    .filter((q) => {
+      if (!q?.id || seenIds.has(q.id)) return false;
+      seenIds.add(q.id);
+      return true;
+    });
+
+  const quarantinedIds = await fetchQuarantinedQuestionIds();
+  let pool = flattened.filter((q) => !quarantinedIds.has(q.id) && isQuestionDeliverable(q));
+
+  const topicFilter = topics.filter(Boolean);
+  if (topicFilter.length) {
+    pool = pool.filter((q) => topicFilter.includes(mapToCanonicalTopic(q.topic, q.section)));
+  }
+
+  const history = await fetchAttemptHistory(userId);
+  let unattempted = 0;
+  let incorrect = 0;
+  for (const q of pool) {
+    if (!history.seenQuestionIds.has(q.id.replace(/__rep\d+$/, ""))) unattempted++;
+    else if (isMissed(q, history)) incorrect++;
+  }
+
+  return { total: pool.length, unattempted, incorrect, attempted: pool.length - unattempted };
+}
