@@ -570,6 +570,12 @@ export default function PracticeTests() {
                     Review Results
                   </Link>
                 </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/dashboard/tests/mistakes">
+                    <Target className="w-4 h-4" />
+                    {stats ? `Mistake Bank — ${stats.incorrect}` : "Mistake Bank"}
+                  </Link>
+                </Button>
                 {practiceMode !== "smart" && (
                   <span className="text-xs text-primary font-medium">
                     Review session — these are questions you've seen before.
