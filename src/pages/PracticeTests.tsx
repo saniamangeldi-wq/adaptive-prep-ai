@@ -825,6 +825,18 @@ export default function PracticeTests() {
                   <div className="text-xs text-muted-foreground mt-1">Take an official Digital SAT test or a custom quick practice session</div>
                 </div>
               </button>
+              <Link
+                to="/dashboard/tests/mistakes"
+                className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Target className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Mistake Bank</div>
+                  <div className="text-xs text-muted-foreground mt-1">Find every question you missed, see the correct answer and redo them</div>
+                </div>
+              </Link>
             </div>
           </div>
         )}
