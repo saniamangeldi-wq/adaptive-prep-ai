@@ -153,6 +153,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard/tests" element={<ProtectedRoute><PracticeTests /></ProtectedRoute>} />
+      <Route path="/dashboard/tests/mistakes" element={<ProtectedRoute><MistakeBank /></ProtectedRoute>} />
       <Route path="/dashboard/tests/:testId" element={<ProtectedRoute><TakeTest /></ProtectedRoute>} />
       <Route path="/dashboard/sat-test/:testId" element={<ProtectedRoute><TakeSATTest /></ProtectedRoute>} />
       <Route path="/dashboard/tests/:testId/results" element={<ProtectedRoute><TestResults /></ProtectedRoute>} />
