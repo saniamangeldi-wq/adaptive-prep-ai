@@ -212,6 +212,13 @@ function AppRoutes() {
       <Route path="/dashboard/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
       <Route path="/dashboard/lessons" element={<ProtectedRoute><VideoLessons /></ProtectedRoute>} />
       <Route path="/dashboard/lessons/coming-soon" element={<ProtectedRoute><LessonsComingSoon /></ProtectedRoute>} />
+
+      {/* Hidden IELTS module — 404s for anyone without access */}
+      <Route path="/dashboard/ielts" element={<ProtectedRoute><IeltsGate><IeltsOverview /></IeltsGate></ProtectedRoute>} />
+      <Route path="/dashboard/ielts/reading" element={<ProtectedRoute><IeltsGate><IeltsReading /></IeltsGate></ProtectedRoute>} />
+      <Route path="/dashboard/ielts/writing" element={<ProtectedRoute><IeltsGate><IeltsWriting /></IeltsGate></ProtectedRoute>} />
+      <Route path="/dashboard/ielts/history" element={<ProtectedRoute><IeltsGate><IeltsHistory /></IeltsGate></ProtectedRoute>} />
+      
       
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
