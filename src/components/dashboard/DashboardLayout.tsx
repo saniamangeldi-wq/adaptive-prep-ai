@@ -38,6 +38,8 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 import { SIDEBAR } from "@/lib/design-system";
 import { canAccessCalculator } from "@/lib/calculator-access";
+import { useIeltsAccess } from "@/hooks/useIeltsAccess";
+import { Languages } from "lucide-react";
 
 type NavItem = {
   nameKey: string;
@@ -107,6 +109,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isSchoolStudent } = useSchoolStudent();
+  const { hasAccess: hasIeltsAccess } = useIeltsAccess();
   const { t, i18n } = useTranslation();
 
   // Sync language from profile on mount
@@ -174,6 +177,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       const calcItem: NavItem = { nameKey: "Calculator", href: "/dashboard/revenue-calculator", icon: Calculator };
       if (settingsIdx >= 0) nav = [...nav.slice(0, settingsIdx), calcItem, ...nav.slice(settingsIdx)];
       else nav = [...nav, calcItem];
+    }
+    // Hidden IELTS module: only shows for accounts/schools with it switched on.
+    if (hasIeltsAccess) {
+      const settingsIdx = nav.findIndex((n) => n.href === "/dashboard/settings");
+      const ieltsItem: NavItem = { nameKey: "IELTS", href: "/dashboard/ielts", icon: Languages };
+      if (settingsIdx >= 0) nav = [...nav.slice(0, settingsIdx), ieltsItem, ...nav.slice(settingsIdx)];
+      else nav = [...nav, ieltsItem];
     }
     return nav;
   };

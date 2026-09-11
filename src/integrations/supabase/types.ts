@@ -1007,6 +1007,152 @@ export type Database = {
           },
         ]
       }
+      ielts_sessions: {
+        Row: {
+          answers: Json
+          band: number | null
+          completed_at: string | null
+          config: Json
+          content: Json
+          created_at: string
+          id: string
+          mode: string
+          raw_score: number | null
+          skill: string
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+          variant: string
+        }
+        Insert: {
+          answers?: Json
+          band?: number | null
+          completed_at?: string | null
+          config?: Json
+          content?: Json
+          created_at?: string
+          id?: string
+          mode?: string
+          raw_score?: number | null
+          skill: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          variant?: string
+        }
+        Update: {
+          answers?: Json
+          band?: number | null
+          completed_at?: string | null
+          config?: Json
+          content?: Json
+          created_at?: string
+          id?: string
+          mode?: string
+          raw_score?: number | null
+          skill?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          variant?: string
+        }
+        Relationships: []
+      }
+      ielts_trials: {
+        Row: {
+          converted: boolean
+          created_at: string
+          ends_at: string
+          reminder_day3_sent_at: string | null
+          reminder_day6_sent_at: string | null
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          converted?: boolean
+          created_at?: string
+          ends_at?: string
+          reminder_day3_sent_at?: string | null
+          reminder_day6_sent_at?: string | null
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          converted?: boolean
+          created_at?: string
+          ends_at?: string
+          reminder_day3_sent_at?: string | null
+          reminder_day6_sent_at?: string | null
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ielts_writing_reports: {
+        Row: {
+          chart: Json | null
+          comments: Json
+          created_at: string
+          criteria: Json
+          essay: string
+          id: string
+          model_answer: string | null
+          overall_band: number | null
+          prompt: string
+          session_id: string | null
+          task_type: string
+          updated_at: string
+          user_id: string
+          word_count: number
+        }
+        Insert: {
+          chart?: Json | null
+          comments?: Json
+          created_at?: string
+          criteria?: Json
+          essay: string
+          id?: string
+          model_answer?: string | null
+          overall_band?: number | null
+          prompt: string
+          session_id?: string | null
+          task_type: string
+          updated_at?: string
+          user_id: string
+          word_count?: number
+        }
+        Update: {
+          chart?: Json | null
+          comments?: Json
+          created_at?: string
+          criteria?: Json
+          essay?: string
+          id?: string
+          model_answer?: string | null
+          overall_band?: number | null
+          prompt?: string
+          session_id?: string | null
+          task_type?: string
+          updated_at?: string
+          user_id?: string
+          word_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ielts_writing_reports_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ielts_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       join_requests: {
         Row: {
           created_at: string
@@ -1442,6 +1588,7 @@ export type Database = {
           full_name: string | null
           grade_level: string | null
           id: string
+          ielts_enabled: boolean
           is_trial: boolean
           learning_style: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed: boolean
@@ -1485,6 +1632,7 @@ export type Database = {
           full_name?: string | null
           grade_level?: string | null
           id?: string
+          ielts_enabled?: boolean
           is_trial?: boolean
           learning_style?: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed?: boolean
@@ -1528,6 +1676,7 @@ export type Database = {
           full_name?: string | null
           grade_level?: string | null
           id?: string
+          ielts_enabled?: boolean
           is_trial?: boolean
           learning_style?: Database["public"]["Enums"]["learning_style"] | null
           onboarding_completed?: boolean
@@ -1977,6 +2126,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          ielts_enabled: boolean
           invite_code: string
           monthly_cost: number | null
           name: string
@@ -1990,6 +2140,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          ielts_enabled?: boolean
           invite_code?: string
           monthly_cost?: number | null
           name: string
@@ -2003,6 +2154,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          ielts_enabled?: boolean
           invite_code?: string
           monthly_cost?: number | null
           name?: string
@@ -3363,6 +3515,7 @@ export type Database = {
         Args: { _school_id: string; _user_id: string }
         Returns: undefined
       }
+      has_ielts_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]

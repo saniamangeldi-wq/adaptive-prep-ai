@@ -71,6 +71,13 @@ import SATVerbal from "./pages/SATVerbal";
 import RevenueCalculator from "./pages/RevenueCalculator";
 import OAuthConsent from "./pages/OAuthConsent";
 
+// Hidden IELTS module (access-gated)
+import IeltsGate from "./pages/ielts/IeltsGate";
+import IeltsOverview from "./pages/ielts/IeltsOverview";
+import IeltsReading from "./pages/ielts/IeltsReading";
+import IeltsWriting from "./pages/ielts/IeltsWriting";
+import IeltsHistory from "./pages/ielts/IeltsHistory";
+
 const queryClient = new QueryClient();
 
 // Protected route wrapper
@@ -205,6 +212,13 @@ function AppRoutes() {
       <Route path="/dashboard/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
       <Route path="/dashboard/lessons" element={<ProtectedRoute><VideoLessons /></ProtectedRoute>} />
       <Route path="/dashboard/lessons/coming-soon" element={<ProtectedRoute><LessonsComingSoon /></ProtectedRoute>} />
+
+      {/* Hidden IELTS module — 404s for anyone without access */}
+      <Route path="/dashboard/ielts" element={<ProtectedRoute><IeltsGate><IeltsOverview /></IeltsGate></ProtectedRoute>} />
+      <Route path="/dashboard/ielts/reading" element={<ProtectedRoute><IeltsGate><IeltsReading /></IeltsGate></ProtectedRoute>} />
+      <Route path="/dashboard/ielts/writing" element={<ProtectedRoute><IeltsGate><IeltsWriting /></IeltsGate></ProtectedRoute>} />
+      <Route path="/dashboard/ielts/history" element={<ProtectedRoute><IeltsGate><IeltsHistory /></IeltsGate></ProtectedRoute>} />
+      
       
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
