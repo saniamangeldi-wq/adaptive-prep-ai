@@ -64,14 +64,16 @@ export default function IeltsReading() {
       if (user) {
         const { data: session } = await supabase
           .from("ielts_sessions")
-          .insert({
-            user_id: user.id,
-            skill: "reading",
-            variant,
-            mode: "practice",
-            config: { passageCount, topic },
-            content: generated as unknown as Record<string, unknown>,
-          })
+          .insert([
+            {
+              user_id: user.id,
+              skill: "reading",
+              variant,
+              mode: "practice",
+              config: { passageCount, topic },
+              content: generated as unknown as Record<string, unknown>,
+            },
+          ])
           .select("id")
           .maybeSingle();
         setSessionId(session?.id ?? null);
