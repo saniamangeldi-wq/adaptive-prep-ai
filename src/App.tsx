@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import PracticeTests from "./pages/PracticeTests";
+import MistakeBank from "./pages/MistakeBank";
 import TakeTest from "./pages/TakeTest";
 import TakeSATTest from "./pages/TakeSATTest";
 import TestResults from "./pages/TestResults";
