@@ -1,6 +1,7 @@
 # Separate Practice and Mock Review
 
 ## Outcome
+
 The Mistake Bank will no longer combine unanswered questions with wrong answers or combine practice sessions with full mock tests.
 
 Students will see four distinct review groups:
@@ -13,12 +14,14 @@ Students will see four distinct review groups:
 Only questions answered incorrectly will be treated as mistakes. Each mistake will show the existing explanation and three verified follow-up questions from the question bank.
 
 ## Skipped-question policy
+
 - A skipped practice question is not labeled as a mistake. It remains available under **Practice Skipped** so the student can return to it without creating a false knowledge-gap signal.
 - A skipped mock-test question remains unanswered and scores as incorrect, matching Digital SAT behavior. It appears under **Mock Skipped**, separate from conceptual mistakes because it may indicate pacing rather than weak understanding.
 - Skipped questions do not receive the three-question remediation set until the student attempts one and answers incorrectly.
 - Abandoned tests remain excluded from progress and mistake history under the existing abandonment rules.
 
 ## Interface changes
+
 - Replace the single mixed Mistake Bank list with a clear Practice / Mock selector.
 - Within each source, provide separate **Mistakes** and **Skipped** views with counts.
 - Keep section, topic, and search filters scoped to the active view.
@@ -30,6 +33,7 @@ Only questions answered incorrectly will be treated as mistakes. Each mistake wi
 - Redo actions start a new session and preserve every prior attempt.
 
 ## Verified follow-up questions
+
 For each actual mistake:
 
 1. Select three deliverable, non-quarantined questions from the same SAT section and canonical topic.
@@ -40,6 +44,7 @@ For each actual mistake:
 6. If fewer than three valid questions exist, show the available number honestly rather than padding with repeats.
 
 ## Technical details
+
 - Add an explicit attempt source to completed attempts so future reads do not rely on fragile route assumptions: `practice` or `mock`.
 - Save separate wrong and skipped question IDs when an attempt is completed. Historical rows will still be classified by comparing their served IDs, submitted answers, and linked test format.
 - Extend attempt-history loading to preserve source and outcome per question instead of collapsing wrong and skipped into one value.
@@ -50,6 +55,7 @@ For each actual mistake:
 - Preserve all existing attempt rows and analytics; no history is reset, overwritten, or deleted.
 
 ## Validation
+
 - Confirm wrong and skipped answers land in different groups.
 - Confirm practice and mock records never appear together.
 - Confirm abandoned sessions are excluded.
