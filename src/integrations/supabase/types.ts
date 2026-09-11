@@ -2550,6 +2550,7 @@ export type Database = {
           abandoned: boolean
           abandoned_at: string | null
           answers: Json
+          attempt_source: string | null
           completed_at: string | null
           correct_answers: number | null
           created_at: string
@@ -2561,16 +2562,19 @@ export type Database = {
           served_question_ids: string[]
           session_saved_at: string | null
           session_state: Json | null
+          skipped_question_ids: string[]
           started_at: string
           test_id: string
           time_spent_seconds: number | null
           total_questions: number | null
           user_id: string
+          wrong_question_ids: string[]
         }
         Insert: {
           abandoned?: boolean
           abandoned_at?: string | null
           answers?: Json
+          attempt_source?: string | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string
@@ -2582,16 +2586,19 @@ export type Database = {
           served_question_ids?: string[]
           session_saved_at?: string | null
           session_state?: Json | null
+          skipped_question_ids?: string[]
           started_at?: string
           test_id: string
           time_spent_seconds?: number | null
           total_questions?: number | null
           user_id: string
+          wrong_question_ids?: string[]
         }
         Update: {
           abandoned?: boolean
           abandoned_at?: string | null
           answers?: Json
+          attempt_source?: string | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string
@@ -2603,11 +2610,13 @@ export type Database = {
           served_question_ids?: string[]
           session_saved_at?: string | null
           session_state?: Json | null
+          skipped_question_ids?: string[]
           started_at?: string
           test_id?: string
           time_spent_seconds?: number | null
           total_questions?: number | null
           user_id?: string
+          wrong_question_ids?: string[]
         }
         Relationships: [
           {
