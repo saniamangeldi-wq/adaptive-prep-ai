@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
+  BookOpenCheck,
   CheckCircle2,
   ChevronDown,
   Loader2,
   Play,
   Search,
   Target,
+  TimerOff,
   X,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
@@ -19,9 +21,16 @@ import { PageSeo } from "@/components/seo/PageSeo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { fetchMistakes, generateTest, type MistakeEntry } from "@/lib/test-generator";
+import {
+  fetchMistakes,
+  generateTest,
+  type AttemptSource,
+  type MistakeEntry,
+  type ReviewOutcome,
+} from "@/lib/test-generator";
 
 type SectionFilter = "all" | "math" | "reading_writing";
+type ReviewKey = `${AttemptSource}:${ReviewOutcome}`;
 
 const sectionLabel = (s: string) => (s === "math" ? "Math" : "Reading & Writing");
 
@@ -31,7 +40,14 @@ export default function MistakeBank() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [mistakes, setMistakes] = useState<MistakeEntry[]>([]);
+  const [reviews, setReviews] = useState<Record<ReviewKey, MistakeEntry[]>>({
+    "practice:wrong": [],
+    "practice:skipped": [],
+    "mock:wrong": [],
+    "mock:skipped": [],
+  });
+  const [source, setSource] = useState<AttemptSource>("practice");
+  const [outcome, setOutcome] = useState<ReviewOutcome>("wrong");
   const [section, setSection] = useState<SectionFilter>("all");
   const [topic, setTopic] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -42,12 +58,27 @@ export default function MistakeBank() {
     if (!user) return;
     let cancelled = false;
     setLoading(true);
-    fetchMistakes(user.id, "combined")
-      .then((rows) => {
-        if (!cancelled) setMistakes(rows);
+    Promise.all([
+      fetchMistakes(user.id, "combined", "practice", "wrong"),
+      fetchMistakes(user.id, "combined", "practice", "skipped"),
+      fetchMistakes(user.id, "combined", "mock", "wrong"),
+      fetchMistakes(user.id, "combined", "mock", "skipped"),
+    ])
+      .then(([practiceWrong, practiceSkipped, mockWrong, mockSkipped]) => {
+        if (!cancelled) setReviews({
+          "practice:wrong": practiceWrong,
+          "practice:skipped": practiceSkipped,
+          "mock:wrong": mockWrong,
+          "mock:skipped": mockSkipped,
+        });
       })
       .catch(() => {
-        if (!cancelled) setMistakes([]);
+        if (!cancelled) setReviews({
+          "practice:wrong": [],
+          "practice:skipped": [],
+          "mock:wrong": [],
+          "mock:skipped": [],
+        });
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -56,6 +87,8 @@ export default function MistakeBank() {
       cancelled = true;
     };
   }, [user]);
+
+  const mistakes = reviews[`${source}:${outcome}`];
 
   const topics = useMemo(() => {
     const counts = new Map<string, number>();
@@ -78,11 +111,11 @@ export default function MistakeBank() {
     });
   }, [mistakes, section, topic, query]);
 
-  const startRedo = async () => {
+  const startQuestions = async (questionIds: string[]) => {
     if (!user || isStarting) return;
     setIsStarting(true);
     try {
-      const count = filtered.length;
+      const count = questionIds.length;
       const test = await generateTest(
         {
           testType: section === "all" ? "combined" : section,
@@ -91,14 +124,14 @@ export default function MistakeBank() {
           timerEnabled: false,
           sortOrder: "mixed",
           topics: topic ? [topic] : [],
-          practiceMode: "incorrect",
+          reviewQuestionIds: questionIds,
         },
         user.id
       );
       if (!test) {
         toast({
-          title: "No mistakes to review",
-          description: "Great work — there's nothing to redo with these filters.",
+          title: "Nothing available to review",
+          description: "No verified questions are available for this review yet.",
         });
         setIsStarting(false);
         return;
@@ -114,11 +147,13 @@ export default function MistakeBank() {
     }
   };
 
+  const startRedo = () => startQuestions(filtered.map((m) => m.question.id));
+
   return (
     <>
       <PageSeo
         title="Mistake Bank | AdaptivePrep"
-        description="Every SAT question you got wrong or skipped, with the correct answer and explanation — review and redo them in one place."
+        description="Review SAT mistakes and skipped questions separately for practice sessions and full mock tests."
         path="/dashboard/tests/mistakes"
       />
       <DashboardLayout>
@@ -135,7 +170,7 @@ export default function MistakeBank() {
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Mistake Bank</h1>
                 <p className="text-muted-foreground mt-1">
-                  Every question you missed or skipped — find it, understand it, redo it.
+                  Review wrong and skipped questions separately from practice and mock tests.
                 </p>
               </div>
             </div>
@@ -153,7 +188,7 @@ export default function MistakeBank() {
               ) : (
                 <>
                   <Play className="w-4 h-4" />
-                  Redo these ({filtered.length})
+                  {outcome === "wrong" ? "Redo mistakes" : "Try skipped"} ({filtered.length})
                 </>
               )}
             </Button>
@@ -161,6 +196,44 @@ export default function MistakeBank() {
 
           {/* Filters */}
           <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2" aria-label="Attempt source">
+              {(["practice", "mock"] as AttemptSource[]).map((value) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant={source === value ? "default" : "outline"}
+                  onClick={() => {
+                    setSource(value);
+                    setTopic(null);
+                    setOpenId(null);
+                  }}
+                >
+                  {value === "practice" ? "Practice" : "Mock tests"} ({
+                    reviews[`${value}:wrong`].length + reviews[`${value}:skipped`].length
+                  })
+                </Button>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2" aria-label="Review outcome">
+              {(["wrong", "skipped"] as ReviewOutcome[]).map((value) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant={outcome === value ? "secondary" : "outline"}
+                  onClick={() => {
+                    setOutcome(value);
+                    setTopic(null);
+                    setOpenId(null);
+                  }}
+                >
+                  {value === "wrong" ? (
+                    <><BookOpenCheck className="w-4 h-4" /> Mistakes ({reviews[`${source}:wrong`].length})</>
+                  ) : (
+                    <><TimerOff className="w-4 h-4" /> Skipped ({reviews[`${source}:skipped`].length})</>
+                  )}
+                </Button>
+              ))}
+            </div>
             <div className="flex flex-wrap gap-2">
               {(["all", "math", "reading_writing"] as SectionFilter[]).map((s) => (
                 <button
@@ -208,7 +281,7 @@ export default function MistakeBank() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search your mistakes..."
+                placeholder={`Search ${source} ${outcome === "wrong" ? "mistakes" : "skipped questions"}...`}
                 className="pl-9"
               />
             </div>
@@ -218,17 +291,18 @@ export default function MistakeBank() {
           {loading ? (
             <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
               <Loader2 className="w-5 h-5 animate-spin" />
-              Loading your mistakes...
+              Loading your review history...
             </div>
           ) : mistakes.length === 0 ? (
             <div className="p-8 rounded-2xl bg-card border border-border/50 text-center space-y-3">
               <CheckCircle2 className="w-10 h-10 text-primary mx-auto" />
               <h2 className="text-lg font-semibold text-foreground">
-                No mistakes to review yet
+                 No {source} {outcome === "wrong" ? "mistakes" : "skipped questions"} yet
               </h2>
               <p className="text-sm text-muted-foreground">
-                Once you miss or skip a question, it shows up here with the correct answer and a
-                full explanation.
+                 {outcome === "wrong"
+                   ? "Questions answered incorrectly will appear here with explanations and verified follow-up practice."
+                   : "Questions left unanswered will appear here separately so they do not count as conceptual mistakes."}
               </p>
               <Button variant="hero" size="sm" asChild>
                 <Link to="/dashboard/tests">
@@ -239,7 +313,7 @@ export default function MistakeBank() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="p-8 rounded-2xl bg-card border border-border/50 text-center text-sm text-muted-foreground">
-              No mistakes match these filters.
+              No review questions match these filters.
             </div>
           ) : (
             <div className="space-y-3">
@@ -271,13 +345,12 @@ export default function MistakeBank() {
                           <MathRenderer text={m.question.text} />
                         </span>
                         <span className="block text-xs text-muted-foreground mt-1">
-                          {m.topic} •{" "}
-                          {m.yourAnswer ? (
+                           {m.topic} • {outcome === "wrong" ? (
                             <>
                               You answered <span className="text-red-500">{m.yourAnswer}</span>
                             </>
                           ) : (
-                            <span className="text-yellow-500">Skipped</span>
+                             <span className="text-yellow-500">Unanswered</span>
                           )}
                         </span>
                       </span>
@@ -299,8 +372,26 @@ export default function MistakeBank() {
                           onAnswerChange={() => {}}
                           isFlagged={false}
                           onToggleFlag={() => {}}
-                          showCorrectAnswer
+                          showCorrectAnswer={outcome === "wrong"}
+                          readOnly
                         />
+                        <div className="flex justify-end pt-3">
+                          <Button
+                            variant="hero"
+                            size="sm"
+                            disabled={isStarting || (outcome === "wrong" && m.similarQuestions.length === 0)}
+                            onClick={() => startQuestions(
+                              outcome === "wrong"
+                                ? m.similarQuestions.map((q) => q.id)
+                                : [m.question.id]
+                            )}
+                          >
+                            <Play className="w-4 h-4" />
+                            {outcome === "wrong"
+                              ? `Practice ${m.similarQuestions.length} similar question${m.similarQuestions.length === 1 ? "" : "s"}`
+                              : "Try this question"}
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>

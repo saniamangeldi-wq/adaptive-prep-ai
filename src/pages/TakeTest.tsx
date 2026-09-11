@@ -9,7 +9,7 @@ import { DesmosCalculator } from "@/components/test/DesmosCalculator";
 import { Calculator as CalculatorIcon, ChevronLeft, ChevronRight, Send, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-generator";
+import { calculateScore, classifyQuestionOutcomes, type Question, type GeneratedTest } from "@/lib/test-generator";
 import { useToast } from "@/hooks/use-toast";
 import { useXPLevel } from "@/hooks/useXPLevel";
 import { XP_REWARDS } from "@/lib/gamification-config";
@@ -104,6 +104,7 @@ export default function TakeTest() {
     try {
       const timeSpent = Math.round((Date.now() - startTime) / 1000);
       const result = calculateScore(test.questions, answers);
+      const outcomes = classifyQuestionOutcomes(test.questions, answers);
 
       // Update the test attempt
       const { error } = await supabase
@@ -119,6 +120,9 @@ export default function TakeTest() {
             byTopic: result.byTopic,
             bySection: result.bySection,
           },
+          attempt_source: "practice",
+          wrong_question_ids: outcomes.wrongQuestionIds,
+          skipped_question_ids: outcomes.skippedQuestionIds,
         })
         .eq("id", test.id);
 

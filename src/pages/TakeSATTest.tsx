@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useXPLevel } from "@/hooks/useXPLevel";
 import { XP_REWARDS } from "@/lib/gamification-config";
 import { supabase } from "@/integrations/supabase/client";
-import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-generator";
+import { calculateScore, classifyQuestionOutcomes, type Question, type GeneratedTest } from "@/lib/test-generator";
 import { PageSeo } from "@/components/seo/PageSeo";
 import {
   TestStartScreen,
@@ -362,6 +362,7 @@ export default function TakeSATTest() {
       ];
 
       const result = calculateScore(allQuestions, allAnswers);
+      const outcomes = classifyQuestionOutcomes(allQuestions, allAnswers);
       const totalTimeSpent = 
         (testSession.reading_writing.module1.timeSpent || 0) +
         (testSession.reading_writing.module2.timeSpent || 0) +
@@ -384,6 +385,9 @@ export default function TakeSATTest() {
             byTopic: result.byTopic,
             bySection: result.bySection,
           },
+          attempt_source: "mock",
+          wrong_question_ids: outcomes.wrongQuestionIds,
+          skipped_question_ids: outcomes.skippedQuestionIds,
         })
         .eq("id", testSession.testId);
 
