@@ -30,6 +30,7 @@ import {
 } from "@/lib/test-generator";
 
 type SectionFilter = "all" | "math" | "reading_writing";
+type ReviewKey = `${AttemptSource}:${ReviewOutcome}`;
 
 const sectionLabel = (s: string) => (s === "math" ? "Math" : "Reading & Writing");
 
@@ -39,7 +40,12 @@ export default function MistakeBank() {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [mistakes, setMistakes] = useState<MistakeEntry[]>([]);
+  const [reviews, setReviews] = useState<Record<ReviewKey, MistakeEntry[]>>({
+    "practice:wrong": [],
+    "practice:skipped": [],
+    "mock:wrong": [],
+    "mock:skipped": [],
+  });
   const [source, setSource] = useState<AttemptSource>("practice");
   const [outcome, setOutcome] = useState<ReviewOutcome>("wrong");
   const [section, setSection] = useState<SectionFilter>("all");
@@ -52,12 +58,27 @@ export default function MistakeBank() {
     if (!user) return;
     let cancelled = false;
     setLoading(true);
-    fetchMistakes(user.id, "combined", source, outcome)
-      .then((rows) => {
-        if (!cancelled) setMistakes(rows);
+    Promise.all([
+      fetchMistakes(user.id, "combined", "practice", "wrong"),
+      fetchMistakes(user.id, "combined", "practice", "skipped"),
+      fetchMistakes(user.id, "combined", "mock", "wrong"),
+      fetchMistakes(user.id, "combined", "mock", "skipped"),
+    ])
+      .then(([practiceWrong, practiceSkipped, mockWrong, mockSkipped]) => {
+        if (!cancelled) setReviews({
+          "practice:wrong": practiceWrong,
+          "practice:skipped": practiceSkipped,
+          "mock:wrong": mockWrong,
+          "mock:skipped": mockSkipped,
+        });
       })
       .catch(() => {
-        if (!cancelled) setMistakes([]);
+        if (!cancelled) setReviews({
+          "practice:wrong": [],
+          "practice:skipped": [],
+          "mock:wrong": [],
+          "mock:skipped": [],
+        });
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -65,7 +86,9 @@ export default function MistakeBank() {
     return () => {
       cancelled = true;
     };
-  }, [user, source, outcome]);
+  }, [user]);
+
+  const mistakes = reviews[`${source}:${outcome}`];
 
   const topics = useMemo(() => {
     const counts = new Map<string, number>();
@@ -185,7 +208,9 @@ export default function MistakeBank() {
                     setOpenId(null);
                   }}
                 >
-                  {value === "practice" ? "Practice" : "Mock tests"}
+                  {value === "practice" ? "Practice" : "Mock tests"} ({
+                    reviews[`${value}:wrong`].length + reviews[`${value}:skipped`].length
+                  })
                 </Button>
               ))}
             </div>
@@ -202,9 +227,9 @@ export default function MistakeBank() {
                   }}
                 >
                   {value === "wrong" ? (
-                    <><BookOpenCheck className="w-4 h-4" /> Mistakes</>
+                    <><BookOpenCheck className="w-4 h-4" /> Mistakes ({reviews[`${source}:wrong`].length})</>
                   ) : (
-                    <><TimerOff className="w-4 h-4" /> Skipped</>
+                    <><TimerOff className="w-4 h-4" /> Skipped ({reviews[`${source}:skipped`].length})</>
                   )}
                 </Button>
               ))}

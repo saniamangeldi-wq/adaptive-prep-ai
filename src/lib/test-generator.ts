@@ -806,7 +806,7 @@ export async function fetchMistakes(
     .limit(500);
 
   const questionById = new Map(deliverable.map((q) => [baseQuestionId(q.id), q]));
-  const latest = new Map<string, { answer: string | null; lastSeenAt: number }>();
+  const latest = new Map<string, { answer: string | null; lastSeenAt: number; outcome: ReviewOutcome | "correct" }>();
 
   for (const attempt of attempts ?? []) {
     // Older rows predate attempt_source. Full-length attempts are the only
@@ -823,25 +823,27 @@ export async function fetchMistakes(
     const answers = attempt.answers && typeof attempt.answers === "object" && !Array.isArray(attempt.answers)
       ? attempt.answers as Record<string, string>
       : {};
-    const persistedIds = outcome === "wrong" ? attempt.wrong_question_ids : attempt.skipped_question_ids;
-    const ids = persistedIds.length > 0
-      ? persistedIds
-      : (attempt.served_question_ids ?? []).filter((rawId) => {
-          const id = baseQuestionId(rawId);
-          const question = questionById.get(id);
-          if (!question) return false;
-          const given = answers[rawId] ?? answers[id];
-          return outcome === "skipped"
-            ? !given?.trim()
-            : Boolean(given?.trim()) && given.trim().toLowerCase() !== question.correct_answer.trim().toLowerCase();
-        });
-
-    for (const rawId of ids) {
+    const persistedWrong = new Set(attempt.wrong_question_ids.map(baseQuestionId));
+    const persistedSkipped = new Set(attempt.skipped_question_ids.map(baseQuestionId));
+    for (const rawId of attempt.served_question_ids ?? []) {
       const id = baseQuestionId(rawId);
       if (latest.has(id) || !questionById.has(id)) continue;
+      const question = questionById.get(id);
+      if (!question) continue;
+      const answer = answers[rawId] ?? answers[id] ?? null;
+      const questionOutcome: ReviewOutcome | "correct" = persistedWrong.has(id)
+        ? "wrong"
+        : persistedSkipped.has(id)
+          ? "skipped"
+          : !answer?.trim()
+            ? "skipped"
+            : answer.trim().toLowerCase() === question.correct_answer.trim().toLowerCase()
+              ? "correct"
+              : "wrong";
       latest.set(id, {
-        answer: answers[rawId] ?? answers[id] ?? null,
+        answer,
         lastSeenAt: attempt.completed_at ? new Date(attempt.completed_at).getTime() : 0,
+        outcome: questionOutcome,
       });
     }
   }
@@ -850,6 +852,7 @@ export async function fetchMistakes(
   const difficultyRank: Record<Question["difficulty"], number> = { easy: 0, normal: 1, hard: 2 };
 
   return [...latest.entries()]
+    .filter(([, attempt]) => attempt.outcome === outcome)
     .map(([id, attempt]) => {
       const question = questionById.get(id);
       if (!question) return null;
