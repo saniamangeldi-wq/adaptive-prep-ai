@@ -38,6 +38,8 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 import { SIDEBAR } from "@/lib/design-system";
 import { canAccessCalculator } from "@/lib/calculator-access";
+import { useIeltsAccess } from "@/hooks/useIeltsAccess";
+import { Languages } from "lucide-react";
 
 type NavItem = {
   nameKey: string;
