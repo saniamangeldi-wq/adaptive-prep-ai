@@ -71,7 +71,7 @@ export default function IeltsReading() {
               variant,
               mode: "practice",
               config: { passageCount, topic },
-              content: generated as unknown as Record<string, unknown>,
+              content: JSON.parse(JSON.stringify(generated)),
             },
           ])
           .select("id")
