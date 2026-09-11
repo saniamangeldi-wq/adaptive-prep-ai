@@ -697,3 +697,65 @@ export async function getSectionPracticeStats(
 
   return { total: pool.length, unattempted, incorrect, attempted: pool.length - unattempted };
 }
+
+export interface MistakeEntry {
+  question: Question;
+  /** What the student answered last time; null when they skipped it. */
+  yourAnswer: string | null;
+  /** Canonical SAT domain for grouping/filtering. */
+  topic: string;
+  /** Last time this question was served (ms epoch). */
+  lastSeenAt: number;
+}
+
+/**
+ * Bluebook-style mistake bank: every question whose latest attempt was wrong or
+ * skipped, with the student's answer, the correct answer and the explanation.
+ * Read-only — nothing here mutates attempt history.
+ */
+export async function fetchMistakes(
+  userId: string,
+  testType: "math" | "reading_writing" | "combined" = "combined"
+): Promise<MistakeEntry[]> {
+  const testTypes = testType === "combined" ? ["math", "reading_writing"] : [testType];
+
+  const { data: rawTests, error } = await supabase
+    .from("sat_tests")
+    .select("id, questions, difficulty, test_type")
+    .in("test_type", testTypes)
+    .eq("is_official", true);
+  if (error || !rawTests) return [];
+
+  const seen = new Set<string>();
+  const pool: Question[] = rawTests
+    .flatMap((t) => {
+      const qs = (t.questions as unknown as Question[]) || [];
+      return qs.map((q) => ({
+        ...q,
+        difficulty: q.difficulty || (t.difficulty as Question["difficulty"]),
+      }));
+    })
+    .filter((q) => {
+      if (!q?.id || seen.has(q.id)) return false;
+      seen.add(q.id);
+      return true;
+    });
+
+  const quarantinedIds = await fetchQuarantinedQuestionIds();
+  const deliverable = pool.filter((q) => !quarantinedIds.has(q.id) && isQuestionDeliverable(q));
+
+  const history = await fetchAttemptHistory(userId);
+
+  return deliverable
+    .filter((q) => isMissed(q, history))
+    .map((q) => {
+      const base = baseQuestionId(q.id);
+      return {
+        question: q,
+        yourAnswer: history.latestAnswer.get(base) ?? null,
+        topic: mapToCanonicalTopic(q.topic, q.section),
+        lastSeenAt: history.lastSeenAt.get(base) ?? 0,
+      };
+    })
+    .sort((a, b) => b.lastSeenAt - a.lastSeenAt);
+}

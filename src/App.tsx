@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import PracticeTests from "./pages/PracticeTests";
+import MistakeBank from "./pages/MistakeBank";
 import TakeTest from "./pages/TakeTest";
 import TakeSATTest from "./pages/TakeSATTest";
 import TestResults from "./pages/TestResults";
@@ -152,6 +153,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard/tests" element={<ProtectedRoute><PracticeTests /></ProtectedRoute>} />
+      <Route path="/dashboard/tests/mistakes" element={<ProtectedRoute><MistakeBank /></ProtectedRoute>} />
       <Route path="/dashboard/tests/:testId" element={<ProtectedRoute><TakeTest /></ProtectedRoute>} />
       <Route path="/dashboard/sat-test/:testId" element={<ProtectedRoute><TakeSATTest /></ProtectedRoute>} />
       <Route path="/dashboard/tests/:testId/results" element={<ProtectedRoute><TestResults /></ProtectedRoute>} />
