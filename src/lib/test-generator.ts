@@ -73,8 +73,8 @@ export interface TestConfig {
   topics?: string[];
   /** Custom practice sessions: how questions are picked. Omit for official SAT. */
   practiceMode?: PracticeMode;
-
-
+  /** Exact verified questions for mistake/skipped review sessions. */
+  reviewQuestionIds?: string[];
 }
 
 /** Canonical SAT domains per section. Kept in sync with the College Board's Digital SAT specification. */
@@ -172,6 +172,9 @@ export interface AttemptHistory {
   latestAnswer: Map<string, string | null>;
 }
 
+export type AttemptSource = "practice" | "mock";
+export type ReviewOutcome = "wrong" | "skipped";
+
 const baseQuestionId = (id: string) => id.replace(/__rep\d+$/, "");
 
 /**
@@ -183,6 +186,7 @@ export async function fetchAttemptHistory(userId: string): Promise<AttemptHistor
     .from("test_attempts")
     .select("answers, served_question_ids, created_at")
     .eq("user_id", userId)
+    .eq("abandoned", false)
     .order("created_at", { ascending: false })
     .limit(500);
 
@@ -222,8 +226,35 @@ export function isMissed(q: Question, history: AttemptHistory): boolean {
   const id = baseQuestionId(q.id);
   if (!history.seenQuestionIds.has(id)) return false;
   const given = history.latestAnswer.get(id);
-  if (given === undefined || given === null || given === "") return true;
+  if (given === undefined || given === null || given === "") return false;
   return given.toLowerCase().trim() !== (q.correct_answer || "").toLowerCase().trim();
+}
+
+export function isSkipped(q: Question, history: AttemptHistory): boolean {
+  const id = baseQuestionId(q.id);
+  if (!history.seenQuestionIds.has(id)) return false;
+  const given = history.latestAnswer.get(id);
+  return given === undefined || given === null || given.trim() === "";
+}
+
+export function classifyQuestionOutcomes(
+  questions: Question[],
+  answers: Record<string, string>
+): { wrongQuestionIds: string[]; skippedQuestionIds: string[] } {
+  const wrongQuestionIds: string[] = [];
+  const skippedQuestionIds: string[] = [];
+  for (const question of questions) {
+    const id = baseQuestionId(question.id);
+    const given = answers[question.id] ?? answers[id];
+    if (!given?.trim()) skippedQuestionIds.push(id);
+    else if (given.trim().toLowerCase() !== question.correct_answer.trim().toLowerCase()) {
+      wrongQuestionIds.push(id);
+    }
+  }
+  return {
+    wrongQuestionIds: [...new Set(wrongQuestionIds)],
+    skippedQuestionIds: [...new Set(skippedQuestionIds)],
+  };
 }
 
 /**
@@ -426,11 +457,22 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
 
   // Topic filter: narrow the pool BEFORE difficulty/seen ranking runs.
   const topicFilter = (config.topics ?? []).filter(Boolean);
-  const topicFiltered = topicFilter.length
+  let topicFiltered = topicFilter.length
     ? allQuestions.filter((q) =>
         topicFilter.includes(mapToCanonicalTopic(q.topic, q.section))
       )
     : allQuestions;
+
+  if (config.reviewQuestionIds?.length) {
+    const requestedOrder = new Map(config.reviewQuestionIds.map((id, index) => [baseQuestionId(id), index]));
+    topicFiltered = topicFiltered
+      .filter((q) => requestedOrder.has(baseQuestionId(q.id)))
+      .sort(
+        (a, b) =>
+          (requestedOrder.get(baseQuestionId(a.id)) ?? 0) -
+          (requestedOrder.get(baseQuestionId(b.id)) ?? 0)
+      );
+  }
 
   // CHANGE 3: Fisher-Yates instead of biased Math.random()-0.5 sort.
   const unseenAll = shuffle(topicFiltered.filter((q) => !seenQuestionIds.has(q.id)));
@@ -459,7 +501,10 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   // with an empty session: every mode except "incorrect" falls back to the
   // full section pool.
   const practiceMode = config.practiceMode;
-  if (practiceMode) {
+  if (config.reviewQuestionIds?.length) {
+    selectedQuestions = topicFiltered.map((q) => shuffleChoices(q));
+    if (selectedQuestions.length === 0) return null;
+  } else if (practiceMode) {
     // Weakest first: missed → skipped/least-recently-seen → everything else.
     const reviewRanked = [...topicFiltered]
       .filter((q) => seenQuestionIds.has(baseQuestionId(q.id)))
@@ -575,6 +620,7 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
       answers: [],
       total_questions: selectedQuestions.length,
       served_question_ids: selectedQuestions.map((q) => q.id.replace(/__rep\d+$/, "")),
+      attempt_source: config.practiceMode || config.reviewQuestionIds?.length ? "practice" : "mock",
       started_at: new Date().toISOString(),
     })
 
@@ -642,7 +688,7 @@ export interface SectionPracticeStats {
   total: number;
   /** Never served to this student. */
   unattempted: number;
-  /** Latest attempt was wrong or skipped. */
+  /** Latest attempt was actually wrong; skipped questions are tracked separately. */
   incorrect: number;
   /** Already served at least once. */
   attempted: number;
@@ -706,6 +752,10 @@ export interface MistakeEntry {
   topic: string;
   /** Last time this question was served (ms epoch). */
   lastSeenAt: number;
+  source: AttemptSource;
+  outcome: ReviewOutcome;
+  /** Verified same-topic questions, excluding the original. */
+  similarQuestions: Question[];
 }
 
 /**
@@ -715,7 +765,9 @@ export interface MistakeEntry {
  */
 export async function fetchMistakes(
   userId: string,
-  testType: "math" | "reading_writing" | "combined" = "combined"
+  testType: "math" | "reading_writing" | "combined" = "combined",
+  source: AttemptSource = "practice",
+  outcome: ReviewOutcome = "wrong"
 ): Promise<MistakeEntry[]> {
   const testTypes = testType === "combined" ? ["math", "reading_writing"] : [testType];
 
@@ -744,18 +796,82 @@ export async function fetchMistakes(
   const quarantinedIds = await fetchQuarantinedQuestionIds();
   const deliverable = pool.filter((q) => !quarantinedIds.has(q.id) && isQuestionDeliverable(q));
 
-  const history = await fetchAttemptHistory(userId);
+  const { data: attempts } = await supabase
+    .from("test_attempts")
+    .select("answers, served_question_ids, wrong_question_ids, skipped_question_ids, attempt_source, total_questions, completed_at")
+    .eq("user_id", userId)
+    .eq("abandoned", false)
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(500);
 
-  return deliverable
-    .filter((q) => isMissed(q, history))
-    .map((q) => {
-      const base = baseQuestionId(q.id);
-      return {
-        question: q,
-        yourAnswer: history.latestAnswer.get(base) ?? null,
-        topic: mapToCanonicalTopic(q.topic, q.section),
-        lastSeenAt: history.lastSeenAt.get(base) ?? 0,
-      };
+  const questionById = new Map(deliverable.map((q) => [baseQuestionId(q.id), q]));
+  const latest = new Map<string, { answer: string | null; lastSeenAt: number }>();
+
+  for (const attempt of attempts ?? []) {
+    // Older rows predate attempt_source. Full-length attempts are the only
+    // historical sessions routed through the mock interface.
+    const attemptSource: AttemptSource = attempt.attempt_source === "mock"
+      ? "mock"
+      : attempt.attempt_source === "practice"
+        ? "practice"
+        : (attempt.total_questions ?? 0) >= 80
+          ? "mock"
+          : "practice";
+    if (attemptSource !== source) continue;
+
+    const answers = attempt.answers && typeof attempt.answers === "object" && !Array.isArray(attempt.answers)
+      ? attempt.answers as Record<string, string>
+      : {};
+    const persistedIds = outcome === "wrong" ? attempt.wrong_question_ids : attempt.skipped_question_ids;
+    const ids = persistedIds.length > 0
+      ? persistedIds
+      : (attempt.served_question_ids ?? []).filter((rawId) => {
+          const id = baseQuestionId(rawId);
+          const question = questionById.get(id);
+          if (!question) return false;
+          const given = answers[rawId] ?? answers[id];
+          return outcome === "skipped"
+            ? !given?.trim()
+            : Boolean(given?.trim()) && given.trim().toLowerCase() !== question.correct_answer.trim().toLowerCase();
+        });
+
+    for (const rawId of ids) {
+      const id = baseQuestionId(rawId);
+      if (latest.has(id) || !questionById.has(id)) continue;
+      latest.set(id, {
+        answer: answers[rawId] ?? answers[id] ?? null,
+        lastSeenAt: attempt.completed_at ? new Date(attempt.completed_at).getTime() : 0,
+      });
+    }
+  }
+
+  const history = await fetchAttemptHistory(userId);
+  const difficultyRank: Record<Question["difficulty"], number> = { easy: 0, normal: 1, hard: 2 };
+
+  return [...latest.entries()]
+    .map(([id, attempt]) => {
+      const question = questionById.get(id);
+      if (!question) return null;
+      const topic = mapToCanonicalTopic(question.topic, question.section);
+      const similarQuestions = deliverable
+        .filter((candidate) =>
+          baseQuestionId(candidate.id) !== id &&
+          candidate.section === question.section &&
+          mapToCanonicalTopic(candidate.topic, candidate.section) === topic
+        )
+        .sort((a, b) => {
+          const aSeen = history.seenQuestionIds.has(baseQuestionId(a.id)) ? 1 : 0;
+          const bSeen = history.seenQuestionIds.has(baseQuestionId(b.id)) ? 1 : 0;
+          if (aSeen !== bSeen) return aSeen - bSeen;
+          const aDifficulty = Math.abs(difficultyRank[a.difficulty] - difficultyRank[question.difficulty]);
+          const bDifficulty = Math.abs(difficultyRank[b.difficulty] - difficultyRank[question.difficulty]);
+          if (aDifficulty !== bDifficulty) return aDifficulty - bDifficulty;
+          return (history.lastSeenAt.get(baseQuestionId(a.id)) ?? 0) - (history.lastSeenAt.get(baseQuestionId(b.id)) ?? 0);
+        })
+        .slice(0, 3);
+      return { question, yourAnswer: attempt.answer, topic, lastSeenAt: attempt.lastSeenAt, source, outcome, similarQuestions };
     })
+    .filter((entry): entry is MistakeEntry => entry !== null)
     .sort((a, b) => b.lastSeenAt - a.lastSeenAt);
 }
