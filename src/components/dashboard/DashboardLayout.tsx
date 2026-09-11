@@ -107,6 +107,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isSchoolStudent } = useSchoolStudent();
+  const { hasAccess: hasIeltsAccess } = useIeltsAccess();
   const { t, i18n } = useTranslation();
 
   // Sync language from profile on mount
