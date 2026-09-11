@@ -175,6 +175,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       if (settingsIdx >= 0) nav = [...nav.slice(0, settingsIdx), calcItem, ...nav.slice(settingsIdx)];
       else nav = [...nav, calcItem];
     }
+    // Hidden IELTS module: only shows for accounts/schools with it switched on.
+    if (hasIeltsAccess) {
+      const settingsIdx = nav.findIndex((n) => n.href === "/dashboard/settings");
+      const ieltsItem: NavItem = { nameKey: "IELTS", href: "/dashboard/ielts", icon: Languages };
+      if (settingsIdx >= 0) nav = [...nav.slice(0, settingsIdx), ieltsItem, ...nav.slice(settingsIdx)];
+      else nav = [...nav, ieltsItem];
+    }
     return nav;
   };
 
