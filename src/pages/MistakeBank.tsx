@@ -373,6 +373,7 @@ export default function MistakeBank() {
                           isFlagged={false}
                           onToggleFlag={() => {}}
                           showCorrectAnswer={outcome === "wrong"}
+                          readOnly
                         />
                         <div className="flex justify-end pt-3">
                           <Button

@@ -18,6 +18,7 @@ interface QuestionCardProps {
   isFlagged: boolean;
   onToggleFlag: () => void;
   showCorrectAnswer?: boolean;
+  readOnly?: boolean;
 }
 
 export function QuestionCard({
@@ -29,6 +30,7 @@ export function QuestionCard({
   isFlagged,
   onToggleFlag,
   showCorrectAnswer = false,
+  readOnly = false,
 }: QuestionCardProps) {
   const [gridInValue, setGridInValue] = useState(selectedAnswer || "");
 
@@ -104,8 +106,8 @@ export function QuestionCard({
               return (
                 <button
                   key={index}
-                  onClick={() => !showCorrectAnswer && onAnswerChange(option)}
-                  disabled={showCorrectAnswer}
+                  onClick={() => !showCorrectAnswer && !readOnly && onAnswerChange(option)}
+                  disabled={showCorrectAnswer || readOnly}
                   className={cn(
                     "w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all duration-200",
                     isCorrect
@@ -115,7 +117,7 @@ export function QuestionCard({
                       : isSelected
                       ? "border-primary bg-primary/10"
                       : "border-border hover:border-primary/50",
-                    showCorrectAnswer && "cursor-default"
+                    (showCorrectAnswer || readOnly) && "cursor-default"
                   )}
                 >
                   <span
@@ -150,14 +152,14 @@ export function QuestionCard({
             <Input
               type="text"
               value={gridInValue}
-              onChange={(e) => handleGridInChange(e.target.value)}
+              onChange={(e) => !readOnly && handleGridInChange(e.target.value)}
               placeholder="Type your answer..."
               className={cn(
                 "text-lg h-12",
                 showCorrectAnswer && selectedAnswer === question.correct_answer && "border-green-500 bg-green-500/10",
                 showCorrectAnswer && selectedAnswer !== question.correct_answer && "border-red-500 bg-red-500/10"
               )}
-              disabled={showCorrectAnswer}
+              disabled={showCorrectAnswer || readOnly}
             />
             {showCorrectAnswer && selectedAnswer !== question.correct_answer && (
               <p className="text-sm text-green-600">
