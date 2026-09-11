@@ -825,7 +825,9 @@ export async function fetchMistakes(
       : {};
     const persistedWrong = new Set(attempt.wrong_question_ids.map(baseQuestionId));
     const persistedSkipped = new Set(attempt.skipped_question_ids.map(baseQuestionId));
-    for (const rawId of attempt.served_question_ids ?? []) {
+    // Rows created before served_question_ids existed still retain answered ids.
+    const recordedIds = [...new Set([...(attempt.served_question_ids ?? []), ...Object.keys(answers)])];
+    for (const rawId of recordedIds) {
       const id = baseQuestionId(rawId);
       if (latest.has(id) || !questionById.has(id)) continue;
       const question = questionById.get(id);
