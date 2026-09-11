@@ -71,6 +71,13 @@ import SATVerbal from "./pages/SATVerbal";
 import RevenueCalculator from "./pages/RevenueCalculator";
 import OAuthConsent from "./pages/OAuthConsent";
 
+// Hidden IELTS module (access-gated)
+import IeltsGate from "./pages/ielts/IeltsGate";
+import IeltsOverview from "./pages/ielts/IeltsOverview";
+import IeltsReading from "./pages/ielts/IeltsReading";
+import IeltsWriting from "./pages/ielts/IeltsWriting";
+import IeltsHistory from "./pages/ielts/IeltsHistory";
+
 const queryClient = new QueryClient();
 
 // Protected route wrapper
