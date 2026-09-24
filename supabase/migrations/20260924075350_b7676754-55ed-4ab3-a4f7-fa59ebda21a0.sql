@@ -1,0 +1,1 @@
+CREATE POLICY "Answer keys are backend-only" ON public.quiz_questions FOR SELECT TO authenticated USING (false);
