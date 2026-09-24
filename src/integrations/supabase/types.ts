@@ -1803,6 +1803,215 @@ export type Database = {
           },
         ]
       }
+      quiz_attempts: {
+        Row: {
+          attempt_number: number
+          correct_answer: string | null
+          created_at: string
+          evaluation: string | null
+          explanation_opened: boolean
+          hint_used: boolean
+          id: string
+          input_type: string | null
+          is_correct: boolean | null
+          options: Json | null
+          question_id: string
+          question_text: string | null
+          response_time_seconds: number | null
+          score: number | null
+          selected_answer: string | null
+          sequence_number: number | null
+          session_id: string
+          status: string
+          subject: string | null
+          subtopic: string | null
+          topic: string | null
+          total_questions: number | null
+          user_id: string
+        }
+        Insert: {
+          attempt_number?: number
+          correct_answer?: string | null
+          created_at?: string
+          evaluation?: string | null
+          explanation_opened?: boolean
+          hint_used?: boolean
+          id?: string
+          input_type?: string | null
+          is_correct?: boolean | null
+          options?: Json | null
+          question_id: string
+          question_text?: string | null
+          response_time_seconds?: number | null
+          score?: number | null
+          selected_answer?: string | null
+          sequence_number?: number | null
+          session_id: string
+          status?: string
+          subject?: string | null
+          subtopic?: string | null
+          topic?: string | null
+          total_questions?: number | null
+          user_id: string
+        }
+        Update: {
+          attempt_number?: number
+          correct_answer?: string | null
+          created_at?: string
+          evaluation?: string | null
+          explanation_opened?: boolean
+          hint_used?: boolean
+          id?: string
+          input_type?: string | null
+          is_correct?: boolean | null
+          options?: Json | null
+          question_id?: string
+          question_text?: string | null
+          response_time_seconds?: number | null
+          score?: number | null
+          selected_answer?: string | null
+          sequence_number?: number | null
+          session_id?: string
+          status?: string
+          subject?: string | null
+          subtopic?: string | null
+          topic?: string | null
+          total_questions?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quiz_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          question_id: string | null
+          session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          question_id?: string | null
+          session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          question_id?: string | null
+          session_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          correct_answer: string | null
+          evaluation_criteria: Json | null
+          explanation: string | null
+          input_type: string
+          options: Json | null
+          question_id: string
+          question_text: string
+          rendered_at: string
+          sequence_number: number
+          session_id: string
+          subject: string | null
+          subtopic: string | null
+          topic: string | null
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          correct_answer?: string | null
+          evaluation_criteria?: Json | null
+          explanation?: string | null
+          input_type: string
+          options?: Json | null
+          question_id: string
+          question_text: string
+          rendered_at?: string
+          sequence_number: number
+          session_id: string
+          subject?: string | null
+          subtopic?: string | null
+          topic?: string | null
+          total_questions?: number
+          user_id: string
+        }
+        Update: {
+          correct_answer?: string | null
+          evaluation_criteria?: Json | null
+          explanation?: string | null
+          input_type?: string
+          options?: Json | null
+          question_id?: string
+          question_text?: string
+          rendered_at?: string
+          sequence_number?: number
+          session_id?: string
+          subject?: string | null
+          subtopic?: string | null
+          topic?: string | null
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_sessions: {
+        Row: {
+          conversation_id: string | null
+          ended_at: string | null
+          id: string
+          started_at: string
+          status: string
+          subject: string
+          topic: string
+          total_questions: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          subject?: string
+          topic?: string
+          total_questions?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          subject?: string
+          topic?: string
+          total_questions?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sat_figures: {
         Row: {
           alt_text: string | null
