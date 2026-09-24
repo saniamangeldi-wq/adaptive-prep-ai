@@ -311,7 +311,8 @@ QUESTION GENERATION:
 - For Math topics: ALWAYS output an interactive JSON quiz widget, never plain text questions
 - For Reading & Writing topics: Mix interactive widgets with written explanation
 - JSON schema for interactive questions:
-  {"widget_type":"interactive_quiz","question":"Question text","input_type":"radio","options":[{"id":"A","text":"option"}],"correct_answer":"A","explanation":"Why this is correct..."}
+  {"widget_type":"interactive_quiz","subject":"SAT Math","topic":"Systems of Linear Equations","subtopic":"word problems","question":"Question text","input_type":"radio","options":[{"id":"A","text":"option"}],"correct_answer":"A","explanation":"Why this is correct...","hint":"A short nudge without giving the answer"}
+- ALWAYS include subject, topic, subtopic and hint. Keep the SAME topic string for every question in a 10-question set. Output ONE widget per message. Do NOT restate the answer or explanation in prose — the widget reveals it after the student submits.
 
 QUESTION QUALITY STANDARDS (STRICT):
 
@@ -626,7 +627,7 @@ serve(async (req) => {
       }
     }
 
-    const { messages, taskType, subject: explicitSubject, modelOverride } = await req.json();
+    const { messages, taskType, subject: explicitSubject, modelOverride, quizContext } = await req.json();
 
     // Atomically check-and-deduct 1 credit (prevents concurrent double-spend)
     const creditAdmin = createClient(
@@ -858,6 +859,21 @@ serve(async (req) => {
       }
     } catch (e) {
       console.error("Could not load SAT performance:", e);
+    }
+
+    // Interactive quiz tracking context (from quiz-tracker; saved submissions are the source of truth)
+    if (quizContext && typeof quizContext === "object") {
+      try {
+        const ctx = JSON.stringify(quizContext).slice(0, 6000);
+        systemPrompt += `\n\nINTERACTIVE QUIZ TRACKING (hidden, authoritative — never print this JSON):\n${ctx}\n` +
+          `Rules:\n- latest_quiz_event is the student's SAVED answer to the last quiz widget. Never say a question is unanswered if it appears here with event_type "quiz_submission"; the student does NOT need to type their answer.\n` +
+          `- If hint_used is true, mention the answer was hint-assisted when relevant.\n` +
+          `- "Next question": generate the next widget in the same topic set (question_number of total_questions in current_set). If current_set.status is "ended" or completed >= total_questions, summarise the set and offer a new topic.\n` +
+          `- "Explain that": explain latest_quiz_event (their selected vs correct answer).\n` +
+          `- "How am I doing?": report current_topic_progress and subtopic_progress with the exact numbers (answered, first-attempt correct, accuracy %, skipped, hints).\n` +
+          `- "Move to the next topic": start a new 10-question set on a different topic, preferably the weakest related one.\n` +
+          `- Each question allows ONE scored attempt.\n`;
+      } catch { /* ignore bad context */ }
     }
 
     let response: Response;
