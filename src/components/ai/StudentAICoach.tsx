@@ -48,6 +48,9 @@ import { DocumentWidget } from "./DocumentWidget";
 import { ChartWidget } from "./ChartWidget";
 import { AISuggestions } from "./AISuggestions";
 import { GenerateImageDialog } from "./GenerateImageDialog";
+import { QuizSetBar } from "./QuizSetBar";
+import { QuizDashboard } from "./QuizDashboard";
+import { fetchQuizContext, flushQuizQueue } from "@/lib/quiz-tracker";
 
 const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
   if (isTrial) return TRIAL_LIMITS.creditsPerDay;
@@ -153,6 +156,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const [showAttachments, setShowAttachments] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showReferences, setShowReferences] = useState(false);
+  const [showQuizDashboard, setShowQuizDashboard] = useState(false);
+  useEffect(() => { flushQuizQueue(); }, []);
   const skipNextLoad = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -295,8 +300,10 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
     }
 
     
+    let convForContext = activeConvId;
     if (!activeConvId && onEnsureConversation) {
       const newId = await onEnsureConversation();
+      convForContext = newId;
       if (newId) {
         skipNextLoad.current = true;
         setActiveConvId(newId);
@@ -323,7 +330,9 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       setShowAttachments(false);
       setShowReferences(false);
     }
-    await streamChat(fullInput, { endpoint: "student-chat", modelOverride }, text, attachMeta, options?.hidden);
+    // Saved quiz submissions + cumulative progress go to the AI as hidden context.
+    const quizContext = await fetchQuizContext(convForContext);
+    await streamChat(fullInput, { endpoint: "student-chat", modelOverride, extraBody: quizContext ? { quizContext } : undefined }, text, attachMeta, options?.hidden);
   };
 
   // Keep handleSendRef in sync so the STT callback can call it
@@ -438,6 +447,8 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
                   }}
                   onSend={(text) => handleSend(text)}
                   onSendSilent={(text) => handleSend(text, { hidden: true })}
+                  conversationId={activeConvId}
+                  subject={subject}
                 />
               ))}
               {isLoading && (!messages.length || messages[messages.length - 1]?.role !== "assistant" || messages[messages.length - 1]?.content === "") && (
@@ -483,6 +494,9 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       {/* Floating input bar — Perplexity style */}
       <div className="pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 flex-shrink-0">
         <div className="max-w-[760px] mx-auto px-4">
+          {messages.length > 0 && (
+            <QuizSetBar conversationId={activeConvId} onOpenDashboard={() => setShowQuizDashboard(true)} onSend={(t) => handleSend(t)} />
+          )}
           {/* Attachment previews above input */}
           {showAttachments && (
             <div className="mb-2">
@@ -604,6 +618,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
       </div>
 
       <GenerateImageDialog open={showImageDialog} onOpenChange={setShowImageDialog} />
+      <QuizDashboard open={showQuizDashboard} onOpenChange={setShowQuizDashboard} onSend={(t) => handleSend(t)} />
     </div>
   );
 }
@@ -704,7 +719,9 @@ function parseMessageContent(content: string, isStreaming = false) {
 }
 
 /* ─── Perplexity-style message (no bubbles) ─── */
-function PerplexityMessage({ message, isTier3, isLast, isStreaming, onRetry, onSend, onSendSilent }: { 
+function PerplexityMessage({ message, isTier3, isLast, isStreaming, onRetry, onSend, onSendSilent, conversationId, subject }: { 
+  conversationId?: string | null;
+  subject?: string;
   message: Message; 
   isTier3: boolean; 
   isLast: boolean;
@@ -783,7 +800,8 @@ function PerplexityMessage({ message, isTier3, isLast, isStreaming, onRetry, onS
             if (part.data.widget_type === 'chart_visual') {
               return <ChartWidget key={i} data={part.data} />;
             }
-            return <QuestionWidget key={i} data={part.data} onSubmitFreeWrite={(payload) => onSendSilent(payload)} onNextQuestion={() => onSendSilent("Next question please — give me another interactive quiz question on the same topic.")} />;
+            if (isStreaming && isLast) return null; // register only once the widget is complete
+            return <QuestionWidget key={i} data={part.data} conversationId={conversationId} subject={subject} onSubmitFreeWrite={(payload) => onSendSilent(payload)} onNextQuestion={() => onSendSilent("Next question please — continue the same topic set with the next interactive quiz question.")} onRequestHint={(q) => onSendSilent(`Give me a short hint for this question without revealing the answer: ${q}`)} />;
           }
           return part.content ? <ReactMarkdown key={i}>{part.content}</ReactMarkdown> : null;
         })}

@@ -24,6 +24,7 @@ interface StreamChatOptions {
   };
   analysisType?: "general" | "projection" | "comprehensive";
   modelOverride?: string;
+  extraBody?: Record<string, unknown>;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -129,6 +130,7 @@ export function useAIChat(conversationId?: string | null) {
           reportContext: options.reportContext,
           analysisType: options.analysisType,
           modelOverride: options.modelOverride,
+          ...(options.extraBody || {}),
         }),
       });
 
