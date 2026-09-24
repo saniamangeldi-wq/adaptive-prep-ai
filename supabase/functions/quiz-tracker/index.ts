@@ -195,8 +195,9 @@ serve(async (req) => {
         let question = existing;
         if (!question) {
           const incomingTopic = clip(q.topic, 200) as string | null;
-          let { data: session } = await db.from("quiz_sessions").select("*").eq("user_id", uid).eq("status", "active")
-            .eq("conversation_id", conversation_id).order("started_at", { ascending: false }).limit(1).maybeSingle();
+          let sq = db.from("quiz_sessions").select("*").eq("user_id", uid).eq("status", "active");
+          sq = conversation_id ? sq.eq("conversation_id", conversation_id) : sq.is("conversation_id", null);
+          let { data: session } = await sq.order("started_at", { ascending: false }).limit(1).maybeSingle();
           if (session) {
             const st = await sessionState(session);
             const topicChanged = incomingTopic && incomingTopic !== "General" && session.topic !== "General" && norm(incomingTopic) !== norm(session.topic);
