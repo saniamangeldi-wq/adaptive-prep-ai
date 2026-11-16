@@ -80,6 +80,8 @@ export function describeApiError(e: unknown, action: ApiAction = "draft"): strin
     case "too_short":
       return "Your answer is too short to grade. Write a little more and try again.";
     case "too_long":
+      // The same code is used for a chart image or description that is too large: the server says which.
+      if (/image|description/i.test(err.error)) return err.error;
       return `Your answer is over ${LIMITS.maxScriptWords} words. Shorten it and try again.`;
     case "rate_limited":
       return "You are going a bit fast. Wait a minute and try again.";
@@ -88,6 +90,7 @@ export function describeApiError(e: unknown, action: ApiAction = "draft"): strin
     case "unauthorized":
       return "Your session has expired. Sign in again.";
     case "not_found":
+      if (action === "grade") return "This question is no longer in our set, so it cannot be graded. Copy your answer, then start it again with \"Use my own question\".";
       return action === "draft" ? "We could not find that draft." : "We could not find that.";
     case "upstream_error":
       return action === "grade"

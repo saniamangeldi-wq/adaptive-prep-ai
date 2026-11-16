@@ -11,6 +11,8 @@ export interface Message {
   // so history is not corrupted, but nothing in the UI creates them any more.
   visibleText?: string;
   hidden?: boolean;
+  /** An error note shown in the chat. Never sent to the coach and never saved. */
+  isError?: boolean;
 }
 
 interface StreamChatOptions {
@@ -36,7 +38,7 @@ export function useAIChat(conversationId?: string | null) {
   const saveMessages = useCallback(async (msgs: Message[]) => {
     const convId = conversationIdRef.current;
     if (!convId) return;
-    const dbMessages = msgs.map(m => ({
+    const dbMessages = msgs.filter(m => !m.isError).map(m => ({
       role: m.role,
       content: m.content,
       ...(m.visibleText ? { visibleText: m.visibleText } : {}),
@@ -102,7 +104,8 @@ export function useAIChat(conversationId?: string | null) {
         return;
       }
 
-      const allMessages = [...messages, userMessage].map(m => ({
+      // Error notes are UI only: the coach must not read them as its own earlier replies.
+      const allMessages = [...messages, userMessage].filter(m => !m.isError).map(m => ({
         role: m.role,
         content: m.content,
       }));
@@ -147,6 +150,7 @@ export function useAIChat(conversationId?: string | null) {
               role: "assistant" as const,
               content: `_${friendly}_`,
               timestamp: new Date(),
+              isError: true,
             },
           ]);
           setIsLoading(false);
@@ -261,6 +265,7 @@ export function useAIChat(conversationId?: string | null) {
                   content: assistantContent
                     ? `${assistantContent}\n\n_Response interrupted: ${msg}_`
                     : `_Something went wrong: ${msg}. Your message is saved — try sending again._`,
+                  ...(assistantContent ? {} : { isError: true }),
                 }
               : m
           );
@@ -272,6 +277,7 @@ export function useAIChat(conversationId?: string | null) {
             role: "assistant" as const,
             content: `_Something went wrong: ${msg}. Your message is saved — try sending again._`,
             timestamp: new Date(),
+            isError: true,
           },
         ];
       });

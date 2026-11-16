@@ -4,7 +4,6 @@ import { ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   LIMITS,
-  TASK_RULES,
   VARIANTS_BY_TASK,
   type CustomVisualInput,
   type DraftRecord,
@@ -30,8 +29,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { describeApiError, discardDraft, getWritingTask, listDrafts, saveDraft } from "@/lib/ielts/api";
-import { readSeenTaskIds, rememberSeenTaskId, writeLocalDraft } from "@/lib/ielts/drafts";
-import { saveCustomVisual } from "@/lib/ielts/deviceStore";
+import { clearLocalDraft, readSeenTaskIds, rememberSeenTaskId, writeLocalDraft } from "@/lib/ielts/drafts";
+import { deleteCustomVisual, saveCustomVisual } from "@/lib/ielts/deviceStore";
+import { buildCustomTask, buildCustomVisual } from "@/lib/ielts/requestBuilders";
 import { compressImageToJpeg } from "@/lib/ielts/image";
 import { TASK_TYPE_HINTS, TASK_TYPE_LABELS, VARIANT_LABELS, describeTask, formatDuration } from "@/lib/ielts/labels";
 import { countWords } from "@/lib/ielts/words";
@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
 
 const TASK_TYPES: TaskType[] = ["task1_academic", "task1_general", "task2"];
 const MIN_OWN_PROMPT_CHARS = 20;
-const MAX_DESCRIPTION_CHARS = 2000;
+const MAX_DESCRIPTION_CHARS = LIMITS.maxVisualDescriptionChars;
 
 function formatWhen(iso: string): string {
   const d = new Date(iso);
@@ -117,7 +117,7 @@ export default function WritingHome() {
   const startWithTask = async (task: WritingTask, visual?: CustomVisualInput) => {
     const saved = await saveDraft({ task, script: "", secondsUsed: 0 });
     // Keep a device copy straight away so the editor opens even if the server is slow.
-    writeLocalDraft(saved.sessionId, { task, script: "", secondsUsed: 0, updatedAt: saved.updatedAt });
+    writeLocalDraft(saved.sessionId, { task, script: "", secondsUsed: 0, updatedAt: saved.updatedAt, serverUpdatedAt: saved.updatedAt });
     if (visual) await saveCustomVisual(saved.sessionId, visual);
     navigate(`/dashboard/writing/session/${saved.sessionId}`);
   };
@@ -160,23 +160,8 @@ export default function WritingHome() {
     if (ownProblem || variant === "any") return;
     setStarting(true);
     setError(null);
-    const rules = TASK_RULES[taskType];
-    const task: WritingTask = {
-      id: "custom",
-      source: "custom",
-      taskType,
-      variant,
-      prompt: trimmedPrompt,
-      bullets: [],
-      visuals: [],
-      minWords: rules.minWords,
-      timeMinutes: rules.timeMinutes,
-    };
-    const visual: CustomVisualInput | undefined = ownNeedsVisual
-      ? visualMode === "image"
-        ? { imageDataUrl: imageDataUrl ?? undefined }
-        : { description: description.trim() }
-      : undefined;
+    const task = buildCustomTask({ taskType, variant, prompt: trimmedPrompt });
+    const visual = buildCustomVisual({ taskType, mode: visualMode, imageDataUrl, description });
     try {
       await startWithTask(task, visual);
     } catch (e) {
@@ -191,6 +176,9 @@ export default function WritingHome() {
     if (!target) return;
     try {
       await discardDraft(target.sessionId);
+      // Remove the device copies too, so a discarded draft cannot come back from this device.
+      clearLocalDraft(target.sessionId);
+      void deleteCustomVisual(target.sessionId);
       setDrafts((prev) => (prev ? prev.filter((d) => d.sessionId !== target.sessionId) : prev));
       toast.success("Draft discarded");
     } catch (e) {

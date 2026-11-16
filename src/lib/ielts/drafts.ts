@@ -8,6 +8,12 @@ export interface LocalDraft {
   /** ISO time of the last edit on this device. */
   updatedAt: string;
   feedbackLang?: FeedbackLang;
+  /**
+   * `updatedAt` of the newest server copy this device knows about (from the last
+   * successful load or save). Lets the device copy win after offline edits even when
+   * the device clock is behind the server clock.
+   */
+  serverUpdatedAt?: string;
 }
 
 export interface ChosenDraft {
@@ -35,9 +41,12 @@ function validServer(d: DraftRecord | null | undefined): d is DraftRecord {
 }
 
 /**
- * Pick the copy to restore: the newer one wins. On a tie the server copy wins (it is
- * the one that survives a cleared browser). Device and server clocks can differ a
- * little; this is accepted because autosave runs every few seconds.
+ * Pick the copy to restore.
+ *  1. If the server copy has not changed since this device last synced with it
+ *     (`local.serverUpdatedAt`), the device copy wins: any difference is an edit made
+ *     here that has not reached the server yet. No clock comparison is needed.
+ *  2. Otherwise the newer one wins. On a tie the server copy wins (it is the one that
+ *     survives a cleared browser).
  */
 export function chooseDraft(local: LocalDraft | null | undefined, server: DraftRecord | null | undefined): ChosenDraft | null {
   const l = validLocal(local) ? local : null;
@@ -63,6 +72,10 @@ export function chooseDraft(local: LocalDraft | null | undefined, server: DraftR
 
   if (l && !s) return fromLocal(l, true);
   if (s && !l) return fromServer(s);
+  if (l!.serverUpdatedAt && time(s!.updatedAt) <= time(l!.serverUpdatedAt)) {
+    const same = l!.script === s!.script && l!.secondsUsed === s!.secondsUsed;
+    return same ? fromServer(s!) : fromLocal(l!, true);
+  }
   return time(l!.updatedAt) > time(s!.updatedAt) ? fromLocal(l!, true) : fromServer(s!);
 }
 

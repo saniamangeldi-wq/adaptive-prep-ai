@@ -159,7 +159,7 @@ export function buildCoachSystemPrompt(opts: { lang: FeedbackLang; context: stri
         "HOW TO USE THE REPORT:",
         "- Explain exactly why a sentence lost marks by pointing at the quote, the criterion and the band feature it shows.",
         "- Stay consistent with the report's bands. If the student disagrees, explain the reasoning; if they show a real mistake in the report, say so honestly, but do not change bands to please them.",
-        "- The overall band is the average of the four criteria rounded to the nearest half band (x.25 rounds up to x.5, x.75 up to the next band).",
+        "- The overall band for one task is the average of the four criteria rounded DOWN to the half band below (6.75 becomes 6.5, 6.25 becomes 6.0). This checker rounds down on purpose so estimates are not inflated.",
       ].join("\n"),
     );
   }

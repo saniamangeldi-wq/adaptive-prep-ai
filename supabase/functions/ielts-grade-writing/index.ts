@@ -127,7 +127,9 @@ Deno.serve(async (req) => {
       report.id = null;
     }
 
-    if (sessionId) {
+    // Close the draft only when the report is stored: otherwise the draft is the only
+    // server copy of the essay, so it stays open for the student to submit again.
+    if (sessionId && !saveError) {
       const { error: sErr } = await admin
         .from("ielts_sessions")
         .update({ status: "completed", completed_at: new Date().toISOString(), band: report.overall })

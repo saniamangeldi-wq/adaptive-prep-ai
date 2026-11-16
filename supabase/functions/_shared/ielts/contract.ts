@@ -346,4 +346,11 @@ export interface ApiError {
 export const CREDIT_COST = { grade: 5, gradeWithModelAnswer: 7, generateTask: 2, chat: 1 } as const;
 
 /** Hard limits enforced on the server. */
-export const LIMITS = { minScriptChars: 40, maxScriptWords: 600, maxPromptChars: 4000, maxImageBytes: 1_500_000 } as const;
+export const LIMITS = {
+  minScriptChars: 40,
+  maxScriptWords: 600,
+  maxPromptChars: 4000,
+  maxImageBytes: 1_500_000,
+  /** ADDED (additive): longest text description of a student's own chart. */
+  maxVisualDescriptionChars: 2000,
+} as const;

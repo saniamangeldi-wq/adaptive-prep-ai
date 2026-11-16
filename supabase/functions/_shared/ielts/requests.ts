@@ -38,7 +38,7 @@ const TASK_TYPES: readonly TaskType[] = ["task1_academic", "task1_general", "tas
 
 /** Hard cap on script size in characters, independent of words (defends against one 50k-char "word"). */
 export const MAX_SCRIPT_CHARS = 8_000;
-export const MAX_VISUAL_DESCRIPTION_CHARS = 2_000;
+export const MAX_VISUAL_DESCRIPTION_CHARS = LIMITS.maxVisualDescriptionChars;
 
 const IMAGE_DATA_URL = /^data:image\/(png|jpeg|jpg|webp);base64,([A-Za-z0-9+/=\s]+)$/;
 

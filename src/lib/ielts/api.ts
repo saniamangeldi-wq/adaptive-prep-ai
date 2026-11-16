@@ -17,8 +17,9 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const DEFAULT_TIMEOUT_MS = 25_000;
-// Grading can take up to about a minute.
-const GRADE_TIMEOUT_MS = 120_000;
+// Grading usually takes under a minute; the server may use up to 140 s (GRADER_TOTAL_BUDGET_MS),
+// so the browser waits a little longer than that rather than giving up on a grading that will succeed.
+const GRADE_TIMEOUT_MS = 150_000;
 
 async function callFunction<Res>(name: string, body: unknown, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<Res> {
   let token: string | undefined;

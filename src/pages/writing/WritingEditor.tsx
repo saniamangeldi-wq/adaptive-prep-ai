@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { describeApiError, getDraft, gradeWriting, saveDraft, toApiError } from "@/lib/ielts/api";
+import { buildGradeRequest } from "@/lib/ielts/requestBuilders";
 import { chooseDraft, clearLocalDraft, readLocalDraft, writeLocalDraft } from "@/lib/ielts/drafts";
 import { deleteCustomVisual, loadCustomVisual, saveCustomVisual } from "@/lib/ielts/deviceStore";
 import { compressImageToJpeg } from "@/lib/ielts/image";
@@ -43,8 +44,16 @@ function clock(d: Date): string {
   return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function WritingEditor() {
+/**
+ * One editor instance per draft: a new session id remounts the editor, so no timer or
+ * save from one draft can ever write into another.
+ */
+export default function WritingEditorRoute() {
   const { sessionId = "" } = useParams();
+  return <WritingEditor key={sessionId} sessionId={sessionId} />;
+}
+
+function WritingEditor({ sessionId }: { sessionId: string }) {
   const navigate = useNavigate();
   const { profile } = useAuth();
 
@@ -56,6 +65,8 @@ export default function WritingEditor() {
   const [lang, setLang] = useState<FeedbackLang>("en");
   const [langTouched, setLangTouched] = useState(false);
   const [status, setStatus] = useState<SaveStatus>({ kind: "idle" });
+  // False when the browser refused to store the device copy (storage full or blocked).
+  const [localOk, setLocalOk] = useState(true);
   const [showTask, setShowTask] = useState(true);
   const [includeModelAnswer, setIncludeModelAnswer] = useState(false);
   const [customVisual, setCustomVisual] = useState<CustomVisualInput | null>(null);
@@ -80,6 +91,8 @@ export default function WritingEditor() {
   const savingRef = useRef(false);
   // Set once the answer has been graded, so the cleanup below does not recreate the device draft.
   const submittedRef = useRef(false);
+  // updatedAt of the newest server copy we know about; stored with the device copy (see chooseDraft).
+  const serverSyncRef = useRef<string | null>(null);
   scriptRef.current = script;
   secondsRef.current = seconds;
   langRef.current = lang;
@@ -95,7 +108,9 @@ export default function WritingEditor() {
     try {
       server = await getDraft(sessionId);
     } catch (e) {
-      serverFailed = e;
+      const err = toApiError(e);
+      // A malformed or unknown id is a missing draft, not a connection problem.
+      if (err.code !== "bad_request" && err.code !== "not_found") serverFailed = err;
     }
     const chosen = chooseDraft(local, server);
     if (!chosen) {
@@ -107,6 +122,7 @@ export default function WritingEditor() {
       }
       return;
     }
+    serverSyncRef.current = server?.updatedAt ?? local?.serverUpdatedAt ?? null;
     setTask(chosen.task);
     setScript(chosen.script);
     setSeconds(chosen.secondsUsed);
@@ -135,13 +151,15 @@ export default function WritingEditor() {
   const writeLocalNow = useCallback(() => {
     const t = taskRef.current;
     if (!t || !sessionId || submittedRef.current) return;
-    writeLocalDraft(sessionId, {
+    const ok = writeLocalDraft(sessionId, {
       task: t,
       script: scriptRef.current,
       secondsUsed: secondsRef.current,
       updatedAt: new Date().toISOString(),
       feedbackLang: langRef.current,
+      ...(serverSyncRef.current ? { serverUpdatedAt: serverSyncRef.current } : {}),
     });
+    setLocalOk(ok);
   }, [sessionId]);
 
   useEffect(() => {
@@ -161,6 +179,8 @@ export default function WritingEditor() {
     try {
       const res = await saveDraft({ sessionId, task: t, script: snapshot, secondsUsed: secondsRef.current });
       if (scriptRef.current !== snapshot) dirtyRef.current = true;
+      serverSyncRef.current = res.updatedAt;
+      writeLocalNow();
       setStatus({ kind: "saved", at: new Date(res.updatedAt) });
     } catch (e) {
       dirtyRef.current = true;
@@ -170,7 +190,7 @@ export default function WritingEditor() {
     } finally {
       savingRef.current = false;
     }
-  }, [sessionId]);
+  }, [sessionId, writeLocalNow]);
 
   const handleChange = (value: string) => {
     setScript(value);
@@ -202,7 +222,10 @@ export default function WritingEditor() {
       document.removeEventListener("visibilitychange", onHidden);
       window.removeEventListener("pagehide", writeLocalNow);
       window.removeEventListener("beforeunload", onBeforeUnload);
+      // Leaving the editor inside the app (Back, menu): keep the device copy and push the
+      // latest text to the server so the drafts list and other devices see it.
       writeLocalNow();
+      void saveToServer();
     };
   }, [loadState, saveToServer, writeLocalNow]);
 
@@ -234,18 +257,17 @@ export default function WritingEditor() {
     setGrading(true);
     setGradeError(null);
     try {
-      const { report } = await gradeWriting({
-        task,
-        script,
-        feedbackLang: lang,
-        sessionId,
-        customVisual: visual ?? undefined,
-        includeModelAnswer: includeModelAnswer || undefined,
-      });
+      const { report } = await gradeWriting(
+        buildGradeRequest({ task, script, feedbackLang: lang, sessionId, visual, includeModelAnswer }),
+      );
       submittedRef.current = true;
-      clearLocalDraft(sessionId);
-      void deleteCustomVisual(sessionId);
       dirtyRef.current = false;
+      if (report.id) {
+        clearLocalDraft(sessionId);
+        void deleteCustomVisual(sessionId);
+      }
+      // Without an id the report could not be stored, so the server keeps the draft open;
+      // the device copy stays too, and the student can submit it again from Drafts.
       if (report.id) navigate(`/dashboard/writing/report/${report.id}`, { replace: true });
       else navigate("/dashboard/writing/report/unsaved", { replace: true, state: { report } });
     } catch (e) {
@@ -335,9 +357,13 @@ export default function WritingEditor() {
       ? "Saving…"
       : status.kind === "saved"
         ? `Saved ${clock(status.at)}`
-        : status.kind === "offline"
-          ? "Offline, saved on this device"
-          : "Saved on this device";
+        : !localOk
+          ? status.kind === "offline"
+            ? "Not saved. Copy your text somewhere safe."
+            : "Not saved on this device yet"
+          : status.kind === "offline"
+            ? "Offline, saved on this device"
+            : "Saved on this device";
 
   return (
     <DashboardLayout>
@@ -397,7 +423,7 @@ export default function WritingEditor() {
                 <span className={cn("tabular-nums", overTime ? "text-amber-400" : "text-muted-foreground")}>
                   {formatDuration(seconds)} of {formatDuration(recommendedSeconds)}
                 </span>
-                <span className="text-xs text-muted-foreground ml-auto" role="status">{statusText}</span>
+                <span className={cn("text-xs ml-auto", localOk ? "text-muted-foreground" : "text-destructive")} role="status">{statusText}</span>
               </div>
             </div>
 
@@ -493,7 +519,7 @@ export default function WritingEditor() {
             </Button>
             <div className="space-y-2">
               <Label htmlFor="fix-desc">Or describe it in words</Label>
-              <Textarea id="fix-desc" rows={4} value={fixDescription} onChange={(e) => setFixDescription(e.target.value)} placeholder="Say what kind of chart it is and list the key figures." />
+              <Textarea id="fix-desc" rows={4} value={fixDescription} onChange={(e) => setFixDescription(e.target.value.slice(0, LIMITS.maxVisualDescriptionChars))} placeholder="Say what kind of chart it is and list the key figures." />
               <Button type="button" variant="outline" className="w-full" disabled={!fixDescription.trim()} onClick={() => applyFixedVisual({ description: fixDescription.trim() })}>
                 Use this description
               </Button>
