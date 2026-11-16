@@ -4,12 +4,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { splitScript } from "@/lib/ielts/segments";
 import { criterionLabel, errorTagLabel } from "@/lib/ielts/labels";
 
+/** One colour per criterion; the values are theme tokens (src/index.css, --crit-*). */
 export const CRITERION_COLORS: Record<CriterionKey, string> = {
-  task: "#a78bfa",
-  coherence: "#60a5fa",
-  lexical: "#fbbf24",
-  grammar: "#f87171",
+  task: "hsl(var(--crit-task))",
+  coherence: "hsl(var(--crit-coherence))",
+  lexical: "hsl(var(--crit-lexical))",
+  grammar: "hsl(var(--crit-grammar))",
 };
+
+/** A light wash of a criterion colour, for highlighted passages. */
+export function criterionWash(color: string): string {
+  return `color-mix(in srgb, ${color} 16%, transparent)`;
+}
 
 function IssueDetail({ issue, taskType }: { issue: InlineIssue; taskType?: string }) {
   return (
@@ -61,7 +67,7 @@ export function ScriptHighlights({ script, issues, taskType }: { script: string;
         ))}
       </ul>
 
-      <div className="rounded-xl border border-border bg-card p-4 whitespace-pre-wrap break-words leading-8 text-foreground text-[15px]">
+      <div className="rounded-xl border border-border bg-card p-4 whitespace-pre-wrap break-words leading-8 text-foreground text-[15px] font-script">
         {segments.map((seg) => {
           if (seg.issueIndexes.length === 0) return <span key={seg.start}>{seg.text}</span>;
           const first = safeIssues[seg.issueIndexes[0]];
@@ -80,7 +86,7 @@ export function ScriptHighlights({ script, issues, taskType }: { script: string;
                     }
                   }}
                   className="cursor-pointer rounded-sm px-0.5 text-foreground underline decoration-2 underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  style={{ background: `${color}26`, textDecorationColor: color }}
+                  style={{ background: criterionWash(color), textDecorationColor: color }}
                 >
                   {seg.text}
                 </mark>

@@ -71,12 +71,12 @@ export function FullReportView({ report }: { report: GradeReport }) {
         band={report.overall}
         meta={`${taskLabel} · ${report.wordCount} words${report.createdAt ? ` · ${new Date(report.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}` : ""}`}
       >
-        <p className={cn("text-sm", report.confidence === "low" ? "text-amber-400" : "text-muted-foreground")}>{CONFIDENCE_TEXT[report.confidence]}</p>
+        <p className={cn("text-sm", report.confidence === "low" ? "text-warning" : "text-muted-foreground")}>{CONFIDENCE_TEXT[report.confidence]}</p>
         {(report.flags.length > 0 || detected) && (
           <ul className="space-y-2">
             {report.flags.map((f) => (
-              <li key={f} className="flex gap-2 text-sm text-foreground rounded-lg bg-amber-500/10 border border-amber-500/30 p-3">
-                <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
+              <li key={f} className="flex gap-2 text-sm text-foreground rounded-lg bg-warning/10 border border-warning/30 p-3">
+                <AlertTriangle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" aria-hidden="true" />
                 <span>{flagText(f)}{f === "wrong_task_variant" && detected ? ` We treated it as: ${detected.toLowerCase()}.` : ""}</span>
               </li>
             ))}
@@ -132,7 +132,7 @@ export function FullReportView({ report }: { report: GradeReport }) {
                 <span
                   className={cn(
                     "mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full",
-                    item.met === "yes" ? "bg-primary/20 text-primary" : item.met === "partly" ? "bg-amber-500/20 text-amber-400" : "bg-destructive/20 text-destructive"
+                    item.met === "yes" ? "bg-primary/20 text-primary" : item.met === "partly" ? "bg-warning/15 text-warning" : "bg-destructive/20 text-destructive"
                   )}
                 >
                   {item.met === "yes" ? <Check className="h-4 w-4" aria-hidden="true" /> : item.met === "partly" ? <Minus className="h-4 w-4" aria-hidden="true" /> : <X className="h-4 w-4" aria-hidden="true" />}
@@ -200,11 +200,11 @@ export function FullReportView({ report }: { report: GradeReport }) {
           <div className="grid gap-3 md:grid-cols-2">
             <div className="rounded-xl border border-border p-4">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Your paragraph</h3>
-              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{report.rewrite.original}</p>
+              <p className="text-[15px] text-foreground whitespace-pre-wrap leading-relaxed font-script">{report.rewrite.original}</p>
             </div>
             <div className="rounded-xl border border-primary/40 bg-primary/5 p-4">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Improved</h3>
-              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{report.rewrite.improved}</p>
+              <p className="text-[15px] text-foreground whitespace-pre-wrap leading-relaxed font-script">{report.rewrite.improved}</p>
             </div>
           </div>
           {report.rewrite.changes.length > 0 && (
@@ -290,7 +290,7 @@ export function LegacyReportViewUi({ view }: { view: LegacyReportView }) {
       )}
 
       <Section title="Your answer" id="essay">
-        <div className="rounded-xl border border-border bg-card p-4 whitespace-pre-wrap break-words leading-relaxed text-foreground text-[15px]">{view.essay}</div>
+        <div className="rounded-xl border border-border bg-card p-4 whitespace-pre-wrap break-words leading-relaxed text-foreground text-[15px] font-script">{view.essay}</div>
       </Section>
 
       {view.modelAnswer.trim() && (

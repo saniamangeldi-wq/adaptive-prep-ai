@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { User, Mail, Save, Languages, Lock, LogOut } from "lucide-react";
+import { User, Mail, Save, Languages, Lock, LogOut, SunMoon } from "lucide-react";
+import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -201,6 +203,9 @@ export default function Settings() {
           </Select>
         </div>
 
+        {/* Appearance */}
+        <AppearanceSetting />
+
         {/* Change password */}
         <div className="p-4 sm:p-6 rounded-2xl bg-card border border-border/50">
           <div className="flex items-center gap-3 mb-6">
@@ -252,5 +257,42 @@ export default function Settings() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+const THEMES = [
+  { value: "system", label: "Match device" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
+
+function AppearanceSetting() {
+  const { theme, setTheme } = useTheme();
+  const current = theme ?? "system";
+  return (
+    <div className="p-4 sm:p-6 rounded-2xl bg-card border border-border/50">
+      <div className="flex items-center gap-3 mb-2">
+        <SunMoon className="w-5 h-5 text-primary" />
+        <h2 className="font-semibold text-foreground" id="appearance-title">Appearance</h2>
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">Saved on this device.</p>
+      <div role="radiogroup" aria-labelledby="appearance-title" className="inline-flex flex-wrap gap-1 rounded-xl border border-border bg-muted p-1">
+        {THEMES.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            role="radio"
+            aria-checked={current === t.value}
+            onClick={() => setTheme(t.value)}
+            className={cn(
+              "rounded-lg px-3.5 py-1.5 text-sm transition-colors",
+              current === t.value ? "bg-card text-foreground font-medium shadow-card" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

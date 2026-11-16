@@ -137,7 +137,7 @@ export default function WritingReport() {
           <>
             <h1 className="sr-only">Writing report</h1>
             {state.parsed.id === "unsaved" && (
-              <p role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-foreground">
+              <p role="status" className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">
                 We could not save this report, so it will not appear in your history. Your answer is still in your drafts on the Writing page.
               </p>
             )}

@@ -2,14 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>AdaptivePrep — IELTS Writing checker</title>
     <meta name="description" content="AdaptivePrep checks your IELTS Writing against the four public criteria. Get an estimated band and feedback on your own sentences in English, Russian or Kazakh." />
     <meta name="author" content="AdaptivePrep" />
     <meta name="google-site-verification" content="LajP5Gkn79kjz3EkQtGkovplFc51SOR-3TS4c87PdIc" />
     <meta name="google-site-verification" content="_lxpQX6yb4-TwtVg5Uq9gKbgIKupBppnaydsNNg3o8g" />
 
-    <meta name="theme-color" content="#0d9488" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8faf9" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101716" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="apple-touch-icon" href="/apple-icon-180.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180.png" />
 
@@ -22,6 +24,10 @@
     <meta name="twitter:site" content="@AdaptivePrep" />
 
     <link rel="icon" href="/favicon.png" type="image/png" />
+
+    <!-- Self-hosted fonts: Golos Text (interface) and Literata (the student's own writing). -->
+    <link rel="preload" href="/fonts/golos-text-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
 
 
     <!-- Structured data: Organization + WebSite -->

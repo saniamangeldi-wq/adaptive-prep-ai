@@ -417,10 +417,10 @@ function WritingEditor({ sessionId }: { sessionId: string }) {
           <section className="space-y-3 min-w-0" aria-label="Your answer">
             <div className="sticky top-14 z-20 -mx-4 px-4 py-2 bg-background/95 backdrop-blur border-b border-border sm:mx-0 sm:px-0 sm:border-0 sm:bg-transparent sm:backdrop-blur-none sm:static">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                <span aria-live="polite" className={cn("font-medium tabular-nums", belowMin ? "text-amber-400" : "text-primary")}>
+                <span aria-live="polite" className={cn("font-medium tabular-nums", belowMin ? "text-warning" : "text-primary")}>
                   {words} / {task.minWords} words
                 </span>
-                <span className={cn("tabular-nums", overTime ? "text-amber-400" : "text-muted-foreground")}>
+                <span className={cn("tabular-nums", overTime ? "text-warning" : "text-muted-foreground")}>
                   {formatDuration(seconds)} of {formatDuration(recommendedSeconds)}
                 </span>
                 <span className={cn("text-xs ml-auto", localOk ? "text-muted-foreground" : "text-destructive")} role="status">{statusText}</span>
@@ -438,7 +438,7 @@ function WritingEditor({ sessionId }: { sessionId: string }) {
               autoCorrect="off"
               autoCapitalize="sentences"
               placeholder="Write your answer here."
-              className="min-h-[18rem] lg:min-h-[30rem] text-base leading-relaxed resize-y"
+              className="min-h-[18rem] lg:min-h-[30rem] text-base leading-[1.75] resize-y font-script"
             />
 
             {belowMin && words > 0 && (

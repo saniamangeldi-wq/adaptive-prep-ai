@@ -1,8 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquarePlus, Trash2, MoreHorizontal } from "lucide-react";
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useConversations, Conversation } from "@/hooks/useConversations";
+import { useConversations, type Conversation } from "@/hooks/useConversations";
+import { groupByRecency } from "@/components/dashboard/conversationGroups";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,102 +12,103 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface ConversationSidebarProps {
-  currentConversationId?: string;
-  onSelectConversation: (conversation: Conversation | null) => void;
-  onNewConversation: () => void;
+  /** The conversation open in the chat, if any. */
+  currentConversationId?: string | null;
+  /** Called after a conversation is deleted (the shell starts a new chat if it was open). */
+  onDeleted?: (conversation: Conversation) => void;
+  /** Called when a conversation is opened (the phone drawer closes). */
+  onOpen?: () => void;
 }
 
-const getPreviewText = (messages: Array<{ role: string; content: string }>) => {
-  const firstUserMsg = messages.find(m => m.role === "user");
-  if (!firstUserMsg) return "No messages yet";
-  return firstUserMsg.content.length > 50
-    ? firstUserMsg.content.substring(0, 50) + "..."
-    : firstUserMsg.content;
-};
+export function conversationHref(id: string) {
+  return `/dashboard?c=${encodeURIComponent(id)}`;
+}
 
-export function ConversationSidebar({
-  currentConversationId,
-  onSelectConversation,
-  onNewConversation,
-}: ConversationSidebarProps) {
+function titleOf(conv: Conversation) {
+  const t = (conv.title || "").trim();
+  if (t && t !== "New Conversation") return t;
+  const first = conv.messages.find((m) => m.role === "user")?.content?.trim();
+  return first ? first.slice(0, 60) : "Untitled chat";
+}
+
+/** Recent conversations, grouped by recency, each with open and delete. */
+export function ConversationSidebar({ currentConversationId, onDeleted, onOpen }: ConversationSidebarProps) {
   const { conversations, loading, deleteConversation } = useConversations();
+  // Chats with no messages are created lazily and swept away; never list them.
+  const visible = useMemo(() => conversations.filter((c) => c.messages.length > 0 || c.id === currentConversationId), [conversations, currentConversationId]);
+  const groups = useMemo(() => groupByRecency(visible), [visible]);
 
   const handleDelete = async (conv: Conversation) => {
     const deleted = await deleteConversation(conv.id);
-    if (deleted && conv.id === currentConversationId) {
-      onNewConversation();
-    }
+    if (deleted) onDeleted?.(conv);
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* New Chat button */}
-      <div className="p-3">
-        <Button
-          variant="outline"
-          className="w-full justify-start gap-2 text-sm"
-          onClick={onNewConversation}
-        >
-          <MessageSquarePlus className="w-4 h-4" />
-          New Chat
-        </Button>
+  if (loading) {
+    return (
+      <div className="px-3 py-2 space-y-3" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-4 rounded bg-sidebar-accent/70" style={{ width: `${80 - i * 15}%` }} />
+        ))}
       </div>
+    );
+  }
 
-      <ScrollArea className="flex-1">
-        <div className="px-2 pb-2">
-          <p className="px-2 py-1 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Recent</p>
-          <div className="space-y-0.5">
-            {loading ? (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">Loading...</div>
-            ) : conversations.length === 0 ? (
-              <div className="px-3 py-4 text-xs text-muted-foreground text-center">No conversations</div>
-            ) : (
-              conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  className={cn(
-                    "group flex items-start gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors",
-                    currentConversationId === conv.id
-                      ? "bg-primary/10 text-foreground"
-                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                  )}
-                  onClick={() => onSelectConversation(conv)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{conv.title || "Untitled"}</p>
-                    <p className="text-xs text-muted-foreground/60 truncate mt-0.5">
-                      {getPreviewText(conv.messages)}
-                    </p>
-                  </div>
+  if (groups.length === 0) {
+    return <p className="px-3 py-2 text-sm text-muted-foreground">Your chats will appear here.</p>;
+  }
 
+  return (
+    <nav aria-label="Recent chats" className="space-y-4">
+      {groups.map((group) => (
+        <section key={group.label} aria-label={group.label}>
+          <h3 className="px-3 pb-1 text-xs font-medium text-muted-foreground">{group.label}</h3>
+          <ul className="space-y-px">
+            {group.items.map((conv) => {
+              const active = conv.id === currentConversationId;
+              const title = titleOf(conv);
+              return (
+                <li key={conv.id} className="group relative">
+                  <Link
+                    to={conversationHref(conv.id)}
+                    onClick={onOpen}
+                    aria-current={active ? "page" : undefined}
+                    title={title}
+                    className={cn(
+                      "flex h-9 items-center rounded-lg pl-3 pr-9 text-sm transition-colors",
+                      active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        : "text-sidebar-foreground/85 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground",
+                    )}
+                  >
+                    <span className="truncate">{title}</span>
+                  </Link>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 md:h-6 md:w-6 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0"
-                        aria-label="Conversation options"
-                        onClick={(e) => e.stopPropagation()}
+                      <button
+                        type="button"
+                        aria-label={`Options for “${title}”`}
+                        className={cn(
+                          "absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/70",
+                          "md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 md:data-[state=open]:opacity-100",
+                          active && "md:opacity-100",
+                        )}
                       >
-                        <MoreHorizontal className="h-3.5 w-3.5" />
-                      </Button>
+                        <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                      </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => handleDelete(conv)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => handleDelete(conv)}>
+                        <Trash2 className="h-4 w-4 mr-2" aria-hidden="true" />
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </ScrollArea>
-    </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </nav>
   );
 }

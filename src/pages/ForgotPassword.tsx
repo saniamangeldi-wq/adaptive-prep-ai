@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { GraduationCap, Mail, Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { AuthShell } from "@/components/landing/AuthShell";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -34,65 +35,47 @@ export default function ForgotPassword() {
   };
 
   return (
-    <>
-    <PageSeo
-      title="Forgot password — AdaptivePrep"
-      description="Reset your AdaptivePrep account password. Enter your email to receive a secure password reset link."
-      path="/forgot-password"
-    />
-    <div className="min-h-screen flex items-center justify-center p-8 bg-background dark text-foreground">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold text-foreground">AdaptivePrep</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-foreground">Reset your password</h1>
-          <p className="text-muted-foreground mt-2">
-            {sent
-              ? "Check your email for a password reset link"
-              : "Enter your email and we'll send you a reset link"}
-          </p>
-        </div>
-
+    <AuthShell
+      title="Reset your password"
+      subtitle={sent ? "Check your email for a reset link." : "Enter your email and we will send you a link to set a new password."}
+    >
+      <PageSeo
+        title="Forgot password — AdaptivePrep"
+        description="Reset your AdaptivePrep account password. Enter your email to receive a secure password reset link."
+        path="/forgot-password"
+      />
+      <div className="space-y-6">
         {sent ? (
-          <div className="space-y-4 text-center">
-            <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-              <Mail className="w-8 h-8 text-primary" />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              We sent a reset link to <span className="font-medium text-foreground">{email}</span>.
-              Click the link in the email to set a new password.
+          <div className="space-y-4">
+            <p className="rounded-xl border border-border bg-card p-4 text-[15px] leading-6 text-foreground">
+              We sent a reset link to <span className="font-medium">{email}</span>. Open it to set a new password. If it
+              is not in your inbox, check the spam folder.
             </p>
-            <Button variant="outline" onClick={() => setSent(false)} className="mt-4">
-              Try a different email
+            <Button variant="outline" onClick={() => setSent(false)} className="h-11 rounded-xl">
+              Use a different email
             </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10 h-12"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                className="h-12 text-base"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
 
-            <Button type="submit" variant="hero" className="w-full h-12" disabled={loading}>
+            <Button type="submit" variant="hero" className="h-12 w-full rounded-xl text-[15px]" disabled={loading}>
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Sending...
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Sending…
                 </>
               ) : (
                 "Send reset link"
@@ -101,14 +84,11 @@ export default function ForgotPassword() {
           </form>
         )}
 
-        <div className="text-center">
-          <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" />
-            Back to sign in
-          </Link>
-        </div>
+        <Link to="/login" className="inline-flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back to log in
+        </Link>
       </div>
-    </div>
-    </>
+    </AuthShell>
   );
 }

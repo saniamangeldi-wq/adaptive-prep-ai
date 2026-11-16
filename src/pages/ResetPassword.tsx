@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { AuthShell } from "@/components/landing/AuthShell";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -63,35 +64,22 @@ export default function ResetPassword() {
   };
 
   return (
-    <>
-    <PageSeo
-      title="Reset password — AdaptivePrep"
-      description="Set a new password for your AdaptivePrep account and get back to your IELTS Writing in seconds."
-      path="/reset-password"
-    />
-    <div className="min-h-screen flex items-center justify-center p-8 bg-background dark text-foreground">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold text-foreground">AdaptivePrep</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-foreground">Set new password</h1>
-          <p className="text-muted-foreground mt-2">Enter your new password below</p>
-        </div>
-
+    <AuthShell title="Set a new password" subtitle="Choose a password with at least 6 characters.">
+      <PageSeo
+        title="Reset password — AdaptivePrep"
+        description="Set a new password for your AdaptivePrep account and get back to your IELTS Writing in seconds."
+        path="/reset-password"
+      />
+      <div className="space-y-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">New password</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                className="pl-10 pr-10 h-12"
+                autoComplete="new-password"
+                className="h-12 pr-12 text-base"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -100,35 +88,33 @@ export default function ResetPassword() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm new password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                id="confirmPassword"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                className="pl-10 h-12"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
+            <Input
+              id="confirmPassword"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              className="h-12 text-base"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+            />
           </div>
 
-          <Button type="submit" variant="hero" className="w-full h-12" disabled={loading}>
+          <Button type="submit" variant="hero" className="h-12 w-full rounded-xl text-[15px]" disabled={loading}>
             {loading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Updating...
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Updating…
               </>
             ) : (
               "Update password"
@@ -136,13 +122,10 @@ export default function ResetPassword() {
           </Button>
         </form>
 
-        <div className="text-center">
-          <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground">
-            Back to sign in
-          </Link>
-        </div>
+        <Link to="/login" className="inline-block rounded-sm text-sm text-muted-foreground hover:text-foreground">
+          Back to log in
+        </Link>
       </div>
-    </div>
-    </>
+    </AuthShell>
   );
 }
