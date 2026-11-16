@@ -1,6 +1,6 @@
 # Handover
 
-Last updated: 16 Nov 2026, by the lead session (Claude Fable 5.2). Next owner: Claude Opus.
+Last updated: 16 Nov 2026, by the verification session (web ↔ server tests and browser pass).
 Read `CLAUDE.md` first. Update this file at the end of every session.
 
 ## Where things stand
@@ -11,20 +11,24 @@ Branch `ielts-writing-only` holds the stripped app: sign-in, chat, IELTS Writing
 | --- | --- | --- |
 | Strip-down (343 → 124 files in `src/` including the new screens, 60 → 12 edge functions) | Done | Build, type-check, tests; viewed in a browser at 380 px and 1280 px with a mocked session |
 | Grading engine, task bank (47 original tasks), drafts, slim chat function | Done | 117 unit tests; entry files type-checked with a Deno shim; **never executed** |
-| Writing screens (home, editor, report, history), visuals, chat wired to reports | Code complete; the agent building them was cut off by a usage limit during final polish of the map visual | Build, type-check, 53 unit tests pass. **Not viewed in a browser by anyone after completion** |
+| Writing screens (home, editor, report, history), visuals, chat wired to reports | Done; map labels reworked, data-loss paths closed | Viewed in Chrome at 380 px and 1280 px against a mocked Supabase (`scripts/preview-with-mocks`), every screen and state below |
+| Web ↔ server agreement | Checked | `src/test/integration/`: the web's real request code (api.ts, useAIChat) against the server's own validators, bank, post-processing and row mapping, in process. Not checked against the deployed functions |
 | Calibration | Scaffold only (`calibration/`), zero scored scripts | Not run |
 
-Commands (all pass at handover): `npm run build`, `npx tsc -p tsconfig.app.json --noEmit`, `npx vitest run` (15 files, 170 tests).
+Commands (all pass at handover): `npm run build`, `npx tsc -p tsconfig.app.json --noEmit`, `npx vitest run` (20 files, 281 tests).
+
+## Contract changes
+
+- `LIMITS.maxVisualDescriptionChars` (2000), additive. The server already enforced this limit; now the web uses the same constant.
 
 ## Do these next, in order
 
-1. **Look at the writing screens.** Run the built app with mocked function responses from `src/test/fixtures/ielts.ts` and view every screen at 380 px and 1280 px: every visual kind (line, bar, pie, table, mixed, process, map), both report fixtures, the editor's autosave states, the chat chip. Fix what is broken. The map panels (`src/components/writing/TaskVisuals.tsx`, ResizeObserver layout) were being edited when the agent stopped.
-2. **First deployment check** (needs Sani; see "Going live"). In order:
+1. **First deployment check** (needs Sani; see "Going live"). In order:
    - Grade one bank Task 2 and one bank Academic Task 1. In the function logs find `grade: ok` and note `mode` (`tool` or `json`) and `attempts`. Confirm the row in `ielts_writing_reports` has the full report in `comments`.
    - Send a chat message with a `reportId`; confirm the reply streams and the conversation is saved.
    - Force a failure and confirm the credits come back.
-3. **Calibration.** Sani collects 30+ examiner-scored scripts (see `calibration/README.md`). Run `calibration/run-calibration.mjs`. The gate in `CLAUDE.md` applies: no charging until the average error on the overall band is 0.5 or less.
-4. **Payment.** Not built. The plan is time-boxed passes, activated by hand at first (see the Project doc `claude/adaptiveprep-foundation.md`). Needs Sani's decisions first.
+2. **Calibration.** Sani collects 30+ examiner-scored scripts (see `calibration/README.md`). Run `calibration/run-calibration.mjs`. The gate in `CLAUDE.md` applies: no charging until the average error on the overall band is 0.5 or less.
+3. **Payment.** Not built. The plan is time-boxed passes, activated by hand at first (see the Project doc `claude/adaptiveprep-foundation.md`). Needs Sani's decisions first.
 
 ## Not verified (the backend agent's list)
 
@@ -32,9 +36,10 @@ Commands (all pass at handover): `npm run build`, `npx tsc -p tsconfig.app.json 
 2. Which auth header the gateway wants (`Lovable-API-Key` or `Authorization: Bearer`). Both are sent.
 3. Whether `max_tokens` counts the model's hidden reasoning tokens, and whether temperature 0 is honoured.
 4. Whether base64 `image_url` parts reach the model (student-uploaded chart photos).
-5. Whether the chat stream keeps the exact `data:` / `[DONE]` format `src/hooks/useAIChat.ts` parses. The old `<think>`-tag stripping was dropped.
+5. Whether the real gateway stream matches the OpenAI-style `data:` / `[DONE]` format. The hook's parser is now tested against that format split at arbitrary byte boundaries (CRLF, keep-alive comments, a final usage chunk, a missing `[DONE]`), so only the gateway side is unverified. The old `<think>`-tag stripping was dropped.
 6. Whether a full grading fits in the edge function time limit (140 s budget; the retry runs only with 45 s left).
-7. supabase-js behaviour against the live schema (`update().select().maybeSingle()`, the `updated_at` trigger).
+7. supabase-js behaviour against the live schema (`update().select().maybeSingle()`, the `updated_at` trigger on `ielts_sessions`; draft restore relies on that trigger moving `updated_at` on every save).
+9. Whether RLS lets the browser read its own `ielts_writing_reports` rows (report, history and chat pages read them directly; the policy in the migration says yes).
 8. Model ids in `_shared/ielts/models.ts` were copied from the old code and not checked against the gateway's current list.
 
 ## Going live (Sani decides when)
@@ -72,6 +77,40 @@ Commands (all pass at handover): `npm run build`, `npx tsc -p tsconfig.app.json 
 - No error profile or drills, no share link, no payment, no progress beyond the simple history chart.
 - Uploaded chart images live only on the student's device; a report graded with an image cannot show that image later.
 - The landing page is English only.
+
+## Verification session (16 Nov 2026): what was found and fixed
+
+Web ↔ server mismatches (all covered by `src/test/integration/`):
+- Chat error notes ("out of credits", "something went wrong") were sent back to the coach as its own earlier replies and saved in `ai_conversations`. Now flagged `isError` and kept out of both.
+- The coach prompt said the overall is rounded to the nearest half band; the server rounds down. Prompt fixed (`chat.ts`; not grader text, so no version bump).
+- `too_long` for a large image or description showed "over 600 words"; a bank id the server no longer has showed "We could not find that". Messages fixed in `apiErrors.ts`.
+- The missing-chart dialog in the editor had no length cap; the server rejects descriptions over 2000 characters.
+- Grade function marked the draft completed even when the report insert failed, so the essay survived only in browser history state. Now the draft stays open, the device copy is kept, and the unsaved report page says the answer is still in Drafts.
+- Browser grade timeout (120 s) was shorter than the server's grading budget (140 s): a slow but successful grading looked like a failure. Now 150 s.
+
+Data-loss paths closed in the editor:
+- Draft restore compared device and server clocks only; a device clock behind the server lost offline edits. The device copy now stores `serverUpdatedAt` (the server copy it last synced with) and wins whenever that copy is unchanged (`chooseDraft`).
+- The editor remounts per session id (no timer of one draft can write into another), pushes the latest text to the server when the student leaves inside the app, shows "Not saved. Copy your text somewhere safe." when the browser refuses local storage, and treats a malformed id as a missing draft.
+- Discarding a draft also deletes its device copies.
+
+Visual fixes: map labels (new `src/lib/ielts/mapLayout.ts`: sized in pixels, wrapped, moved off other labels and shapes, numbered badges with a key for features too small to label); straight line-graph segments; report and history pages had double padding on phones; history chart axis now goes below 3 when a band does.
+
+Looked at and fine: landing, login, signup, settings; writing home (task type, variant list, give me a task, own question with image and with description, drafts list, discard dialog); editor for line, bar, pie, table, mixed, process, cycle, branching process, both fixture and both bank maps, letter, Task 2; word counter, timer, saving / saved / offline states, restore after reload while offline, grading overlay, every `ApiError` code, missing-chart dialog, missing and malformed draft ids; report for both fixtures plus a server-built report with a ceiling (adjustments line), highlights and popover, unlocated comments, checklist, error types, rewrite, model answer, flags and low confidence, legacy row, malformed row, missing row, unsaved report; history empty, one, several with chart; chat with report chip, report starter prompts, a streamed reply.
+
+Still open:
+- `src/pages/Terms.tsx` still describes subscriptions, plans and trials (left for Sani's review, see Decisions).
+- On phones, the issues in the report are reachable only through the highlights (tap) and the "Other comments" list; there is no separate full list. Not added (scope).
+- Process diagrams with branches show the steps in order plus a "How the steps connect" list rather than drawn arrows. Readable; a drawn diagram would be new work.
+
+## Browser check with mocks
+
+```
+npm run build
+npx vite-node scripts/preview-with-mocks/dump-fixtures.ts > /tmp/ielts-fixtures.json
+python3 scripts/preview-with-mocks/run.py --out /tmp/ielts-shots            # all screens, 380 and 1280 px
+python3 scripts/preview-with-mocks/run.py --only editor --widths 380          # a subset
+```
+Needs Python Playwright and Chrome (`/usr/bin/google-chrome` by default). It starts `vite preview` on 127.0.0.1:4173, answers every `*.supabase.co` call from `mock_server.py`, and writes screenshots and `errors.txt` to `--out` (keep that outside the repo). It fails only on crashes and console errors; look at the screenshots for layout. Scenarios are plain functions in `run.py`; mock behaviour (offline saves, held saves, grade errors, unsaved report) is switched through `MockState`.
 
 ## Working in this repo from a cloud session
 
