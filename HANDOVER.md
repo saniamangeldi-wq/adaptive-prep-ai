@@ -8,7 +8,14 @@ Read `CLAUDE.md` first. Update this file at the end of every session.
 Sani changed the direction (see `CLAUDE.md`, "What this product is"). Three pieces of work were started by sub-agents; if you are taking over mid-way, run `git status` and `git log` to see what landed, then finish whichever is incomplete:
 
 1. **Design, landing page and chat-first dashboard** — new visual identity (tokens in `src/index.css` and `tailwind.config.ts`), `src/pages/Index.tsx` and landing components, `src/components/dashboard/DashboardLayout.tsx`, the chat page. Original design using familiar AI-app layout conventions; not a copy of any product.
-2. **Payment plans restored** — pricing section/page and `/dashboard/billing` brought back from `main` (`src/components/landing/Pricing.tsx`, `src/pages/Billing.tsx`, `src/lib/stripe-links.ts`, `src/lib/tier-limits.ts`), trimmed to what tiers give in this product. Prices and Stripe links unchanged.
+2. **Payment plans restored: done in code (16 Nov 2026), not yet seen in a browser.** `/pricing` (`PricingPage.tsx`, `landing/Pricing.tsx`), `/dashboard/billing` (`Billing.tsx`, `components/billing/CancelSubscriptionDialog.tsx`), `lib/stripe-links.ts` (student links byte-identical), `lib/pricing-config.ts` (names Free/Basic/Pro/Elite, $0/$5/$10/$21 plus the ₸ prices and the 3-month/yearly cycles), `lib/plan-features.ts` (plan bullets derived from `TIER_DAILY_CREDITS` and `CREDIT_COST`), `lib/billing-state.ts` (what each state offers), `lib/tier-limits.ts` (reduced to credits), `hooks/usePlan.ts`. Terms clause 3 has its original "from the Billing page" wording back. Tests: `src/test/app/billing.test.ts`. Tutor/school plans, top-ups, university match, donation banner, trial upsells, revenue calculator and all SAT/test/flashcard/lesson lines stay removed.
+   **Left for Sani (read before taking money; details in the session report):**
+   - `stripe-webhook` never sets `profiles.tier` on a payment (only `subscription_ends_at` and `is_trial = false`). As coded, a purchase does not change the plan. Nothing in the old repo sets it either. Decide: edit the webhook (map the paid price/link to a tier) or confirm a manual step exists.
+   - Payments are matched to accounts by email only (`ilike` on `profiles.email`, `maybeSingle`). The payment links carry no user id.
+   - Upgrading or downgrading through a payment link creates a second subscription; the old one stays. When either ends, `customer.subscription.deleted` drops the user to `tier_0` even if another subscription is still active.
+   - The billing page says this honestly and asks users to email hello@adaptiveprep.org after switching. Confirm you want to make that promise.
+   - Terms clauses that describe things the product does not have are listed in the report (free-trial-converts-to-paid, credit packs).
+   - Browser check of `/pricing` and `/dashboard/billing` with `scripts/preview-with-mocks` still to do (item 3).
 3. After both: browser check with `scripts/preview-with-mocks`, update this file, commit, push.
 
 Still Sani's call and not done: replacing the live site (merging to `main`).
