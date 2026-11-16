@@ -3,6 +3,16 @@
 Last updated: 16 Nov 2026, by the verification session (web ↔ server tests and browser pass).
 Read `CLAUDE.md` first. Update this file at the end of every session.
 
+## In progress right now (started 16 Nov 2026, 23:15 Almaty)
+
+Sani changed the direction (see `CLAUDE.md`, "What this product is"). Three pieces of work were started by sub-agents; if you are taking over mid-way, run `git status` and `git log` to see what landed, then finish whichever is incomplete:
+
+1. **Design, landing page and chat-first dashboard** — new visual identity (tokens in `src/index.css` and `tailwind.config.ts`), `src/pages/Index.tsx` and landing components, `src/components/dashboard/DashboardLayout.tsx`, the chat page. Original design using familiar AI-app layout conventions; not a copy of any product.
+2. **Payment plans restored** — pricing section/page and `/dashboard/billing` brought back from `main` (`src/components/landing/Pricing.tsx`, `src/pages/Billing.tsx`, `src/lib/stripe-links.ts`, `src/lib/tier-limits.ts`), trimmed to what tiers give in this product. Prices and Stripe links unchanged.
+3. After both: browser check with `scripts/preview-with-mocks`, update this file, commit, push.
+
+Still Sani's call and not done: replacing the live site (merging to `main`).
+
 ## Where things stand
 
 Branch `ielts-writing-only` holds the stripped app: sign-in, chat, IELTS Writing checker. `main` is still the old SAT app and the live site. **Nothing on this branch has been deployed or run against the real database or the AI gateway.**
