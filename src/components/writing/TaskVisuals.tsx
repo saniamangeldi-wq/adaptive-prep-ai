@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import type { DataVisual, MapFeatureType, MapVisual, ProcessVisual, TaskVisual } from "@ielts/contract.ts";
 import { describeDataVisual, describeMapPanel } from "@/lib/ielts/visualText";
+import { layoutMapLabels, type PlacedLabel } from "@/lib/ielts/mapLayout";
 import { MAP_FEATURE_LABELS } from "@/lib/ielts/labels";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -121,7 +122,7 @@ export function DataVisualView({ visual }: { visual: DataVisual }) {
               <Tooltip contentStyle={tooltipStyle} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               {series.map((s, i) => (
-                <Line key={s} type="monotone" dataKey={s} stroke={PALETTE[i % PALETTE.length]} strokeWidth={2} dot isAnimationActive={false} />
+                <Line key={s} type="linear" dataKey={s} stroke={PALETTE[i % PALETTE.length]} strokeWidth={2} dot isAnimationActive={false} />
               ))}
             </LineChart>
           ) : (
@@ -231,8 +232,13 @@ const FEATURE_STYLE: Record<MapFeatureType, { fill: string; stroke: string }> = 
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
-function MapPanel({ panel }: { panel: MapVisual["panels"][number] }) {
+function MapPanel({ panel, widthPx }: { panel: MapVisual["panels"][number]; widthPx: number }) {
   const features = (Array.isArray(panel.features) ? panel.features : []).filter(isObj);
+  const labels = layoutMapLabels(features, widthPx);
+  const badges = labels
+    .filter((l): l is Extract<PlacedLabel, { kind: "badge" }> => l.kind === "badge")
+    .sort((a, b) => a.n - b.n)
+    .filter((b, i, all) => i === 0 || all[i - 1].n !== b.n);
   return (
     <div className="space-y-1 min-w-0">
       <p className="text-sm font-medium text-foreground">{panel.label}</p>
@@ -242,47 +248,52 @@ function MapPanel({ panel }: { panel: MapVisual["panels"][number] }) {
         aria-label={describeMapPanel(panel)}
         className="w-full h-auto rounded-lg border border-border bg-background"
       >
+        {/* All shapes first, then every label on top, so no shape hides a label. */}
         {features.map((f) => {
           const style = FEATURE_STYLE[f.type] ?? FEATURE_STYLE.other;
           const x = clamp(Number(f.x) || 0, 0, 100);
           const y = clamp(Number(f.y) || 0, 0, 100);
           const w = clamp(Number(f.w) || 0, 0, 100 - x);
           const h = clamp(Number(f.h) || 0, 0, 100 - y);
-          const label = String(f.label ?? "");
-          // Split long labels in two lines at the space nearest the middle.
-          const roughWidth = label.length * 2.1;
-          let lines = [label];
-          if (roughWidth > w && label.includes(" ")) {
-            const mid = label.length / 2;
-            const cut = [...label.matchAll(/ /g)].map((m) => m.index as number).sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid))[0];
-            lines = [label.slice(0, cut), label.slice(cut + 1)];
-          }
-          const textW = Math.max(...lines.map((l) => l.length)) * 2.1;
-          const cx = clamp(x + w / 2, textW / 2 + 1, 99 - textW / 2);
-          const cy = y + h / 2;
-          return (
-            <g key={f.id}>
-              <rect x={x} y={y} width={w} height={h} fill={style.fill} fillOpacity={0.75} stroke={style.stroke} strokeWidth={0.5} rx={0.8} />
-              <text
-                x={cx}
-                y={cy - ((lines.length - 1) * 3.6) / 2}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize={3.6}
-                fontWeight={600}
-                fill="#ffffff"
-                stroke="rgba(0,0,0,0.75)"
-                strokeWidth={0.9}
-                paintOrder="stroke"
-              >
-                {lines.map((l, i) => (
-                  <tspan key={i} x={cx} dy={i === 0 ? 0 : 3.8}>{l}</tspan>
-                ))}
-              </text>
-            </g>
-          );
+          return <rect key={f.id} x={x} y={y} width={w} height={h} fill={style.fill} fillOpacity={0.75} stroke={style.stroke} strokeWidth={0.5} rx={0.8} />;
         })}
+        {labels.map((l) =>
+          l.kind === "text" ? (
+            <text
+              key={l.id}
+              x={l.x}
+              y={l.y - ((l.lines.length - 1) * l.fontSize * 1.15) / 2}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize={l.fontSize}
+              fontWeight={600}
+              fill="#ffffff"
+              stroke="rgba(0,0,0,0.75)"
+              strokeWidth={0.9}
+              paintOrder="stroke"
+            >
+              {l.lines.map((line, i) => (
+                <tspan key={i} x={l.x} dy={i === 0 ? 0 : l.fontSize * 1.15}>{line}</tspan>
+              ))}
+            </text>
+          ) : (
+            <g key={l.id}>
+              <circle cx={l.x} cy={l.y} r={2.4} fill="rgba(0,0,0,0.8)" stroke="#ffffff" strokeWidth={0.4} />
+              <text x={l.x} y={l.y} textAnchor="middle" dominantBaseline="central" fontSize={3} fontWeight={700} fill="#ffffff">{l.n}</text>
+            </g>
+          )
+        )}
       </svg>
+      {badges.length > 0 && (
+        <ol className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-foreground list-none p-0" aria-hidden="true">
+          {badges.map((b) => (
+            <li key={b.id} className="flex items-center gap-1">
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-black/80 border border-white text-[10px] font-bold text-white">{b.n}</span>
+              {b.label}
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }
@@ -307,7 +318,7 @@ export function MapVisualView({ visual }: { visual: MapVisual }) {
       <VisualTitle title={visual.title} />
       <div ref={gridRef} className={`grid gap-3 ${sideBySide ? "grid-cols-2" : "grid-cols-1"}`}>
         {panels.map((p, i) => (
-          <MapPanel key={i} panel={p} />
+          <MapPanel key={i} panel={p} widthPx={sideBySide ? (width - 12) / 2 : width} />
         ))}
       </div>
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-label="Legend">
