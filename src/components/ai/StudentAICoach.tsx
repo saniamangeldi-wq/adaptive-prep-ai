@@ -174,6 +174,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, report, o
       onSend={() => handleSend()}
       busy={isLoading}
       large={isEmpty}
+      placeholder={isEmpty ? (report ? "Ask about this report…" : "Ask about your writing, a task type or a band…") : "Reply to the coach…"}
       report={report}
       onDetachReport={onDetachReport}
     />
@@ -261,6 +262,7 @@ function Composer({
   onSend,
   busy,
   large,
+  placeholder,
   report,
   onDetachReport,
 }: {
@@ -270,6 +272,7 @@ function Composer({
   onSend: () => void;
   busy: boolean;
   large: boolean;
+  placeholder: string;
   report?: AttachedReport | null;
   onDetachReport?: () => void;
 }) {
@@ -326,7 +329,7 @@ function Composer({
                 onSend();
               }
             }}
-            placeholder={large ? "Ask about your writing, a task type or a band…" : "Reply to the coach…"}
+            placeholder={placeholder}
             aria-label="Message"
             enterKeyHint="send"
             className={cn(
