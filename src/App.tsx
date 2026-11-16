@@ -14,6 +14,8 @@ import ResetPassword from "./pages/ResetPassword";
 import Unsubscribe from "./pages/Unsubscribe";
 import AICoach from "./pages/AICoach";
 import Settings from "./pages/Settings";
+import PricingPage from "./pages/PricingPage";
+import Billing from "./pages/Billing";
 import NotFound from "./pages/NotFound";
 import WritingHome from "./pages/writing/WritingHome";
 import WritingEditor from "./pages/writing/WritingEditor";
@@ -60,6 +62,7 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/pricing" element={<PricingPage />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
 
       {/* Signed in */}
@@ -70,6 +73,7 @@ function AppRoutes() {
       <Route path="/dashboard/writing/report/:reportId" element={<ProtectedRoute><WritingReport /></ProtectedRoute>} />
       <Route path="/dashboard/history" element={<ProtectedRoute><WritingHistory /></ProtectedRoute>} />
       <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

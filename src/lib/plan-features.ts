@@ -29,19 +29,29 @@ function plural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
+/** "About 3 essay checks a day, or 15 chat messages". */
+export function planUsage(tierId: string): string {
+  const a = allowanceForTier(tierId);
+  return `About ${plural(a.essayChecks, "essay check", "essay checks")} a day, or ${plural(a.chatMessages, "chat message", "chat messages")}`;
+}
+
 /** Bullet points for a plan card. Every number comes from the constants. */
 export function planFeatureLines(tierId: string): string[] {
   const a = allowanceForTier(tierId);
   return [
     `${a.dailyCredits} AI credits every day`,
-    `About ${plural(a.essayChecks, "essay check", "essay checks")} a day, or ${plural(a.chatMessages, "chat message", "chat messages")}`,
+    planUsage(tierId),
     `An essay check costs ${plural(CREDIT_COST.grade, "credit", "credits")}, a chat message ${plural(CREDIT_COST.chat, "credit", "credits")}`,
     "Credits reset every day",
   ];
 }
 
-/** One-line summary, for the billing page. */
-export function planSummary(tierId: string): string {
-  const a = allowanceForTier(tierId);
-  return `${a.dailyCredits} credits a day: about ${plural(a.essayChecks, "essay check", "essay checks")} or ${plural(a.chatMessages, "chat message", "chat messages")}.`;
+/** What each kind of call costs, for the billing page. Numbers come from CREDIT_COST. */
+export function creditCostLines(): string[] {
+  return [
+    `Essay check: ${plural(CREDIT_COST.grade, "credit", "credits")}`,
+    `Essay check with a model answer: ${plural(CREDIT_COST.gradeWithModelAnswer, "credit", "credits")}`,
+    `New practice task (when it is not in the task bank): ${plural(CREDIT_COST.generateTask, "credit", "credits")}`,
+    `Chat message: ${plural(CREDIT_COST.chat, "credit", "credits")}`,
+  ];
 }

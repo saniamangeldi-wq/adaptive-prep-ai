@@ -79,10 +79,13 @@ export function Pricing({ headingLevel = "h2", headingText }: PricingProps = {})
         </div>
 
         <p className="text-center mt-10 text-muted-foreground">
-          Start on the free plan, no card needed.{" "}
+          Create an account to try it free, no card needed.{" "}
           <Link to="/signup" className="text-primary hover:underline font-medium">
-            Create an account
+            Sign up
           </Link>
+        </p>
+        <p className="text-center mt-2 text-sm text-muted-foreground">
+          Paying? Use the same email as your account at checkout, so your payment reaches it.
         </p>
       </div>
     </section>

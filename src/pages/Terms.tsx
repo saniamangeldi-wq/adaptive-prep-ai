@@ -60,13 +60,10 @@ export default function Terms() {
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-foreground">3. Cancellation and access until period end</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              You may cancel your subscription at any time, for any reason, by emailing{" "}
-              <a href="mailto:hello@adaptiveprep.org" className="text-primary hover:underline">
-                hello@adaptiveprep.org
-              </a>{" "}
-              from the address on your account. Cancellation takes effect immediately in the sense that no
-              further charges will be made to your payment method. We will never require you to call or
-              complete additional steps in order to cancel.
+              You may cancel your subscription at any time, for any reason, from the Billing page in your
+              account. Cancellation takes effect immediately in the sense that no further charges will be
+              made to your payment method. You do not need to contact support, and we will never require
+              you to call, email, or complete additional steps in order to cancel.
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed">
               After cancelling, you keep full access to all features of your plan until the end of the

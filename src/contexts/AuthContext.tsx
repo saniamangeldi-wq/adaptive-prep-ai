@@ -11,6 +11,12 @@ interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   preferred_language: string;
+  // Billing fields (written by the stripe-webhook and cancel-subscription functions).
+  tier: string | null;
+  is_trial: boolean | null;
+  trial_ends_at: string | null;
+  credits_remaining: number | null;
+  subscription_ends_at: string | null;
 }
 
 interface AuthContextType {
