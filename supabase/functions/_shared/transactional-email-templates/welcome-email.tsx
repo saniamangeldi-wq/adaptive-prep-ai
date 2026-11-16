@@ -14,25 +14,23 @@ interface WelcomeEmailProps {
 const WelcomeEmail = ({ name }: WelcomeEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Welcome to {SITE_NAME} — your AI-powered learning journey starts now</Preview>
+    <Preview>Welcome to {SITE_NAME} — check your first IELTS essay</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={headerSection}>
           <Heading style={logo}>{SITE_NAME}</Heading>
         </Section>
         <Heading style={h1}>
-          {name ? `Welcome, ${name}! 🎓` : 'Welcome to AdaptivePrep! 🎓'}
+          {name ? `Welcome, ${name}` : 'Welcome to AdaptivePrep'}
         </Heading>
         <Text style={text}>
-          You've just unlocked your AI-powered study companion. Whether you're
-          prepping for the SAT, mastering new subjects, or building study habits —
-          we've got you covered.
+          AdaptivePrep checks your IELTS Writing answers and shows you what to
+          fix first. Band scores are estimates, not official results.
         </Text>
-        <Text style={text}>Here's what you can do right away:</Text>
-        <Text style={listItem}>📝 Take adaptive practice tests</Text>
-        <Text style={listItem}>🤖 Chat with your AI coach</Text>
-        <Text style={listItem}>📊 Track your progress over time</Text>
-        <Text style={listItem}>🎴 Create smart flashcard decks</Text>
+        <Text style={text}>Here is what you can do right away:</Text>
+        <Text style={listItem}>Write or paste a Task 1 or Task 2 answer</Text>
+        <Text style={listItem}>Get an estimated band on the four criteria</Text>
+        <Text style={listItem}>Ask the coach why a sentence lost marks</Text>
         <Section style={buttonSection}>
           <Button style={button} href="https://adaptive-prep-ai.lovable.app/dashboard">
             Go to Dashboard
@@ -40,7 +38,7 @@ const WelcomeEmail = ({ name }: WelcomeEmailProps) => (
         </Section>
         <Hr style={hr} />
         <Text style={footer}>
-          Happy studying! — The {SITE_NAME} Team
+          The {SITE_NAME} team
         </Text>
       </Container>
     </Body>
@@ -49,7 +47,7 @@ const WelcomeEmail = ({ name }: WelcomeEmailProps) => (
 
 export const template = {
   component: WelcomeEmail,
-  subject: 'Welcome to AdaptivePrep! 🎓',
+  subject: 'Welcome to AdaptivePrep',
   displayName: 'Welcome email',
   previewData: { name: 'Alex' },
 } satisfies TemplateEntry

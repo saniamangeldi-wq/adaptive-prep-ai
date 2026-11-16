@@ -66,7 +66,7 @@ export default function ResetPassword() {
     <>
     <PageSeo
       title="Reset password — AdaptivePrep"
-      description="Set a new password for your AdaptivePrep account and get back to your SAT prep in seconds."
+      description="Set a new password for your AdaptivePrep account and get back to your IELTS Writing in seconds."
       path="/reset-password"
     />
     <div className="min-h-screen flex items-center justify-center p-8 bg-background dark text-foreground">

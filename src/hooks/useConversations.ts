@@ -4,28 +4,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
 
-export interface ConversationSpace {
-  id: string;
-  user_id: string;
-  name: string;
-  description: string | null;
-  icon: string;
-  color: string;
-  conversation_count: number;
-  created_at: string;
-}
-
 export interface Conversation {
   id: string;
   user_id: string;
   title: string | null;
   messages: Array<{ role: string; content: string }>;
-  space_id: string | null;
-  is_archived: boolean;
-  is_pinned: boolean;
   created_at: string;
   updated_at: string;
 }
+
+// Chats live in `ai_conversations`; every chat here belongs to the student coach.
+const COACH_TYPE = "student";
 
 // Helper to transform database messages to typed format
 function transformMessages(messages: Json): Array<{ role: string; content: string }> {
@@ -45,75 +34,47 @@ function transformConversation(data: Record<string, unknown>): Conversation {
     user_id: String(data.user_id),
     title: data.title ? String(data.title) : null,
     messages: transformMessages(data.messages as Json),
-    space_id: data.space_id ? String(data.space_id) : null,
-    is_archived: Boolean(data.is_archived),
-    is_pinned: Boolean(data.is_pinned),
     created_at: String(data.created_at),
     updated_at: String(data.updated_at),
   };
 }
 
-export function useConversations(coachType: "student" | "tutor" = "student") {
-  const [spaces, setSpaces] = useState<ConversationSpace[]>([]);
+export function useConversations() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  const loadSpaces = useCallback(async () => {
+  const loadConversations = useCallback(async () => {
     if (!user) return;
 
     const { data, error } = await supabase
-      .from("conversation_spaces")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("coach_type", coachType)
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setSpaces(data);
-    }
-  }, [user, coachType]);
-
-  const loadConversations = useCallback(async (spaceId: string | null = null) => {
-    if (!user) return;
-
-    let query = supabase
       .from("ai_conversations")
       .select("*")
       .eq("user_id", user.id)
       .eq("is_archived", false)
-      .eq("coach_type", coachType)
+      .eq("coach_type", COACH_TYPE)
       .order("updated_at", { ascending: false });
-
-    if (spaceId) {
-      query = query.eq("space_id", spaceId);
-    }
-
-    const { data, error } = await query;
 
     if (!error && data) {
       setConversations(data.map(d => transformConversation(d as unknown as Record<string, unknown>)));
     }
     setLoading(false);
-  }, [user, coachType]);
+  }, [user]);
 
   useEffect(() => {
     if (user) {
-      loadSpaces();
-      loadConversations(selectedSpaceId);
+      loadConversations();
     }
-  }, [user, loadSpaces, loadConversations, selectedSpaceId]);
+  }, [user, loadConversations]);
 
   // Keep every mounted instance of this hook in sync (sidebar + chat page)
   useEffect(() => {
     const onChanged = () => {
-      loadSpaces();
-      loadConversations(selectedSpaceId);
+      loadConversations();
     };
     window.addEventListener("adaptiveprep:conversations-changed", onChanged);
     return () => window.removeEventListener("adaptiveprep:conversations-changed", onChanged);
-  }, [loadSpaces, loadConversations, selectedSpaceId]);
+  }, [loadConversations]);
 
   // Remove conversations that were created but never used
   const deleteEmptyConversations = useCallback(async (exceptId?: string | null) => {
@@ -122,7 +83,7 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
       .from("ai_conversations")
       .select("id, messages")
       .eq("user_id", user.id)
-      .eq("coach_type", coachType);
+      .eq("coach_type", COACH_TYPE);
 
     const emptyIds = (data || [])
       .filter(c => {
@@ -135,59 +96,9 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
 
     await supabase.from("ai_conversations").delete().in("id", emptyIds);
     setConversations(prev => prev.filter(c => !emptyIds.includes(c.id)));
-  }, [user, coachType]);
-
-
-  const createSpace = useCallback(async (
-    name: string,
-    description?: string,
-    icon: string = "📁",
-    color: string = "#3b82f6"
-  ) => {
-    if (!user) return null;
-
-    const { data, error } = await supabase
-      .from("conversation_spaces")
-      .insert({
-        user_id: user.id,
-        name,
-        description,
-        icon,
-        color,
-        coach_type: coachType,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast.error("Failed to create space");
-      return null;
-    }
-
-    setSpaces(prev => [data, ...prev]);
-    toast.success("Space created!");
-    return data;
   }, [user]);
 
-  const deleteSpace = useCallback(async (spaceId: string) => {
-    const { error } = await supabase
-      .from("conversation_spaces")
-      .delete()
-      .eq("id", spaceId);
-
-    if (error) {
-      toast.error("Failed to delete space");
-      return;
-    }
-
-    setSpaces(prev => prev.filter(s => s.id !== spaceId));
-    if (selectedSpaceId === spaceId) {
-      setSelectedSpaceId(null);
-    }
-    toast.success("Space deleted");
-  }, [selectedSpaceId]);
-
-  const createConversation = useCallback(async (title?: string, spaceId?: string | null) => {
+  const createConversation = useCallback(async (title?: string) => {
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -196,8 +107,7 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
         user_id: user.id,
         title: title || "New Conversation",
         messages: [],
-        space_id: spaceId || selectedSpaceId,
-        coach_type: coachType,
+        coach_type: COACH_TYPE,
       })
       .select()
       .single();
@@ -211,27 +121,7 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
     setConversations(prev => [transformed, ...prev]);
     window.dispatchEvent(new CustomEvent("adaptiveprep:conversations-changed"));
     return transformed;
-  }, [user, selectedSpaceId, coachType]);
-
-
-  const updateConversation = useCallback(async (
-    conversationId: string,
-    updates: Partial<Pick<Conversation, "title" | "messages" | "space_id" | "is_archived" | "is_pinned">>
-  ) => {
-    const { error } = await supabase
-      .from("ai_conversations")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", conversationId);
-
-    if (error) {
-      toast.error("Failed to update conversation");
-      return;
-    }
-
-    setConversations(prev =>
-      prev.map(c => (c.id === conversationId ? { ...c, ...updates } : c))
-    );
-  }, []);
+  }, [user]);
 
   const deleteConversation = useCallback(async (conversationId: string) => {
     const { error } = await supabase
@@ -241,50 +131,21 @@ export function useConversations(coachType: "student" | "tutor" = "student") {
 
     if (error) {
       toast.error("Failed to delete conversation");
-      return;
+      return false;
     }
 
     setConversations(prev => prev.filter(c => c.id !== conversationId));
     window.dispatchEvent(new CustomEvent("adaptiveprep:conversations-changed"));
     toast.success("Conversation deleted");
+    return true;
   }, []);
 
-
-  const togglePin = useCallback(async (conversationId: string) => {
-    const conv = conversations.find(c => c.id === conversationId);
-    if (!conv) return;
-
-    await updateConversation(conversationId, { is_pinned: !conv.is_pinned });
-  }, [conversations, updateConversation]);
-
-  const archiveConversation = useCallback(async (conversationId: string) => {
-    await updateConversation(conversationId, { is_archived: true });
-    setConversations(prev => prev.filter(c => c.id !== conversationId));
-    toast.success("Conversation archived");
-  }, [updateConversation]);
-
-  const moveToSpace = useCallback(async (conversationId: string, spaceId: string | null) => {
-    await updateConversation(conversationId, { space_id: spaceId });
-    toast.success("Conversation moved");
-  }, [updateConversation]);
-
   return {
-    spaces,
     conversations,
-    selectedSpaceId,
-    setSelectedSpaceId,
     loading,
-    loadSpaces,
     loadConversations,
-    createSpace,
-    deleteSpace,
     createConversation,
-    updateConversation,
     deleteConversation,
     deleteEmptyConversations,
-
-    togglePin,
-    archiveConversation,
-    moveToSpace,
   };
 }

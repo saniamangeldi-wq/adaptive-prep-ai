@@ -5,7 +5,6 @@ import App from "./App.tsx";
 import "./i18n";
 import "./index.css";
 import "katex/dist/katex.min.css";
-import { registerAppServiceWorker } from "./lib/pwa";
 
 const rootElement = document.getElementById("root");
 
@@ -17,6 +16,4 @@ if (rootElement) {
       </ThemeProvider>
     </HelmetProvider>,
   );
-
-  void registerAppServiceWorker();
 }

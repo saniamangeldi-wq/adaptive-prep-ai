@@ -2,41 +2,15 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
+// Subset of the `profiles` row that the app reads. The table itself has many
+// more (legacy) columns that we neither read nor write.
 interface Profile {
   id: string;
   user_id: string;
   email: string;
   full_name: string | null;
   avatar_url: string | null;
-  role: "student" | "tutor" | "teacher" | "school_admin";
-  tier: "tier_0" | "tier_1" | "tier_2" | "tier_3";
-  learning_style: "visual" | "auditory" | "reading_writing" | "kinesthetic" | null;
-  credits_remaining: number;
-  tests_remaining: number;
-  onboarding_completed: boolean;
-  is_trial: boolean;
-  trial_ends_at: string | null;
-  trial_started_at: string | null;
-  questions_used_today: number;
-  questions_reset_at: string | null;
-  flashcards_created_today: number;
-  flashcards_reset_at: string | null;
-  // Multi-subject fields
-  study_subjects: string[] | null;
-  grade_level: string | null;
-  primary_goal: string | null;
-  // VAK assessment fields
-  vak_visual_pct: number;
-  vak_auditory_pct: number;
-  vak_kinesthetic_pct: number;
-  vak_primary_style: string | null;
-  vak_secondary_style: string | null;
-  vak_sub_type: string | null;
-  vak_tier_taken: string | null;
-  vak_last_taken_at: string | null;
-  vak_progress: Record<string, any> | null;
   preferred_language: string;
-  preferred_ai_model: string | null;
 }
 
 interface AuthContextType {
@@ -113,8 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (currentUser.user_metadata as any)?.name ||
       null;
     const avatarUrl = (currentUser.user_metadata as any)?.avatar_url || null;
-    const role = ((currentUser.user_metadata as any)?.role as Profile["role"]) || "student";
 
+    // Normally the `on_auth_user_created` database trigger (handle_new_user) has
+    // already created this row, so this is only a fallback. The legacy columns
+    // below belong to the old app but still exist in the live table (and the
+    // server-side credit check may read them), so we keep writing the values
+    // this fallback has always written. The database is not being changed.
     const { data: inserted, error: insertError } = await supabase
       .from("profiles")
       .insert({
@@ -122,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: currentUser.email ?? "",
         full_name: fullName,
         avatar_url: avatarUrl,
-        role,
+        role: "student",
         tier: "tier_2",
         is_trial: true,
         trial_started_at: new Date().toISOString(),
@@ -130,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credits_remaining: 100,
         tests_remaining: 2,
         questions_used_today: 0,
-        onboarding_completed: false,
+        onboarding_completed: true,
       })
       .select("*")
       .single();

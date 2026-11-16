@@ -1,403 +1,187 @@
-import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-
-
 import { useTranslation } from "react-i18next";
-import {
-  GraduationCap,
-  LayoutDashboard,
-  FileText,
-  MessageSquare,
-  
-  Layers,
-  FolderOpen,
-  Settings,
-  LogOut,
-  
-  Sparkles,
-  Zap,
-  Users,
-  Calendar,
-  BarChart3,
-  ClipboardList,
-  Building2,
-  CreditCard,
-  BookOpen,
-  Trophy,
-  Download,
-  HelpCircle,
-  Calculator,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { GraduationCap, MessageSquare, PenLine, History, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { useSchoolStudent } from "@/hooks/useSchoolStudent";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { ThemeSwitcher } from "./ThemeSwitcher";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-
 import { SIDEBAR } from "@/lib/design-system";
-import { canAccessCalculator } from "@/lib/calculator-access";
-import { useIeltsAccess } from "@/hooks/useIeltsAccess";
-import { Languages } from "lucide-react";
 
 type NavItem = {
   nameKey: string;
   href: string;
   icon: React.ElementType;
-  schoolOnly?: boolean;
+  /** Extra path prefixes that should also highlight this item. */
+  matchPrefix?: string;
 };
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+const navigation: NavItem[] = [
+  { nameKey: "nav.chat", href: "/dashboard", icon: MessageSquare },
+  { nameKey: "nav.writing", href: "/dashboard/writing", icon: PenLine, matchPrefix: "/dashboard/writing" },
+  { nameKey: "nav.history", href: "/dashboard/history", icon: History, matchPrefix: "/dashboard/history" },
+  { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings, matchPrefix: "/dashboard/settings" },
+];
+
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  /**
+   * Full-bleed content that fills the viewport below the header (used by the chat
+   * page, which manages its own scrolling). Default pages scroll normally.
+   */
+  flush?: boolean;
 }
 
-const studentNav: NavItem[] = [
-  { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { nameKey: "nav.practiceTests", href: "/dashboard/tests", icon: FileText },
-  { nameKey: "nav.aiCoach", href: "/dashboard/coach", icon: MessageSquare },
-  { nameKey: "nav.spaces", href: "/dashboard/spaces", icon: FolderOpen },
-  { nameKey: "nav.assignments", href: "/dashboard/assignments", icon: ClipboardList, schoolOnly: true },
-  { nameKey: "nav.grades", href: "/dashboard/grades", icon: BarChart3, schoolOnly: true },
-  { nameKey: "nav.calendar", href: "/dashboard/calendar", icon: Calendar, schoolOnly: true },
-  { nameKey: "nav.curriculum", href: "/dashboard/curriculum", icon: BookOpen, schoolOnly: true },
-  { nameKey: "nav.universityMatch", href: "/dashboard/university-match", icon: GraduationCap },
-  { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
-];
-
-const tutorNav: NavItem[] = [
-  { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { nameKey: "nav.myStudents", href: "/dashboard/students", icon: Users },
-  { nameKey: "nav.assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
-  { nameKey: "nav.leaderboard", href: "/dashboard/leaderboard", icon: Trophy },
-  { nameKey: "nav.aiCoach", href: "/dashboard/coach", icon: MessageSquare },
-  { nameKey: "nav.studentProgress", href: "/dashboard/analytics", icon: BarChart3 },
-  { nameKey: "nav.schedule", href: "/dashboard/schedule", icon: Calendar },
-  { nameKey: "nav.billing", href: "/dashboard/billing", icon: CreditCard },
-  { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
-];
-
-const teacherNav: NavItem[] = [
-  { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { nameKey: "nav.myClassroom", href: "/dashboard/classroom", icon: Users },
-  { nameKey: "nav.assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
-  { nameKey: "nav.aiCoach", href: "/dashboard/coach", icon: MessageSquare },
-  { nameKey: "nav.classAnalytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { nameKey: "nav.calendar", href: "/dashboard/calendar", icon: Calendar },
-  
-  { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
-];
-
-const adminNav: NavItem[] = [
-  { nameKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { nameKey: "nav.schoolOverview", href: "/dashboard/school", icon: Building2 },
-  { nameKey: "nav.aiInsights", href: "/dashboard/coach", icon: MessageSquare },
-  { nameKey: "nav.assignments", href: "/dashboard/manage-assignments", icon: ClipboardList },
-  { nameKey: "nav.teachers", href: "/dashboard/school/teachers", icon: Users },
-  { nameKey: "nav.students", href: "/dashboard/school/students", icon: GraduationCap },
-  { nameKey: "nav.analytics", href: "/dashboard/school/analytics", icon: BarChart3 },
-  { nameKey: "nav.billing", href: "/dashboard/school/billing", icon: CreditCard },
-  
-  { nameKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
-];
-
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
-  const sidebarExpanded = false;
-  const { profile, signOut, user } = useAuth();
+export function DashboardLayout({ children, flush = false }: DashboardLayoutProps) {
+  const { profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isSchoolStudent } = useSchoolStudent();
-  const { hasAccess: hasIeltsAccess } = useIeltsAccess();
-  const { t, i18n } = useTranslation();
-
-  // Sync language from profile on mount
-  useEffect(() => {
-    if (profile?.preferred_language && i18n.language !== profile.preferred_language) {
-      i18n.changeLanguage(profile.preferred_language);
-    }
-  }, [profile?.preferred_language, i18n]);
-
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-
-  useEffect(() => {
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsStandalone(true);
-      return;
-    }
-    const ua = navigator.userAgent;
-    setIsIOS(/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream);
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  const handleInstall = async () => {
-    if (isIOS) {
-      alert("Tap the Share button in your browser, then select 'Add to Home Screen'");
-      return;
-    }
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") setDeferredPrompt(null);
-  };
-
-  const showInstallButton = !isStandalone && (deferredPrompt || isIOS);
+  const { t } = useTranslation();
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
 
-  const getNavigation = (): NavItem[] => {
-    let nav: NavItem[];
-    switch (profile?.role) {
-      case "tutor":
-        nav = tutorNav;
-        break;
-      case "teacher":
-        nav = teacherNav;
-        break;
-      case "school_admin":
-        nav = adminNav;
-        break;
-      case "student":
-      default:
-        nav = studentNav.filter((item) => !item.schoolOnly || isSchoolStudent);
+  const isActive = (item: NavItem) => {
+    const path = location.pathname.replace(/\/+$/, "") || "/";
+    if (item.href === "/dashboard") {
+      // Chat is the home of the dashboard; /dashboard/coach is the same page.
+      return path === "/dashboard" || path === "/dashboard/coach";
     }
-    if (canAccessCalculator(user?.id)) {
-      const settingsIdx = nav.findIndex((n) => n.href === "/dashboard/settings");
-      const calcItem: NavItem = { nameKey: "Calculator", href: "/dashboard/revenue-calculator", icon: Calculator };
-      if (settingsIdx >= 0) nav = [...nav.slice(0, settingsIdx), calcItem, ...nav.slice(settingsIdx)];
-      else nav = [...nav, calcItem];
-    }
-    // Hidden IELTS module: only shows for accounts/schools with it switched on.
-    if (hasIeltsAccess) {
-      const settingsIdx = nav.findIndex((n) => n.href === "/dashboard/settings");
-      const ieltsItem: NavItem = { nameKey: "IELTS", href: "/dashboard/ielts", icon: Languages };
-      if (settingsIdx >= 0) nav = [...nav.slice(0, settingsIdx), ieltsItem, ...nav.slice(settingsIdx)];
-      else nav = [...nav, ieltsItem];
-    }
-    return nav;
+    return item.matchPrefix ? path === item.matchPrefix || path.startsWith(`${item.matchPrefix}/`) : path === item.href;
   };
 
-  const navigation = getNavigation();
   const iconStyle = { width: SIDEBAR.icon_size, height: SIDEBAR.icon_size };
-
-  const getTierShort = () => {
-    if (profile?.is_trial) return t("dashboard.trial");
-    if (profile?.role === "tutor") {
-      return profile?.tier === "tier_3" ? t("dashboard.tier_business") : profile?.tier === "tier_2" ? t("dashboard.tier_professional") : t("dashboard.tier_solo");
-    }
-    switch (profile?.tier) {
-      case "tier_3":
-        return t("dashboard.tier_elite");
-      case "tier_2":
-        return t("dashboard.tier_pro");
-      case "tier_1":
-        return t("dashboard.tier_basic");
-      default:
-        return t("dashboard.tier_free");
-    }
-  };
+  const initial = profile?.full_name?.[0] || profile?.email?.[0]?.toUpperCase() || "?";
+  const displayName = profile?.full_name || t("dashboard.user");
 
   return (
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside
-        className="dashboard-sidebar-locked fixed top-0 left-0 z-50 h-full border-r border-sidebar-border hidden md:flex flex-col transition-[width] duration-200 bg-sidebar"
-        style={{
-          width: sidebarExpanded ? SIDEBAR.width_expanded : SIDEBAR.width_collapsed,
-        }}
+        className="dashboard-sidebar-locked fixed top-0 left-0 z-50 h-full border-r border-sidebar-border hidden md:flex flex-col bg-sidebar"
+        style={{ width: SIDEBAR.width_collapsed }}
       >
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
             <Link
               to="/dashboard"
-              className={cn(
-                "h-14 w-full flex items-center border-b border-sidebar-border",
-                sidebarExpanded ? "px-3 justify-start" : "justify-center"
-              )}
+              aria-label="AdaptivePrep"
+              className="h-14 w-full flex items-center justify-center border-b border-sidebar-border"
             >
               <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
                 <GraduationCap className="text-sidebar-primary" style={iconStyle} />
               </div>
             </Link>
           </TooltipTrigger>
-          {!sidebarExpanded && <TooltipContent side="right" className="text-xs">AdaptivePrep</TooltipContent>}
+          <TooltipContent side="right" className="text-xs">AdaptivePrep</TooltipContent>
         </Tooltip>
 
         <nav className="flex-1 py-2 px-1.5 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
             const label = t(item.nameKey);
-            const navButton = (
-              <Link
-                key={item.nameKey}
-                to={item.href}
-                className={cn(
-                  "group flex items-center rounded-lg transition-colors",
-                  sidebarExpanded ? "h-10 px-3 gap-3" : "h-10 w-10 mx-auto justify-center",
-                  isActive
-                    ? "bg-sidebar-accent/70 text-sidebar-primary"
-                    : "text-[hsl(var(--sidebar-icon-muted))] hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
-                )}
-              >
-                <item.icon style={iconStyle} className="flex-shrink-0" />
-                {sidebarExpanded && <span className="truncate text-sm font-medium">{label}</span>}
-              </Link>
-            );
-
-            if (sidebarExpanded) return <div key={item.nameKey}>{navButton}</div>;
-
             return (
               <Tooltip key={item.nameKey} delayDuration={0}>
-                <TooltipTrigger asChild>{navButton}</TooltipTrigger>
-                <TooltipContent side="right" className="text-xs">
-                  {label}
-                </TooltipContent>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.href}
+                    aria-label={label}
+                    className={cn(
+                      "flex items-center h-10 w-10 mx-auto justify-center rounded-lg transition-colors",
+                      isActive(item)
+                        ? "bg-sidebar-accent/70 text-sidebar-primary"
+                        : "text-[hsl(var(--sidebar-icon-muted))] hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
+                    )}
+                  >
+                    <item.icon style={iconStyle} className="flex-shrink-0" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="text-xs">{label}</TooltipContent>
               </Tooltip>
             );
           })}
         </nav>
 
-        <div className="border-t border-sidebar-border p-1.5 space-y-0.5">
-          <div className="flex flex-col items-center py-1">
-            <LanguageSwitcher className="flex-col gap-0.5" />
-          </div>
-          <ThemeSwitcher collapsed={!sidebarExpanded} />
-
-
+        <div className="border-t border-sidebar-border p-1.5">
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <button
                 onClick={handleSignOut}
-                className={cn(
-                  "flex items-center gap-2 w-full rounded-lg transition-colors hover:bg-sidebar-accent/60",
-                  sidebarExpanded ? "px-2 py-2" : "h-10 w-10 mx-auto justify-center"
-                )}
+                aria-label={t("dashboard.sign_out")}
+                className="flex items-center justify-center h-10 w-10 mx-auto rounded-lg transition-colors text-[hsl(var(--sidebar-icon-muted))] hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
               >
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-sidebar-primary flex-shrink-0">
-                  {profile?.full_name?.[0] || profile?.email?.[0]?.toUpperCase() || "?"}
-                </div>
-                {sidebarExpanded && (
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-xs font-medium text-sidebar-foreground truncate">{profile?.full_name || t("dashboard.user")}</p>
-                    <p className="text-[10px] text-[hsl(var(--sidebar-icon-muted))]">{getTierShort()}</p>
-                  </div>
-                )}
-                {sidebarExpanded && <LogOut className="w-3.5 h-3.5 text-[hsl(var(--sidebar-icon-muted))]" />}
+                <LogOut style={iconStyle} />
               </button>
             </TooltipTrigger>
-            {!sidebarExpanded && (
-              <TooltipContent side="right" className="text-xs">
-                {profile?.full_name || t("dashboard.user")} · {getTierShort()} · {t("dashboard.sign_out")}
-              </TooltipContent>
-            )}
+            <TooltipContent side="right" className="text-xs">
+              {displayName} · {t("dashboard.sign_out")}
+            </TooltipContent>
           </Tooltip>
         </div>
       </aside>
 
-      {/* Mobile: Bottom sheet */}
-      <div className="md:hidden">
-        {bottomSheetOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setBottomSheetOpen(false)} />}
-        <div
-          className={cn(
-            "fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border rounded-t-2xl transition-transform duration-300 ease-out",
-            bottomSheetOpen ? "translate-y-0" : "translate-y-[calc(100%-3.5rem)]"
-          )}
-          style={{ maxHeight: "80dvh" }}
-        >
-          <button onClick={() => setBottomSheetOpen(!bottomSheetOpen)} className="w-full flex items-center justify-center gap-2 py-3 px-4 min-h-[56px]">
-            <Zap className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-sidebar-foreground">{t("dashboard.menu")}</span>
-            <div className="w-8 h-1 bg-sidebar-foreground/30 rounded-full ml-2" />
-          </button>
-
-          {bottomSheetOpen && (
-            <div className="overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]" style={{ maxHeight: "calc(80dvh - 3.5rem)" }}>
-              <nav className="space-y-1 pb-4">
-                {navigation.map((item) => {
-                  const isActive = location.pathname === item.href;
-                  return (
-                    <Link
-                      key={item.nameKey}
-                      to={item.href}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[48px]",
-                        isActive
-                          ? "bg-sidebar-accent text-sidebar-primary"
-                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                      )}
-                      onClick={() => setBottomSheetOpen(false)}
-                    >
-                      <item.icon className="w-5 h-5 flex-shrink-0" />
-                      {t(item.nameKey)}
-                    </Link>
-                  );
-                })}
-              </nav>
-              <div className="border-t border-sidebar-border pt-3 pb-2 space-y-2">
-                
-                <div className="flex items-center gap-3 p-2">
-                  <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-sm font-medium text-primary">
-                    {profile?.full_name?.[0] || profile?.email?.[0]?.toUpperCase() || "?"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || t("dashboard.user")}</p>
-                    <p className="text-xs text-sidebar-foreground/50 truncate">{getTierShort()}</p>
-                  </div>
-                  <button
-                    onClick={handleSignOut}
-                    className="p-2 min-w-[48px] min-h-[48px] flex items-center justify-center text-sidebar-foreground/50 hover:text-sidebar-foreground rounded-lg hover:bg-sidebar-accent/50 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div
-        className="dashboard-main-shell transition-[padding] duration-200 md:pl-[var(--sidebar-offset)]"
-        style={{
-          ["--sidebar-offset" as string]: sidebarExpanded ? SIDEBAR.width_expanded : SIDEBAR.width_collapsed,
-        }}
-      >
+      <div className="md:pl-[var(--sidebar-offset)]" style={{ ["--sidebar-offset" as string]: SIDEBAR.width_collapsed }}>
         <header className="sticky top-0 z-30 h-14 bg-background/80 backdrop-blur-lg border-b border-border flex items-center px-4 lg:px-6">
-          <div className="md:hidden flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+          <Link to="/dashboard" className="md:hidden flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
               <GraduationCap className="w-5 h-5 text-primary" />
             </div>
-          </div>
+            <span className="font-semibold text-foreground truncate">AdaptivePrep</span>
+          </Link>
           <div className="flex-1" />
-          {profile?.role === "student" && profile?.tier !== "tier_3" && (
-            <Button variant="hero" size="sm" asChild className="text-xs md:text-sm">
-              <Link to="/dashboard/billing">
-                <Sparkles className="w-4 h-4" />
-                <span className="hidden sm:inline">{t("dashboard.upgrade")}</span>
-              </Link>
-            </Button>
-          )}
-          <button
-            className="md:hidden ml-2 w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-sm font-medium text-primary min-w-[48px] min-h-[48px]"
-            onClick={() => setBottomSheetOpen(true)}
-          >
-            {profile?.full_name?.[0] || profile?.email?.[0]?.toUpperCase() || "?"}
-          </button>
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary flex-shrink-0"
+              title={displayName}
+            >
+              {initial}
+            </div>
+            <button
+              onClick={handleSignOut}
+              aria-label={t("dashboard.sign_out")}
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </header>
 
-        <main className="p-4 lg:p-6 pb-16 md:pb-4 lg:pb-6">{children}</main>
+        <main
+          className={cn(
+            flush
+              ? "h-[calc(100dvh-3.5rem)] pb-14 md:pb-0 flex flex-col"
+              : "p-4 lg:p-6 pb-20 md:pb-6"
+          )}
+        >
+          {children}
+        </main>
       </div>
+
+      {/* Mobile: bottom tab bar */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border pb-[env(safe-area-inset-bottom)]"
+        aria-label="Main"
+      >
+        <ul className="grid grid-cols-4">
+          {navigation.map((item) => {
+            const active = isActive(item);
+            return (
+              <li key={item.nameKey} className="min-w-0">
+                <Link
+                  to={item.href}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-0.5 h-14 px-1 text-[11px] font-medium transition-colors",
+                    active ? "text-sidebar-primary" : "text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                  )}
+                  aria-current={active ? "page" : undefined}
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="truncate max-w-full">{t(item.nameKey)}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }

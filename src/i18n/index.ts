@@ -1,6 +1,5 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
 import enLegacy from "./en";
 import kkLegacy from "./kk";
 import ruLegacy from "./ru";
@@ -29,7 +28,6 @@ const ru = deepMerge(ruLegacy as any, ruJson as any);
 const kk = deepMerge(kkLegacy as any, kkJson as any);
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
@@ -37,13 +35,10 @@ i18n
       kk: { translation: kk },
       ru: { translation: ru },
     },
+    // The interface is English only. The language choice in Settings sets the language of feedback and chat answers.
+    lng: "en",
     fallbackLng: "en",
     interpolation: { escapeValue: false },
-    detection: {
-      order: ["localStorage", "navigator"],
-      caches: ["localStorage"],
-      lookupLocalStorage: "i18nextLng",
-    },
   });
 
 export default i18n;

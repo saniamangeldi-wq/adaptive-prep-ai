@@ -60,16 +60,19 @@ export default function Terms() {
           <section className="space-y-3">
             <h2 className="text-xl font-semibold text-foreground">3. Cancellation and access until period end</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              You may cancel your subscription at any time, for any reason, from the Billing page in your
-              account. Cancellation takes effect immediately in the sense that no further charges will be
-              made to your payment method. You do not need to contact support, and we will never require
-              you to call, email, or complete additional steps in order to cancel.
+              You may cancel your subscription at any time, for any reason, by emailing{" "}
+              <a href="mailto:hello@adaptiveprep.org" className="text-primary hover:underline">
+                hello@adaptiveprep.org
+              </a>{" "}
+              from the address on your account. Cancellation takes effect immediately in the sense that no
+              further charges will be made to your payment method. We will never require you to call or
+              complete additional steps in order to cancel.
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed">
               After cancelling, you keep full access to all features of your plan until the end of the
               billing period you have already paid for. When that period ends, your account moves to the
-              free plan. Your account, progress, test history, and saved study material remain available on
-              the free plan, subject to free-plan limits.
+              free plan. Your account, writing history, and saved chats remain available on the free plan,
+              subject to free-plan limits.
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed">
               You may resubscribe at any time. Resubscribing starts a new billing period at the price then
@@ -97,8 +100,8 @@ export default function Terms() {
                 cancelling before the trial ends if you do not wish to be billed.
               </li>
               <li>
-                One-time purchases, including question top-ups and other credit packs, are non-refundable
-                once the credits or questions have been added to your account.
+                One-time purchases, including credit packs, are non-refundable once the credits have been
+                added to your account.
               </li>
               <li>
                 Annual plans are non-refundable in whole or in part after the payment has been taken.

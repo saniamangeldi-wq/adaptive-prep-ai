@@ -1,22 +1,19 @@
 import { useState, useCallback, useRef } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { awardXP } from "@/lib/award-xp";
-import { XP_REWARDS } from "@/lib/gamification-config";
 
 export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  // Older saved conversations may carry these; they are still read and written back
+  // so history is not corrupted, but nothing in the UI creates them any more.
   visibleText?: string;
   hidden?: boolean;
-  attachmentMeta?: Array<{ type: string; name: string; preview?: string }>;
 }
 
 interface StreamChatOptions {
-  endpoint: "student-chat" | "teacher-reports" | "admin-analytics";
   isReport?: boolean;
   reportContext?: {
     type: string;
@@ -32,7 +29,6 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 export function useAIChat(conversationId?: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { user, refreshProfile } = useAuth();
   const conversationIdRef = useRef(conversationId);
   conversationIdRef.current = conversationId;
 
@@ -45,7 +41,6 @@ export function useAIChat(conversationId?: string | null) {
       content: m.content,
       ...(m.visibleText ? { visibleText: m.visibleText } : {}),
       ...(m.hidden ? { hidden: true } : {}),
-      ...(m.attachmentMeta?.length ? { attachmentMeta: m.attachmentMeta } : {}),
     }));
 
     const updates: Record<string, unknown> = {
@@ -78,10 +73,7 @@ export function useAIChat(conversationId?: string | null) {
 
   const streamChat = useCallback(async (
     userInput: string,
-    options: StreamChatOptions,
-    visibleText?: string,
-    attachmentMeta?: Array<{ type: string; name: string; preview?: string }>,
-    hidden?: boolean
+    options: StreamChatOptions = {}
   ) => {
     if (!userInput.trim() || isLoading) return;
 
@@ -90,9 +82,6 @@ export function useAIChat(conversationId?: string | null) {
       role: "user",
       content: userInput.trim(),
       timestamp: new Date(),
-      visibleText: visibleText || undefined,
-      hidden: hidden || undefined,
-      attachmentMeta: attachmentMeta?.length ? attachmentMeta : undefined,
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -118,7 +107,7 @@ export function useAIChat(conversationId?: string | null) {
         content: m.content,
       }));
 
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/${options.endpoint}`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/student-chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -252,14 +241,6 @@ export function useAIChat(conversationId?: string | null) {
         }
       }
 
-      // Refresh profile to update credits
-      await refreshProfile();
-
-      // Award XP for AI interaction (fire-and-forget)
-      if (user?.id) {
-        awardXP(user.id, XP_REWARDS.ai_chat_message).catch(() => {});
-      }
-
       // Save to database
       setMessages(prev => {
         saveMessages(prev);
@@ -298,7 +279,7 @@ export function useAIChat(conversationId?: string | null) {
       setIsLoading(false);
     }
 
-  }, [messages, isLoading, refreshProfile, saveMessages]);
+  }, [messages, isLoading, saveMessages]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -317,7 +298,6 @@ export function useAIChat(conversationId?: string | null) {
         content: string;
         visibleText?: string;
         hidden?: boolean;
-        attachmentMeta?: Message["attachmentMeta"];
       }>).map((m, i) => ({
         id: `loaded-${i}`,
         role: m.role as "user" | "assistant",
@@ -325,7 +305,6 @@ export function useAIChat(conversationId?: string | null) {
         timestamp: new Date(),
         visibleText: m.visibleText,
         hidden: m.hidden,
-        attachmentMeta: m.attachmentMeta,
       }));
       // Never wipe an in-progress chat with an empty/stale server copy
       setMessages(prev => (loaded.length === 0 && prev.length > 0 ? prev : loaded));

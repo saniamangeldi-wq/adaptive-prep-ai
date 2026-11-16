@@ -19,6 +19,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@ielts/*": [
+        "./supabase/functions/_shared/ielts/*"
       ]
     },
     "skipLibCheck": true,
@@ -31,6 +34,7 @@
     "useDefineForClassFields": true
   },
   "include": [
-    "src"
+    "src",
+    "supabase/functions/_shared/ielts"
   ]
 }

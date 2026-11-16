@@ -7,6 +7,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@ielts/*": [
+        "./supabase/functions/_shared/ielts/*"
       ]
     },
     "skipLibCheck": true,

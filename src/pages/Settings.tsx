@@ -1,45 +1,36 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { User, Mail, Save, Languages, Lock, LogOut } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useTheme } from "next-themes";
-import { useTranslation } from "react-i18next";
-import { 
-  User, 
-  Mail, 
-  Shield,
-  LogOut,
-  Save,
-  Bell,
-  Moon,
-  Globe,
-  Languages,
-  Brain,
-  Trophy,
-  CreditCard,
-  ChevronRight
-} from "lucide-react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { getTierLimits, PricingTier } from "@/lib/tier-limits";
-import { SchoolSettingsSection } from "@/components/settings/SchoolSettingsSection";
 import { PageSeo } from "@/components/seo/PageSeo";
+
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "ru", label: "Русский" },
+  { value: "kk", label: "Қазақша" },
+];
+
+const MIN_PASSWORD_LENGTH = 6;
 
 export default function Settings() {
   const { user, profile, signOut, updateProfile } = useAuth();
-  const { theme, setTheme } = useTheme();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [preferredLanguage, setPreferredLanguage] = useState(profile?.preferred_language || "en");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     setFullName(profile?.full_name || "");
@@ -48,16 +39,6 @@ export default function Settings() {
   useEffect(() => {
     setPreferredLanguage(profile?.preferred_language || "en");
   }, [profile?.preferred_language]);
-
-  // Preferences
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const isDarkMode = theme === "dark";
-
-  const LANGUAGES = [
-    { value: "en", label: "English", flag: "🇺🇸" },
-    { value: "kk", label: "Қазақша", flag: "🇰🇿" },
-    { value: "ru", label: "Русский", flag: "🇷🇺" },
-  ];
 
   const handleLanguageChange = async (lang: string) => {
     setPreferredLanguage(lang);
@@ -72,17 +53,13 @@ export default function Settings() {
         if (error) throw error;
 
         updateProfile({ preferred_language: lang });
-        await i18n.changeLanguage(lang);
-        toast.success(lang === "kk" ? "Тіл өзгертілді" : lang === "ru" ? "Язык изменён" : "Language updated");
+        toast.success("Language updated");
       } catch (error) {
         console.error("Error saving language:", error);
         setPreferredLanguage(profile.preferred_language || "en");
         toast.error(t("settings.profileError"));
       }
-      return;
     }
-
-    await i18n.changeLanguage(lang);
   };
 
   const handleSaveProfile = async () => {
@@ -106,6 +83,33 @@ export default function Settings() {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      toast.error(t("settings.passwordTooShort", { count: MIN_PASSWORD_LENGTH }));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error(t("settings.passwordMismatch"));
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.success(t("settings.passwordUpdated"));
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      toast.error(error?.message || t("settings.passwordError"));
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
@@ -118,73 +122,24 @@ export default function Settings() {
     }
   };
 
-  const getRoleBadge = () => {
-    switch (profile?.role) {
-      case "school_admin":
-        return t("roles.schoolAdmin");
-      case "teacher":
-        return t("roles.teacher");
-      case "tutor":
-        return t("roles.tutor");
-      default:
-        return t("roles.student");
-    }
-  };
-
-  const getTierBadge = () => {
-    if (profile?.is_trial) return "Pro Trial";
-    if (profile?.role === "tutor") {
-      return profile?.tier === "tier_3" ? "Tutor Business" : profile?.tier === "tier_2" ? "Professional" : "Solo Tutor";
-    }
-    const tierLimits = getTierLimits(profile?.tier as PricingTier);
-    return tierLimits.displayName;
-  };
-
   return (
     <DashboardLayout>
-      <PageSeo title="Account Settings | AdaptivePrep" description="Update your profile, language, theme, AI model and notification preferences on AdaptivePrep." path="/dashboard/settings" />
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
+      <PageSeo
+        title="Account Settings | AdaptivePrep"
+        description="Update your name, language and password on AdaptivePrep."
+        path="/dashboard/settings"
+      />
+      <div className="max-w-2xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t("settings.title")}</h1>
-          <p className="text-muted-foreground mt-1">
-            {t("settings.subtitle")}
-          </p>
+          <p className="text-muted-foreground mt-1">{t("settings.subtitle")}</p>
         </div>
 
-        {/* School Settings - Only for School Admins */}
-        {profile?.role === "school_admin" && <SchoolSettingsSection />}
-
-        {/* Quick Links - moved from sidebar (students only) */}
-        {profile?.role === "student" && (
-          <div className="p-6 rounded-2xl bg-card border border-border/50">
-            <h3 className="font-semibold text-foreground mb-4">More</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[
-                { to: "/dashboard/achievements", icon: Trophy, label: "Achievements" },
-                { to: "/dashboard/billing", icon: CreditCard, label: "Billing & Plans" },
-              ].map(({ to, icon: Icon, label }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="flex items-center justify-between p-4 rounded-xl bg-muted/40 border border-border/50 hover:border-primary/40 hover:bg-muted/60 transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-5 h-5 text-primary" />
-                    <span className="text-foreground font-medium">{label}</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Profile Section */}
-        <div className="p-6 rounded-2xl bg-card border border-border/50">
+        {/* Profile */}
+        <div className="p-4 sm:p-6 rounded-2xl bg-card border border-border/50">
           <div className="flex items-center gap-3 mb-6">
             <User className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">{t("settings.profileInfo")}</h3>
+            <h2 className="font-semibold text-foreground">{t("settings.profileInfo")}</h2>
           </div>
 
           <div className="space-y-4">
@@ -201,19 +156,17 @@ export default function Settings() {
 
             <div>
               <Label className="text-foreground">{t("settings.email")}</Label>
-              <div className="flex items-center gap-2 mt-1.5 p-3 rounded-lg bg-muted/50 border border-border">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground">{user?.email}</span>
+              <div className="flex items-center gap-2 mt-1.5 p-3 rounded-lg bg-muted/50 border border-border min-w-0">
+                <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-foreground truncate">{user?.email}</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t("settings.emailNoChange")}
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">{t("settings.emailNoChange")}</p>
             </div>
 
             <Button
               variant="hero"
               onClick={handleSaveProfile}
-              disabled={saving || fullName === profile?.full_name}
+              disabled={saving || fullName === (profile?.full_name || "")}
             >
               {saving ? (
                 t("settings.saving")
@@ -227,182 +180,73 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Account Info */}
-        <div className="p-6 rounded-2xl bg-card border border-border/50">
-          <div className="flex items-center gap-3 mb-6">
-            <Shield className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">{t("settings.account")}</h3>
+        {/* Language */}
+        <div className="p-4 sm:p-6 rounded-2xl bg-card border border-border/50">
+          <div className="flex items-center gap-3 mb-2">
+            <Languages className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold text-foreground">{t("settings.language")}</h2>
           </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-              <span className="text-muted-foreground">{t("settings.role")}</span>
-              <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium">
-                {getRoleBadge()}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-              <span className="text-muted-foreground">{t("settings.plan")}</span>
-              <span className="px-3 py-1 rounded-full bg-accent/20 text-accent text-sm font-medium">
-                {getTierBadge()}
-              </span>
-            </div>
-
-            {profile?.role === "student" && (
-              <>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                  <span className="text-muted-foreground">{t("settings.aiCredits")}</span>
-                  <span className="font-medium text-foreground">
-                    {profile.credits_remaining} {t("settings.remaining")}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                  <span className="text-muted-foreground">{t("settings.testsRemaining")}</span>
-                  <span className="font-medium text-foreground">
-                    {profile.tests_remaining} {t("settings.thisMonth")}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
+          <p className="text-sm text-muted-foreground mb-4">{t("settings.languageDesc")}</p>
+          <Select value={preferredLanguage} onValueChange={handleLanguageChange}>
+            <SelectTrigger className="w-full sm:w-[220px]" aria-label={t("settings.language")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LANGUAGES.map((lang) => (
+                <SelectItem key={lang.value} value={lang.value}>
+                  {lang.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Preferences */}
-        <div className="p-6 rounded-2xl bg-card border border-border/50">
+        {/* Change password */}
+        <div className="p-4 sm:p-6 rounded-2xl bg-card border border-border/50">
           <div className="flex items-center gap-3 mb-6">
-            <Globe className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">{t("settings.preferences")}</h3>
+            <Lock className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold text-foreground">{t("settings.changePassword")}</h2>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-              <div className="flex items-center gap-3">
-                <Bell className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground">{t("settings.emailNotifications")}</span>
-              </div>
-              <Switch
-                checked={emailNotifications}
-                onCheckedChange={setEmailNotifications}
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <Label htmlFor="newPassword" className="text-foreground">{t("settings.newPassword")}</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="mt-1.5"
+                minLength={MIN_PASSWORD_LENGTH}
               />
             </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-              <div className="flex items-center gap-3">
-                <Moon className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground">{t("settings.darkMode")}</span>
-              </div>
-              <Switch
-                checked={isDarkMode}
-                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+            <div>
+              <Label htmlFor="confirmPassword" className="text-foreground">{t("settings.confirmPassword")}</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="mt-1.5"
+                minLength={MIN_PASSWORD_LENGTH}
               />
             </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-              <div className="flex items-center gap-3">
-                <Languages className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground">{t("settings.language")}</span>
-              </div>
-              <Select value={preferredLanguage} onValueChange={handleLanguageChange}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {LANGUAGES.map((lang) => (
-                    <SelectItem key={lang.value} value={lang.value}>
-                      <span className="flex items-center gap-2">
-                        <span>{lang.flag}</span>
-                        <span>{lang.label}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+            <Button type="submit" variant="hero" disabled={changingPassword || !newPassword || !confirmPassword}>
+              {changingPassword ? t("settings.saving") : t("settings.updatePassword")}
+            </Button>
+          </form>
         </div>
 
-        {/* Learning Style Assessment */}
-        {profile?.role === "student" && (
-          <div className="p-6 rounded-2xl bg-card border border-border/50">
-            <div className="flex items-center gap-3 mb-6">
-              <Brain className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold text-foreground">{t("settings.learningStyle")}</h3>
-            </div>
-            <div className="space-y-4">
-              {profile?.vak_primary_style && (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                  <span className="text-muted-foreground">{t("settings.currentStyle")}</span>
-                  <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium capitalize">
-                    {profile.vak_primary_style}
-                  </span>
-                </div>
-              )}
-              {profile?.vak_last_taken_at && (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                  <span className="text-muted-foreground">{t("settings.lastTaken")}</span>
-                  <span className="text-foreground text-sm">
-                    {new Date(profile.vak_last_taken_at).toLocaleDateString()}
-                  </span>
-                </div>
-              )}
-              {(() => {
-                const lastTaken = profile?.vak_last_taken_at;
-                const canRetake = !lastTaken || (Date.now() - new Date(lastTaken).getTime()) > 7 * 24 * 60 * 60 * 1000;
-                const nextDate = lastTaken ? new Date(new Date(lastTaken).getTime() + 7 * 24 * 60 * 60 * 1000) : null;
-                return (
-                  <>
-                    <p className="text-sm text-muted-foreground">
-                      {t("settings.retakeDesc")}
-                    </p>
-                    <Button
-                      variant="hero"
-                      onClick={() => navigate("/onboarding?retake=vak")}
-                      disabled={!canRetake}
-                    >
-                      <Brain className="w-4 h-4" />
-                      {canRetake ? t("settings.retakeAssessment") : `${t("settings.availableOn")} ${nextDate?.toLocaleDateString()}`}
-                    </Button>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        )}
-
-        {/* Contact / Support */}
-        <div className="p-6 rounded-2xl bg-card border border-border/50">
-          <div className="flex items-center gap-3 mb-4">
-            <Mail className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Contact & Support</h3>
-          </div>
-          <p className="text-muted-foreground mb-4">
-            If you would like to contact us or report any issues, email us here.
-          </p>
-          <a
-            href="mailto:hello@adaptiveprep.org"
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-          >
-            <Mail className="w-4 h-4" />
-            hello@adaptiveprep.org
-          </a>
-        </div>
-
-        {/* Logout */}
-        <div className="p-6 rounded-2xl bg-card border border-destructive/30">
+        {/* Sign out */}
+        <div className="p-4 sm:p-6 rounded-2xl bg-card border border-destructive/30">
           <div className="flex items-center gap-3 mb-4">
             <LogOut className="w-5 h-5 text-destructive" />
-            <h3 className="font-semibold text-foreground">{t("settings.signOut")}</h3>
+            <h2 className="font-semibold text-foreground">{t("settings.signOut")}</h2>
           </div>
-          <p className="text-muted-foreground mb-4">
-            {t("settings.signOutDesc")}
-          </p>
-          <Button
-            variant="destructive"
-            onClick={handleLogout}
-            disabled={loggingOut}
-          >
+          <p className="text-muted-foreground mb-4">{t("settings.signOutDesc")}</p>
+          <Button variant="destructive" onClick={handleLogout} disabled={loggingOut}>
             {loggingOut ? t("settings.signingOut") : t("settings.signOut")}
           </Button>
         </div>

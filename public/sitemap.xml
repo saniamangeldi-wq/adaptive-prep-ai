@@ -2,38 +2,12 @@
 <!--
   Auth routes (/login /signup /forgot-password /reset-password /unsubscribe)
   are intentionally excluded from this sitemap and blocked in robots.txt.
-  These pages should not be indexed by search engines.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://adaptivetestprep.org/</loc>
-    <changefreq>weekly</changefreq>
+    <changefreq>monthly</changefreq>
     <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://adaptivetestprep.org/pricing</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://adaptivetestprep.org/digital-sat-question-bank</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://adaptivetestprep.org/digital-sat-score-calculator</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://adaptivetestprep.org/blog/free-ai-sat-prep</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://adaptivetestprep.org/blog/northeastern-acceptance-rate</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://adaptivetestprep.org/terms</loc>

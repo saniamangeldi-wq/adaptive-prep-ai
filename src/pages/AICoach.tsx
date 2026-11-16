@@ -1,106 +1,74 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { useAuth } from "@/contexts/AuthContext";
-import { StudentAICoach } from "@/components/ai/StudentAICoach";
-import { TeacherAICoach } from "@/components/ai/TeacherAICoach";
-import { AdminAICoach } from "@/components/ai/AdminAICoach";
-import { ConversationSidebar } from "@/components/ai/ConversationSidebar";
-import { SpaceInterior } from "@/components/spaces/SpaceInterior";
-import { SpaceDashboard } from "@/components/spaces/SpaceDashboard";
-import { useConversations, Conversation, ConversationSpace } from "@/hooks/useConversations";
-import { Button } from "@/components/ui/button";
-import { History, X, Zap, Mic, MessageSquare } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditsInfoPopover } from "@/components/ai/CreditsInfoPopover";
-import { getTierLimits, TRIAL_LIMITS, VOICE_CHAT_ENABLED } from "@/lib/tier-limits";
-import { ModelSelector, type EliteModel } from "@/components/ai/ModelSelector";
-import type { Reference } from "@/hooks/useReferences";
+import { useAuth } from "@/contexts/AuthContext";
+import { chatChipText, readReportRow, summarizeReport, type ReportRowLike } from "@/lib/ielts/reportRow";
+import type { AttachedReport } from "@/components/ai/StudentAICoach";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { StudentAICoach } from "@/components/ai/StudentAICoach";
+import { ConversationSidebar } from "@/components/ai/ConversationSidebar";
+import { useConversations, Conversation } from "@/hooks/useConversations";
+import { Button } from "@/components/ui/button";
+import { History, X, MessageSquarePlus, PenLine } from "lucide-react";
 import { PageSeo } from "@/components/seo/PageSeo";
-import { UpgradeModal } from "@/components/upgrade/UpgradeModal";
-import { useUpgradeModal } from "@/hooks/useUpgradeModal";
-import { useRef } from "react";
-
-
-const getTierCredits = (tier: string | undefined, isTrial: boolean | undefined) => {
-  if (isTrial) return TRIAL_LIMITS.creditsPerDay;
-  return getTierLimits(tier as any).creditsPerDay;
-};
 
 export default function AICoach() {
-  const { profile } = useAuth();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const coachUpgrade = useUpgradeModal("coach");
-  const coachMsgCountRef = useRef(0);
-
-  useEffect(() => {
-    const onSent = () => {
-      coachMsgCountRef.current += 1;
-      if (coachMsgCountRef.current >= 5) {
-        coachUpgrade.trigger();
-        coachMsgCountRef.current = 0;
-      }
-    };
-    window.addEventListener("adaptiveprep:coach-message-sent", onSent);
-    return () => window.removeEventListener("adaptiveprep:coach-message-sent", onSent);
-  }, [coachUpgrade]);
-
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
-  const [chatMode, setChatMode] = useState<"text" | "voice">("text");
-  const [selectedSubject, setSelectedSubject] = useState("SAT");
-  const [eliteModel, setEliteModel] = useState<EliteModel>(
-    (profile?.preferred_ai_model as EliteModel) ||
-      (localStorage.getItem("adaptiveprep:preferred_ai_model") as EliteModel) ||
-      "perplexity-pro"
-  );
-  const isElite = profile?.tier === "tier_3";
-  const coachType = (profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") ? "tutor" : "student";
-  const { spaces, createConversation, deleteEmptyConversations } = useConversations(coachType);
+  const { createConversation, deleteEmptyConversations } = useConversations();
+  const { profile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reportId = searchParams.get("report");
+  const [report, setReport] = useState<AttachedReport | null>(null);
+  const lang = profile?.preferred_language === "ru" || profile?.preferred_language === "kk" ? profile.preferred_language : "en";
 
-  // Profile loads asynchronously — adopt the saved model once it arrives so the
-  // selection sticks across reloads instead of falling back to the default.
+  // Load a small summary of the report the student came here to discuss.
   useEffect(() => {
-    const saved = profile?.preferred_ai_model as EliteModel | undefined;
-    if (saved) {
-      setEliteModel(saved);
-      localStorage.setItem("adaptiveprep:preferred_ai_model", saved);
+    if (!reportId) {
+      setReport(null);
+      return;
     }
-  }, [profile?.preferred_ai_model]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.from("ielts_writing_reports").select("*").eq("id", reportId).maybeSingle();
+        if (cancelled) return;
+        if (!data) {
+          setReport(null);
+          return;
+        }
+        const parsed = readReportRow(data as unknown as ReportRowLike);
+        if (parsed.kind === "invalid") {
+          setReport(null);
+          return;
+        }
+        setReport({ id: reportId, label: chatChipText(summarizeReport(parsed)) });
+      } catch {
+        if (!cancelled) setReport(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reportId]);
 
-  // Persist model preference when changed
-  const handleModelChange = useCallback(async (model: EliteModel) => {
-    setEliteModel(model);
-    localStorage.setItem("adaptiveprep:preferred_ai_model", model);
-    if (profile?.user_id) {
-      await supabase
-        .from("profiles")
-        .update({ preferred_ai_model: model })
-        .eq("user_id", profile.user_id);
-    }
-  }, [profile?.user_id]);
-
-
-  // Check if we're inside a space
-  const spaceId = searchParams.get("space");
-  const activeSpace = spaceId ? spaces.find((s) => s.id === spaceId) || null : null;
+  const detachReport = () => {
+    setReport(null);
+    const next = new URLSearchParams(searchParams);
+    next.delete("report");
+    setSearchParams(next, { replace: true });
+  };
 
   // "New Chat" simply resets to a blank chat. The conversation row is created
   // lazily on the first message (see ensureConversation), so unused chats never
   // pollute the history list.
-  const handleNewConversation = async (initialMessage?: string) => {
+  const handleNewConversation = () => {
     setCurrentConversation(null);
-    setInitialMessage(initialMessage || null);
     setShowHistory(false);
     // Clean up any previously created but never-used conversations
     deleteEmptyConversations().catch(() => {});
     window.dispatchEvent(new CustomEvent("adaptiveprep:new-chat"));
   };
-
-
-  const [initialMessage, setInitialMessage] = useState<string | null>(null);
 
   // Sweep away leftover empty conversations from previous sessions
   useEffect(() => {
@@ -108,10 +76,9 @@ export default function AICoach() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deleteEmptyConversations]);
 
-
   const ensureConversation = async (): Promise<string | null> => {
     if (currentConversation) return currentConversation.id;
-    const conv = await createConversation(undefined, spaceId);
+    const conv = await createConversation();
     if (conv) {
       setCurrentConversation(conv);
       return conv.id;
@@ -124,221 +91,86 @@ export default function AICoach() {
     setShowHistory(false);
   };
 
-  const handleBackToSpaces = () => {
-    setCurrentConversation(null);
-    navigate("/dashboard/spaces");
-  };
-
-  // Parse space references
-  const spaceRefs: Reference[] = useMemo(() => {
-    if (!activeSpace) return [];
-    try {
-      const refs = (activeSpace as any).references;
-      if (Array.isArray(refs)) return refs;
-    } catch {}
-    return [];
-  }, [activeSpace]);
-
-  const renderAICoach = () => {
-    switch (profile?.role) {
-      case "school_admin":
-        return (
-          <AdminAICoach
-            conversationId={currentConversation?.id || null}
-            onEnsureConversation={ensureConversation}
-            chatMode={chatMode}
-            spaceReferences={spaceRefs}
-            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
-          />
-        );
-      case "teacher":
-      case "tutor":
-        return (
-          <TeacherAICoach
-            conversationId={currentConversation?.id || null}
-            onEnsureConversation={ensureConversation}
-            chatMode={chatMode}
-            spaceReferences={spaceRefs}
-            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
-          />
-        );
-      case "student":
-      default:
-        return (
-          <StudentAICoach
-            conversationId={currentConversation?.id || null}
-            onEnsureConversation={ensureConversation}
-            chatMode={chatMode}
-            spaceReferences={spaceRefs}
-            activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
-            modelOverride={isElite ? eliteModel : undefined}
-            subject={selectedSubject}
-            onSubjectChange={setSelectedSubject}
-          />
-        );
-    }
-  };
-
-  const showConversationSidebar = true;
-  const dailyLimit = getTierCredits(profile?.tier, profile?.is_trial);
-  const creditsRemaining = profile?.credits_remaining || 0;
-
-  // If inside a space, show dashboard or chat
-  if (activeSpace && showConversationSidebar) {
-    // No conversation selected → show Space dashboard
-    if (!currentConversation) {
-      return (
-        <>
-          <PageSeo
-            title="AI SAT Coach | AdaptivePrep"
-            description="Get personalized SAT tutoring from our AI coach. Socratic guidance, essay feedback, and study planning."
-            path="/dashboard/coach"
-          />
-          <DashboardLayout>
-            <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
-              <SpaceDashboard
-                space={activeSpace}
-                onSelectConversation={handleSelectConversation}
-                onNewConversation={handleNewConversation}
-                onBack={handleBackToSpaces}
-                coachType={coachType}
-              />
-            </div>
-          </DashboardLayout>
-        </>
-      );
-    }
-
-    // Conversation selected → show chat interior
-    return (
-      <>
-        <PageSeo
-          title="AI SAT Coach | AdaptivePrep"
-          description="Get personalized SAT tutoring from our AI coach. Socratic guidance, essay feedback, and study planning."
-          path="/dashboard/coach"
-        />
-        <DashboardLayout>
-          <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
-            <SpaceInterior
-              space={activeSpace}
-              currentConversationId={currentConversation?.id}
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              onBack={() => setCurrentConversation(null)}
-              coachType={coachType}
-            >
-              {renderAICoach()}
-            </SpaceInterior>
-          </div>
-        </DashboardLayout>
-      </>
-    );
-  }
-
   return (
     <>
       <PageSeo
-        title="AI SAT Coach | AdaptivePrep"
-        description="Get personalized SAT tutoring from our AI coach. Socratic guidance, essay feedback, and study planning."
-        path="/dashboard/coach"
+        title="Chat | AdaptivePrep"
+        description="Ask your IELTS Writing coach about task types, the marking criteria and how to improve your writing."
+        path="/dashboard"
       />
-      <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 lg:-m-6 relative">
-        {/* Top header bar */}
-        {showConversationSidebar && (
+      <DashboardLayout flush>
+        <div className="flex flex-col flex-1 min-h-0 relative">
+          {/* Top header bar */}
           <div className="h-12 flex items-center justify-between px-4 border-b border-border/50 flex-shrink-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                className="h-9 w-9 text-muted-foreground hover:text-foreground flex-shrink-0"
+                aria-label="Chat history"
                 onClick={() => setShowHistory(!showHistory)}
               >
                 <History className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium text-foreground truncate max-w-[200px]">
+              <span className="text-sm font-medium text-foreground truncate">
                 {currentConversation?.title || "New Conversation"}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Elite model selector */}
-              {isElite && (
-                <ModelSelector value={eliteModel} onChange={handleModelChange} />
-              )}
-
-              {/* Text / Voice toggle — Elite only, and only when voice chat is globally enabled */}
-              {isElite && VOICE_CHAT_ENABLED ? (
-                <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
-                  <button
-                    onClick={() => setChatMode("text")}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-                      chatMode === "text"
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <MessageSquare className="w-3 h-3" />
-                    Text
-                  </button>
-                  <button
-                    onClick={() => setChatMode("voice")}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-                      chatMode === "voice"
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <Mic className="w-3 h-3" />
-                    Voice
-                  </button>
-                </div>
-              ) : null}
-
-              {/* Credit counter */}
-              <CreditsInfoPopover creditsRemaining={creditsRemaining} dailyLimit={dailyLimit}>
-                <button className="flex items-center gap-1 px-2 py-1 rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  <Zap className="w-3 h-3" />
-                  <span>{creditsRemaining}</span>
-                </button>
-              </CreditsInfoPopover>
+            <div className="flex items-center gap-1 flex-shrink-0">
+            <Button variant="outline" size="sm" className="gap-1.5" asChild>
+              <Link to="/dashboard/writing">
+                <PenLine className="h-4 w-4" aria-hidden="true" />
+                Check an essay
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground hover:text-foreground flex-shrink-0"
+              onClick={handleNewConversation}
+            >
+              <MessageSquarePlus className="h-4 w-4" />
+              <span className="hidden sm:inline">New chat</span>
+            </Button>
             </div>
           </div>
-        )}
 
-        {/* Conversation history overlay panel */}
-        {showConversationSidebar && showHistory && (
-          <>
-            <div className="fixed inset-0 z-30 bg-black/40" onClick={() => setShowHistory(false)} />
-            <div className="absolute top-0 left-0 z-40 h-full w-[280px] animate-in slide-in-from-left duration-200">
-              <div className="h-full bg-card border-r border-border flex flex-col">
-                <div className="flex items-center justify-between p-3 border-b border-border">
-                  <span className="text-sm font-medium text-foreground">History</span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowHistory(false)}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                 <ConversationSidebar
-                    currentConversationId={currentConversation?.id}
-                    onSelectConversation={handleSelectConversation}
-                    onNewConversation={handleNewConversation}
-                    coachType={coachType}
-                  />
+          {/* Conversation history overlay panel */}
+          {showHistory && (
+            <>
+              <div className="fixed inset-0 z-30 bg-black/40" onClick={() => setShowHistory(false)} />
+              <div className="absolute top-0 left-0 z-40 h-full w-[280px] max-w-[85vw] animate-in slide-in-from-left duration-200">
+                <div className="h-full bg-card border-r border-border flex flex-col">
+                  <div className="flex items-center justify-between p-3 border-b border-border">
+                    <span className="text-sm font-medium text-foreground">History</span>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Close history" onClick={() => setShowHistory(false)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <ConversationSidebar
+                      currentConversationId={currentConversation?.id}
+                      onSelectConversation={handleSelectConversation}
+                      onNewConversation={handleNewConversation}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
 
-        {/* Main content */}
-        <div className="flex-1 overflow-hidden">
-          {renderAICoach()}
+          {/* Main content */}
+          <div className="flex-1 overflow-hidden">
+            <StudentAICoach
+              conversationId={currentConversation?.id || null}
+              onEnsureConversation={ensureConversation}
+              report={report}
+              onDetachReport={detachReport}
+              lang={lang}
+            />
+          </div>
         </div>
-      </div>
-      <UpgradeModal open={coachUpgrade.isOpen} onClose={coachUpgrade.close} variant="coach" />
-    </DashboardLayout>
+      </DashboardLayout>
     </>
   );
 }
