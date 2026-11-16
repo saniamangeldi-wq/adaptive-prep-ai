@@ -1,202 +1,146 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// POST ielts-grade-writing — GradeRequest → GradeResponse | ApiError
+//
+// Order of work: authenticate → validate (no credits spent on bad input) →
+// spend credits (with the daily reset) → one gateway call (+1 retry on
+// invalid output) → post-process → save → complete the draft → respond.
+// Any failure after credits were spent refunds them (see _shared/ielts/credits.ts).
+// All marking logic lives in _shared/ielts/ (pure, unit-tested).
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { GradeResponse } from "../_shared/ielts/contract.ts";
+import { CREDIT_COST } from "../_shared/ielts/contract.ts";
+import { fail, json, preflight, readJson } from "../_shared/ielts/http.ts";
+import { validateGradeRequest } from "../_shared/ielts/requests.ts";
+import { refundCredits, spendCredits } from "../_shared/ielts/credits.ts";
+import { callGateway, mapUpstreamFailure } from "../_shared/ielts/gateway.ts";
+import { gradeWithModel } from "../_shared/ielts/grader.ts";
+import { buildReport, reportDiagnostics, reportRow } from "../_shared/ielts/postprocess.ts";
+import { countWords, promptOverlap, splitParagraphs } from "../_shared/ielts/text.ts";
+import { GRADER_VERSION } from "../_shared/ielts/prompt.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+Deno.serve(async (req) => {
+  const early = preflight(req);
+  if (early) return early;
 
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return fail(401, "Please sign in.", "unauthorized");
 
-const clampBand = (value: unknown): number => {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return 5;
-  return Math.min(9, Math.max(1, Math.round(n * 2) / 2));
-};
+  let userId: string;
+  try {
+    const supabase = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user) return fail(401, "Please sign in.", "unauthorized");
+    userId = data.user.id;
+  } catch {
+    return fail(401, "Please sign in.", "unauthorized");
+  }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const body = await readJson(req);
+  if (body === null) return fail(400, "Request body must be JSON (max 3 MB).", "bad_request");
+  const checked = validateGradeRequest(body);
+  if (checked.ok === false) return json(checked.error, checked.status);
+  const input = checked.value;
+
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) return fail(500, "The marking service is not configured.", "upstream_error");
+
+  const admin = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const cost = input.includeModelAnswer ? CREDIT_COST.gradeWithModelAnswer : CREDIT_COST.grade;
+  const spend = await spendCredits(admin, userId, cost);
+  if (spend.ok === false) {
+    if (spend.reason === "no_credits") return fail(402, "You're out of credits for today. They reset tomorrow.", "no_credits");
+    console.error("grade: credit check failed", spend.detail);
+    return fail(500, "Could not verify credits.", "upstream_error");
+  }
+  let creditsRemaining: number | null = spend.remaining;
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) return json({ error: "Unauthorized" }, 401);
-
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-    const { data: hasAccess } = await admin.rpc("has_ielts_access", { _user_id: user.id });
-    if (!hasAccess) return json({ error: "Not found" }, 404);
-
-    const body = await req.json().catch(() => ({}));
-    const taskType: string = ["task1_academic", "task1_general", "task2"].includes(body.taskType)
-      ? body.taskType
-      : "task2";
-    const prompt = typeof body.prompt === "string" ? body.prompt.slice(0, 4000) : "";
-    const essay = typeof body.essay === "string" ? body.essay.trim() : "";
-    const chart = body.chart ?? null;
-    const sessionId = typeof body.sessionId === "string" ? body.sessionId : null;
-
-    if (!prompt) return json({ error: "The task prompt is missing." }, 400);
-    if (essay.length < 40) return json({ error: "Write a longer answer before submitting." }, 400);
-    if (essay.length > 20000) return json({ error: "That answer is too long." }, 400);
-
-    const { data: remaining, error: creditError } = await admin.rpc("consume_ai_credits", {
-      _user_id: user.id,
-      _cost: 5,
-    });
-    if (creditError) return json({ error: "Could not verify credits" }, 500);
-    if (typeof remaining !== "number" || remaining < 0) {
-      return json({ error: "No credits remaining" }, 402);
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) return json({ error: "AI not configured" }, 500);
-
-    const wordCount = essay.split(/\s+/).filter(Boolean).length;
-    const minWords = taskType === "task2" ? 250 : 150;
-    const criterionOne =
-      taskType === "task2" ? "Task Response" : "Task Achievement";
-
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": LOVABLE_API_KEY },
-      body: JSON.stringify({
-        model: "google/gemini-3.1-pro-preview",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a trained IELTS Writing examiner. You apply the public IELTS band descriptors strictly and consistently, in whole or half bands. You never inflate scores. You always answer with valid JSON only.",
-          },
-          {
-            role: "user",
-            content: `Assess this candidate answer.
-
-TASK TYPE: ${taskType}
-TASK PROMPT: ${prompt}
-${chart ? `TASK DATA: ${JSON.stringify(chart).slice(0, 3000)}` : ""}
-MINIMUM WORDS: ${minWords}
-WORD COUNT: ${wordCount}
-
-CANDIDATE ANSWER:
-"""
-${essay}
-"""
-
-Score each criterion 1-9 in half bands: ${criterionOne}, Coherence and Cohesion, Lexical Resource, Grammatical Range and Accuracy. Penalise under-length answers under ${criterionOne}. The overall band is the average of the four, rounded to the nearest half band.
-
-Return JSON only:
-{"criteria":{"task":{"band":6.5,"comment":"..."},"coherence":{"band":6,"comment":"..."},"lexical":{"band":6,"comment":"..."},"grammar":{"band":6,"comment":"..."}},"overall":6,"summary":"2-3 sentence overview","strengths":["..."],"improvements":["..."],"corrections":[{"original":"exact quote from the answer","suggestion":"improved version","reason":"..."}],"modelAnswer":"a full model answer one to two bands higher"}`,
-          },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    if (!aiRes.ok) {
-      const detail = await aiRes.text();
-      console.error("AI gateway error", aiRes.status, detail);
-      if (aiRes.status === 429) return json({ error: "Too many requests, try again shortly." }, 429);
-      if (aiRes.status === 402) return json({ error: "AI credits exhausted for this workspace." }, 402);
-      return json({ error: "Could not mark this answer." }, 502);
-    }
-
-    const payload = await aiRes.json();
-    const raw = payload?.choices?.[0]?.message?.content ?? "";
-    let report: any;
-    try {
-      report = JSON.parse(raw);
-    } catch {
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) return json({ error: "Could not read the marking result." }, 502);
-      report = JSON.parse(match[0]);
-    }
-
-    const criteria = {
-      task: {
-        band: clampBand(report?.criteria?.task?.band),
-        comment: String(report?.criteria?.task?.comment ?? ""),
-        label: criterionOne,
-      },
-      coherence: {
-        band: clampBand(report?.criteria?.coherence?.band),
-        comment: String(report?.criteria?.coherence?.comment ?? ""),
-        label: "Coherence and Cohesion",
-      },
-      lexical: {
-        band: clampBand(report?.criteria?.lexical?.band),
-        comment: String(report?.criteria?.lexical?.comment ?? ""),
-        label: "Lexical Resource",
-      },
-      grammar: {
-        band: clampBand(report?.criteria?.grammar?.band),
-        comment: String(report?.criteria?.grammar?.comment ?? ""),
-        label: "Grammatical Range and Accuracy",
-      },
+    const stats = {
+      wordCount: countWords(input.script),
+      paragraphCount: splitParagraphs(input.script).length,
+      copiedWords: promptOverlap(input.script, [input.task.prompt, ...input.task.bullets].join("\n")).copiedWords,
     };
 
-    const average =
-      (criteria.task.band + criteria.coherence.band + criteria.lexical.band + criteria.grammar.band) / 4;
-    const overall = Math.round(average * 2) / 2;
+    const result = await gradeWithModel(
+      {
+        task: input.task,
+        variant: input.task.variant,
+        script: input.script,
+        feedbackLang: input.feedbackLang,
+        includeModelAnswer: input.includeModelAnswer,
+        customVisual: input.customVisual,
+        stats,
+      },
+      {
+        call: (b, timeoutMs) => callGateway(LOVABLE_API_KEY, b, { timeoutMs }),
+        now: () => Date.now(),
+        log: (msg, data) => console.warn(msg, JSON.stringify(data ?? {})),
+      },
+    );
 
-    const comments = {
-      summary: String(report?.summary ?? ""),
-      strengths: Array.isArray(report?.strengths) ? report.strengths.map(String).slice(0, 8) : [],
-      improvements: Array.isArray(report?.improvements) ? report.improvements.map(String).slice(0, 8) : [],
-      corrections: Array.isArray(report?.corrections)
-        ? report.corrections.slice(0, 12).map((c: any) => ({
-            original: String(c?.original ?? ""),
-            suggestion: String(c?.suggestion ?? ""),
-            reason: String(c?.reason ?? ""),
-          }))
-        : [],
-    };
+    if (result.ok === false) {
+      const refunded = await refundCredits(admin, userId, cost);
+      if (refunded !== null) creditsRemaining = refunded;
+      if (result.kind === "invalid") {
+        console.error("grade: invalid model output after retry", { graderVersion: GRADER_VERSION, errors: result.errors.slice(0, 10) });
+        return fail(502, "The marker returned an unreadable result. Your credits were not used; please try again.", "grader_invalid_output");
+      }
+      console.error("grade: upstream failure", result.status, result.detail.slice(0, 500));
+      const m = mapUpstreamFailure(result.status);
+      return fail(m.status, m.message, m.code);
+    }
 
-    const { data: saved, error: saveError } = await admin
-      .from("ielts_writing_reports")
-      .insert({
-        user_id: user.id,
-        session_id: sessionId,
-        task_type: taskType,
-        prompt,
-        chart,
-        essay,
-        word_count: wordCount,
-        criteria,
-        overall_band: overall,
-        comments,
-        model_answer: String(report?.modelAnswer ?? ""),
-      })
-      .select()
-      .single();
-
-    if (saveError) console.error("Could not save IELTS report", saveError);
-
-    return json({
-      id: saved?.id ?? null,
-      taskType,
-      wordCount,
-      criteria,
-      overall,
-      comments,
-      modelAnswer: String(report?.modelAnswer ?? ""),
-      creditsRemaining: remaining,
+    const reportId = crypto.randomUUID();
+    const report = buildReport({
+      output: result.output,
+      task: input.task,
+      script: input.script,
+      feedbackLang: input.feedbackLang,
+      model: result.model,
+      includeModelAnswer: input.includeModelAnswer,
+      customVisual: input.customVisual,
+      id: reportId,
+      now: new Date().toISOString(),
     });
-  } catch (error) {
-    console.error("ielts-grade-writing failed", error);
-    return json({ error: "Unexpected error" }, 500);
+    console.log("grade: ok", JSON.stringify({ attempts: result.attempts, mode: result.mode, ...reportDiagnostics(result.output, report) }));
+
+    // Only link a draft the user owns (session_id is a foreign key).
+    let sessionId: string | null = null;
+    if (input.sessionId) {
+      const { data: s } = await admin
+        .from("ielts_sessions")
+        .select("id")
+        .eq("id", input.sessionId)
+        .eq("user_id", userId)
+        .eq("skill", "writing")
+        .maybeSingle();
+      if (s?.id) sessionId = s.id;
+    }
+
+    const { error: saveError } = await admin.from("ielts_writing_reports").insert({ ...reportRow(report), user_id: userId, session_id: sessionId });
+    if (saveError) {
+      // The student paid and the grading succeeded: return it, but without an id (it cannot be reopened or discussed in chat).
+      console.error("grade: could not save report", saveError);
+      report.id = null;
+    }
+
+    if (sessionId) {
+      const { error: sErr } = await admin
+        .from("ielts_sessions")
+        .update({ status: "completed", completed_at: new Date().toISOString(), band: report.overall })
+        .eq("id", sessionId)
+        .eq("user_id", userId);
+      if (sErr) console.error("grade: could not complete draft session", sErr);
+    }
+
+    const response: GradeResponse = { report, creditsRemaining };
+    return json(response);
+  } catch (e) {
+    console.error("grade: unexpected error", e);
+    await refundCredits(admin, userId, cost);
+    return fail(500, "Unexpected error while marking. Your credits were not used.", "upstream_error");
   }
 });

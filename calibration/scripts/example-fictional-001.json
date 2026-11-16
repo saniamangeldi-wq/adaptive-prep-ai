@@ -1,0 +1,29 @@
+{
+  "id": "example-fictional-001",
+  "fictional": true,
+  "source": {
+    "kind": "examiner_scored_original",
+    "reference": "FICTIONAL FORMAT EXAMPLE written for this repository. The script and the bands below are invented and were NOT scored by an examiner. Do not use as calibration data.",
+    "licence": "Original, AdaptivePrep"
+  },
+  "task": {
+    "id": "custom",
+    "source": "custom",
+    "taskType": "task2",
+    "variant": "positive_negative",
+    "prompt": "Write about the following topic:\n\nIn many cities, people now borrow bicycles from public bike-sharing schemes instead of owning one.\n\nIs this a positive or negative development?\n\nGive reasons for your answer and include any relevant examples from your own knowledge or experience.\n\nWrite at least 250 words.",
+    "bullets": [],
+    "visuals": [],
+    "minWords": 250,
+    "timeMinutes": 40
+  },
+  "script": "In recent years, bike-sharing schemes has become popular in many cities around the world. Instead of buying a bicycle, people can pick up one from a station, ride it and leave it in another place. In my opinion, this is mostly a positive development, although there are some problems which need to be solved.\n\nThe main advantage is that bike-sharing makes cycling easy for everyone. A person who only cycle once a week do not need to spend money on a bike, a lock and repairs. For example, in my city the scheme costs less than a bus ticket for a whole day, so students and workers use it to travel short distances. As a result, there are less cars in the centre and the air is cleaner.\n\nAnother benefit is that people do not have to worry about storage. Many people lives in small flats without a garage, and keeping a bicycle on a balcony is not practical. With shared bikes, this problem disappears.\n\nHowever, there are also some disadvantages. Sometimes the bikes are broken or there is no bikes at the station when you need one, especially in the morning. Also, some users leave the bikes on the pavement, which is dangerous for pedestrians and old people.\n\nIn conclusion, I believe that bike-sharing schemes are a positive development because they are cheap, convenient and good for the environment. The city authorities should repair the bikes regularly and punish people who park them in wrong places, so that the schemes work better for everybody.",
+  "examiner": {
+    "overall": 6,
+    "task": 6.5,
+    "coherence": 6,
+    "lexical": 6,
+    "grammar": 5.5
+  },
+  "notes": "Fictional. About 270 words; agreement errors (has/do/lives/is), 'less cars'; clear position; mechanical but clear organisation."
+}
