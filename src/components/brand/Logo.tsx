@@ -2,23 +2,23 @@ import { cn } from "@/lib/utils";
 
 /**
  * The AdaptivePrep mark: the cap from the app icon (src/assets/logo.webp on `main`) on a
- * flat tile, drawn as SVG so it stays sharp at sidebar size. The tile takes the primary
- * colour of the current theme.
+ * flat tile, drawn as SVG so it stays sharp at sidebar size. Fixed brand colours (deep
+ * teal tile, white cap) in both themes, like the app icon.
  */
 export function LogoMark({ className, title }: { className?: string; title?: string }) {
   return (
     <svg
       viewBox="0 0 32 32"
-      className={cn("h-8 w-8 flex-shrink-0 text-primary", className)}
+      className={cn("h-8 w-8 flex-shrink-0", className)}
       role={title ? "img" : undefined}
       aria-hidden={title ? undefined : true}
       aria-label={title}
     >
-      <rect width="32" height="32" rx="8" fill="currentColor" />
-      <path d="M10 16.4v4.1c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.1l-6 2.7z" className="fill-primary-foreground" fillOpacity=".82" />
-      <path d="M16 7.5 27 12.6 16 17.7 5 12.6z" className="fill-primary-foreground" />
-      <path d="M24.6 13.8v5.6" className="stroke-primary-foreground" strokeWidth="1.3" strokeLinecap="round" fill="none" />
-      <circle cx="24.6" cy="20.2" r="1.25" className="fill-primary-foreground" />
+      <rect width="32" height="32" rx="8" fill="#0A756C" />
+      <path d="M10 16.4v4.1c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.1l-6 2.7z" fill="#fff" fillOpacity=".82" />
+      <path d="M16 7.5 27 12.6 16 17.7 5 12.6z" fill="#fff" />
+      <path d="M24.6 13.8v5.6" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" fill="none" />
+      <circle cx="24.6" cy="20.2" r="1.25" fill="#fff" />
     </svg>
   );
 }

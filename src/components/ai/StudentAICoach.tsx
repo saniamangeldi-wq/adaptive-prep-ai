@@ -212,7 +212,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, report, o
                     type="button"
                     onClick={() => handleSend(chip)}
                     disabled={isLoading}
-                    className="rounded-full border border-border bg-card px-3.5 py-2 text-left text-sm text-foreground/90 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                    className="rounded-[1.25rem] border border-border bg-card px-3.5 py-2 text-left text-sm text-foreground/90 transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                   >
                     {chip}
                   </button>
@@ -314,44 +314,54 @@ function Composer({
           "focus-within:border-primary/70 focus-within:ring-[3px] focus-within:ring-primary/15",
         )}
       >
-        <textarea
-          ref={inputRef}
-          rows={large ? 3 : 1}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              onSend();
-            }
-          }}
-          placeholder={large ? "Ask about your writing, a task type or a band…" : "Reply to the coach…"}
-          aria-label="Message"
-          enterKeyHint="send"
-          className={cn(
-            "block w-full resize-none bg-transparent px-4 text-base leading-6 text-foreground placeholder:text-muted-foreground focus:outline-none",
-            large ? "pt-4 pb-1 min-h-[5.5rem]" : "pt-3 pb-0 min-h-[2.75rem]",
-          )}
-        />
-        <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5 pt-1">
-          <p className="hidden sm:block pl-1.5 text-xs text-muted-foreground">
-            Enter to send, Shift + Enter for a new line
-          </p>
-          <button
-            type="button"
-            onClick={onSend}
-            disabled={!canSend}
-            aria-label={busy ? "The coach is answering" : "Send message"}
+        <div className={cn(large ? "" : "flex items-end gap-2 py-1.5 pl-1 pr-1.5")}>
+          <textarea
+            ref={inputRef}
+            rows={large ? 3 : 1}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                onSend();
+              }
+            }}
+            placeholder={large ? "Ask about your writing, a task type or a band…" : "Reply to the coach…"}
+            aria-label="Message"
+            enterKeyHint="send"
             className={cn(
-              "ml-auto h-9 w-9 flex items-center justify-center rounded-xl transition-colors",
-              canSend ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted text-muted-foreground",
+              "block w-full resize-none bg-transparent text-base leading-6 text-foreground placeholder:text-muted-foreground focus:outline-none",
+              large ? "px-4 pt-4 pb-1 min-h-[5.5rem]" : "flex-1 min-w-0 px-3 py-2 min-h-[2.5rem]",
             )}
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <ArrowUp className="h-[18px] w-[18px]" aria-hidden="true" />}
-          </button>
+          />
+          {large ? (
+            <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5 pt-1">
+              <p className="hidden sm:block pl-1.5 text-xs text-muted-foreground">Enter to send, Shift + Enter for a new line</p>
+              <SendButton canSend={canSend} busy={busy} onSend={onSend} />
+            </div>
+          ) : (
+            <SendButton canSend={canSend} busy={busy} onSend={onSend} />
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function SendButton({ canSend, busy, onSend }: { canSend: boolean; busy: boolean; onSend: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onSend}
+      disabled={!canSend}
+      aria-label={busy ? "The coach is answering" : "Send message"}
+      className={cn(
+        "ml-auto h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-xl transition-colors",
+        canSend ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted text-muted-foreground",
+      )}
+    >
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <ArrowUp className="h-[18px] w-[18px]" aria-hidden="true" />}
+    </button>
   );
 }
 

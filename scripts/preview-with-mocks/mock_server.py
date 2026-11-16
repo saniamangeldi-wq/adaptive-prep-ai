@@ -68,13 +68,15 @@ class MockState:
     grade_error: tuple | None = None  # (status, code, message)
     grade_report: str = "task2"  # which fixture report a grading returns
     grade_unsaved: bool = False  # return the report with id null
+    chat_error: tuple | None = None  # (status, message) for student-chat
     task_for_variant: dict = field(default_factory=dict)
     chat_reply: str = "Your coherence band is 6.5 because the paragraphs are clear but the linking is mechanical. Try replacing *Firstly* and *Secondly* with a sentence that builds on the previous idea."
     held: list = field(default_factory=list)
     calls: list = field(default_factory=list)
 
     def profile(self) -> dict:
-        return {"id": "p1", "user_id": USER_ID, "email": "student@example.com", "full_name": "Test Student", "avatar_url": None, "preferred_language": "en"}
+        return {"id": "p1", "user_id": USER_ID, "email": "student@example.com", "full_name": "Test Student", "avatar_url": None, "preferred_language": "en",
+                "tier": "tier_0", "is_trial": False, "trial_ends_at": None, "credits_remaining": 12, "subscription_ends_at": None}
 
 
 def _json(route, body, status=200, headers=None):
@@ -206,6 +208,9 @@ def _task(route, body, state: MockState):
 
 
 def _chat(route, body, state: MockState):
+    if state.chat_error:
+        status, message = state.chat_error
+        return _json(route, {"error": message}, status)
     words = state.chat_reply.split(" ")
     chunks = [json.dumps({"choices": [{"index": 0, "delta": {"content": w + (" " if i < len(words) - 1 else "")}}]}) for i, w in enumerate(words)]
     stream = "".join(f"data: {c}\n\n" for c in chunks) + "data: [DONE]\n\n"

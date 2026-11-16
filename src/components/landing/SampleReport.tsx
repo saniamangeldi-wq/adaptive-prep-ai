@@ -56,11 +56,7 @@ export function SampleReport() {
           })}
         </p>
 
-        <div className="sample-note-in relative mt-3 rounded-lg border border-border bg-popover p-4 shadow-float sm:ml-8">
-          <span
-            className="absolute -top-[7px] left-8 h-3 w-3 rotate-45 border-l border-t border-border bg-popover"
-            aria-hidden="true"
-          />
+        <div className="sample-note-in mt-3 rounded-lg border border-border bg-popover p-4 shadow-float sm:ml-8">
           <div className="space-y-1.5">
             <p className="flex items-center gap-1.5 text-xs font-medium">
               <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: CRITERION_COLORS[SAMPLE.comment.criterion] }} aria-hidden="true" />

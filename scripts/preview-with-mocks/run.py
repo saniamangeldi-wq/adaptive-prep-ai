@@ -4,7 +4,7 @@ Browser check of every screen against a mocked Supabase (no real project, no AI 
 
   npm run build
   npx vite-node scripts/preview-with-mocks/dump-fixtures.ts > /tmp/ielts-fixtures.json
-  python3 scripts/preview-with-mocks/run.py --out /tmp/ielts-shots [--only editor] [--widths 380,1280]
+  python3 scripts/preview-with-mocks/run.py --out /tmp/ielts-shots [--only landing,shell] [--widths 380,1280] [--schemes light,dark]
 
 Starts `npx vite preview` on port 4173 (unless something already listens there), opens
 Chrome through Playwright, answers every *.supabase.co call from mock_server.py, and
@@ -57,8 +57,9 @@ def port_open(port: int) -> bool:
 
 
 class Runner:
-    def __init__(self, browser, fx, out: Path, widths):
+    def __init__(self, browser, fx, out: Path, widths, scheme="light"):
         self.browser, self.fx, self.out, self.widths = browser, fx, out, widths
+        self.scheme = scheme
         self.errors: list[str] = []
 
     def state(self, **kw) -> ms.MockState:
@@ -67,8 +68,8 @@ class Runner:
             setattr(st, k, v)
         return st
 
-    def page(self, width: int, state: ms.MockState, signed_in=True):
-        ctx = self.browser.new_context(viewport={"width": width, "height": 860}, device_scale_factor=1, color_scheme="dark")
+    def page(self, width: int, state: ms.MockState, signed_in=True, height=860, scheme=None):
+        ctx = self.browser.new_context(viewport={"width": width, "height": height}, device_scale_factor=1, color_scheme=scheme or self.scheme)
         ctx.add_init_script(ms.init_script(ms.fake_session() if signed_in else None))
         ms.install(ctx, state)
         page = ctx.new_page()
@@ -80,7 +81,8 @@ class Runner:
 
     def shot(self, page, name: str, width: int, full=True):
         page.wait_for_timeout(250)
-        path = self.out / f"{name}@{width}.png"
+        suffix = "" if self.scheme == "light" else f"-{self.scheme}"
+        path = self.out / f"{name}{suffix}@{width}.png"
         page.screenshot(path=str(path), full_page=full)
         print("  shot", path.name)
 
@@ -340,7 +342,135 @@ def sc_chat(r: Runner, w: int):
     ctx.close()
 
 
+def _conversations(fx_reply: str) -> list:
+    """Chats for the sidebar: some today, yesterday, last week, older."""
+    def iso(days_ago: int, hour: int = 10) -> str:
+        t = time.time() - days_ago * 86400
+        return time.strftime(f"%Y-%m-%dT{hour:02d}:00:00.000Z", time.gmtime(t))
+    titles = [
+        (0, "Linking words in Task 2"),
+        (0, "How to write an overview for a line graph"),
+        (1, "Formal letter: complaint about a delivery"),
+        (3, "Band 6 vs band 7 lexical resource"),
+        (5, "Planning a discussion essay"),
+        (12, "Process diagram vocabulary"),
+        (45, "Articles: a, an, the"),
+    ]
+    rows = []
+    for i, (d, title) in enumerate(titles):
+        rows.append({
+            "id": f"e0000000-0000-4000-8000-00000000000{i}",
+            "user_id": ms.USER_ID,
+            "title": title,
+            "messages": [
+                {"role": "user", "content": "How do I write an overview for a line graph? My teacher says mine are too detailed."},
+                {"role": "assistant", "content": "An overview gives the **main trends** without numbers. Look at the whole period and ask two questions:\n\n1. Which lines went up, which went down?\n2. Which category was highest overall?\n\nThen write two sentences, for example:\n\n> Overall, the number of visitors to all three museums rose, and the City Museum remained the most popular throughout the period.\n\nKeep exact figures for the body paragraphs."},
+            ] if i != 6 else [{"role": "user", "content": title}, {"role": "assistant", "content": "Sure."}],
+            "created_at": iso(d), "updated_at": iso(d, 10 + (7 - i)),
+            "is_archived": False, "coach_type": "student",
+        })
+    return rows
+
+
+def sc_landing(r: Runner, w: int):
+    ctx, p = r.page(w, r.state(), signed_in=False)
+    r.goto(p, "/")
+    p.wait_for_timeout(1800)  # the sample's one animation
+    r.shot(p, "landing-top", w, full=False)
+    r.shot(p, "landing", w)
+    p.get_by_role("button", name="What does “estimated band” mean?").click()
+    p.wait_for_timeout(300)
+    p.locator("#faq").scroll_into_view_if_needed()
+    r.shot(p, "landing-faq-open", w, full=False)
+    ctx.close()
+    for path, name in [("/login", "login"), ("/signup", "signup"), ("/forgot-password", "forgot"), ("/reset-password", "reset")]:
+        ctx, p = r.page(w, r.state(), signed_in=False)
+        r.goto(p, path)
+        r.shot(p, name, w, full=False)
+        ctx.close()
+
+
+def sc_shell(r: Runner, w: int):
+    convs = _conversations("")
+    st = r.state(conversations=convs)
+    ctx, p = r.page(w, st)
+    r.goto(p, "/dashboard")
+    r.shot(p, "shell-new-chat", w, full=False)
+    if w >= 768:
+        p.get_by_role("button", name="Collapse sidebar").click()
+        p.wait_for_timeout(300)
+        r.shot(p, "shell-collapsed", w, full=False)
+        p.get_by_role("button", name="Expand sidebar").click()
+        p.wait_for_timeout(300)
+        p.locator("aside").get_by_role("button", name="Test Student").click()
+    else:
+        p.get_by_role("button", name="Open menu").click()
+        p.wait_for_timeout(400)
+        r.shot(p, "shell-drawer", w, full=False)
+        p.get_by_role("dialog").get_by_role("button", name="Test Student").click()
+    p.wait_for_timeout(300)
+    r.shot(p, "shell-account-menu", w, full=False)
+    p.keyboard.press("Escape")
+    p.wait_for_timeout(300)
+    if w < 768:
+        p.keyboard.press("Escape")  # and the drawer
+        p.wait_for_timeout(400)
+    # Open a conversation from the sidebar
+    if w < 768:
+        p.get_by_role("button", name="Open menu").click()
+        p.wait_for_timeout(300)
+        p.get_by_role("dialog").get_by_role("link", name="How to write an overview for a line graph").click()
+    else:
+        p.get_by_role("link", name="How to write an overview for a line graph").click()
+    p.wait_for_timeout(800)
+    r.shot(p, "shell-conversation", w, full=False)
+    # Send a reply: streaming answer shows up
+    p.get_by_role("textbox", name="Message").fill("Can you check this overview: Overall, visitors increased.")
+    p.keyboard.press("Enter")
+    p.wait_for_timeout(1500)
+    r.shot(p, "shell-conversation-reply", w, full=False)
+    # Error inline
+    ctx.close()
+
+    # Out of credits: the error shows inline in the chat
+    st = r.state(conversations=convs)
+    st.chat_error = (402, "You're out of AI credits for today.")
+    ctx, p = r.page(w, st)
+    r.goto(p, "/dashboard")
+    p.get_by_role("textbox", name="Message").fill("What is a good Task 2 conclusion?")
+    p.keyboard.press("Enter")
+    p.wait_for_timeout(1200)
+    r.shot(p, "shell-chat-error", w, full=False)
+    ctx.close()
+
+    # Phone with the on-screen keyboard open (viewport shrinks with resizes-content)
+    if w < 768:
+        ctx, p = r.page(w, r.state(conversations=convs), height=420)
+        r.goto(p, f"/dashboard?c={convs[1]['id']}")
+        p.wait_for_timeout(600)
+        p.get_by_role("textbox", name="Message").click()
+        r.shot(p, "shell-keyboard-conversation", w, full=False)
+        r.goto(p, "/dashboard")
+        p.get_by_role("textbox", name="Message").click()
+        r.shot(p, "shell-keyboard-new", w, full=False)
+        ctx.close()
+
+    # Writing screens and Settings inside the shell
+    rows = r.fx["rows"]
+    ctx, p = r.page(w, r.state(conversations=convs, reports=[rows["task2"]]))
+    r.goto(p, f"/dashboard/writing/report/{rows['task2']['id']}")
+    r.shot(p, "shell-report", w, full=False)
+    r.shot(p, "shell-report-full", w)
+    r.goto(p, "/dashboard/writing")
+    r.shot(p, "shell-writing-home", w, full=False)
+    r.goto(p, "/dashboard/settings")
+    r.shot(p, "shell-settings", w)
+    ctx.close()
+
+
 SCENARIOS = {
+    "landing": sc_landing,
+    "shell": sc_shell,
     "public": sc_public,
     "home": sc_home,
     "editor-visuals": sc_editor_visuals,
@@ -358,6 +488,7 @@ def main():
     ap.add_argument("--only", default="")
     ap.add_argument("--widths", default="380,1280")
     ap.add_argument("--chrome", default="/usr/bin/google-chrome")
+    ap.add_argument("--schemes", default="light", help="light,dark: run every scenario in each colour scheme")
     args = ap.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -375,16 +506,19 @@ def main():
         with sync_playwright() as pw:
             browser = pw.chromium.launch(executable_path=args.chrome, args=["--no-sandbox"])
             r = Runner(browser, fx, out, widths)
-            for name, fn in SCENARIOS.items():
-                if args.only and args.only not in name:
-                    continue
-                for w in widths:
-                    print(f"{name} @ {w}")
-                    try:
-                        fn(r, w)
-                    except Exception as e:  # keep going; report at the end
-                        r.errors.append(f"[{w}] SCENARIO {name} crashed: {e}")
-                        print("  CRASH", e)
+            only = [o for o in args.only.split(",") if o]
+            for scheme in args.schemes.split(","):
+                r.scheme = scheme
+                for name, fn in SCENARIOS.items():
+                    if only and not any(o == name or o in name for o in only):
+                        continue
+                    for w in widths:
+                        print(f"{name} @ {w} ({scheme})")
+                        try:
+                            fn(r, w)
+                        except Exception as e:  # keep going; report at the end
+                            r.errors.append(f"[{w} {scheme}] SCENARIO {name} crashed: {e}")
+                            print("  CRASH", e)
             browser.close()
             (out / "errors.txt").write_text("\n".join(r.errors))
             print(f"\n{len(r.errors)} console/page errors (see {out / 'errors.txt'})")
