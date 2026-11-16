@@ -96,7 +96,7 @@ export default function WritingReport() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      <div className="max-w-4xl mx-auto w-full space-y-6">
         <div className="flex items-center justify-between gap-3">
           <Link to="/dashboard/history" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" /> History

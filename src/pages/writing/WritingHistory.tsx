@@ -56,9 +56,15 @@ export default function WritingHistory() {
     [trend]
   );
 
+  // Start the axis at 3 as usual, lower when a band is below 3 (very short or non-English answers), so no point falls off the chart.
+  const yMin = useMemo(() => {
+    const lows = trend.flatMap((p) => CRITERIA.map((k) => p[k])).filter((n) => Number.isFinite(n));
+    return Math.max(0, Math.min(3, Math.floor(Math.min(9, ...lows))));
+  }, [trend]);
+
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+      <div className="max-w-4xl mx-auto w-full space-y-8">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">History</h1>
@@ -103,7 +109,7 @@ export default function WritingHistory() {
                       <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: -20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} interval="preserveStartEnd" />
-                        <YAxis domain={[3, 9]} ticks={[3, 4, 5, 6, 7, 8, 9]} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                        <YAxis domain={[yMin, 9]} ticks={Array.from({ length: 10 - yMin }, (_, i) => yMin + i)} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                         <Tooltip
                           contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
                           labelStyle={{ color: "hsl(var(--foreground))" }}
