@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, BookOpen, Calculator, CheckCircle2, Target } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,7 +50,8 @@ export default function ExampleSATResults() {
 
   return (
     <DashboardLayout>
-      <PageSeo title="Example SAT Results | AdaptivePrep" description="Personal demonstration of SAT mock results and topic feedback." path="/dashboard/tests/example/results" noIndex />
+      <PageSeo title="Example SAT Results | AdaptivePrep" description="Personal demonstration of SAT mock results and topic feedback." path="/dashboard/tests/example/results" />
+      <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
       <main className="max-w-5xl mx-auto space-y-8 pb-10">
         <header className="space-y-5">
           <Button variant="ghost" asChild className="px-0"><Link to="/dashboard/tests"><ArrowLeft className="h-4 w-4" />Practice</Link></Button>
