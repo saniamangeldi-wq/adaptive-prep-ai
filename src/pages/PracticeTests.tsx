@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getTierLimits, PricingTier } from "@/lib/tier-limits";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 import { PageSeo } from "@/components/seo/PageSeo";
+import { canViewExampleSatResult } from "@/lib/example-sat-result";
 
 type TestMode = "practice" | "official";
 type TestType = "math" | "reading_writing" | "combined";
@@ -837,6 +838,11 @@ export default function PracticeTests() {
                   <div className="text-xs text-muted-foreground mt-1">Find every question you missed, see the correct answer and redo them</div>
                 </div>
               </Link>
+              {canViewExampleSatResult(user?.email) && (
+                <Button variant="outline" asChild className="justify-between h-auto py-4">
+                  <Link to="/dashboard/tests/example/results"><span className="flex items-center gap-2"><LineChartIcon className="w-5 h-5" />Example SAT Results · 1190</span><ChevronRight className="w-4 h-4 shrink-0" /></Link>
+                </Button>
+              )}
             </div>
           </div>
         )}

@@ -22,6 +22,7 @@ import MistakeBank from "./pages/MistakeBank";
 import TakeTest from "./pages/TakeTest";
 import TakeSATTest from "./pages/TakeSATTest";
 import TestResults from "./pages/TestResults";
+import ExampleSATResults from "./pages/ExampleSATResults";
 import AICoach from "./pages/AICoach";
 import Spaces from "./pages/Spaces";
 import Progress from "./pages/Progress";
@@ -161,6 +162,7 @@ function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard/tests" element={<ProtectedRoute><PracticeTests /></ProtectedRoute>} />
       <Route path="/dashboard/tests/mistakes" element={<ProtectedRoute><MistakeBank /></ProtectedRoute>} />
+      <Route path="/dashboard/tests/example/results" element={<ProtectedRoute><ExampleSATResults /></ProtectedRoute>} />
       <Route path="/dashboard/tests/:testId" element={<ProtectedRoute><TakeTest /></ProtectedRoute>} />
       <Route path="/dashboard/sat-test/:testId" element={<ProtectedRoute><TakeSATTest /></ProtectedRoute>} />
       <Route path="/dashboard/tests/:testId/results" element={<ProtectedRoute><TestResults /></ProtectedRoute>} />
