@@ -839,9 +839,14 @@ export default function PracticeTests() {
                 </div>
               </Link>
               {canViewExampleSatResult(user?.email) && (
-                <Button variant="outline" asChild className="justify-between h-auto py-4">
-                  <Link to="/dashboard/tests/example/results"><span className="flex items-center gap-2"><LineChartIcon className="w-5 h-5" />Example SAT Results · 1190</span><ChevronRight className="w-4 h-4 shrink-0" /></Link>
-                </Button>
+                <div className="flex flex-col gap-3">
+                  <Button variant="outline" asChild className="justify-between h-auto py-4">
+                    <Link to="/dashboard/tests/example/results"><span className="flex items-center gap-2"><LineChartIcon className="w-5 h-5" />Example SAT Results · 1190</span><ChevronRight className="w-4 h-4 shrink-0" /></Link>
+                  </Button>
+                  <Button variant="outline" asChild className="justify-between h-auto py-4">
+                    <Link to="/dashboard/tests/example/1180/results"><span className="flex items-center gap-2"><LineChartIcon className="w-5 h-5" />Example SAT Results · 1180</span><ChevronRight className="w-4 h-4 shrink-0" /></Link>
+                  </Button>
+                </div>
               )}
             </div>
           </div>
