@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canViewExampleSatResult, exampleSatResult as result } from '../example-sat-result';
+import { canViewExampleSatResult, exampleSatResult as result, getExampleSatResult } from '../example-sat-result';
 
 describe('personal SAT example', () => {
   it('shows 1190 overall, 520 verbal, and 670 math', () => {
