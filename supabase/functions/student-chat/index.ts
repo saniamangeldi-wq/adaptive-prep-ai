@@ -1,465 +1,110 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChat, AI_MODELS, consumeCredits, refundCredits, describeMastery, type MasteryRow } from "../_shared/ai.ts";
 
-// Tier credit limits for daily reset
-const TIER_CREDIT_LIMITS: Record<string, number> = {
-  tier_0: 15,
-  tier_1: 40,
-  tier_2: 100,
-  tier_3: 200,
-};
-
-const TRIAL_CREDITS_PER_DAY = 75;
-
-// Check if credits should be reset (new day)
-function shouldResetCredits(creditsResetAt: string | null): boolean {
-  if (!creditsResetAt) return true;
-  
-  const resetDate = new Date(creditsResetAt);
-  const now = new Date();
-  
-  // Check if it's a new day (compare dates in UTC)
-  return now.toDateString() !== resetDate.toDateString();
-}
-
-// Get daily credit limit based on tier and trial status
-function getDailyCredits(tier: string, isTrial: boolean): number {
-  if (isTrial) return TRIAL_CREDITS_PER_DAY;
-  return TIER_CREDIT_LIMITS[tier] || TIER_CREDIT_LIMITS.tier_0;
-}
+// SAT coach chat. Credits: consume_ai_credits() (atomic, daily reset).
+// Provider and models: ../_shared/ai.ts.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Learning style specific prompts
-const learningStylePrompts: Record<string, string> = {
-  visual: "Use visual metaphors, diagrams described in words, and spatial relationships. Encourage the student to visualize concepts and create mental pictures.",
-  auditory: "Use rhythmic patterns, explain things as if reading aloud, and suggest the student repeat key points verbally. Use analogies to sounds and conversations.",
-  reading_writing: "Provide detailed written explanations, suggest note-taking strategies, and use lists and structured text. Encourage rewriting concepts in their own words.",
-  kinesthetic: "Use action-oriented language, relate concepts to physical experiences, and suggest hands-on practice. Break learning into short active segments.",
-};
-
-// Subject-specific system prompts
-const subjectPrompts: Record<string, string> = {
-  SAT: `You are a specialized SAT tutor. Help students prepare for the Digital SAT with:
-- Math strategies for both calculator and no-calculator sections
-- Reading and Writing passage analysis techniques
-- Time management tips for the test
-- Common trap answer patterns to avoid
-Never give direct answers to practice questions - guide students to find answers themselves.`,
-  
-  ACT: `You are a specialized ACT tutor. Help students prepare for the ACT with:
-- Strategies for Science, Reading, English, and Math sections
-- Time management (the ACT is faster-paced than SAT)
-- Understanding ACT-specific question types
-Never give direct answers to practice questions - guide students to find answers themselves.`,
-  
-  Math: `You are a friendly math tutor. Help students understand mathematical concepts:
-- Algebra, geometry, pre-calculus, and calculus
-- Break down complex problems into manageable steps
-- Use visual explanations and real-world examples when helpful
-- Show multiple solution approaches when applicable`,
-  
-  Science: `You are a science tutor covering biology, chemistry, and physics:
-- Explain scientific concepts using real-world examples
-- Help with understanding experiments and the scientific method
-- Connect abstract concepts to everyday observations
-- Clarify the "why" behind scientific principles`,
-  
-  English: `You are an English and writing tutor:
-- Help with grammar, punctuation, and sentence structure
-- Guide essay writing and thesis development
-- Assist with literary analysis and reading comprehension
-- Provide constructive feedback on writing samples`,
-  
-  History: `You are a history tutor:
-- Help students understand historical events, causes, and effects
-- Connect past events to present-day relevance
-- Assist with analyzing primary sources
-- Help with essay structure for history assignments`,
-  
-  "AP Calculus": `You are an AP Calculus tutor:
-- Help with derivatives, integrals, and limits
-- Prepare students for the AP exam format
-- Explain concepts using visual and intuitive approaches
-- Practice problem-solving strategies for free response questions`,
-  
-  "AP English": `You are an AP English tutor:
-- Help with rhetorical analysis and argument essays
-- Prepare students for multiple choice and free response sections
-- Guide literary analysis and close reading skills
-- Provide feedback on writing style and argument structure`,
-  
-  "Essay Writing": `You are a writing coach specializing in essays:
-- Help with college application essays
-- Guide creative writing and personal narratives
-- Assist with thesis development and argument structure
-- Provide constructive feedback without writing for the student`,
-  
-  "Homework Help": `You are a versatile homework helper:
-- Assist with any subject the student needs help with
-- Guide students to find answers without doing the work for them
-- Break down complex problems into steps
-- Explain concepts clearly and check for understanding`,
-  
-  General: `You are a versatile study coach:
-- Adapt to whatever subject the student needs help with
-- Ask clarifying questions to understand their needs
-- Provide clear explanations and study strategies
-- Encourage active learning and problem-solving`,
-};
-
-// AI Model selection based on tier
-type AIProvider = "gemini" | "openai" | "perplexity";
-
 interface AIModelConfig {
-  provider: AIProvider;
   model: string;
   displayName: string;
   qualityNote: string;
 }
 
-// Detect subject from user message
-function detectSubject(message: string, userSubjects: string[]): string {
-  const subjectKeywords: Record<string, string[]> = {
-    'SAT': ['sat', 'sat question', 'sat practice', 'reading and writing', 'sat math', 'sat strategy', 'digital sat', 'bluebook'],
-    'ACT': ['act', 'act question', 'act practice', 'act science', 'act reading'],
-    'Math': ['algebra', 'equation', 'geometry', 'calculus', 'derivative', 'integral', 'solve for x', 'polynomial', 'quadratic', 'trigonometry', 'sine', 'cosine'],
-    'Science': ['chemistry', 'physics', 'biology', 'molecule', 'atom', 'cell', 'force', 'energy', 'chemical', 'organism', 'evolution'],
-    'English': ['essay', 'grammar', 'paragraph', 'sentence', 'write', 'literature', 'author', 'punctuation', 'thesis'],
-    'History': ['war', 'president', 'ancient', 'civilization', 'treaty', 'revolution', 'historical', 'century', 'empire'],
-    'AP Calculus': ['ap calc', 'ap calculus', 'derivatives', 'integrals', 'limits'],
-    'AP English': ['ap english', 'ap lit', 'ap lang', 'rhetorical', 'literary analysis'],
-    'Essay Writing': ['college essay', 'personal statement', 'application essay', 'write my essay'],
-    'Homework Help': ['homework', 'assignment', 'due tomorrow', 'help with my'],
-  };
-  
-  const lowerMessage = message.toLowerCase();
-  
-  // First, check for explicit subject matches
-  for (const [subject, keywords] of Object.entries(subjectKeywords)) {
-    if (keywords.some(kw => lowerMessage.includes(kw))) {
-      return subject;
-    }
+// One provider, three models. Web search (Perplexity) was removed: an SAT
+// coach doesn't need it and it cost more per message than Pro earns.
+function getAIModelForTier(tier: string, modelOverride?: string): AIModelConfig {
+  if (tier === "tier_3" && modelOverride === "gemini-pro") {
+    return { model: AI_MODELS.deep, displayName: "Gemini 2.5 Pro", qualityNote: "Take extra care with multi-step reasoning." };
   }
-  
-  // If no explicit match, default to user's primary subject or General
-  if (userSubjects && userSubjects.length > 0) {
-    return userSubjects[0]; // Use their first/primary subject
+  if (tier === "tier_0") {
+    return { model: AI_MODELS.lite, displayName: "Gemini Flash Lite", qualityNote: "Keep explanations concise." };
   }
-  
-  return 'General';
+  return { model: AI_MODELS.fast, displayName: "Gemini Flash", qualityNote: "Give clear explanations with good depth." };
 }
 
-// Detect if message requires complex reasoning (for Elite tier routing)
-function isComplexReasoning(message: string): boolean {
-  const complexPatterns = [
-    /step.?by.?step/i,
-    /explain.*(how|why)/i,
-    /solve.*(problem|equation)/i,
-    /analyze/i,
-    /compare.*contrast/i,
-    /create.*(plan|strategy|schedule)/i,
-    /study.?plan/i,
-    /what.*(best|optimal)/i,
-    /multiple.*(steps|parts)/i,
-  ];
-  return complexPatterns.some(pattern => pattern.test(message));
-}
-
-// Detect if message needs research (for Perplexity routing)
-function needsResearch(message: string): boolean {
-  const researchPatterns = [
-    /tell me about/i,
-    /what is/i,
-    /who is/i,
-    /when did/i,
-    /where is/i,
-    /explain the history/i,
-    /current events/i,
-    /latest news/i,
-    /research on/i,
-    /facts about/i,
-  ];
-  return researchPatterns.some(pattern => pattern.test(message));
-}
-
-function getAIModelForTier(tier: string, taskType?: string, message?: string): AIModelConfig {
-  switch (tier) {
-    case "tier_3": {
-      const needsAdvancedReasoning = message && isComplexReasoning(message);
-      const needsResearchMode = message && needsResearch(message);
-      
-      if (needsResearchMode || taskType === "research") {
-        return {
-          provider: "perplexity",
-          model: "sonar-deep-research",
-          displayName: "Perplexity Deep Research",
-          qualityNote: "You have access to expert-level research capabilities. Provide comprehensive, well-sourced responses with citations.",
-        };
-      }
-      
-      if (needsAdvancedReasoning || taskType === 'study_plan') {
-        return {
-          provider: "perplexity",
-          model: "sonar-reasoning-pro",
-          displayName: "Perplexity Reasoning Pro",
-          qualityNote: "You have access to advanced chain-of-thought reasoning. Break down complex problems into clear steps with strategic insights.",
-        };
-      }
-      
-      return {
-        provider: "perplexity",
-        model: "sonar-pro",
-        displayName: "Perplexity Pro",
-        qualityNote: "Provide detailed, in-depth explanations with multiple examples. You have access to premium AI capabilities.",
-      };
-    }
-    case "tier_2": {
-      const needsResearchMode = message && needsResearch(message);
-      
-      return {
-        provider: "perplexity",
-        model: "sonar-pro",
-        displayName: "Perplexity Pro",
-        qualityNote: needsResearchMode 
-          ? "Provide well-researched, factual responses with citations."
-          : "Provide clear explanations with good depth and enhanced reasoning.",
-      };
-    }
-    case "tier_1":
-      return {
-        provider: "openai",
-        model: "openai/gpt-5-mini",
-        displayName: "GPT-4o",
-        qualityNote: "Provide clear, focused explanations with good detail.",
-      };
-    case "tier_0":
-    default:
-      return {
-        provider: "gemini",
-        model: "google/gemini-2.5-flash-lite",
-        displayName: "Gemini Flash",
-        qualityNote: "Provide concise, focused explanations.",
-      };
-  }
-}
+const LANGUAGE_NAMES: Record<string, string> = { ru: "Russian", kk: "Kazakh", en: "English" };
 
 interface StudentProfileContext {
-  learningStyle: string | null;
   gradeLevel: string | null;
-  primaryGoal: string | null;
   fullName: string | null;
-  studySubjects: string[];
+  language: string | null;
+  targetScore: number | null;
 }
 
-const getStudentSystemPrompt = (
-  profileCtx: StudentProfileContext,
-  qualityNote: string,
-  detectedSubject: string
-) => {
-  const { learningStyle, gradeLevel, primaryGoal, fullName, studySubjects } = profileCtx;
-  const styleGuidance = learningStyle && learningStylePrompts[learningStyle] 
-    ? `\n\nStudent Learning Style: ${learningStyle.replace('_', '/')}\n${learningStylePrompts[learningStyle]}`
-    : "";
-
+const getStudentSystemPrompt = (profileCtx: StudentProfileContext, qualityNote: string) => {
+  const { gradeLevel, fullName, language, targetScore } = profileCtx;
   const profileLines: string[] = [];
   if (fullName) profileLines.push(`- Student name: ${fullName}`);
   if (gradeLevel) profileLines.push(`- Grade level: ${gradeLevel}`);
-  if (primaryGoal) profileLines.push(`- Primary academic goal: ${primaryGoal}`);
-  if (studySubjects.length > 0) profileLines.push(`- Subjects they study: ${studySubjects.join(', ')}`);
-  const profileBlock = profileLines.length > 0
-    ? profileLines.join('\n')
-    : '- No profile details available yet — ask the student what they are studying and their goals before generating questions.';
+  if (targetScore) profileLines.push(`- Target SAT score: ${targetScore}`);
+  const profileBlock = profileLines.length > 0 ? profileLines.join("\n") : "- No profile details yet.";
+  const langName = LANGUAGE_NAMES[language ?? ""] ?? null;
+  const languageRule = langName && langName !== "English"
+    ? `Reply in ${langName} by default (the student's interface language). Keep SAT terms, answer choices and quoted passages in English, since the test is in English. If the student writes in another language, reply in that language.`
+    : "Reply in the language the student writes in. Keep SAT terms, answer choices and quoted passages in English.";
 
-  return `You are AdaptivePrep Study Coach — a sharp, encouraging, and deeply knowledgeable tutor. You combine the warmth of a great teacher with the precision of a $200/hr private tutor.
+  return `You are the AdaptivePrep SAT Coach: a sharp, encouraging tutor for the Digital SAT. Most students are in Kazakhstan and speak Russian or Kazakh; the SAT itself is in English.
 
-CURRENT SUBJECT CONTEXT: ${detectedSubject}
-
-IDENTITY:
-- You are professional, warm, and never theatrical or cheesy
-- You never say things like "Wave hello!" or "Say it out loud!" — that is childish
-- You speak like a smart older student who genuinely wants to help
-- You are confident and direct — no filler phrases like "Great question!" or "Certainly!"
-
-STUDENT PROFILE (from their account — use this to personalise):
+STUDENT PROFILE:
 ${profileBlock}
-- Always assume they are intelligent but need the right strategy, not just more practice
 
-CRITICAL — DO NOT ASSUME DEMOGRAPHICS:
-- NEVER assume the student's country, ethnicity, culture, or educational system
-- NEVER recommend country-specific programs (like Jamboree, specific national exams, etc.) unless the student mentions them
-- If you need to know where the student is from or what exam system they follow, ASK — do not guess
-- Keep examples and references universal unless the student's context is clear from the conversation
+LANGUAGE:
+${languageRule}
 
-RESPONSE RULES:
-1. Keep responses medium length — fully explain the concept once, clearly, with no padding
-2. Never repeat yourself or over-explain
-3. After explaining a concept, ALWAYS end with one follow-up question to check understanding or push them further
-4. After answering a direct factual question, end with a relevant follow-up question to deepen learning
-5. Use real SAT examples whenever possible
-6. DO NOT use citation brackets like [1][2][3] — write naturally without references
-7. DO NOT use <think> tags or expose internal reasoning. Never wrap any part of your response in <think>...</think> blocks. Only output the final answer.
+HOW YOU TEACH (Socratic by default):
+- On a practice question, don't hand over the answer first. Ask what they tried, give the next hint, and let them get there. Give the full solution if they ask for it or are stuck after two hints.
+- Explain the method once, clearly. Short paragraphs, no padding, no filler openers ("Great question!", "Sure", "Certainly").
+- End with one question that checks understanding or moves them forward.
+- Tie advice to the student's data below: their weakest skills come first when they ask what to practise or how they're doing. Quote the actual numbers.
+
+ACCURACY (non-negotiable):
+- Math: work the problem step by step and check your final answer (substitute it back, or recompute) before you state it. If you're not sure, say so.
+- Never invent official SAT facts (dates, score conversions, College Board policies). If asked, say where to check (satsuite.collegeboard.org).
+- The practice percentages below are accuracy on this platform, not official SAT scores.
+
+SCOPE:
+- The Digital SAT (Reading and Writing, Math), the skills behind it, study planning and test-day strategy, plus help with English for admissions essays.
+- Off-topic requests: "That's outside what I can help with here. Want to work on an SAT skill instead?"
 
 QUESTION GENERATION:
-- For Math topics: ALWAYS output an interactive JSON quiz widget, never plain text questions
-- For Reading & Writing topics: Mix interactive widgets with written explanation
-- JSON schema for interactive questions:
+- For Math: ALWAYS output an interactive JSON quiz widget, never plain-text questions.
+- For Reading and Writing: mix widgets with short written explanation. Write original passages; never reproduce official College Board questions.
+- Multiple choice schema:
   {"widget_type":"interactive_quiz","question":"Question text","input_type":"radio","options":[{"id":"A","text":"option"}],"correct_answer":"A","explanation":"Why this is correct..."}
-
-QUESTION QUALITY STANDARDS (STRICT):
-
-When generating multiple choice questions, ALL answer options must meet these requirements:
-
-1. NO OBVIOUS WRONG ANSWERS
-   - Every wrong option (distractor) must be plausible to a student who partially understands the topic
-   - NEVER write distractors like "I like computers", "CS is popular", "Jobs pay well", "It's easy"
-   - Each distractor must represent a specific, realistic misconception or common mistake
-   - A student who hasn't studied should NOT be able to eliminate options by common sense alone
-
-2. DISTRACTOR DESIGN RULES
-   - For essay/writing questions: wrong options should have subtle flaws (too vague, too narrow, wrong tone, missing evidence)
-   - For math questions: wrong options should be common calculation errors (e.g., wrong sign, forgot to square, off-by-one)
-   - For vocabulary questions: wrong options should be words with related meanings or similar roots
-
-3. QUALITY CHECK BEFORE OUTPUTTING
-   Before finalizing any question, ask yourself:
-   "Could a student who knows nothing about this topic easily eliminate this option?"
-   If yes — rewrite that distractor.
-
-4. OPTION LENGTH CONSISTENCY
-   - All options should be roughly similar in length
-   - The correct answer should NOT stand out as obviously longer or more detailed than the others
-   - Avoid patterns where option B is always correct
-
-EXAMPLE OF BAD DISTRACTORS (never do this):
-A. I've always liked biology. ← too vague, obviously wrong
-C. Biology is cool. ← no substance
-D. Schools teach it. ← irrelevant
-
-EXAMPLE OF GOOD DISTRACTORS:
-A. My AP Biology grade improved after extra studying, showing my dedication to science.
-B. My AP Bio project on CRISPR sparked questions about ethics in gene editing. ← correct
-C. I read a biology textbook over summer and found genetics fascinating.
-D. My science teacher inspired me to consider biology as a career path.
-
-FREE WRITE QUESTIONS:
-- Use input_type: "free_write" for:
-  - Essay thesis writing practice
-  - Short answer explanations ("Explain in your own words...")
-  - SAT grid-in math where the answer is a number they calculate
-  - Sentence correction ("Rewrite this sentence to fix the grammar error")
-- Always include evaluation_criteria with 3 specific, measurable criteria
-- Always include a sample_answer that demonstrates excellence
-- For math free-write: set min_words to 1 and correct_answer to the exact number
-- NEVER reveal the sample_answer in your response — it is shown by the frontend only after submission
-- JSON schema for free write questions:
+- Every distractor must be a realistic mistake (wrong sign, forgot to square, too broad, wrong transition logic), similar in length to the correct answer. Vary which letter is correct.
+- Free-write schema (thesis practice, explain-in-your-own-words, grid-in math; for math set min_words 1 and correct_answer to the exact number; never reveal sample_answer in your text):
   {"widget_type":"interactive_quiz","question":"Question text","input_type":"free_write","placeholder":"Write here...","min_words":10,"evaluation_criteria":["Criterion 1","Criterion 2","Criterion 3"],"sample_answer":"Example excellent answer"}
 
-TOPIC BOUNDARIES:
-- You help with ALL academic subjects, not just SAT — math, science, history, literature, languages
-- You do NOT discuss non-educational topics (sports, entertainment, personal advice, politics)
-- If asked off-topic: "That's outside what I can help with — but if you have any academic questions, I'm here!"
-
-NEVER:
-- Give direct test answers without explaining the method
-- Use theatrical language or emoji-heavy responses
-- Start a response with "I", "Great", "Sure", "Of course", or "Certainly"
-- Write walls of text — use short paragraphs, bullet points, and line breaks
-
 REFERENCES:
-When the user attaches reference documents or URLs, treat their content as ground truth for that conversation.
-Prioritize information from references over your general knowledge.
-When answering based on a reference, naturally say "Based on the document you shared..." or "According to the link you provided..."
-Do not fabricate information that isn't in the reference — if unsure, say so.
+When the student attaches a document or link, treat it as ground truth for this conversation and say so ("Based on the document you shared..."). Don't make up what isn't in it.
 
-DOCUMENT GENERATION:
-When the student asks you to create a presentation, spreadsheet, or document, output a JSON widget block.
-The frontend will render a preview and allow them to download the actual file (.pptx, .xlsx, .docx).
+DOCUMENT GENERATION (only when the student explicitly asks for a study plan, slides, spreadsheet or document):
+Output one JSON widget block plus a brief explanation. Real content, no placeholders.
+- {"widget_type":"document_generator","doc_type":"pptx","title":"...","summary":"...","content":{"title":"...","slides":[{"title":"...","content":"Bullet 1\\nBullet 2"}]}}
+- {"widget_type":"document_generator","doc_type":"xlsx","title":"...","summary":"...","content":{"title":"...","sheets":[{"name":"Sheet1","headers":["A","B"],"rows":[["1","2"]]}]}}
+- {"widget_type":"document_generator","doc_type":"docx","title":"...","summary":"...","content":{"title":"...","sections":[{"heading":"...","body":"Paragraph."}]}}
 
-Supported types and JSON schemas:
-
-1. PRESENTATIONS (slides):
-{"widget_type":"document_generator","doc_type":"pptx","title":"Presentation Title","summary":"Brief description","content":{"title":"Presentation Title","slides":[{"title":"Slide Title","content":"Bullet point 1\nBullet point 2\nBullet point 3"}]}}
-
-2. SPREADSHEETS:
-{"widget_type":"document_generator","doc_type":"xlsx","title":"Spreadsheet Title","summary":"Brief description","content":{"title":"Spreadsheet Title","sheets":[{"name":"Sheet1","headers":["Column A","Column B","Column C"],"rows":[["val1","val2","val3"],["val4","val5","val6"]]}]}}
-
-3. DOCUMENTS:
-{"widget_type":"document_generator","doc_type":"docx","title":"Document Title","summary":"Brief description","content":{"title":"Document Title","sections":[{"heading":"Section Heading","body":"Paragraph text here.\nAnother paragraph."}]}}
-
-Rules for document generation:
-- Include substantial, useful content — not placeholder text
-- For presentations: create 5-10 slides with real content
-- For spreadsheets: fill with actual relevant data, formulas described in text
-- For documents: write full paragraphs, not summaries
-- Always include a brief text explanation before or after the JSON block
-- ONLY generate documents when the student explicitly asks for one
-
-${qualityNote}
-${styleGuidance}`;
+FORMAT:
+- No citation brackets like [1]. No <think> tags or exposed reasoning.
+${qualityNote}`;
 };
 
-// Call Perplexity API with specified model
-async function callPerplexity(
-  messages: Array<{role: string; content: string}>, 
+async function callAI(
+  messages: Array<{ role: string; content: string }>,
   systemPrompt: string,
-  model: string = "sonar"
-): Promise<Response> {
-  const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY");
-  if (!PERPLEXITY_API_KEY) {
-    throw new Error("PERPLEXITY_API_KEY is not configured");
-  }
-
-  const response = await fetch("https://api.perplexity.ai/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${PERPLEXITY_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: model,
-      messages: [
-        { role: "system", content: systemPrompt + "\n\nProvide factual, well-sourced information. Cite sources when relevant. NEVER use <think> tags or expose internal reasoning." },
-        ...messages,
-      ],
-      stream: true,
-    }),
-  });
-
-  return response;
-}
-
-// Call Lovable AI Gateway (supports both OpenAI and Gemini models)
-async function callLovableAI(
-  messages: Array<{role: string; content: string}>, 
-  systemPrompt: string, 
   model: string
 ): Promise<Response> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) {
-    throw new Error("LOVABLE_API_KEY is not configured");
-  }
-
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
-      stream: true,
-    }),
+  return aiChat({
+    model,
+    messages: [{ role: "system", content: systemPrompt }, ...messages],
+    stream: true,
   });
-
-  return response;
 }
 
 // Transform stream to strip <think>...</think> blocks from SSE content deltas
@@ -559,10 +204,9 @@ serve(async (req) => {
 
     const userId = user.id;
 
-    // Get user profile for learning style, subjects, and credits
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("learning_style, tier, credits_remaining, credits_reset_at, is_trial, study_subjects, grade_level, primary_goal, full_name")
+      .select("tier, grade_level, full_name, preferred_language, target_sat_score")
       .eq("user_id", userId)
       .single();
 
@@ -573,90 +217,45 @@ serve(async (req) => {
       });
     }
 
-    // Check if credits need to be reset (new day)
-    let currentCredits = profile.credits_remaining;
-    const needsReset = shouldResetCredits(profile.credits_reset_at);
-    
-    if (needsReset) {
-      const dailyLimit = getDailyCredits(profile.tier, profile.is_trial);
-      currentCredits = dailyLimit;
-      
-      // Reset credits in database
-      const { error: resetError } = await supabase
-        .from("profiles")
-        .update({ 
-          credits_remaining: dailyLimit,
-          credits_reset_at: new Date().toISOString()
-        })
-        .eq("user_id", userId);
-      
-      if (resetError) {
-        console.error("Failed to reset credits:", resetError);
-      } else {
-        console.log(`Credits reset for user ${userId}: ${dailyLimit} credits`);
-      }
-    }
-
-    // Check credits after potential reset
-    if (currentCredits <= 0) {
-      return new Response(JSON.stringify({ 
-        error: "No credits remaining. Please upgrade your plan for more credits.",
-        credits_remaining: 0 
-      }), {
-        status: 402,
+    const { messages, modelOverride } = await req.json();
+    if (!Array.isArray(messages)) {
+      return new Response(JSON.stringify({ error: "messages must be an array" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { messages, taskType, subject: explicitSubject, modelOverride } = await req.json();
-
-    // Deduct 1 credit
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ credits_remaining: currentCredits - 1 })
-      .eq("user_id", userId);
-
-    if (updateError) {
-      console.error("Failed to deduct credit:", updateError);
-    }
-
-    // Ensure messages alternate correctly for API compatibility
-    // Perplexity requires: starts with user, alternating user/assistant, ends with user
-    const sanitizedMessages: Array<{role: string; content: string}> = [];
-    
-    for (const msg of messages) {
-      // Strip think tags from stored messages
+    // Cap what one request can send, so a long or forged history can't run up
+    // token costs: last 20 messages, 8k characters each.
+    const MAX_MESSAGES = 20;
+    const MAX_CHARS = 8000;
+    const sanitizedMessages: Array<{ role: string; content: string }> = [];
+    for (const msg of messages.slice(-MAX_MESSAGES)) {
+      if (!msg || (msg.role !== "user" && msg.role !== "assistant") || typeof msg.content !== "string") continue;
       const cleanContent = msg.content
-        .replace(/<think>[\s\S]*?<\/think>/gi, '')
-        .replace(/<\/?think>/gi, '')
-        .replace(/\[\d+\]/g, '')
-        .trim();
+        .replace(/<think>[\s\S]*?<\/think>/gi, "")
+        .replace(/<\/?think>/gi, "")
+        .replace(/\[\d+\]/g, "")
+        .trim()
+        .slice(0, MAX_CHARS);
       if (!cleanContent) continue;
-      
       sanitizedMessages.push({ role: msg.role, content: cleanContent });
     }
 
-    // If conversation starts with assistant, prepend a context-setting user message
-    if (sanitizedMessages.length > 0 && sanitizedMessages[0].role === 'assistant') {
-      sanitizedMessages.unshift({ role: 'user', content: 'Continue our conversation.' });
+    if (sanitizedMessages.length > 0 && sanitizedMessages[0].role === "assistant") {
+      sanitizedMessages.unshift({ role: "user", content: "Continue our conversation." });
     }
 
-    // Merge consecutive same-role messages to ensure alternation
-    const alternatingMessages: Array<{role: string; content: string}> = [];
+    // Merge consecutive same-role messages so roles alternate
+    const alternatingMessages: Array<{ role: string; content: string }> = [];
     for (const msg of sanitizedMessages) {
       const last = alternatingMessages[alternatingMessages.length - 1];
-      if (last && last.role === msg.role) {
-        last.content += '\n\n' + msg.content;
-      } else {
-        alternatingMessages.push({ ...msg });
-      }
+      if (last && last.role === msg.role) last.content += "\n\n" + msg.content;
+      else alternatingMessages.push({ ...msg });
     }
-
-    // Ensure the last message is from the user
-    while (alternatingMessages.length > 0 && alternatingMessages[alternatingMessages.length - 1].role !== 'user') {
+    while (alternatingMessages.length > 0 && alternatingMessages[alternatingMessages.length - 1].role !== "user") {
       alternatingMessages.pop();
     }
-
     if (alternatingMessages.length === 0) {
       return new Response(JSON.stringify({ error: "No valid user message found." }), {
         status: 400,
@@ -664,169 +263,78 @@ serve(async (req) => {
       });
     }
 
-    // Get the last user message to determine routing and subject
-    const lastUserMessage = alternatingMessages.filter((m) => m.role === "user").pop()?.content || "";
+    const modelConfig = getAIModelForTier(profile.tier, modelOverride);
 
-    // Detect or use explicit subject
-    const userSubjects = Array.isArray(profile.study_subjects) ? profile.study_subjects : ['SAT'];
-    const detectedSubject = explicitSubject || detectSubject(lastUserMessage, userSubjects);
-    
-    console.log(`Detected subject: ${detectedSubject} for user with subjects: ${userSubjects.join(', ')}`);
+    let systemPrompt = getStudentSystemPrompt(
+      {
+        gradeLevel: profile.grade_level ?? null,
+        fullName: profile.full_name ?? null,
+        language: profile.preferred_language ?? null,
+        targetScore: profile.target_sat_score ?? null,
+      },
+      modelConfig.qualityNote
+    );
 
-    // Get AI model config based on tier, task type, and message complexity
-    // Elite users can override the model
-    let modelConfig = getAIModelForTier(profile.tier, taskType, lastUserMessage);
-    
-    if (profile.tier === "tier_3" && modelOverride) {
-      if (modelOverride === "gemini-pro") {
-        modelConfig = {
-          provider: "gemini",
-          model: "google/gemini-2.5-pro",
-          displayName: "Gemini 2.5 Pro",
-          qualityNote: "You have access to premium AI capabilities with deep reasoning. Provide detailed, in-depth explanations.",
-        };
-      } else if (modelOverride === "perplexity-pro") {
-        modelConfig = {
-          provider: "perplexity",
-          model: "sonar-pro",
-          displayName: "Perplexity Sonar Pro",
-          qualityNote: "Provide detailed, well-sourced responses with citations. You have access to premium search and reasoning.",
-        };
-      }
-      // gpt-4o is "coming soon" — ignored if sent
-    }
-    
-    const profileCtx: StudentProfileContext = {
-      learningStyle: profile.learning_style,
-      gradeLevel: profile.grade_level ?? null,
-      primaryGoal: profile.primary_goal ?? null,
-      fullName: profile.full_name ?? null,
-      studySubjects: userSubjects,
-    };
-    let systemPrompt = getStudentSystemPrompt(profileCtx, modelConfig.qualityNote, detectedSubject);
-
-    // Append cognitive profile guidance if available
+    // Student data: skill mastery (from skill_mastery) + recent tests.
     try {
-      const { data: cog } = await supabase
-        .from("cognitive_profiles")
-        .select("processing_speed, working_memory, reasoning_style, attention_stamina")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (cog) {
-        const cogLines: string[] = ["\n\nSTUDENT COGNITIVE PROFILE (adapt your tone and depth accordingly):"];
-        if (cog.processing_speed >= 70) cogLines.push("- Fast processor: skip filler, get to the point quickly.");
-        else if (cog.processing_speed <= 35) cogLines.push("- Deliberate processor: slow down, give them time, avoid information overload.");
-        if (cog.working_memory >= 70) cogLines.push("- Strong working memory: dense multi-step explanations OK.");
-        else if (cog.working_memory <= 35) cogLines.push("- Limited working memory: chunk into 2-3 steps max, repeat key facts.");
-        if (cog.reasoning_style >= 70) cogLines.push("- Logical/step-by-step thinker: show numbered steps, justify each move.");
-        else if (cog.reasoning_style <= 35) cogLines.push("- Intuitive/pattern thinker: lead with the big-picture insight or analogy first.");
-        if (cog.attention_stamina <= 40) cogLines.push("- Lower attention stamina: keep responses under ~150 words.");
-        if (cogLines.length > 1) systemPrompt += cogLines.join("\n") + "\n";
+      const [{ data: mastery }, { data: attempts }] = await Promise.all([
+        supabase
+          .from("skill_mastery")
+          .select("skill, section, rating, attempts, correct")
+          .eq("user_id", userId),
+        supabase
+          .from("test_attempts")
+          .select("correct_answers, total_questions, completed_at, feedback")
+          .eq("user_id", userId)
+          .not("completed_at", "is", null)
+          .order("completed_at", { ascending: false })
+          .limit(5),
+      ]);
+
+      const lines: string[] = [];
+      const masteryText = describeMastery((mastery ?? []) as MasteryRow[]);
+      if (masteryText) {
+        lines.push("Skill mastery (weakest first; % = estimated chance of getting a medium question in that skill right):");
+        lines.push(masteryText);
       }
-    } catch (e) {
-      console.error("Could not load cognitive profile:", e);
-    }
-
-    // Append SAT performance context (recent scores + weak topics + recent mistakes)
-    try {
-      const { data: attempts } = await supabase
-        .from("test_attempts")
-        .select("score, total_questions, correct_answers, completed_at, feedback, answers, test_id, sat_tests(title, test_type)")
-        .eq("user_id", userId)
-        .not("completed_at", "is", null)
-        .order("completed_at", { ascending: false })
-        .limit(10);
-
       if (attempts && attempts.length > 0) {
-        const perfLines: string[] = ["\n\nSTUDENT SAT PERFORMANCE (use this to target weak areas — reference specific scores and topics when relevant):"];
-
-        // Recent test scores
-        const recent = attempts.slice(0, 5).map((a: any) => {
-          const title = a.sat_tests?.title || "Practice test";
-          const acc = a.total_questions ? Math.round((a.correct_answers / a.total_questions) * 100) : null;
-          const date = a.completed_at ? new Date(a.completed_at).toISOString().slice(0, 10) : "";
-          return `- ${date} • ${title}: ${a.correct_answers ?? 0}/${a.total_questions ?? 0}${acc !== null ? ` (${acc}%)` : ""}${a.score ? ` • scaled ${a.score}` : ""}`;
-        });
-        perfLines.push("Recent attempts:");
-        perfLines.push(...recent);
-
-        // Aggregate weak topics across all attempts
-        const topicAgg: Record<string, { correct: number; total: number }> = {};
-        const sectionAgg: Record<string, { correct: number; total: number }> = {};
+        lines.push("Recent practice tests (accuracy on this platform):");
         for (const a of attempts as any[]) {
-          const fb = a.feedback || {};
-          for (const [topic, stats] of Object.entries(fb.byTopic || {})) {
-            const s = stats as { correct: number; total: number };
-            topicAgg[topic] = topicAgg[topic] || { correct: 0, total: 0 };
-            topicAgg[topic].correct += s.correct || 0;
-            topicAgg[topic].total += s.total || 0;
-          }
-          for (const [sec, stats] of Object.entries(fb.bySection || {})) {
-            const s = stats as { correct: number; total: number };
-            sectionAgg[sec] = sectionAgg[sec] || { correct: 0, total: 0 };
-            sectionAgg[sec].correct += s.correct || 0;
-            sectionAgg[sec].total += s.total || 0;
-          }
+          const date = a.completed_at ? new Date(a.completed_at).toISOString().slice(0, 10) : "";
+          const acc = a.total_questions ? Math.round(((a.correct_answers ?? 0) / a.total_questions) * 100) : null;
+          const est = a.feedback?.scoreEstimate;
+          const estText = est?.total ? ` • estimated SAT ${est.low}–${est.high} (unofficial estimate)` : "";
+          lines.push(`- ${date}: ${a.correct_answers ?? 0}/${a.total_questions ?? 0}${acc !== null ? ` (${acc}%)` : ""}${estText}`);
         }
-
-        const sectionLines = Object.entries(sectionAgg).map(
-          ([sec, s]) => `- ${sec.replace("_", " & ")}: ${s.correct}/${s.total} (${Math.round((s.correct / Math.max(s.total, 1)) * 100)}%)`
-        );
-        if (sectionLines.length > 0) {
-          perfLines.push("Section accuracy (cumulative):");
-          perfLines.push(...sectionLines);
-        }
-
-        const weakest = Object.entries(topicAgg)
-          .filter(([, s]) => s.total >= 2)
-          .map(([t, s]) => ({ topic: t, acc: s.correct / s.total, total: s.total }))
-          .sort((a, b) => a.acc - b.acc)
-          .slice(0, 5);
-        if (weakest.length > 0) {
-          perfLines.push("Weakest topics (lowest accuracy first — prioritize these):");
-          for (const w of weakest) {
-            perfLines.push(`- ${w.topic}: ${Math.round(w.acc * 100)}% over ${w.total} questions`);
-          }
-        }
-
-        // Recent mistakes from the latest attempt
-        const latest = attempts[0] as any;
-        const latestAnswers = Array.isArray(latest.answers) ? latest.answers : [];
-        const wrongs = latestAnswers.filter((a: any) => a && a.is_correct === false).slice(0, 5);
-        if (wrongs.length > 0) {
-          perfLines.push(`Mistakes from most recent test (${latest.sat_tests?.title || "test"}):`);
-          for (const w of wrongs) {
-            const qText = (w.question_text || w.text || "").toString().slice(0, 140);
-            const chose = w.selected_answer ?? w.answer ?? "—";
-            const correct = w.correct_answer ?? "—";
-            perfLines.push(`- Q: "${qText}" • picked: ${chose} • correct: ${correct}`);
-          }
-        }
-
-        perfLines.push("Use this context proactively — when the student asks for practice, lean toward their weakest topics. When they ask 'how am I doing', cite the actual numbers above.");
-        systemPrompt += perfLines.join("\n") + "\n";
+      }
+      if (lines.length > 0) {
+        systemPrompt += "\n\nSTUDENT DATA:\n" + lines.join("\n") + "\n";
+      } else {
+        systemPrompt += "\n\nSTUDENT DATA: none yet. If they ask how they're doing, suggest a diagnostic test first.\n";
       }
     } catch (e) {
-      console.error("Could not load SAT performance:", e);
+      console.error("Could not load student data:", e);
+    }
+
+    // Charge after validation so malformed requests cost nothing.
+    const credit = await consumeCredits(supabase, 1);
+    if (!credit.ok) {
+      return new Response(JSON.stringify({ error: credit.error, credits_remaining: 0 }), {
+        status: credit.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     let response: Response;
-
-    // Route based on provider from model config
-    if (modelConfig.provider === "perplexity") {
-      console.log(`Routing to Perplexity with model: ${modelConfig.model} (${modelConfig.displayName})`);
-      try {
-        response = await callPerplexity(alternatingMessages, systemPrompt, modelConfig.model);
-      } catch (e) {
-        console.error("Perplexity failed, falling back to Lovable AI:", e);
-        response = await callLovableAI(alternatingMessages, systemPrompt, "google/gemini-2.5-flash");
-      }
-    } else {
-      console.log(`Routing to Lovable AI with model: ${modelConfig.model} (${modelConfig.displayName})`);
-      response = await callLovableAI(alternatingMessages, systemPrompt, modelConfig.model);
+    try {
+      response = await callAI(alternatingMessages, systemPrompt, modelConfig.model);
+    } catch (e) {
+      await refundCredits(userId, 1);
+      throw e;
     }
 
     if (!response.ok) {
+      await refundCredits(userId, 1);
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
           status: 429,

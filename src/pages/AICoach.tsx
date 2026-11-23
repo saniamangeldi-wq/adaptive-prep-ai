@@ -49,9 +49,8 @@ export default function AICoach() {
 
   const [showHistory, setShowHistory] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
-  const [chatMode, setChatMode] = useState<"text" | "voice">("text");
   const [eliteModel, setEliteModel] = useState<EliteModel>(
-    (profile?.preferred_ai_model as EliteModel) || "perplexity-pro"
+    (profile?.preferred_ai_model === "gemini-pro" ? "gemini-pro" : "gemini-flash")
   );
   const isElite = profile?.tier === "tier_3";
   const coachType = (profile?.role === "tutor" || profile?.role === "teacher" || profile?.role === "school_admin") ? "tutor" : "student";
@@ -123,7 +122,6 @@ export default function AICoach() {
           <AdminAICoach
             conversationId={currentConversation?.id || null}
             onEnsureConversation={ensureConversation}
-            chatMode={chatMode}
             spaceReferences={spaceRefs}
             activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
           />
@@ -134,7 +132,6 @@ export default function AICoach() {
           <TeacherAICoach
             conversationId={currentConversation?.id || null}
             onEnsureConversation={ensureConversation}
-            chatMode={chatMode}
             spaceReferences={spaceRefs}
             activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
           />
@@ -145,7 +142,6 @@ export default function AICoach() {
           <StudentAICoach
             conversationId={currentConversation?.id || null}
             onEnsureConversation={ensureConversation}
-            chatMode={chatMode}
             spaceReferences={spaceRefs}
             activeSpace={activeSpace ? { name: activeSpace.name, description: activeSpace.description, icon: activeSpace.icon } : null}
             modelOverride={isElite ? eliteModel : undefined}
@@ -240,36 +236,6 @@ export default function AICoach() {
               {isElite && (
                 <ModelSelector value={eliteModel} onChange={handleModelChange} />
               )}
-
-              {/* Text / Voice toggle — Elite only, and only when voice chat is globally enabled */}
-              {isElite && VOICE_CHAT_ENABLED ? (
-                <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
-                  <button
-                    onClick={() => setChatMode("text")}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-                      chatMode === "text"
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <MessageSquare className="w-3 h-3" />
-                    Text
-                  </button>
-                  <button
-                    onClick={() => setChatMode("voice")}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-                      chatMode === "voice"
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <Mic className="w-3 h-3" />
-                    Voice
-                  </button>
-                </div>
-              ) : null}
 
               {/* Credit counter */}
               <CreditsInfoPopover creditsRemaining={creditsRemaining} dailyLimit={dailyLimit}>

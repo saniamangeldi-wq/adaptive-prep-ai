@@ -109,7 +109,7 @@ export function Pricing({ headingLevel = "h2", headingText }: PricingProps = {})
           <div
             className={cn(
               "grid gap-8 max-w-6xl mx-auto",
-              selectedRole === "student" ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3"
+              selectedRole === "student" ? "md:grid-cols-2 max-w-3xl" : "max-w-md"
             )}
           >
             {(selectedRole === "student"
@@ -160,7 +160,7 @@ function GenericPlanCard({
   billingCycle,
   role,
 }: {
-  plan: { id: string; tier: string; name: string; badge: string | null; description: string; monthlyPriceKZT: number; monthlyPriceUSD: number; mostPopular: boolean; features: string[] };
+  plan: { id: string; tier: string; stripeTier: "tier_1" | "tier_2" | "tier_3" | null; name: string; badge: string | null; description: string; monthlyPriceKZT: number; monthlyPriceUSD: number; mostPopular: boolean; features: string[] };
   billingCycle: BillingCycle;
   role: "student" | "tutor";
 }) {
@@ -168,10 +168,7 @@ function GenericPlanCard({
   const discountedUSD = calcPrice(plan.monthlyPriceUSD, billingCycle);
   const isFree = plan.monthlyPriceKZT === 0;
 
-  // Map tier string (e.g. "Tier 2") to tier key (e.g. "tier_1")
-  const tierIndex = parseInt(plan.tier.replace("Tier ", "")) - 1;
-  const tierKey = `tier_${tierIndex}` as "tier_1" | "tier_2" | "tier_3";
-  const stripeLink = tierIndex >= 1 ? getStripeLink(role, tierKey, billingCycle) : null;
+  const stripeLink = plan.stripeTier ? getStripeLink(role, plan.stripeTier, billingCycle) : null;
 
   return (
     <div

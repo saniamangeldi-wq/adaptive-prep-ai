@@ -471,18 +471,6 @@ export default function PracticeTests() {
                   <div className="text-xs text-muted-foreground mt-1">Review key concepts with smart cards</div>
                 </div>
               </Link>
-              <Link
-                to="/dashboard/lessons"
-                className="flex flex-col items-start gap-3 p-5 rounded-xl border-2 border-border hover:border-primary/50 transition-all duration-200 group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Video Lessons</div>
-                  <div className="text-xs text-muted-foreground mt-1">VAK-adapted lessons for every topic</div>
-                </div>
-              </Link>
               <button
                 type="button"
                 onClick={() => {

@@ -21,7 +21,6 @@ export function StudentGuide() {
           description="Complete onboarding and set up your profile"
           defaultOpen
           items={[
-            { text: "Complete the VAK learning style assessment during onboarding — it personalizes your AI experience", type: "do" },
             { text: "Set your target SAT score in Settings to track progress toward your goal", type: "do" },
             { text: "Choose your grade level and study subjects accurately", type: "do" },
             { text: "Don't skip onboarding — the AI needs your learning style to help effectively", type: "dont" },

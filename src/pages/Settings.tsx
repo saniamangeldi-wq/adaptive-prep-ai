@@ -14,7 +14,6 @@ import {
   Moon,
   Globe,
   Languages,
-  Brain,
   Trophy,
   CreditCard,
   ChevronRight
@@ -322,54 +321,6 @@ export default function Settings() {
             </div>
           </div>
         </div>
-
-        {/* Learning Style Assessment */}
-        {profile?.role === "student" && (
-          <div className="p-6 rounded-2xl bg-card border border-border/50">
-            <div className="flex items-center gap-3 mb-6">
-              <Brain className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold text-foreground">{t("settings.learningStyle")}</h3>
-            </div>
-            <div className="space-y-4">
-              {profile?.vak_primary_style && (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                  <span className="text-muted-foreground">{t("settings.currentStyle")}</span>
-                  <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium capitalize">
-                    {profile.vak_primary_style}
-                  </span>
-                </div>
-              )}
-              {profile?.vak_last_taken_at && (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                  <span className="text-muted-foreground">{t("settings.lastTaken")}</span>
-                  <span className="text-foreground text-sm">
-                    {new Date(profile.vak_last_taken_at).toLocaleDateString()}
-                  </span>
-                </div>
-              )}
-              {(() => {
-                const lastTaken = profile?.vak_last_taken_at;
-                const canRetake = !lastTaken || (Date.now() - new Date(lastTaken).getTime()) > 7 * 24 * 60 * 60 * 1000;
-                const nextDate = lastTaken ? new Date(new Date(lastTaken).getTime() + 7 * 24 * 60 * 60 * 1000) : null;
-                return (
-                  <>
-                    <p className="text-sm text-muted-foreground">
-                      {t("settings.retakeDesc")}
-                    </p>
-                    <Button
-                      variant="hero"
-                      onClick={() => navigate("/onboarding?retake=vak")}
-                      disabled={!canRetake}
-                    >
-                      <Brain className="w-4 h-4" />
-                      {canRetake ? t("settings.retakeAssessment") : `${t("settings.availableOn")} ${nextDate?.toLocaleDateString()}`}
-                    </Button>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        )}
 
         {/* Contact / Support */}
         <div className="p-6 rounded-2xl bg-card border border-border/50">

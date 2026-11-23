@@ -27,6 +27,8 @@ export function fmtUSD(amount: number): string {
 export interface StudentPlan {
   id: string;
   tier: string;
+  /** Billing tier stored on profiles.tier and used for the Stripe link; null = free. */
+  stripeTier: "tier_1" | "tier_2" | "tier_3" | null;
   name: string;
   badge: string | null;
   description: string;
@@ -39,6 +41,8 @@ export interface StudentPlan {
 export interface TutorPlan {
   id: string;
   tier: string;
+  /** Billing tier stored on profiles.tier and used for the Stripe link; null = free. */
+  stripeTier: "tier_1" | "tier_2" | "tier_3" | null;
   name: string;
   badge: string | null;
   description: string;
@@ -67,6 +71,7 @@ export const PRICING_CONFIG = {
     {
       id: "student-free",
       tier: "Tier 1",
+      stripeTier: null,
       name: "Free",
       badge: null,
       description: "Curious students, first-timers.",
@@ -77,54 +82,23 @@ export const PRICING_CONFIG = {
         "5 AI questions/day",
         "3 quizzes/week",
         "Basic dashboard",
-        "No voice",
-      ],
-    },
-    {
-      id: "student-basic",
-      tier: "Tier 2",
-      name: "Basic",
-      badge: null,
-      description: "Budget-conscious families.",
-      monthlyPriceKZT: 2500,
-      monthlyPriceUSD: 5,
-      mostPopular: false,
-      features: [
-        "30 AI questions/day",
-        "20 quizzes/month",
-        "Progress tracking",
-        "No voice",
       ],
     },
     {
       id: "student-pro",
-      tier: "Tier 3",
+      tier: "Tier 2",
+      stripeTier: "tier_2",
       name: "Pro",
       badge: "Most Popular",
-      description: "Core target user — the full AdaptivePrep experience.",
+      description: "Everything you need to prepare for the Digital SAT.",
       monthlyPriceKZT: 4990,
       monthlyPriceUSD: 10,
       mostPopular: true,
       features: [
         "100 AI questions/day",
         "Unlimited quizzes",
-        "Listen to AI responses",
-      ],
-    },
-    {
-      id: "student-elite",
-      tier: "Tier 4",
-      name: "Elite",
-      badge: null,
-      description: "Power students, exam prep.",
-      monthlyPriceKZT: 9900,
-      monthlyPriceUSD: 21,
-      mostPopular: false,
-      features: [
-        "200 AI credits/day",
-        "1,000 questions/month",
-        "Deep research mode",
-        "1-on-1 AI coaching",
+        "Full-length practice tests with score reports",
+        "Progress tracking",
       ],
     },
   ] as StudentPlan[],
@@ -132,7 +106,8 @@ export const PRICING_CONFIG = {
     {
       id: "tutor-solo",
       tier: "Tier 1",
-      name: "Solo Tutor",
+      stripeTier: "tier_1",
+      name: "Tutor",
       badge: null,
       description: "For individual tutors with a few students.",
       monthlyPriceKZT: 29500,
@@ -145,44 +120,6 @@ export const PRICING_CONFIG = {
         "Basic analytics dashboard",
         "Email support",
         "Custom test assignments",
-      ],
-    },
-    {
-      id: "tutor-pro",
-      tier: "Tier 2",
-      name: "Professional",
-      badge: "Most Popular",
-      description: "For growing tutoring practices.",
-      monthlyPriceKZT: 84500,
-      monthlyPriceUSD: 169,
-      mostPopular: true,
-      features: [
-        "Up to 15 students",
-        "Advanced progress analytics",
-        "Enhanced AI for students",
-        "Parent progress reports",
-        "Priority support",
-        "Custom branding",
-        "White-label reports",
-      ],
-    },
-    {
-      id: "tutor-business",
-      tier: "Tier 3",
-      name: "Tutor Business",
-      badge: null,
-      description: "For established tutoring businesses.",
-      monthlyPriceKZT: 224500,
-      monthlyPriceUSD: 449,
-      mostPopular: false,
-      features: [
-        "Up to 40 students",
-        "Premium AI for all students",
-        "White-label reports",
-        "API access",
-        "Multi-tutor management",
-        "Dedicated account manager",
-        "Custom integrations",
       ],
     },
   ] as TutorPlan[],

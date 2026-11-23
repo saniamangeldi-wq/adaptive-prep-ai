@@ -112,8 +112,11 @@ export default function TutorBilling() {
         </div>
 
         {/* Plans */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {plans.map((plan) => {
+        <div className="grid md:grid-cols-2 gap-6 max-w-3xl">
+          {plans
+            // Relaunch sells one tutor plan; legacy subscribers still see their own plan.
+            .filter((plan) => plan.tier === "tier_1" || plan.tier === profile?.tier)
+            .map((plan) => {
             const stripeLink = getStripeLink("tutor", plan.tier as "tier_1" | "tier_2" | "tier_3", billingCycle);
             const adjustedPrice = Math.round(plan.price * BILLING_MULTIPLIERS[billingCycle]);
             return (

@@ -8,7 +8,7 @@ import { TestTimer } from "@/components/test/TestTimer";
 import { ChevronLeft, ChevronRight, Send, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-generator";
+import { calculateScore, recordSkillResults, type Question, type GeneratedTest } from "@/lib/test-generator";
 import { useToast } from "@/hooks/use-toast";
 import { useXPLevel } from "@/hooks/useXPLevel";
 import { XP_REWARDS } from "@/lib/gamification-config";
@@ -116,26 +116,20 @@ export default function TakeTest() {
           feedback: {
             byTopic: result.byTopic,
             bySection: result.bySection,
+            bySkill: result.bySkill,
           },
         })
         .eq("id", test.id);
 
       if (error) throw error;
 
+      await recordSkillResults(test.id, result.skillResults);
+
       // Decrement questions remaining by the number of questions taken
       const questionsUsed = test.questions.length;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tests_remaining")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profile) {
-        await supabase
-          .from("profiles")
-          .update({ tests_remaining: Math.max(0, (profile.tests_remaining || 0) - questionsUsed) })
-          .eq("user_id", user.id);
-      }
+      // Quota columns are server-controlled; decrement through the RPC.
+      const { error: quotaError } = await supabase.rpc("consume_tests", { p_count: questionsUsed });
+      if (quotaError) console.error("Failed to update test quota:", quotaError);
 
       await refreshProfile();
 

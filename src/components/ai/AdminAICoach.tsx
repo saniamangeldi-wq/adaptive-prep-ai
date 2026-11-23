@@ -31,8 +31,6 @@ import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { useAIChat, type Message } from "@/hooks/useAIChat";
 import { MarkdownMath as ReactMarkdown } from "@/components/ai/MarkdownMath";
-import { VoiceChat } from "./VoiceChat";
-import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { ChatAttachments } from "./ChatAttachments";
 import { useAttachments } from "@/hooks/useAttachments";
 import { useReferences, type Reference } from "@/hooks/useReferences";
@@ -81,12 +79,11 @@ const projectionTypes = [
 interface AdminAICoachProps {
   conversationId?: string | null;
   onEnsureConversation?: () => Promise<string | null>;
-  chatMode?: "text" | "voice";
   spaceReferences?: Reference[];
   activeSpace?: { name: string; description?: string | null; icon?: string | null } | null;
 }
 
-export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [], activeSpace = null }: AdminAICoachProps) {
+export function AdminAICoach({ conversationId, onEnsureConversation, spaceReferences = [], activeSpace = null }: AdminAICoachProps) {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
@@ -223,18 +220,6 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
   const noCredits = creditsRemaining <= 0;
   const hoursUntilReset = getHoursUntilReset();
 
-  // Voice mode
-  if (chatMode === "voice") {
-    return (
-      <div className="flex flex-col h-full">
-        <VoiceChat
-          onTranscript={handleVoiceTranscript}
-          isDisabled={noCredits || isLoading}
-          fullMode={true}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -549,13 +534,6 @@ export function AdminAICoach({ conversationId, onEnsureConversation, chatMode = 
                   className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground/50 focus:outline-none text-sm h-10"
                 />
 
-                {isTier3 && (
-                  <VoiceChat 
-                    onTranscript={handleVoiceTranscript}
-                    isDisabled={noCredits || isLoading}
-                  />
-                )}
-
                 <Button
                   variant="ghost"
                   size="icon"
@@ -586,7 +564,6 @@ function AdminPerplexityMessage({ message, isTier3, isLast, onRetry }: {
   isLast: boolean;
   onRetry: () => void;
 }) {
-  const { speak, stop, isPlaying, isLoading: ttsLoading } = useTextToSpeech();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -596,10 +573,6 @@ function AdminPerplexityMessage({ message, isTier3, isLast, onRetry }: {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleTTS = () => {
-    if (isPlaying) stop();
-    else speak(message.content);
-  };
 
   if (message.role === "user") {
     const displayText = (message.visibleText || message.content)
@@ -646,16 +619,6 @@ function AdminPerplexityMessage({ message, isTier3, isLast, onRetry }: {
 
       {cleanContent && (
         <div className="mt-4 flex items-center gap-1">
-          {isTier3 && (
-            <button
-              onClick={handleTTS}
-              disabled={ttsLoading}
-              className="group/btn p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
-              title={isPlaying ? "Stop" : "Listen"}
-            >
-              {ttsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : isPlaying ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-            </button>
-          )}
           <button onClick={handleCopy} className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors" title="Copy">
             {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
           </button>

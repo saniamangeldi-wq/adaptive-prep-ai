@@ -1,5 +1,6 @@
  import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChat, AI_MODELS, consumeCredits, refundCredits } from "../_shared/ai.ts";
  
  const corsHeaders = {
    "Access-Control-Allow-Origin": "*",
@@ -36,30 +37,28 @@
  
      const { imageUrl, prompt } = await req.json();
  
-     if (!imageUrl) {
+     if (!imageUrl || typeof imageUrl !== "string" || !/^(https:\/\/|data:image\/)/.test(imageUrl)) {
        return new Response(JSON.stringify({ error: "Image URL is required" }), {
          status: 400,
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });
      }
  
-     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-     if (!LOVABLE_API_KEY) {
-       return new Response(JSON.stringify({ error: "AI API key not configured" }), {
-         status: 500,
+
+ 
+     // Image analysis costs 1 credit, refunded if the AI call fails.
+     const credit = await consumeCredits(supabase, 1);
+     if (!credit.ok) {
+       return new Response(JSON.stringify({ error: credit.error }), {
+         status: credit.status,
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });
      }
- 
-     // Use Lovable AI with vision capabilities (Gemini)
-     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-       method: "POST",
-       headers: {
-         "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-         "Content-Type": "application/json",
-       },
-       body: JSON.stringify({
-         model: "google/gemini-2.5-flash",
+
+     let aiResponse: Response;
+     try {
+       aiResponse = await aiChat({
+         model: AI_MODELS.fast,
          messages: [
            {
              role: "user",
@@ -78,10 +77,14 @@
            },
          ],
          max_tokens: 1500,
-       }),
-     });
+       });
+     } catch (e) {
+       await refundCredits(user.id, 1);
+       throw e;
+     }
  
      if (!aiResponse.ok) {
+       await refundCredits(user.id, 1);
        const errorText = await aiResponse.text();
        console.error("AI vision error:", errorText);
        return new Response(JSON.stringify({ error: "Failed to analyze image" }), {

@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
+import { classifySkill, type SkillKey } from "@/lib/sat-skills";
 
 export interface Question {
   id: string;
@@ -14,6 +16,17 @@ export interface Question {
   image_url?: string;
   /** Optional alt text for the figure. */
   image_alt?: string;
+  /** Digital SAT skill domain (see sat-skills.ts). Classified from the text when missing. */
+  skill?: SkillKey;
+}
+
+export type ModuleRoute = "harder" | "easier";
+
+/** Full Digital SAT: Module 2 is chosen after Module 1, like the real test. */
+export interface AdaptiveSectionModules {
+  module1: Question[];
+  harder: Question[];
+  easier: Question[];
 }
 
 export type SortOrder = "mixed" | "hard_to_easy" | "easy_to_hard";
@@ -37,6 +50,77 @@ export interface GeneratedTest {
   poolSize: number;
   /** User-facing warning when the bank is too small to deliver a full test. */
   poolWarning?: string;
+  /** Present for full-length combined tests: Module 2 is routed on Module 1 accuracy. */
+  adaptiveModules?: {
+    reading_writing: AdaptiveSectionModules;
+    math: AdaptiveSectionModules;
+  };
+}
+
+/** Module 1 accuracy at or above this routes to the harder Module 2. */
+export const ROUTING_THRESHOLD = 0.6;
+
+type DifficultyMix = Record<"easy" | "normal" | "hard", number>;
+const MIX_MODULE1: DifficultyMix = { easy: 0.34, normal: 0.33, hard: 0.33 };
+const MIX_HARDER: DifficultyMix = { easy: 0.1, normal: 0.4, hard: 0.5 };
+const MIX_EASIER: DifficultyMix = { easy: 0.5, normal: 0.4, hard: 0.1 };
+
+/**
+ * Pick `count` questions from `pool` (already ordered by preference: unseen
+ * first) to match a difficulty mix, skipping `exclude`. Tops up from whatever
+ * is left if one difficulty runs short.
+ */
+function pickByDifficulty(pool: Question[], count: number, mix: DifficultyMix, exclude: Set<string>): Question[] {
+  const available = pool.filter((q) => !exclude.has(q.id));
+  const picked: Question[] = [];
+  const used = new Set<string>();
+  for (const level of ["hard", "normal", "easy"] as const) {
+    let need = Math.round(count * mix[level]);
+    for (const q of available) {
+      if (need <= 0 || picked.length >= count) break;
+      if (q.difficulty === level) {
+        picked.push(q);
+        used.add(q.id);
+        need--;
+      }
+    }
+  }
+  for (const q of available) {
+    if (picked.length >= count) break;
+    if (!used.has(q.id)) {
+      picked.push(q);
+      used.add(q.id);
+    }
+  }
+  return shuffle(picked);
+}
+
+function buildSectionModules(pool: Question[], perModule: number): AdaptiveSectionModules {
+  const module1 = pickByDifficulty(pool, perModule, MIX_MODULE1, new Set());
+  const exclude = new Set(module1.map((q) => q.id));
+  return {
+    module1,
+    harder: pickByDifficulty(pool, perModule, MIX_HARDER, exclude),
+    easier: pickByDifficulty(pool, perModule, MIX_EASIER, exclude),
+  };
+}
+
+/**
+ * Practice tests lean toward the student's weaker skills: weighted random
+ * order (Efraimidis–Spirakis) with weight = 1.15 − mastery, so weak skills come
+ * up more often but strong ones never disappear.
+ */
+async function weightByWeakSkills(userId: string, questions: Question[]): Promise<Question[]> {
+  const { data } = await supabase.from("skill_mastery").select("skill, rating").eq("user_id", userId);
+  if (!data || data.length === 0) return questions;
+  const mastery = new Map<string, number>(data.map((r) => [r.skill, 1 / (1 + Math.exp(-r.rating))]));
+  return questions
+    .map((q) => {
+      const weight = 1.15 - (mastery.get(q.skill ?? "") ?? 0.5);
+      return { q, key: Math.pow(Math.random(), 1 / weight) };
+    })
+    .sort((a, b) => b.key - a.key)
+    .map((x) => x.q);
 }
 
 // Unbiased Fisher-Yates shuffle (replaces the biased `.sort(() => Math.random() - 0.5)` pattern).
@@ -68,43 +152,6 @@ function getTimeMinutes(config: TestConfig): number {
 }
 
 type DifficultyLevel = "easy" | "normal" | "hard";
-
-// Calculate adaptive difficulty based on past performance
-async function getAdaptiveDifficulty(userId: string, baseDifficulty: DifficultyLevel): Promise<DifficultyLevel> {
-  const { data: recentAttempts } = await supabase
-    .from("test_attempts")
-    .select("correct_answers, total_questions, time_spent_seconds")
-    .eq("user_id", userId)
-    .not("completed_at", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  if (!recentAttempts || recentAttempts.length < 3) {
-    return baseDifficulty;
-  }
-
-  const accuracy = recentAttempts.reduce((sum, a) => {
-    return sum + ((a.correct_answers || 0) / (a.total_questions || 1));
-  }, 0) / recentAttempts.length;
-
-  const avgTimePerQuestion = recentAttempts.reduce((sum, a) => {
-    const time = a.time_spent_seconds || 0;
-    const qs = a.total_questions || 1;
-    return sum + (time / qs);
-  }, 0) / recentAttempts.length;
-
-  if (accuracy > 0.8 && avgTimePerQuestion < 90) {
-    if (baseDifficulty === "easy") return "normal";
-    if (baseDifficulty === "normal") return "hard";
-    return "hard";
-  } else if (accuracy < 0.5) {
-    if (baseDifficulty === "hard") return "normal";
-    if (baseDifficulty === "normal") return "easy";
-    return "easy";
-  }
-
-  return baseDifficulty;
-}
 
 /**
  * Top up `candidates` to `target` by pulling from `overflow` (which should be
@@ -167,6 +214,7 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
       return qs.map((q) => ({
         ...q,
         difficulty: q.difficulty || (t.difficulty as DifficultyLevel),
+        skill: classifySkill(q),
       }));
     })
     .filter((q) => {
@@ -233,7 +281,8 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     .sort((a, b) => (lastSeenAt.get(a.id) ?? 0) - (lastSeenAt.get(b.id) ?? 0));
 
   // Strict priority order: matching+unseen → matching+seen → other+unseen → other+seen.
-  const { match: unseenMatch, other: unseenOther } = splitByDifficulty(unseenAll);
+  const { match: unseenMatchRaw, other: unseenOther } = splitByDifficulty(unseenAll);
+  const unseenMatch = config.length === "full" ? unseenMatchRaw : await weightByWeakSkills(userId, unseenMatchRaw);
   const { match: seenMatch, other: seenOther } = splitByDifficulty(seenAll);
   // Sort the "other" buckets by distance so we drift toward the chosen difficulty.
   const distSort = (a: Question, b: Question) =>
@@ -246,7 +295,23 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   const seenQuestions = [...seenMatch, ...seenOther];
 
   let selectedQuestions: Question[];
-  if (config.testType === "combined") {
+  let adaptiveModules: GeneratedTest["adaptiveModules"];
+  if (config.testType === "combined" && config.length === "full") {
+    // Real Digital SAT structure: Module 1 is a balanced mix; Module 2 is
+    // harder or easier depending on Module 1. The difficulty picker doesn't
+    // apply here (the test sets difficulty itself).
+    const ordered = [...unseenAll, ...seenAll];
+    adaptiveModules = {
+      reading_writing: buildSectionModules(ordered.filter((q) => q.section === "reading_writing"), 27),
+      math: buildSectionModules(ordered.filter((q) => q.section === "math"), 22),
+    };
+    selectedQuestions = [
+      ...adaptiveModules.reading_writing.module1,
+      ...adaptiveModules.reading_writing.harder,
+      ...adaptiveModules.math.module1,
+      ...adaptiveModules.math.harder,
+    ];
+  } else if (config.testType === "combined") {
     const isFullOfficial = config.length === "full";
     const rwTarget = isFullOfficial ? 54 : Math.floor(targetQuestions / 2);
     const mathTarget = isFullOfficial ? 44 : targetQuestions - rwTarget;
@@ -286,7 +351,7 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   if (selectedQuestions.length < targetQuestions) {
     poolWarning =
       "Some sections have fewer questions than a full SAT because the question bank is still being expanded.";
-  } else if (mismatchedCount > 0) {
+  } else if (mismatchedCount > 0 && !adaptiveModules) {
     poolWarning =
       `Only ${selectedQuestions.length - mismatchedCount} of ${selectedQuestions.length} questions ` +
       `match the "${adaptedDifficulty}" difficulty you picked — the rest were filled in from other ` +
@@ -297,7 +362,7 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
   // Apply sort order — defaults to mixed (preserves existing shuffled / section-grouped order).
   // For combined tests, sort within each section so R&W stays before Math.
   const sortOrder: SortOrder = config.sortOrder ?? "mixed";
-  if (sortOrder !== "mixed") {
+  if (sortOrder !== "mixed" && !adaptiveModules) {
     const dirMul = sortOrder === "hard_to_easy" ? -1 : 1;
     const byDiff = (a: Question, b: Question) =>
       dirMul * ((difficultyRank[a.difficulty] ?? 1) - (difficultyRank[b.difficulty] ?? 1));
@@ -345,41 +410,119 @@ export async function generateTest(config: TestConfig, userId: string): Promise<
     repeatedCount,
     poolSize: allQuestions.length,
     poolWarning,
+    adaptiveModules,
   };
 }
 
-export function calculateScore(questions: Question[], answers: Record<string, string>): {
+export interface SkillResult {
+  skill: SkillKey;
+  difficulty: Question["difficulty"];
+  correct: boolean;
+}
+
+export interface ScoreResult {
+  /** Percent correct (0–100). Not an SAT score; see estimateSatScore. */
   score: number;
   correct: number;
   total: number;
   byTopic: Record<string, { correct: number; total: number }>;
   bySection: Record<string, { correct: number; total: number }>;
-} {
+  bySkill: Record<string, { correct: number; total: number }>;
+  /** One entry per question, in order; sent to record_skill_results. */
+  skillResults: SkillResult[];
+  scoreEstimate?: SatScoreEstimate;
+}
+
+export function isAnswerCorrect(question: Question, userAnswer: string | undefined): boolean {
+  return userAnswer?.toLowerCase().trim() === question.correct_answer.toLowerCase().trim();
+}
+
+export function calculateScore(questions: Question[], answers: Record<string, string>): ScoreResult {
   let correct = 0;
   const byTopic: Record<string, { correct: number; total: number }> = {};
   const bySection: Record<string, { correct: number; total: number }> = {};
+  const bySkill: Record<string, { correct: number; total: number }> = {};
+  const skillResults: SkillResult[] = [];
+
+  const bump = (map: Record<string, { correct: number; total: number }>, key: string, ok: boolean) => {
+    map[key] ??= { correct: 0, total: 0 };
+    map[key].total++;
+    if (ok) map[key].correct++;
+  };
 
   for (const question of questions) {
-    const userAnswer = answers[question.id];
-    const isCorrect = userAnswer?.toLowerCase().trim() === question.correct_answer.toLowerCase().trim();
-
+    const isCorrect = isAnswerCorrect(question, answers[question.id]);
     if (isCorrect) correct++;
-
-    if (!byTopic[question.topic]) {
-      byTopic[question.topic] = { correct: 0, total: 0 };
-    }
-    byTopic[question.topic].total++;
-    if (isCorrect) byTopic[question.topic].correct++;
-
-    if (!bySection[question.section]) {
-      bySection[question.section] = { correct: 0, total: 0 };
-    }
-    bySection[question.section].total++;
-    if (isCorrect) bySection[question.section].correct++;
+    const skill = classifySkill(question);
+    bump(byTopic, question.topic, isCorrect);
+    bump(bySection, question.section, isCorrect);
+    bump(bySkill, skill, isCorrect);
+    skillResults.push({ skill, difficulty: question.difficulty, correct: isCorrect });
   }
 
   const total = questions.length;
   const score = total > 0 ? Math.round((correct / total) * 100) : 0;
 
-  return { score, correct, total, byTopic, bySection };
+  return { score, correct, total, byTopic, bySection, bySkill, skillResults };
 }
+
+export interface SatScoreEstimate {
+  readingWriting: number;
+  math: number;
+  total: number;
+  low: number;
+  high: number;
+  routing: Partial<Record<"reading_writing" | "math", ModuleRoute>>;
+}
+
+const DIFFICULTY_WEIGHT: Record<string, number> = { easy: 0.8, normal: 1, hard: 1.3 };
+const round10 = (n: number) => Math.round(n / 10) * 10;
+
+/**
+ * Rough 400–1600 estimate for a full adaptive test. Difficulty-weighted
+ * accuracy mapped linearly onto 200–800 per section; students routed to the
+ * easier Module 2 are capped at 610 for that section, as the easier module
+ * limits the real score. NOT calibrated against official results yet, so it
+ * is always shown as a range and labelled as an estimate.
+ */
+export function estimateSatScore(
+  questions: Question[],
+  answers: Record<string, string>,
+  routing: SatScoreEstimate["routing"]
+): SatScoreEstimate {
+  const section = (name: "reading_writing" | "math") => {
+    const qs = questions.filter((q) => q.section === name);
+    if (qs.length === 0) return 200;
+    let earned = 0;
+    let possible = 0;
+    for (const q of qs) {
+      const w = DIFFICULTY_WEIGHT[q.difficulty] ?? 1;
+      possible += w;
+      if (isAnswerCorrect(q, answers[q.id])) earned += w;
+    }
+    let scaled = 200 + 600 * (earned / possible);
+    if (routing[name] === "easier") scaled = Math.min(scaled, 610);
+    return Math.max(200, Math.min(800, round10(scaled)));
+  };
+  const readingWriting = section("reading_writing");
+  const math = section("math");
+  const total = readingWriting + math;
+  return {
+    readingWriting,
+    math,
+    total,
+    low: Math.max(400, total - 60),
+    high: Math.min(1600, total + 60),
+    routing,
+  };
+}
+
+/** Update the student's skill mastery from a finished attempt (once per attempt). */
+export async function recordSkillResults(attemptId: string, results: SkillResult[]): Promise<void> {
+  const { error } = await supabase.rpc("record_skill_results", {
+    p_attempt_id: attemptId,
+    p_results: results as unknown as Json,
+  });
+  if (error) console.error("Failed to record skill mastery:", error);
+}
+

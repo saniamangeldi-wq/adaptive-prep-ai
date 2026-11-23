@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Quarantined third-party question data (do not commit or publish)
+salvage/data/quarantine-question-bank/

@@ -156,7 +156,6 @@ export default function FreeAiSatPrep() {
                 <Row feature="Adaptive difficulty per skill" adp ka={false} />
                 <Row feature="Full-length Digital SAT mode" adp ka />
                 <Row feature="Scaled 400–1600 score predictions" adp ka />
-                <Row feature="VAK learning-style personalization" adp ka={false} />
                 <Row feature="Free to start" adp ka />
               </tbody>
             </table>

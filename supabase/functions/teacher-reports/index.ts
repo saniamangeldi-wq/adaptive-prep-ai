@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChat, AI_MODELS, refundCredits, SKILL_LABELS, masteryPct, type MasteryRow } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +31,18 @@ When generating reports, format them with:
 - **Areas for Improvement**: Topics needing more practice
 - **Recommendations**: Specific action items
 - **Comparison**: How they compare to averages (when data available)
+
+PARENT REPORTS:
+When asked for a parent report or weekly update, write one short message per student that a parent can read in under a minute:
+- Opening line: the student's name and the headline (improving / steady / needs attention).
+- 2-3 facts from the roster: tests done, accuracy change, latest estimate range, strongest skill.
+- One focus for next week (their weakest skill) and one concrete action.
+- Write it in the language the tutor asks for (Russian or Kazakh are common); default to the language of the request.
+- Never present an estimate as an official SAT score.
+
+DATA RULES:
+- Use only the numbers in the roster. If a student has no tests, say so and suggest a diagnostic test; don't guess.
+- Skill names are the official Digital SAT domains; keep them in English in brackets when writing in Russian or Kazakh.
 
 For chat questions, be helpful and professional. Reference specific data when available.
 You can also help ${role === 'tutor' ? 'tutors' : 'teachers'} with their own SAT knowledge - explain concepts, suggest teaching approaches, etc.`;
@@ -106,6 +119,52 @@ function stripThinkTagsFromStream(body: ReadableStream<Uint8Array>): ReadableStr
   });
 }
 
+// Compact, per-student summary for the report prompt: tests taken, latest
+// accuracy and estimate, weakest and strongest skills.
+async function buildRoster(supabase: any, students: any[]): Promise<string> {
+  const ids = students.map((s) => s.student_id);
+  const [{ data: attempts }, { data: mastery }] = await Promise.all([
+    supabase
+      .from("test_attempts")
+      .select("user_id, correct_answers, total_questions, completed_at, feedback")
+      .in("user_id", ids)
+      .not("completed_at", "is", null)
+      .order("completed_at", { ascending: false })
+      .limit(300),
+    supabase.from("skill_mastery").select("user_id, skill, section, rating, attempts, correct").in("user_id", ids),
+  ]);
+
+  const lines: string[] = [];
+  for (const s of students) {
+    const p = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles ?? Object.values(s).find((v) => v && typeof v === "object");
+    const name = p?.full_name || p?.email || "Unnamed student";
+    const own = (attempts ?? []).filter((a: any) => a.user_id === s.student_id);
+    const rows = ((mastery ?? []) as (MasteryRow & { user_id: string })[])
+      .filter((m) => m.user_id === s.student_id && m.attempts >= 3)
+      .sort((x, y) => x.rating - y.rating);
+    const parts: string[] = [`${own.length} tests`];
+    if (own[0]) {
+      const a = own[0];
+      const acc = a.total_questions ? Math.round((a.correct_answers / a.total_questions) * 100) : 0;
+      parts.push(`latest ${a.correct_answers}/${a.total_questions} (${acc}%) on ${String(a.completed_at).slice(0, 10)}`);
+      const est = a.feedback?.scoreEstimate;
+      if (est?.total) parts.push(`latest estimate ${est.low}-${est.high}`);
+    }
+    if (own.length >= 2) {
+      const acc = (a: any) => (a.total_questions ? a.correct_answers / a.total_questions : 0);
+      const delta = Math.round((acc(own[0]) - acc(own[own.length - 1])) * 100);
+      parts.push(`accuracy change since first test: ${delta >= 0 ? "+" : ""}${delta} pts`);
+    }
+    if (rows.length > 0) {
+      parts.push("weakest: " + rows.slice(0, 2).map((r) => `${SKILL_LABELS[r.skill]} ${masteryPct(r.rating)}%`).join(", "));
+      const best = rows[rows.length - 1];
+      parts.push(`strongest: ${SKILL_LABELS[best.skill]} ${masteryPct(best.rating)}%`);
+    }
+    lines.push(`- ${name}: ${parts.join("; ")}`);
+  }
+  return `\n\nSTUDENT ROSTER (${students.length} students; % = skill mastery, the estimated chance of getting a medium question right; estimates are unofficial):\n${lines.join("\n")}\nUse these numbers. Don't invent data for students with no tests; suggest a diagnostic for them.`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -166,71 +225,27 @@ serve(async (req) => {
       creditCost = profile.role === "school_admin" ? 10 : 5;
     }
 
-    if (profile.credits_remaining < creditCost) {
-      return new Response(JSON.stringify({ 
-        error: `Insufficient credits. This action requires ${creditCost} credits.`,
-        credits_remaining: profile.credits_remaining,
-        credits_required: creditCost
-      }), {
-        status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+
 
     // Get relevant student data for context
     let studentContext = "";
     
-    if (profile.role === "tutor") {
-      // Get tutor's students and their test attempts
+    if (profile.role === "tutor" || profile.role === "teacher") {
+      // Per-student roster with skill mastery, so reports name real weak spots.
+      const link = profile.role === "tutor"
+        ? { table: "tutor_students", owner: "tutor_id", fk: "profiles!tutor_students_student_id_fkey" }
+        : { table: "teacher_students", owner: "teacher_id", fk: "profiles!teacher_students_student_id_fkey" };
       const { data: students } = await supabase
-        .from("tutor_students")
-        .select(`
-          student_id,
-          profiles!tutor_students_student_id_fkey(full_name, email)
-        `)
-        .eq("tutor_id", userId);
+        .from(link.table)
+        .select(`student_id, ${link.fk}(full_name, email)`)
+        .eq(link.owner, userId)
+        .limit(40);
 
       if (students && students.length > 0) {
-        const studentIds = students.map(s => s.student_id);
-        const { data: attempts } = await supabase
-          .from("test_attempts")
-          .select("user_id, score, correct_answers, total_questions, completed_at")
-          .in("user_id", studentIds)
-          .order("completed_at", { ascending: false })
-          .limit(50);
-
-        studentContext = `\n\nYour students: ${students.length}\nRecent test attempts available: ${attempts?.length || 0}`;
-        if (attempts && attempts.length > 0) {
-          studentContext += `\nRecent test data: ${JSON.stringify(attempts.slice(0, 10))}`;
-        }
-      }
-    } else if (profile.role === "teacher") {
-      const { data: students } = await supabase
-        .from("teacher_students")
-        .select(`
-          student_id,
-          profiles!teacher_students_student_id_fkey(full_name, email)
-        `)
-        .eq("teacher_id", userId);
-
-      if (students && students.length > 0) {
-        const studentIds = students.map(s => s.student_id);
-        const { data: attempts } = await supabase
-          .from("test_attempts")
-          .select("user_id, score, correct_answers, total_questions, completed_at")
-          .in("user_id", studentIds)
-          .order("completed_at", { ascending: false })
-          .limit(50);
-
-        studentContext = `\n\nYour students: ${students.length}\nRecent test attempts available: ${attempts?.length || 0}`;
-        if (attempts && attempts.length > 0) {
-          studentContext += `\nRecent test data: ${JSON.stringify(attempts.slice(0, 10))}`;
-        }
+        studentContext = await buildRoster(supabase, students as any[]);
+      } else {
+        studentContext = "\n\nNo students are linked to this account yet.";
       }
     } else if (profile.role === "school_admin") {
       // Get school-wide data
@@ -247,14 +262,23 @@ serve(async (req) => {
       }
     }
 
-    // Deduct credits
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ credits_remaining: profile.credits_remaining - creditCost })
-      .eq("user_id", userId);
-
-    if (updateError) {
-      console.error("Failed to deduct credit:", updateError);
+    // Deduct credits atomically (daily reset included); -1 means not enough.
+    const { data: creditsLeft, error: creditError } = await supabase.rpc("consume_ai_credits", { p_cost: creditCost });
+    if (creditError) {
+      console.error("Failed to consume credits:", creditError);
+      return new Response(JSON.stringify({ error: "Could not check your credits. Please try again." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (creditsLeft === -1) {
+      return new Response(JSON.stringify({
+        error: `Insufficient credits. This action requires ${creditCost} credits.`,
+        credits_required: creditCost
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Build system prompt
@@ -271,26 +295,18 @@ serve(async (req) => {
       ];
     }
 
-    // Call Lovable AI
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: profile.tier === "tier_3" ? "google/gemini-2.5-pro" : 
-               profile.tier === "tier_2" ? "google/gemini-2.5-flash" : 
-               "google/gemini-2.5-flash-lite",
+    // Call the AI provider (see ../_shared/ai.ts)
+    const response = await aiChat({
+        model: profile.tier === "tier_3" ? AI_MODELS.deep : AI_MODELS.fast,
         messages: [
           { role: "system", content: systemPrompt },
           ...enhancedMessages,
         ],
         stream: true,
-      }),
-    });
+      });
 
     if (!response.ok) {
+      await refundCredits(userId, creditCost);
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
           status: 429,

@@ -1,73 +1,43 @@
-# Welcome to my Lovable project
+# AdaptivePrep
 
-## Project info
+Digital SAT preparation for Kazakh- and Russian-speaking students: adaptive practice tests, score reports, a Socratic AI coach, and dashboards for tutors and tutoring centers. UI in English, Russian and Kazakh.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Live: https://adaptivetestprep.org (adaptiveprep.org redirects there).
 
-## How can I edit this code?
+## Stack
 
-There are several ways of editing your application.
+- React 18 + Vite + TypeScript, Tailwind + shadcn/ui, i18next (en / ru / kk)
+- Supabase (Postgres + RLS, Auth, Edge Functions in `supabase/functions`)
+- Stripe Payment Links (`src/lib/stripe-links.ts`); Kaspi planned for KZ customers
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Run locally
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm ci
+npm run dev      # http://localhost:8080
+npm run build
+npm run lint
+npm test
+npx tsc -p tsconfig.app.json --noEmit   # typecheck (vite build does not typecheck)
 ```
 
-**Edit a file directly in GitHub**
+`.env` holds the Supabase URL and publishable key (both public by design). Server secrets live in Supabase, not in this repo.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Plans we sell
 
-**Use GitHub Codespaces**
+| Plan | Price | Profile tier |
+|---|---|---|
+| Free | — | `tier_0` |
+| Pro | $10 / ₸4,990 per month | `tier_2` |
+| Tutor | $59 / ₸29,500 per month | `tier_1` (tutor role) |
+| Tutoring center | quote | — |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Legacy tiers (student Basic/Elite, tutor Professional/Business) are no longer sold. Existing subscribers keep them, and the billing pages still show a subscriber's own plan. Config: `src/lib/pricing-config.ts`, `src/lib/tier-limits.ts`.
 
-## What technologies are used for this project?
+## Frozen features
 
-This project is built with:
+`src/lib/features.ts` hides University Match, Spaces and the tutor leaderboard. Their code is kept, but they're removed from navigation and their routes redirect to `/dashboard`.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Business plan and salvage
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+`salvage/` holds the audit, the 90-day plan (`salvage/90-DAY-PLAN.md`) and the revenue model. The practice questions currently in the database came from OpenSAT and look like College Board's own questions. Don't use them in anything paid or public; see `salvage/README.md`.

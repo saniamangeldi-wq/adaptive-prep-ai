@@ -36,7 +36,6 @@ import DigitalSATScoreCalculator from "./pages/DigitalSATScoreCalculator";
 
 // School admin pages
 import CreateSchool from "./pages/school/CreateSchool";
-import UploadTests from "./pages/admin/UploadTests";
 import SchoolOverview from "./pages/school/SchoolOverview";
 import SchoolTeachers from "./pages/school/SchoolTeachers";
 import SchoolStudents from "./pages/school/SchoolStudents";
@@ -59,11 +58,7 @@ import Assignments from "./pages/Assignments";
 import Guide from "./pages/Guide";
 import Achievements from "./pages/Achievements";
 import Unsubscribe from "./pages/Unsubscribe";
-import VideoLessons from "./pages/VideoLessons";
-import LessonsComingSoon from "./pages/LessonsComingSoon";
-import SATVerbal from "./pages/SATVerbal";
-import RevenueCalculator from "./pages/RevenueCalculator";
-import OAuthConsent from "./pages/OAuthConsent";
+import { FEATURES } from "./lib/features";
 
 const queryClient = new QueryClient();
 
@@ -136,7 +131,6 @@ function AppRoutes() {
       <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/blog/free-ai-sat-prep" element={<FreeAiSatPrep />} />
       <Route path="/blog/northeastern-acceptance-rate" element={<NortheasternAcceptanceRate />} />
-      <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/digital-sat-question-bank" element={<DigitalSATQuestionBank />} />
       <Route path="/digital-sat-score-calculator" element={<DigitalSATScoreCalculator />} />
@@ -149,17 +143,13 @@ function AppRoutes() {
       <Route path="/dashboard/sat-test/:testId" element={<ProtectedRoute><TakeSATTest /></ProtectedRoute>} />
       <Route path="/dashboard/tests/:testId/results" element={<ProtectedRoute><TestResults /></ProtectedRoute>} />
       <Route path="/dashboard/coach" element={<ProtectedRoute><AICoach /></ProtectedRoute>} />
-      <Route path="/dashboard/spaces" element={<ProtectedRoute><Spaces /></ProtectedRoute>} />
+      <Route path="/dashboard/spaces" element={FEATURES.spaces ? <ProtectedRoute><Spaces /></ProtectedRoute> : <Navigate to="/dashboard" replace />} />
       <Route path="/dashboard/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
       <Route path="/dashboard/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
-      <Route path="/dashboard/university-match" element={<ProtectedRoute><UniversityMatch /></ProtectedRoute>} />
+      <Route path="/dashboard/university-match" element={FEATURES.universityMatch ? <ProtectedRoute><UniversityMatch /></ProtectedRoute> : <Navigate to="/dashboard" replace />} />
       <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
       <Route path="/dashboard/tutor-billing" element={<ProtectedRoute><TutorBilling /></ProtectedRoute>} />
-      <Route path="/dashboard/revenue-calculator" element={<ProtectedRoute><RevenueCalculator /></ProtectedRoute>} />
-      
-      {/* Admin routes */}
-      <Route path="/admin/upload-tests" element={<ProtectedRoute><UploadTests /></ProtectedRoute>} />
       
       {/* School admin routes */}
       <Route path="/dashboard/school" element={<ProtectedRoute><SchoolOverview /></ProtectedRoute>} />
@@ -178,7 +168,7 @@ function AppRoutes() {
       <Route path="/dashboard/classroom/add" element={<ProtectedRoute><SchoolInvite /></ProtectedRoute>} />
       <Route path="/dashboard/classroom/assign" element={<ProtectedRoute><PracticeTests /></ProtectedRoute>} />
       <Route path="/dashboard/manage-assignments" element={<ProtectedRoute><ManageAssignments /></ProtectedRoute>} />
-      <Route path="/dashboard/leaderboard" element={<ProtectedRoute><TutorLeaderboard /></ProtectedRoute>} />
+      <Route path="/dashboard/leaderboard" element={FEATURES.tutorLeaderboard ? <ProtectedRoute><TutorLeaderboard /></ProtectedRoute> : <Navigate to="/dashboard" replace />} />
       <Route path="/dashboard/schedule" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       <Route path="/dashboard/resources" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
       
@@ -189,8 +179,6 @@ function AppRoutes() {
       <Route path="/dashboard/curriculum" element={<ProtectedRoute><Curriculum /></ProtectedRoute>} />
       <Route path="/dashboard/guide" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
       <Route path="/dashboard/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-      <Route path="/dashboard/lessons" element={<ProtectedRoute><VideoLessons /></ProtectedRoute>} />
-      <Route path="/dashboard/lessons/coming-soon" element={<ProtectedRoute><LessonsComingSoon /></ProtectedRoute>} />
       
       {/* 404 */}
       <Route path="*" element={<NotFound />} />

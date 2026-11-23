@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChat, AI_MODELS, consumeCredits, refundCredits } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -154,21 +155,8 @@ serve(async (req) => {
     if (analysisType === "projection") creditCost = 5;
     if (analysisType === "comprehensive") creditCost = 10;
 
-    if (profile.credits_remaining < creditCost) {
-      return new Response(JSON.stringify({ 
-        error: `Insufficient credits. This analysis requires ${creditCost} credits.`,
-        credits_remaining: profile.credits_remaining,
-        credits_required: creditCost
-      }), {
-        status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+
 
     // Get school data
     const { data: schoolMember } = await supabase
@@ -310,39 +298,40 @@ serve(async (req) => {
       }
     }
 
-    // Deduct credits
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ credits_remaining: profile.credits_remaining - creditCost })
-      .eq("user_id", userId);
-
-    if (updateError) {
-      console.error("Failed to deduct credits:", updateError);
+    // Deduct credits atomically (daily reset included); -1 means not enough.
+    const { data: creditsLeft, error: creditError } = await supabase.rpc("consume_ai_credits", { p_cost: creditCost });
+    if (creditError) {
+      console.error("Failed to consume credits:", creditError);
+      return new Response(JSON.stringify({ error: "Could not check your credits. Please try again." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (creditsLeft === -1) {
+      return new Response(JSON.stringify({
+        error: `Insufficient credits. This analysis requires ${creditCost} credits.`,
+        credits_required: creditCost
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Build system prompt with all gathered data
     const systemPrompt = getAdminAnalyticsPrompt(schoolData, teacherPerformance, projections);
 
-    // Call Lovable AI
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: profile.tier === "tier_3" ? "google/gemini-2.5-pro" : 
-               profile.tier === "tier_2" ? "google/gemini-2.5-flash" : 
-               "google/gemini-2.5-flash-lite",
+    // Call the AI provider (see ../_shared/ai.ts)
+    const response = await aiChat({
+        model: profile.tier === "tier_3" ? AI_MODELS.deep : AI_MODELS.fast,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
         ],
         stream: true,
-      }),
-    });
+      });
 
     if (!response.ok) {
+      await refundCredits(userId, creditCost);
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
           status: 429,

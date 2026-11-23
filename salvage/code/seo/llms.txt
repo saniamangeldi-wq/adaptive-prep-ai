@@ -1,0 +1,15 @@
+# AdaptivePrep
+
+> AI-powered SAT preparation platform with adaptive practice tests, an AI study coach, smart flashcards, and university matching for ambitious high-school students.
+
+AdaptivePrep helps students prepare for the Digital SAT using an adaptive engine that calibrates question difficulty to each learner, a Socratic AI Coach that guides without giving away answers, and dashboards for tutors, teachers, and schools. The platform is built around the official Digital SAT format (Reading & Writing + Math modules) and supports four roles: Student, Tutor, Teacher, and School Admin.
+
+## Pages
+
+- [Home](/): Product overview, features, and pricing for AdaptivePrep.
+- [Sign up](/signup): Create a free student, tutor, teacher, or school admin account.
+- [Sign in](/login): Log in to an existing AdaptivePrep account.
+
+## Optional
+
+- [Forgot password](/forgot-password): Request a password reset link.

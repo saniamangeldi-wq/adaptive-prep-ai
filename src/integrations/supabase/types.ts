@@ -1621,6 +1621,36 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_mastery: {
+        Row: {
+          attempts: number
+          correct: number
+          rating: number
+          section: string
+          skill: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          correct?: number
+          rating?: number
+          section: string
+          skill: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          correct?: number
+          rating?: number
+          section?: string
+          skill?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       student_badges: {
         Row: {
           badge_description: string | null
@@ -2832,6 +2862,16 @@ export type Database = {
         Returns: number
       }
       get_founding_member_count: { Args: never; Returns: number }
+      consume_ai_credits: { Args: { p_cost?: number }; Returns: number }
+      consume_tests: { Args: { p_count: number }; Returns: number }
+      record_skill_results: {
+        Args: { p_attempt_id: string; p_results: Json }
+        Returns: number
+      }
+      refund_ai_credits: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: undefined
+      }
       get_school_invite_code: { Args: { _school_id: string }; Returns: string }
       has_role: {
         Args: {

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChat, AI_MODELS, consumeCredits, refundCredits } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,17 +50,6 @@ serve(async (req) => {
       });
     }
 
-    // Check credits
-    if (profile.credits_remaining <= 0) {
-      return new Response(JSON.stringify({ 
-        error: "No credits remaining",
-        cards: [] 
-      }), {
-        status: 402,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const { topic, cardCount, sourceType, customContent } = await req.json();
 
     if (!topic) {
@@ -69,16 +59,17 @@ serve(async (req) => {
       });
     }
 
-    // Deduct 1 credit
-    await supabase
-      .from("profiles")
-      .update({ credits_remaining: profile.credits_remaining - 1 })
-      .eq("user_id", user.id);
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    // Deduct 1 credit atomically (daily reset included); -1 means not enough.
+    const { data: creditsLeft, error: creditError } = await supabase.rpc("consume_ai_credits", { p_cost: 1 });
+    if (creditError) throw new Error(`Could not check credits: ${creditError.message}`);
+    if (creditsLeft === -1) {
+      return new Response(JSON.stringify({ error: "No credits remaining", cards: [] }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+
 
     // Build the prompt with strict guidelines to prevent answer leakage
     const qualityRules = `
@@ -125,14 +116,8 @@ Each flashcard must:
     }
 
     // Call Lovable AI with tool calling for structured output
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+    const response = await aiChat({
+        model: AI_MODELS.fast,
         messages: [
           {
             role: "system",
@@ -187,8 +172,7 @@ Always ensure the question requires the learner to recall information from memor
           }
         ],
         tool_choice: { type: "function", function: { name: "create_flashcards" } }
-      }),
-    });
+      });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -225,7 +209,7 @@ Always ensure the question requires the learner to recall information from memor
     return new Response(JSON.stringify({ 
       cards,
       topic,
-      creditsRemaining: profile.credits_remaining - 1
+      creditsRemaining: creditsLeft
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

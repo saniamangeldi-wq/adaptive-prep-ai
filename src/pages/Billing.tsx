@@ -135,8 +135,11 @@ function TutorBillingView() {
         </Card>
 
         {/* Plans */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {tutorPlans.map((plan) => {
+        <div className="grid md:grid-cols-2 gap-6 max-w-3xl">
+          {tutorPlans
+            // Relaunch sells one tutor plan; legacy subscribers still see their own plan.
+            .filter((plan) => plan.tier === "tier_1" || plan.tier === profile?.tier)
+            .map((plan) => {
             const isCurrentPlan = profile?.tier === plan.tier;
             const stripeLink = getStripeLink("tutor", plan.tier as "tier_1" | "tier_2" | "tier_3", billingCycle);
             return (
@@ -445,8 +448,11 @@ function StudentBillingView() {
         </div>
 
         {/* Pricing Plans Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {studentPlans.map((plan) => {
+        <div className="grid gap-4 sm:grid-cols-2 max-w-3xl">
+          {studentPlans
+            // Relaunch sells Free + Pro only; legacy subscribers still see their own plan.
+            .filter((plan) => plan.tierKey === "tier_0" || plan.tierKey === "tier_2" || plan.tierKey === profile?.tier)
+            .map((plan) => {
             const isCurrentTier = profile?.tier === plan.tierKey && !profile?.is_trial;
             const isTrialTier = profile?.is_trial && plan.tierKey === "tier_2";
 

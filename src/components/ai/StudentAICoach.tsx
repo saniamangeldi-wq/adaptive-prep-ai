@@ -27,8 +27,6 @@ import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { useAIChat, type Message } from "@/hooks/useAIChat";
 import { MarkdownMath as ReactMarkdown } from "@/components/ai/MarkdownMath";
-import { VoiceChat } from "./VoiceChat";
-import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useBrowserSTT } from "@/hooks/useBrowserSTT";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -115,13 +113,12 @@ interface SpaceInfo {
 interface StudentAICoachProps {
   conversationId?: string | null;
   onEnsureConversation?: () => Promise<string | null>;
-  chatMode?: "text" | "voice";
   spaceReferences?: Reference[];
   activeSpace?: SpaceInfo | null;
   modelOverride?: string;
 }
 
-export function StudentAICoach({ conversationId, onEnsureConversation, chatMode = "text", spaceReferences = [], activeSpace = null, modelOverride }: StudentAICoachProps) {
+export function StudentAICoach({ conversationId, onEnsureConversation, spaceReferences = [], activeSpace = null, modelOverride }: StudentAICoachProps) {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<string | null>(conversationId || null);
   const [showAttachments, setShowAttachments] = useState(false);
@@ -135,33 +132,12 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const hasTTS = profile?.tier === "tier_2" || profile?.tier === "tier_3";
 
   const handleSendRef = useRef<(text: string) => void>(() => {});
-  const [isCleaningSTT, setIsCleaningSTT] = useState(false);
-  
-  const handleSTTComplete = useCallback(async (rawText: string) => {
+  // Browser dictation is sent as typed text. (The old cleanup-stt AI pass was
+  // removed: it was an unmetered AI call on every dictation.)
+  const isCleaningSTT = false;
+  const handleSTTComplete = useCallback((rawText: string) => {
     if (!rawText.trim()) return;
-    setIsCleaningSTT(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cleanup-stt`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-          },
-          body: JSON.stringify({ rawText }),
-        }
-      );
-      const data = await response.json();
-      const cleaned = data?.cleaned || rawText.trim();
-      handleSendRef.current(cleaned);
-    } catch {
-      // Fallback: send raw text
-      handleSendRef.current(rawText.trim());
-    } finally {
-      setIsCleaningSTT(false);
-    }
+    handleSendRef.current(rawText.trim());
   }, []);
 
   const { startRecording: startSTT, stopRecording: stopSTT, isRecording: isSTTRecording, isSupported: isSTTSupported, partialText: sttPartialText } = useBrowserSTT({
@@ -311,18 +287,6 @@ export function StudentAICoach({ conversationId, onEnsureConversation, chatMode 
   const noCredits = creditsRemaining <= 0;
   const hoursUntilReset = getHoursUntilReset();
 
-  // Voice mode
-  if (chatMode === "voice") {
-    return (
-      <div className="flex flex-col h-full">
-        <VoiceChat
-          onTranscript={handleVoiceTranscript}
-          isDisabled={noCredits || isLoading}
-          fullMode={true}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -643,7 +607,6 @@ function PerplexityMessage({ message, isTier3, isLast, isStreaming, onRetry, onS
   onSend: (text: string) => void;
   onSendSilent: (text: string) => void;
 }) {
-  const { speak, stop, isPlaying, isLoading: ttsLoading } = useTextToSpeech();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -653,13 +616,6 @@ function PerplexityMessage({ message, isTier3, isLast, isStreaming, onRetry, onS
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleTTS = () => {
-    if (isPlaying) {
-      stop();
-    } else {
-      speak(message.content);
-    }
-  };
 
   if (message.role === "user") {
     // Show clean visible text, strip any ---ATTACHED CONTENT--- markers
@@ -726,22 +682,6 @@ function PerplexityMessage({ message, isTier3, isLast, isStreaming, onRetry, onS
       {/* Reaction row */}
       {cleanContent && (
         <div className="mt-4 flex items-center gap-1">
-          {isTier3 && (
-            <button
-              onClick={handleTTS}
-              disabled={ttsLoading}
-              className="group/btn p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
-              title={isPlaying ? "Stop" : "Listen"}
-            >
-              {ttsLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : isPlaying ? (
-                <VolumeX className="w-3.5 h-3.5" />
-              ) : (
-                <Volume2 className="w-3.5 h-3.5" />
-              )}
-            </button>
-          )}
           <button
             onClick={handleCopy}
             className="p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"

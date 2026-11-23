@@ -26,7 +26,6 @@ import {
   Trophy,
   Download,
   HelpCircle,
-  Calculator,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,7 +36,7 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 import { SIDEBAR } from "@/lib/design-system";
-import { canAccessCalculator } from "@/lib/calculator-access";
+import { isRouteEnabled } from "@/lib/features";
 
 type NavItem = {
   nameKey: string;
@@ -169,13 +168,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       default:
         nav = studentNav.filter((item) => !item.schoolOnly || isSchoolStudent);
     }
-    if (canAccessCalculator(user?.id)) {
-      const settingsIdx = nav.findIndex((n) => n.href === "/dashboard/settings");
-      const calcItem: NavItem = { nameKey: "Calculator", href: "/dashboard/revenue-calculator", icon: Calculator };
-      if (settingsIdx >= 0) nav = [...nav.slice(0, settingsIdx), calcItem, ...nav.slice(settingsIdx)];
-      else nav = [...nav, calcItem];
-    }
-    return nav;
+    return nav.filter((item) => isRouteEnabled(item.href));
   };
 
   const navigation = getNavigation();

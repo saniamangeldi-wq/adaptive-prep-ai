@@ -15,7 +15,8 @@ import {
   XCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Question, GeneratedTest } from "@/lib/test-generator";
+import type { Question, GeneratedTest, SatScoreEstimate } from "@/lib/test-generator";
+import { SKILLS, isSkillKey } from "@/lib/sat-skills";
 import { UpgradeModal } from "@/components/upgrade/UpgradeModal";
 import { useUpgradeModal } from "@/hooks/useUpgradeModal";
 import { PageSeo } from "@/components/seo/PageSeo";
@@ -27,6 +28,8 @@ interface ResultData {
   total: number;
   byTopic: Record<string, { correct: number; total: number }>;
   bySection: Record<string, { correct: number; total: number }>;
+  bySkill?: Record<string, { correct: number; total: number }>;
+  scoreEstimate?: SatScoreEstimate;
 }
 
 export default function TestResults() {
@@ -164,6 +167,24 @@ export default function TestResults() {
           <p className="text-xl text-muted-foreground">{getScoreMessage(result.score)}</p>
         </div>
 
+        {/* Estimated SAT score (full adaptive tests only) */}
+        {result.scoreEstimate && (
+          <div className="bg-card rounded-xl border border-border/50 p-6 text-center space-y-2">
+            <div className="text-sm text-muted-foreground">Estimated SAT score</div>
+            <div className="text-4xl font-bold text-foreground">
+              {result.scoreEstimate.low}–{result.scoreEstimate.high}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Reading &amp; Writing ≈ {result.scoreEstimate.readingWriting} · Math ≈ {result.scoreEstimate.math}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Module 2: Reading &amp; Writing {result.scoreEstimate.routing.reading_writing ?? "—"},
+              {" "}Math {result.scoreEstimate.routing.math ?? "—"}.
+              {" "}An unofficial estimate from this practice test, not a College Board score.
+            </div>
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid sm:grid-cols-3 gap-4">
           <div className="bg-card rounded-xl border border-border/50 p-6 text-center">
@@ -183,7 +204,7 @@ export default function TestResults() {
           <div className="bg-card rounded-xl border border-border/50 p-6 text-center">
             <Trophy className="w-8 h-8 text-primary mx-auto mb-2" />
             <div className="text-2xl font-bold text-foreground capitalize">
-              {test.config.difficulty}
+              {test.adaptiveModules ? "Adaptive" : test.config.difficulty}
             </div>
             <div className="text-sm text-muted-foreground">Difficulty</div>
           </div>
@@ -222,16 +243,16 @@ export default function TestResults() {
           </div>
         )}
 
-        {/* Topic Breakdown */}
-        {Object.keys(result.byTopic).length > 0 && (
+        {/* Skill Breakdown (Digital SAT domains) */}
+        {Object.keys(result.bySkill ?? result.byTopic).length > 0 && (
           <div className="bg-card rounded-xl border border-border/50 p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Score by Topic</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Score by Skill</h2>
             <div className="grid sm:grid-cols-2 gap-4">
-              {Object.entries(result.byTopic).map(([topic, data]) => {
+              {Object.entries(result.bySkill ?? result.byTopic).map(([topic, data]) => {
                 const percentage = Math.round((data.correct / data.total) * 100);
                 return (
                   <div key={topic} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                    <span className="text-foreground capitalize">{topic.replace("_", " ")}</span>
+                    <span className="text-foreground">{isSkillKey(topic) ? SKILLS[topic].label : topic.replace("_", " ")}</span>
                     <span className={cn("font-semibold", getScoreColor(percentage))}>
                       {data.correct}/{data.total}
                     </span>

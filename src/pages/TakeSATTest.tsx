@@ -6,7 +6,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useXPLevel } from "@/hooks/useXPLevel";
 import { XP_REWARDS } from "@/lib/gamification-config";
 import { supabase } from "@/integrations/supabase/client";
-import { calculateScore, type Question, type GeneratedTest } from "@/lib/test-generator";
+import type { Json } from "@/integrations/supabase/types";
+import {
+  calculateScore,
+  estimateSatScore,
+  recordSkillResults,
+  ROUTING_THRESHOLD,
+  type Question,
+  type GeneratedTest,
+  type ModuleRoute,
+} from "@/lib/test-generator";
 import { PageSeo } from "@/components/seo/PageSeo";
 import { 
   TestStartScreen, 
@@ -32,6 +41,8 @@ interface ModuleData {
 
 interface TestSessionData {
   testId: string;
+  /** Which Module 2 each section was routed to (adaptive full tests only). */
+  routing: Partial<Record<"reading_writing" | "math", ModuleRoute>>;
   reading_writing: {
     module1: ModuleData;
     module2: ModuleData;
@@ -65,7 +76,25 @@ export default function TakeSATTest() {
       return;
     }
 
-    // Initialize test session with questions split into modules
+    // Adaptive full test: Module 1 now, Module 2 chosen after Module 1.
+    const adaptive = testData.adaptiveModules;
+    if (adaptive) {
+      setTestSession({
+        testId: testData.id,
+        routing: {},
+        reading_writing: {
+          module1: { questions: adaptive.reading_writing.module1, answers: {}, flaggedQuestions: new Set() },
+          module2: { questions: adaptive.reading_writing.harder, answers: {}, flaggedQuestions: new Set() },
+        },
+        math: {
+          module1: { questions: adaptive.math.module1, answers: {}, flaggedQuestions: new Set() },
+          module2: { questions: adaptive.math.harder, answers: {}, flaggedQuestions: new Set() },
+        },
+      });
+      return;
+    }
+
+    // Older generated tests: split questions into modules
     const allQuestions = testData.questions;
     const rwQuestions = allQuestions.filter(q => q.section === "reading_writing");
     const mathQuestions = allQuestions.filter(q => q.section === "math");
@@ -78,6 +107,7 @@ export default function TakeSATTest() {
 
     setTestSession({
       testId: testData.id,
+      routing: {},
       reading_writing: {
         module1: { questions: rwMod1, answers: {}, flaggedQuestions: new Set() },
         module2: { questions: rwMod2, answers: {}, flaggedQuestions: new Set() },
@@ -184,9 +214,15 @@ export default function TakeSATTest() {
       // Update module with score
       const section = flowState.currentSection;
       const moduleKey = `module${flowState.currentModule}` as "module1" | "module2";
+      // Route Module 2 on Module 1 accuracy, like the real Digital SAT.
+      const adaptive = testData?.adaptiveModules?.[section];
+      const route: ModuleRoute | null =
+        adaptive && flowState.currentModule === 1
+          ? (result.total > 0 && result.correct / result.total >= ROUTING_THRESHOLD ? "harder" : "easier")
+          : null;
       setTestSession(prev => {
         if (!prev) return prev;
-        return {
+        const next = {
           ...prev,
           [section]: {
             ...prev[section],
@@ -197,6 +233,14 @@ export default function TakeSATTest() {
             },
           },
         };
+        if (route && adaptive) {
+          next.routing = { ...prev.routing, [section]: route };
+          next[section] = {
+            ...next[section],
+            module2: { ...next[section].module2, questions: adaptive[route] },
+          };
+        }
+        return next;
       });
     }
 
@@ -210,7 +254,7 @@ export default function TakeSATTest() {
     if (nextState.phase === "complete") {
       await submitFinalResults();
     }
-  }, [flowState, getCurrentModule, startTime]);
+  }, [flowState, getCurrentModule, startTime, testData]);
 
   const handleContinueFromBreak = useCallback(() => {
     setFlowState(prev => getNextFlowState(prev));
@@ -237,6 +281,9 @@ export default function TakeSATTest() {
       ];
 
       const result = calculateScore(allQuestions, allAnswers);
+      if (testData?.adaptiveModules) {
+        result.scoreEstimate = estimateSatScore(allQuestions, allAnswers, testSession.routing);
+      }
       const totalTimeSpent = 
         (testSession.reading_writing.module1.timeSpent || 0) +
         (testSession.reading_writing.module2.timeSpent || 0) +
@@ -256,26 +303,21 @@ export default function TakeSATTest() {
           feedback: {
             byTopic: result.byTopic,
             bySection: result.bySection,
-          },
+            bySkill: result.bySkill,
+            ...(result.scoreEstimate ? { scoreEstimate: result.scoreEstimate } : {}),
+          } as unknown as Json,
         })
         .eq("id", testSession.testId);
 
       if (error) throw error;
 
+      await recordSkillResults(testSession.testId, result.skillResults);
+
       // Update questions remaining
       const questionsUsed = allQuestions.length;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tests_remaining")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profile) {
-        await supabase
-          .from("profiles")
-          .update({ tests_remaining: Math.max(0, (profile.tests_remaining || 0) - questionsUsed) })
-          .eq("user_id", user.id);
-      }
+      // Quota columns are server-controlled; decrement through the RPC.
+      const { error: quotaError } = await supabase.rpc("consume_tests", { p_count: questionsUsed });
+      if (quotaError) console.error("Failed to update test quota:", quotaError);
 
       await refreshProfile();
 
@@ -285,7 +327,8 @@ export default function TakeSATTest() {
       // Navigate to results
       navigate(`/dashboard/tests/${testSession.testId}/results`, {
         state: {
-          test: testData,
+          // Only the questions actually taken (adaptive tests prepare two Module 2 sets).
+          test: testData ? { ...testData, questions: allQuestions } : testData,
           answers: allAnswers,
           result,
           timeSpent: totalTimeSpent,
