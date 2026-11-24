@@ -25,3 +25,6 @@ dist-ssr
 
 # College Board-like question bank: internal testing only, never commit (see salvage/README.md)
 salvage/data/quarantine-question-bank/
+
+# Security findings stay local until fixed and deployed
+salvage/ops/engine/security-audit.md

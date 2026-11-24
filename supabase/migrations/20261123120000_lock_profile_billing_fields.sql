@@ -45,6 +45,7 @@ BEGIN
     NEW.questions_reset_at := NULL;
     NEW.founding_member := false;
     NEW.abandon_warnings := 0;
+    NEW.ielts_enabled := false;
     RETURN NEW;
   END IF;
 
@@ -64,6 +65,8 @@ BEGIN
   NEW.questions_reset_at := OLD.questions_reset_at;
   NEW.founding_member := OLD.founding_member;
   NEW.abandon_warnings := OLD.abandon_warnings;
+  -- Paid IELTS module flag (security review finding 2).
+  NEW.ielts_enabled := OLD.ielts_enabled;
   RETURN NEW;
 END;
 $$;
