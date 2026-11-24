@@ -8,6 +8,7 @@ import { Footer } from "@/components/landing/Footer";
 import { PageSeo } from "@/components/seo/PageSeo";
 import { SKILLS, type SkillKey } from "@/lib/sat-skills";
 import { cn } from "@/lib/utils";
+import { COHORT, formatDate } from "@/lib/cohort";
 
 const CONTACT_EMAIL = "hello@adaptiveprep.org";
 
@@ -83,7 +84,8 @@ function SectionHeading({ id, children }: { id?: string; children: React.ReactNo
 }
 
 const Index = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = ["ru", "kk"].includes(i18n.language?.slice(0, 2)) ? i18n.language.slice(0, 2) : "en";
 
   const steps = [1, 2, 3].map((n) => ({
     n,
@@ -126,6 +128,21 @@ const Index = () => {
               <p className="mt-3 text-sm text-muted-foreground">{t("home.cta_note")}</p>
             </div>
             <SampleReport />
+          </div>
+        </section>
+
+        {/* Live group */}
+        <section className="border-t border-border bg-foreground text-background">
+          <div className="mx-auto max-w-6xl px-4 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="font-semibold">{t("intensive.band_title")}</div>
+              <div className="text-sm text-background/70">
+                {t("intensive.band_body", { start: formatDate(COHORT.startDate, lang), seats: COHORT.seats })}
+              </div>
+            </div>
+            <Button className="bg-background text-foreground hover:bg-background/90 self-start sm:self-auto" asChild>
+              <Link to="/sat-intensive">{t("intensive.band_cta")}<ArrowRight /></Link>
+            </Button>
           </div>
         </section>
 

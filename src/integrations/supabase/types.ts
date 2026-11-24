@@ -382,6 +382,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cohort_leads: {
+        Row: {
+          cohort: string
+          contact: string
+          created_at: string
+          grade: string | null
+          id: string
+          language: string | null
+          name: string
+          note: string | null
+          source: string | null
+          status: string
+          target_score: number | null
+        }
+        Insert: {
+          cohort: string
+          contact: string
+          created_at?: string
+          grade?: string | null
+          id?: string
+          language?: string | null
+          name: string
+          note?: string | null
+          source?: string | null
+          status?: string
+          target_score?: number | null
+        }
+        Update: {
+          cohort?: string
+          contact?: string
+          created_at?: string
+          grade?: string | null
+          id?: string
+          language?: string | null
+          name?: string
+          note?: string | null
+          source?: string | null
+          status?: string
+          target_score?: number | null
+        }
+        Relationships: []
+      }
       conversation_attachments: {
         Row: {
           conversation_id: string | null

@@ -10,6 +10,7 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   const links = [
+    { href: "/sat-intensive", label: t("intensive.nav") },
     { href: "/#how", label: t("home.nav_how") },
     { href: "/#tutors", label: t("home.nav_tutors") },
     { href: "/#pricing", label: t("home.nav_pricing") },

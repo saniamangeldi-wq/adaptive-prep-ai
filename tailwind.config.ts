@@ -82,8 +82,8 @@ export default {
       },
       fontFamily: {
         sans: ['"IBM Plex Sans"', "system-ui", "sans-serif"],
-        display: ['"Source Serif 4"', "Georgia", "serif"],
-        serif: ['"Source Serif 4"', "Georgia", "serif"],
+        display: ['"Literata"', "Georgia", "serif"],
+        serif: ['"Literata"', "Georgia", "serif"],
         mono: ['"IBM Plex Mono"', "ui-monospace", "monospace"],
       },
       boxShadow: {
