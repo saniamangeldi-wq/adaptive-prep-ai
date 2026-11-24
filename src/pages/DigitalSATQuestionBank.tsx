@@ -117,7 +117,7 @@ export default function DigitalSATQuestionBank() {
             </div>
           </section>
 
-          <section className="mt-16 bg-gradient-to-br from-primary/20 to-teal-500/10 border border-primary/30 rounded-2xl p-8 text-center">
+          <section className="mt-16 bg-primary/10 border border-primary/30 rounded-2xl p-8 text-center">
             <h2 className="text-2xl font-bold mb-3">Start the Digital SAT question bank free</h2>
             <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
               Create a free AdaptivePrep account to unlock 1000+ adaptive questions and full-length

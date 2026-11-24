@@ -232,7 +232,7 @@ export default function NortheasternAcceptanceRate() {
         </article>
 
         {/* CTA */}
-        <section className="mt-16 bg-gradient-to-br from-primary/20 to-teal-500/10 border border-primary/30 rounded-2xl p-8 text-center">
+        <section className="mt-16 bg-primary/10 border border-primary/30 rounded-2xl p-8 text-center">
           <h2 className="text-2xl font-bold mb-3">Start prepping for Northeastern today</h2>
           <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
             Join AdaptivePrep free and get an instant SAT score prediction plus a personalized study plan.

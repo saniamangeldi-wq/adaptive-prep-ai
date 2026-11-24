@@ -1,156 +1,78 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Menu, X, GraduationCap, Download } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
 
 export function Navbar() {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
 
-  const navLinks = [
-    { href: "#features", label: t("nav.features") },
-    { href: "/pricing", label: t("nav.pricing") },
-    { href: "#tutors", label: t("nav.for_tutors") },
-    { href: "#schools", label: t("nav.for_schools") },
+  const links = [
+    { href: "/#how", label: t("home.nav_how") },
+    { href: "/#tutors", label: t("home.nav_tutors") },
+    { href: "/#pricing", label: t("home.nav_pricing") },
+    { href: "/#faq", label: t("home.nav_faq") },
   ];
 
-  useEffect(() => {
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsStandalone(true);
-      return;
-    }
-    const ua = navigator.userAgent;
-    setIsIOS(/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream);
-
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
-  const handleInstall = async () => {
-    if (isIOS) {
-      alert("Tap the Share button in your browser, then select 'Add to Home Screen'");
-      return;
-    }
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") setDeferredPrompt(null);
-  };
-
-  const showInstallButton = !isStandalone && (deferredPrompt || isIOS);
-
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-lg border-b border-border/50" />
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background/95">
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4" aria-label="Main">
+        <Link to="/" className="font-display text-xl font-semibold tracking-tight">
+          AdaptivePrep
+        </Link>
 
-      <div className="container relative mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">AdaptivePrep</span>
-          </Link>
-
-          {/* Desktop navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-
-          {/* Right cluster: language + install + sign-in (desktop) */}
-          <div className="hidden md:flex items-center gap-3">
-            <LanguageSwitcher />
-            {showInstallButton && (
-              <Button variant="outline" size="sm" className="items-center gap-1.5" onClick={handleInstall}>
-                <Download className="w-4 h-4" />
-                <span className="text-xs">{t("common.install", "Install App")}</span>
-              </Button>
-            )}
-          </div>
-
-          {/* Install App button - tablet/phone only */}
-          {showInstallButton && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden max-md:flex items-center gap-1.5 mr-2"
-              onClick={handleInstall}
-            >
-              <Download className="w-4 h-4" />
-              <span className="text-xs">{t("common.install", "Install App")}</span>
-            </Button>
-          )}
-
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden p-2 text-foreground"
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label={isOpen ? "Close menu" : "Open menu"}
-            aria-expanded={isOpen}
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+        <div className="hidden md:flex items-center gap-7 text-sm">
+          {links.map((l) => (
+            <a key={l.href} href={l.href} className="text-muted-foreground hover:text-foreground transition-colors">
+              {l.label}
+            </a>
+          ))}
         </div>
 
-        {/* Mobile menu */}
-        <div
-          className={cn(
-            "md:hidden absolute top-full left-0 right-0 bg-background/95 backdrop-blur-lg border-b border-border/50 transition-all duration-300",
-            isOpen ? "opacity-100 visible" : "opacity-0 invisible"
-          )}
+        <div className="hidden md:flex items-center gap-2">
+          <LanguageSwitcher />
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/login">{t("home.sign_in")}</Link>
+          </Button>
+          <Button variant="hero" size="sm" asChild>
+            <Link to="/signup">{t("home.cta_start")}</Link>
+          </Button>
+        </div>
+
+        <button
+          className="md:hidden -mr-2 p-2"
+          onClick={() => setIsOpen((o) => !o)}
+          aria-label={isOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isOpen}
         >
-          <div className="container px-4 py-4 space-y-4">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="block py-2 text-foreground hover:text-primary transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                {link.label}
+          {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+      </nav>
+
+      {isOpen && (
+        <div className="md:hidden border-t border-border bg-background">
+          <div className="mx-auto max-w-6xl px-4 py-3">
+            {links.map((l) => (
+              <a key={l.href} href={l.href} className="block py-3 border-b border-border" onClick={() => setIsOpen(false)}>
+                {l.label}
               </a>
             ))}
-            <div className="pt-4 border-t border-border/50 space-y-3">
-              <div className="flex items-center justify-center">
-                <LanguageSwitcher />
-              </div>
-              {showInstallButton && (
-                <Button variant="secondary" className="w-full gap-2" onClick={handleInstall}>
-                  <Download className="w-4 h-4" />
-                  {t("common.install", "Install App")}
+            <div className="flex items-center justify-between gap-3 pt-4 pb-2">
+              <LanguageSwitcher />
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/login">{t("home.sign_in")}</Link>
                 </Button>
-              )}
-              <Button variant="hero" className="w-full" asChild>
-                <Link to="/signup">{t("nav.get_started")}</Link>
-              </Button>
+                <Button variant="hero" size="sm" asChild>
+                  <Link to="/signup">{t("home.cta_start")}</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </nav>
+      )}
+    </header>
   );
 }

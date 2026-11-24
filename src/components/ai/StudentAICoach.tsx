@@ -325,7 +325,7 @@ export function StudentAICoach({ conversationId, onEnsureConversation, spaceRefe
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center py-24">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mb-6">
                   <GraduationCap className="w-8 h-8 text-primary-foreground" />
                 </div>
                 <h1 className="text-[26px] font-bold text-foreground mb-2">

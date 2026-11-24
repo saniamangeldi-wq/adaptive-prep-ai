@@ -23,7 +23,7 @@ export default function Achievements() {
       <PageSeo title="Achievements & Leaderboard | AdaptivePrep" description="Track XP, badges, levels and your leaderboard rank on AdaptivePrep's gamified SAT prep journey." path="/dashboard/achievements" />
       <div className="space-y-8 max-w-4xl mx-auto">
         {/* Hero Level Card */}
-        <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+        <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="w-20 h-20 rounded-2xl bg-primary/20 flex items-center justify-center text-4xl">
               {currentLevel.icon}

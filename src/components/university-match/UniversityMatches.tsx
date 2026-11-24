@@ -427,7 +427,7 @@ export function UniversityMatches({ onRestart }: UniversityMatchesProps) {
                       setSelectedUniversity(match.university.name);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                    className="gap-2 bg-primary hover:from-primary/90 hover:to-purple-600/90"
                   >
                     <Sparkles className="w-4 h-4" />
                     Get My Plan

@@ -324,7 +324,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType
   return (
     <div className="p-5 rounded-xl bg-card border border-border/50">
       <div className="flex items-center justify-between mb-3">
-        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} p-0.5`}>
+        <div className={`w-10 h-10 rounded-md border border-border p-0.5`}>
           <div className="w-full h-full rounded-[6px] bg-card flex items-center justify-center">
             <Icon className="w-5 h-5 text-foreground" />
           </div>

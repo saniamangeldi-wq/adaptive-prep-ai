@@ -55,7 +55,7 @@ export function JobShortlist({ jobs, calc }: Props) {
                     <p className="text-xs text-muted-foreground">
                       Gap reduction: Shortfall shrinks from{" "}
                       <span className="text-red-400">{formatUSD(Math.abs(calc.gap))}</span> to{" "}
-                      <span className={newGap >= 0 ? "text-emerald-400" : "text-amber-400"}>
+                      <span className={newGap >= 0 ? "text-success" : "text-amber-400"}>
                         {newGap >= 0 ? formatUSD(0) : formatUSD(Math.abs(newGap))}
                       </span>
                     </p>

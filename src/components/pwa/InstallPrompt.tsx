@@ -86,7 +86,7 @@ export function InstallPrompt() {
   if (deferredPrompt) {
     return (
       <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md animate-fade-in">
-        <div className="glass-card rounded-xl p-4 flex items-center gap-3 shadow-glow">
+        <div className="glass-card rounded-xl p-4 flex items-center gap-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
             <Download className="w-5 h-5 text-primary" />
           </div>
@@ -116,7 +116,7 @@ export function InstallPrompt() {
   if (iosBrowser === "safari") {
     return (
       <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md animate-fade-in">
-        <div className="glass-card rounded-xl p-4 shadow-glow">
+        <div className="glass-card rounded-xl p-4">
           <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex items-center gap-3">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -162,7 +162,7 @@ export function InstallPrompt() {
   if (iosBrowser === "chrome" || iosBrowser === "firefox" || iosBrowser === "other") {
     return (
       <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md animate-fade-in">
-        <div className="glass-card rounded-xl p-4 shadow-glow">
+        <div className="glass-card rounded-xl p-4">
           <div className="flex items-start justify-between gap-2 mb-3">
             <div className="flex items-center gap-3">
               <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">

@@ -2,124 +2,182 @@
 @tailwind components;
 @tailwind utilities;
 
-/* AdaptivePrep Design System - Dark mode focused EdTech platform */
+/* AdaptivePrep design system: "exam paper".
+   Warm paper, ink text, one blue accent (answer-sheet ink) and a highlighter
+   yellow used sparingly for marks. Serif headlines, plain sans body, mono for
+   numbers. No gradients, glows or glass. */
 
 @layer base {
   :root {
-    /* Light mode (secondary, toggle available) */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --background: 40 33% 97%;
+    --foreground: 224 22% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 224 22% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 224 22% 11%;
 
-    --primary: 168 76% 42%;
+    --primary: 228 68% 44%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 25% 27%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 40 22% 91%;
+    --secondary-foreground: 224 22% 11%;
 
-    --muted: 214 32% 91%;
-    --muted-foreground: 215 19% 35%;
+    --muted: 40 22% 92%;
+    --muted-foreground: 224 9% 38%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 46 96% 56%;
+    --accent-foreground: 224 22% 11%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 2 68% 46%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 168 76% 42%;
+    --border: 40 14% 84%;
+    --input: 40 14% 80%;
+    --ring: 228 68% 44%;
 
-    --radius: 0.75rem;
+    --radius: 0.375rem;
 
-    --sidebar-background: 240 18% 5%;
-    --sidebar-foreground: 210 20% 98%;
-    --sidebar-primary: 162 72% 46%;
+    --sidebar-background: 40 28% 95%;
+    --sidebar-foreground: 224 22% 11%;
+    --sidebar-primary: 228 68% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 25% 23%;
-    --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 215 25% 27%;
-    --sidebar-ring: 162 72% 46%;
-    --sidebar-icon-muted: 220 9% 46%;
-    --success: 142 76% 36%;
+    --sidebar-accent: 40 22% 89%;
+    --sidebar-accent-foreground: 224 22% 11%;
+    --sidebar-border: 40 14% 84%;
+    --sidebar-ring: 228 68% 44%;
+    --sidebar-icon-muted: 224 9% 45%;
+    --success: 152 58% 30%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 30 88% 42%;
     --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
+    --info: 228 68% 44%;
     --info-foreground: 0 0% 100%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(168, 76%, 42%) 0%, hsl(172, 66%, 50%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(222, 47%, 8%) 0%, hsl(215, 28%, 12%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(215, 28%, 17%) 0%, hsl(222, 47%, 11%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(38, 92%, 50%) 0%, hsl(25, 95%, 53%) 100%);
-    
-    /* Shadows */
-    --shadow-glow: 0 0 40px -10px hsl(168, 76%, 42%, 0.3);
-    --shadow-card: 0 4px 24px -4px hsl(222, 47%, 11%, 0.1);
+    /* Flat on purpose: no gradients or glows. Kept as tokens so older
+       components that reference them still render. */
+    --gradient-primary: linear-gradient(hsl(var(--primary)), hsl(var(--primary)));
+    --gradient-hero: linear-gradient(hsl(var(--background)), hsl(var(--background)));
+    --gradient-card: linear-gradient(hsl(var(--card)), hsl(var(--card)));
+    --gradient-accent: linear-gradient(hsl(var(--accent)), hsl(var(--accent)));
+    --shadow-glow: none;
+    --shadow-card: 0 1px 0 hsl(224 22% 11% / 0.04), 0 1px 3px hsl(224 22% 11% / 0.06);
+  }
+
+  /* Public pages always render on paper, even when the app theme is dark. */
+  .paper {
+    --background: 40 33% 97%;
+    --foreground: 224 22% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 22% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 22% 11%;
+
+    --primary: 228 68% 44%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 22% 91%;
+    --secondary-foreground: 224 22% 11%;
+
+    --muted: 40 22% 92%;
+    --muted-foreground: 224 9% 38%;
+
+    --accent: 46 96% 56%;
+    --accent-foreground: 224 22% 11%;
+
+    --destructive: 2 68% 46%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 14% 84%;
+    --input: 40 14% 80%;
+    --ring: 228 68% 44%;
+
+    --radius: 0.375rem;
+
+    --sidebar-background: 40 28% 95%;
+    --sidebar-foreground: 224 22% 11%;
+    --sidebar-primary: 228 68% 44%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 22% 89%;
+    --sidebar-accent-foreground: 224 22% 11%;
+    --sidebar-border: 40 14% 84%;
+    --sidebar-ring: 228 68% 44%;
+    --sidebar-icon-muted: 224 9% 45%;
+    --success: 152 58% 30%;
+    --success-foreground: 0 0% 100%;
+    --warning: 30 88% 42%;
+    --warning-foreground: 0 0% 100%;
+    --info: 228 68% 44%;
+    --info-foreground: 0 0% 100%;
+
+    /* Flat on purpose: no gradients or glows. Kept as tokens so older
+       components that reference them still render. */
+    --gradient-primary: linear-gradient(hsl(var(--primary)), hsl(var(--primary)));
+    --gradient-hero: linear-gradient(hsl(var(--background)), hsl(var(--background)));
+    --gradient-card: linear-gradient(hsl(var(--card)), hsl(var(--card)));
+    --gradient-accent: linear-gradient(hsl(var(--accent)), hsl(var(--accent)));
+    --shadow-glow: none;
+    --shadow-card: 0 1px 0 hsl(224 22% 11% / 0.04), 0 1px 3px hsl(224 22% 11% / 0.06);
+    color-scheme: light;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 
   .dark {
-    --background: 0 0% 6%;
-    --foreground: 210 20% 98%;
+    --background: 225 14% 8%;
+    --foreground: 40 20% 94%;
 
-    --card: 0 0% 10%;
-    --card-foreground: 210 20% 98%;
+    --card: 225 12% 11%;
+    --card-foreground: 40 20% 94%;
 
-    --popover: 0 0% 10%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 225 12% 11%;
+    --popover-foreground: 40 20% 94%;
 
-    --primary: 168 76% 42%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 228 90% 72%;
+    --primary-foreground: 225 14% 8%;
 
-    --secondary: 0 0% 14%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 225 10% 16%;
+    --secondary-foreground: 40 20% 94%;
 
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 75%;
+    --muted: 225 10% 14%;
+    --muted-foreground: 40 8% 68%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 46 96% 60%;
+    --accent-foreground: 225 14% 8%;
 
-    --destructive: 0 62% 50%;
+    --destructive: 2 70% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
-    --ring: 168 76% 42%;
+    --border: 225 9% 20%;
+    --input: 225 9% 24%;
+    --ring: 228 90% 72%;
 
-    --sidebar-background: 240 18% 5%;
-    --sidebar-foreground: 210 20% 98%;
-    --sidebar-primary: 162 72% 46%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 12%;
-    --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 0 0% 14%;
-    --sidebar-ring: 162 72% 46%;
-    --sidebar-icon-muted: 220 9% 46%;
+    --sidebar-background: 225 15% 6%;
+    --sidebar-foreground: 40 20% 94%;
+    --sidebar-primary: 228 90% 72%;
+    --sidebar-primary-foreground: 225 14% 8%;
+    --sidebar-accent: 225 10% 14%;
+    --sidebar-accent-foreground: 40 20% 94%;
+    --sidebar-border: 225 9% 16%;
+    --sidebar-ring: 228 90% 72%;
+    --sidebar-icon-muted: 40 6% 55%;
 
-    /* Custom tokens - dark mode */
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
+    --success: 152 50% 52%;
+    --success-foreground: 225 14% 8%;
+    --warning: 36 90% 58%;
+    --warning-foreground: 225 14% 8%;
+    --info: 228 90% 72%;
+    --info-foreground: 225 14% 8%;
 
-    /* Gradients - dark mode */
-    --gradient-primary: linear-gradient(135deg, hsl(168, 76%, 42%) 0%, hsl(172, 66%, 50%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(0, 0%, 6%) 0%, hsl(0, 0%, 8%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0, 0%, 10%) 0%, hsl(0, 0%, 7%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(38, 92%, 50%) 0%, hsl(25, 95%, 53%) 100%);
-
-    /* Shadows - dark mode */
-    --shadow-glow: 0 0 60px -15px hsl(168, 76%, 42%, 0.4);
-    --shadow-card: 0 8px 32px -8px hsl(0, 0%, 0%, 0.5);
+    --gradient-primary: linear-gradient(hsl(var(--primary)), hsl(var(--primary)));
+    --gradient-hero: linear-gradient(hsl(var(--background)), hsl(var(--background)));
+    --gradient-card: linear-gradient(hsl(var(--card)), hsl(var(--card)));
+    --gradient-accent: linear-gradient(hsl(var(--accent)), hsl(var(--accent)));
+    --shadow-glow: none;
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.4);
   }
 
   /* Theme: Midnight Blue */
@@ -166,7 +224,7 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    --shadow-glow: 0 0 60px -15px hsl(239, 84%, 67%, 0.4);
+    --shadow-glow: none;
     --shadow-card: 0 8px 32px -8px hsl(0, 0%, 0%, 0.5);
   }
 
@@ -214,7 +272,7 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    --shadow-glow: 0 0 60px -15px hsl(38, 92%, 50%, 0.4);
+    --shadow-glow: none;
     --shadow-card: 0 8px 32px -8px hsl(0, 0%, 0%, 0.5);
   }
 }
@@ -229,8 +287,12 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
   }
 
   ::selection {
@@ -253,26 +315,23 @@
 }
 
 @layer components {
+  /* Legacy class names kept so old markup still renders, now plain. */
   .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg;
+    @apply bg-card border border-border shadow-card;
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-primary to-teal-400 bg-clip-text text-transparent;
+    @apply text-foreground;
   }
 
   .glow-border {
     @apply relative;
   }
 
-  .glow-border::before {
-    content: '';
-    @apply absolute -inset-[1px] rounded-[inherit] bg-gradient-to-r from-primary/50 to-accent/50 opacity-0 transition-opacity duration-300;
-    z-index: -1;
-  }
-
-  .glow-border:hover::before {
-    @apply opacity-100;
+  /* Highlighter mark for a word or number. */
+  .mark {
+    background: linear-gradient(transparent 55%, hsl(var(--accent) / 0.75) 55%, hsl(var(--accent) / 0.75) 92%, transparent 92%);
+    padding: 0 0.08em;
   }
 
   .animate-float {

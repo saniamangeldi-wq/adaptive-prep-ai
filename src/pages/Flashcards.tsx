@@ -152,7 +152,7 @@ export default function Flashcards() {
             )}>
               {/* Front */}
               <div className="absolute inset-0 backface-hidden">
-                <div className="w-full h-full p-8 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/30 flex flex-col items-center justify-center text-center">
+                <div className="w-full h-full p-8 rounded-2xl bg-primary/10 border border-primary/30 flex flex-col items-center justify-center text-center">
                   <span className="text-xs text-primary mb-4">QUESTION</span>
                   <h2 className="text-2xl font-bold text-foreground">{currentCard.front}</h2>
                   <p className="text-sm text-muted-foreground mt-4">Click to reveal answer</p>
@@ -329,7 +329,7 @@ export default function Flashcards() {
             filteredDecks.map((deck) => (
               <div
                 key={deck.id}
-                className="p-6 rounded-xl bg-secondary/50 border border-border hover:border-primary/50 text-left transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group relative"
+                className="p-6 rounded-xl bg-secondary/50 border border-border hover:border-primary/50 text-left transition-all duration-300 hover:bg-muted/40 group relative"
               >
                 <button
                   onClick={() => setSelectedDeck(deck)}

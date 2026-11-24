@@ -255,7 +255,7 @@ export default function SchoolStudents() {
               {students.map((student) => (
                 <div key={student.id} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center text-sm font-medium text-white">
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-sm font-medium text-white">
                       {student.profile?.full_name?.[0] || student.profile?.email?.[0]?.toUpperCase() || "S"}
                     </div>
                     <div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, Mail, Lock, Eye, EyeOff, Loader2, User, Users, School, BookOpen } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2, User, Users, School, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -106,7 +106,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex dark text-foreground">
+    <div className="paper min-h-screen flex text-foreground">
       <PageSeo
         title="Create your AdaptivePrep account — Free AI SAT Prep"
         description="Sign up free for AdaptivePrep. Get an AI SAT coach, adaptive practice tests, flashcards, and a personalized study plan in minutes."
@@ -118,12 +118,9 @@ export default function Signup() {
           {/* Logo */}
           <div className="text-center">
             <Link to="/" className="inline-flex items-center gap-2 mb-8">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="text-2xl font-bold text-foreground">AdaptivePrep</span>
+              <span className="font-display text-2xl font-semibold tracking-tight">AdaptivePrep</span>
             </Link>
-            <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Create your account</h1>
             <p className="text-muted-foreground mt-2">
               {step === "role" ? "First, tell us who you are" : "Complete your registration"}
             </p>
@@ -291,12 +288,9 @@ export default function Signup() {
       </div>
 
       {/* Right side - Image/Gradient */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary/20 via-background to-accent/10 items-center justify-center p-12">
+      <div className="hidden lg:flex flex-1 bg-secondary border-l border-border items-center justify-center p-12">
         <div className="max-w-md text-center space-y-6">
-          <div className="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center animate-float">
-            <GraduationCap className="w-12 h-12 text-primary-foreground" />
-          </div>
-          <h2 className="text-3xl font-bold text-foreground">Join AdaptivePrep</h2>
+          <h2 className="font-display text-3xl font-semibold tracking-tight">Join AdaptivePrep</h2>
           <p className="text-muted-foreground">
             {selectedRole === "student" && "Personalized SAT prep that adapts to how you learn best."}
             {selectedRole === "tutor" && "Powerful tools to track and boost your students' progress."}

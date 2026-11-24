@@ -159,7 +159,7 @@ export default function SchoolBilling() {
         </div>
 
         {/* Contact CTA */}
-        <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/30 text-center">
+        <div className="p-6 rounded-2xl bg-primary/5 border border-primary/30 text-center">
           <h3 className="font-semibold text-foreground mb-2">Interested in a plan?</h3>
           <p className="text-muted-foreground mb-4">All school plans are customized to fit your institution's needs. Contact us to get started.</p>
           <Button variant="hero" onClick={() => {}}>
