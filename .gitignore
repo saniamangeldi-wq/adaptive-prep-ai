@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# College Board-like question bank: internal testing only, never commit (see salvage/README.md)
+salvage/data/quarantine-question-bank/

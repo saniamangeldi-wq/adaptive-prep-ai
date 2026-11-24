@@ -241,7 +241,7 @@ export function UniversityCard({
             </span>
           )}
           {university.offers_full_scholarship && (
-            <span className="text-xs bg-emerald-500/20 border border-emerald-500/40 text-emerald-500 font-semibold px-3 py-1 rounded-full flex items-center gap-1">
+            <span className="text-xs bg-success/20 border border-success/40 text-success font-semibold px-3 py-1 rounded-full flex items-center gap-1">
               🎓 Full Scholarship Available
             </span>
           )}
@@ -252,7 +252,7 @@ export function UniversityCard({
                 ? "bg-destructive/20 text-destructive"
                 : university.acceptance_rate < 30
                 ? "bg-amber-500/20 text-amber-500"
-                : "bg-emerald-500/20 text-emerald-500"
+                : "bg-success/20 text-success"
             )}>
               {university.acceptance_rate}% acceptance
             </span>
@@ -298,7 +298,7 @@ export function UniversityCard({
 
         {/* Scholarship Details */}
         {university.scholarship_name && (
-          <p className="text-xs text-emerald-500 mb-3">
+          <p className="text-xs text-success mb-3">
             ✦ {university.scholarship_name}{university.scholarship_coverage ? ` — ${university.scholarship_coverage}` : ""}
           </p>
         )}

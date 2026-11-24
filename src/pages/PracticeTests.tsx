@@ -415,7 +415,7 @@ export default function PracticeTests() {
                   )}
                 >
                   <div className="absolute top-3 right-3">
-                    <span className="px-2 py-1 rounded-full bg-gradient-to-r from-primary to-teal-400 text-[10px] font-bold text-white">
+                    <span className="px-2 py-1 rounded-full bg-primary text-[10px] font-bold text-white">
                       RECOMMENDED
                     </span>
                   </div>
@@ -748,7 +748,7 @@ export default function PracticeTests() {
 
 
         {/* Start Button */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 rounded-2xl bg-primary/5 border border-primary/20">
           <div>
             <h3 className="font-semibold text-foreground">Ready to start?</h3>
             <p className="text-sm text-muted-foreground">

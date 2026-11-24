@@ -9,7 +9,7 @@ export function FoundingMemberBanner() {
   const pct = spotsLeft === null ? 0 : Math.round(((FOUNDING_MEMBER_CAP - spotsLeft) / FOUNDING_MEMBER_CAP) * 100);
 
   return (
-    <div className="rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:p-5">
+    <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 sm:p-5">
       <div className="flex items-start sm:items-center gap-3 flex-col sm:flex-row sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">

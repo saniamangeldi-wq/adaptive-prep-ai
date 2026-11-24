@@ -88,7 +88,7 @@ export function StudentDashboard() {
       <StudentAffiliationBanner />
       {/* Trial Banner */}
       {isTrialUser && daysRemaining > 0 && (
-        <div className="p-4 rounded-xl bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-accent/10 border border-yellow-500/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Clock className="w-5 h-5 text-yellow-400" />
             <span className="text-foreground">
@@ -188,7 +188,7 @@ export function StudentDashboard() {
       {/* Evidence-based study engine: spaced repetition due today */}
       <Link
         to="/dashboard/flashcards"
-        className="flex items-center justify-between gap-4 p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/5 hover:border-primary/40 transition-colors"
+        className="flex items-center justify-between gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5 hover:border-primary/40 transition-colors"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -217,7 +217,7 @@ export function StudentDashboard() {
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-teal-400 p-0.5 shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-primary p-0.5 shrink-0">
               <div className="w-full h-full rounded-[10px] bg-card flex items-center justify-center">
                 <LineChart className="w-6 h-6 text-foreground" />
               </div>
@@ -293,7 +293,7 @@ export function StudentDashboard() {
       </div>
 
       {/* Learning tip */}
-      <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+      <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
             <Brain className="w-6 h-6 text-primary" />
@@ -333,7 +333,7 @@ function StatCard({
   const content = (
     <div className="p-5 rounded-xl bg-card border border-border/50 cursor-default">
       <div className="flex items-center justify-between mb-3">
-        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} p-0.5`}>
+        <div className={`w-10 h-10 rounded-md border border-border p-0.5`}>
           <div className="w-full h-full rounded-[6px] bg-card flex items-center justify-center">
             <Icon className="w-5 h-5 text-foreground" />
           </div>
@@ -381,9 +381,9 @@ function QuickAction({
   const content = (
     <Link 
       to={href}
-      className="group p-5 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+      className="group p-5 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:bg-muted/40"
     >
-      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} p-0.5 mb-4 group-hover:scale-110 transition-transform duration-300`}>
+      <div className={`w-12 h-12 rounded-md border border-border p-0.5 mb-4`}>
         <div className="w-full h-full rounded-[10px] bg-card flex items-center justify-center">
           <Icon className="w-6 h-6 text-foreground" />
         </div>

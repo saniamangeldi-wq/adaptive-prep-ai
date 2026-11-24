@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { aiChat } from "../_shared/ai.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -8,7 +9,7 @@ const MAINTENANCE_TOKENS = [
   Deno.env.get("SAT_MEDIA_MAINTENANCE_TOKEN") ?? "",
   Deno.env.get("SAT_FIGURE_RUN_TOKEN") ?? "",
 ].filter(Boolean);
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? "";
+const LOVABLE_API_KEY = (Deno.env.get("AI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY")) ?? "";
 
 const BUCKET = "sat-source-files";
 const MODEL = "google/gemini-2.5-flash";
@@ -195,21 +196,14 @@ async function callModel(q: Question): Promise<Record<string, unknown> | null> {
     explanation: typeof q.explanation === "string" ? q.explanation.slice(0, 2000) : null,
   };
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const res = await aiChat({
       model: MODEL,
       temperature: 0,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: JSON.stringify(payload) },
       ],
-    }),
-  });
+    });
 
   if (res.status === 429 || res.status === 402) {
     throw new Error(res.status === 429 ? "rate_limited" : "payment_required");

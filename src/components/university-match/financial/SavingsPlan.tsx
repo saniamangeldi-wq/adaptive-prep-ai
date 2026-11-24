@@ -82,10 +82,10 @@ export function SavingsPlan({ intake, calc }: Props) {
                 <td className="p-2.5 text-right text-foreground">
                   {row.isReducible ? formatTenge(row.suggestedCut) : "—"}
                 </td>
-                <td className="p-2.5 text-right text-emerald-400">
+                <td className="p-2.5 text-right text-success">
                   {row.monthlySaving > 0 ? formatTenge(row.monthlySaving) : "—"}
                 </td>
-                <td className="p-2.5 text-right text-emerald-400">
+                <td className="p-2.5 text-right text-success">
                   {row.yearlySaving > 0 ? formatTenge(row.yearlySaving) : "—"}
                 </td>
               </tr>
@@ -107,7 +107,7 @@ export function SavingsPlan({ intake, calc }: Props) {
                 <span className="text-[10px] text-muted-foreground w-14 flex-shrink-0">{label}</span>
                 <div className="flex-1 h-4 bg-[#2D3748] rounded relative overflow-hidden">
                   <div
-                    className={cn("h-full rounded transition-all", reachedTarget ? "bg-emerald-500" : "bg-[#10B981]/70")}
+                    className={cn("h-full rounded transition-all", reachedTarget ? "bg-success" : "bg-[#10B981]/70")}
                     style={{ width: `${pct}%` }}
                   />
                   <div

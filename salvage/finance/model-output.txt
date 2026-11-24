@@ -1,0 +1,4 @@
+scenario         cohort           b2b   diagnostics subscriptions         gross         costs           net
+floor             3,000           375           400           300         4,075           898         3,177
+base              6,000         1,500           800           800         9,100         1,099         8,001
+stretch           9,900         3,000         1,500         1,500        15,900         1,371        14,529

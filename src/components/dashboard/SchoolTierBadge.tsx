@@ -91,20 +91,20 @@ export function SchoolTierBadge() {
   const getBadgeColor = () => {
     switch (school.ai_tier) {
       case 4:
-        return "from-accent/20 to-primary/20 border-accent/30";
+        return "bg-muted border-accent/30";
       case 3:
-        return "from-primary/20 to-secondary/20 border-primary/30";
+        return "bg-muted border-primary/30";
       case 2:
-        return "from-primary/20 to-muted/20 border-primary/30";
+        return "bg-muted border-primary/30";
       default:
-        return "from-muted/50 to-muted/30 border-border";
+        return "bg-muted border-border";
     }
   };
 
   return (
     <div className="p-3 border-t border-sidebar-border">
       <div className={cn(
-        "p-3 rounded-lg bg-gradient-to-r border",
+        "p-3 rounded-lg border",
         getBadgeColor()
       )}>
         {/* School name and plan */}

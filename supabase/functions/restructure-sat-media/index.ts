@@ -1,9 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { aiChat } from "../_shared/ai.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const LOVABLE_API_KEY = (Deno.env.get("AI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"))!;
 
 /**
  * Detects questions whose table / chart data was flattened into plain text
@@ -40,20 +41,13 @@ Rules:
 - Double-check cell splitting: a row label must not swallow the next cell's value (e.g. "Cornyes" is wrong; it is "Corn" + "yes"). Every row must have exactly as many cells as there are headers.`;
 
 async function restructure(text: string) {
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const res = await aiChat({
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: text },
       ],
-    }),
-  });
+    });
   if (!res.ok) throw new Error(`AI gateway ${res.status}: ${await res.text()}`);
   const data = await res.json();
   const raw: string = data.choices?.[0]?.message?.content ?? "";

@@ -142,7 +142,7 @@ export function DashboardTutorial({ onComplete, isOpen }: DashboardTutorialProps
         {/* Progress bar */}
         <div className="h-1 bg-secondary">
           <div 
-            className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500 ease-out"
+            className="h-full bg-primary transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -178,7 +178,7 @@ export function DashboardTutorial({ onComplete, isOpen }: DashboardTutorialProps
           <div className="flex justify-center mb-6">
             <div className={cn(
               "w-20 h-20 rounded-2xl flex items-center justify-center",
-              "bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30"
+              "bg-primary/10 border border-primary/30"
             )}>
               <StepIcon className="w-10 h-10 text-primary" />
             </div>

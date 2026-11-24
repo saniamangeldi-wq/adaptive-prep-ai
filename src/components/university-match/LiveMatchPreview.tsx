@@ -102,7 +102,7 @@ export function LiveMatchPreview({
                   className={cn(
                     "px-2.5 py-1 rounded-full text-xs font-bold",
                     match.score >= 90
-                      ? "bg-emerald-500/15 text-emerald-400"
+                      ? "bg-success/15 text-success"
                       : match.score >= 70
                       ? "bg-amber-500/15 text-amber-400"
                       : "bg-muted text-muted-foreground"

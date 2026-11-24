@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChat } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -95,13 +96,10 @@ async function gradeFreeWrite(question: any, text: string): Promise<{ score: num
   if (question.correct_answer && /^[-\d.,/\s$%]+$/.test(question.correct_answer)) {
     return { score: 0, is_correct: false, evaluation: `Expected ${question.correct_answer}.` };
   }
-  const key = Deno.env.get("LOVABLE_API_KEY");
+  const key = (Deno.env.get("AI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
   if (!key) return { score: 0, is_correct: false, evaluation: "Could not evaluate automatically." };
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const res = await aiChat({
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: 'You grade short student answers. Reply ONLY with JSON: {"score":0-100,"evaluation":"one or two sentences"}.' },
@@ -110,8 +108,7 @@ async function gradeFreeWrite(question: any, text: string): Promise<{ score: num
             content: `Question: ${question.question_text}\nCriteria: ${JSON.stringify(question.evaluation_criteria || [])}\nStudent answer: ${text}`,
           },
         ],
-      }),
-    });
+      });
     const data = await res.json();
     const raw = String(data?.choices?.[0]?.message?.content || "");
     const m = raw.match(/\{[\s\S]*\}/);

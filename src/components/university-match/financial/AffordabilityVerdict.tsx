@@ -22,7 +22,7 @@ export function AffordabilityVerdict({ calc }: Props) {
     on_track: {
       icon: CheckCircle2,
       label: "✅ On Track",
-      classes: "bg-emerald-500/20 border-emerald-500 text-emerald-400",
+      classes: "bg-success/20 border-success text-success",
     },
     needs_adjustment: {
       icon: AlertTriangle,
@@ -58,7 +58,7 @@ export function AffordabilityVerdict({ calc }: Props) {
                 <td className={cn("p-3 text-foreground", row.bold && "font-semibold")}>{row.label}</td>
                 <td className={cn(
                   "p-3 text-right",
-                  row.highlight ? (row.usd >= 0 ? "text-emerald-400" : "text-red-400") : "text-foreground",
+                  row.highlight ? (row.usd >= 0 ? "text-success" : "text-red-400") : "text-foreground",
                   row.bold && "font-semibold"
                 )}>
                   {row.highlight && row.usd >= 0 ? "+" : ""}{formatUSD(row.usd)}

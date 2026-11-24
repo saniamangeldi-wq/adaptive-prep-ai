@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { aiChat } from "../_shared/ai.ts";
 // No external PDF libraries — we use a small built-in extractor to avoid
 // native canvas/graphics dependencies that break in the edge runtime.
 
@@ -974,7 +975,7 @@ async function parseWithAI(
   pdfText: string,
   fileName: string
 ): Promise<ParsedTest | { error: string }> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const LOVABLE_API_KEY = (Deno.env.get("AI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
   // FIX 1: Strict new system prompt
@@ -1053,13 +1054,7 @@ STRICT RULES YOU MUST FOLLOW:
      { "error": "Unable to parse PDF content" }
      Do NOT invent questions. Do NOT guess. Return the error object only.`;
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  const response = await aiChat({
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: systemPrompt },
@@ -1070,8 +1065,7 @@ STRICT RULES YOU MUST FOLLOW:
       ],
       max_tokens: 8000,
       temperature: 0.2,
-    }),
-  });
+    });
 
   if (!response.ok) {
     const errorText = await response.text();

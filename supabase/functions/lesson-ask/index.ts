@@ -1,5 +1,6 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { aiChat } from "../_shared/ai.ts";
 
 // Context-aware Q&A for a student watching a video lesson.
 // Body: { question, currentSlide, deepDive?, fullLessonContext?, lessonTitle?, vakStyle? }
@@ -96,20 +97,13 @@ Deno.serve(async (req) => {
       ? `FULL LESSON CONTEXT:\n${fullLessonContext.slice(0, 8000)}\n\nCURRENT SLIDE:\n${slideContext}\n\nSTUDENT QUESTION: ${question}`
       : `CURRENT SLIDE:\n${slideContext}\n\nSTUDENT QUESTION: ${question}`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const response = await aiChat({
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userContent },
         ],
-      }),
-    });
+      });
 
     if (!response.ok) {
       const errorBody = await response.text();

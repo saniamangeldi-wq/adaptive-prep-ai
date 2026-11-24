@@ -404,7 +404,7 @@ export default function TutorLeaderboard() {
                 <div
                   key={student.id}
                   className={`grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 p-4 items-center ${
-                    idx < 3 ? "bg-gradient-to-r from-primary/5 to-transparent" : ""
+                    idx < 3 ? "bg-primary/5" : ""
                   }`}
                 >
                   <div className="w-12 text-center">
@@ -414,7 +414,7 @@ export default function TutorLeaderboard() {
                     {idx > 2 && <span className="text-lg font-bold text-muted-foreground">{idx + 1}</span>}
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center text-white font-medium">
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-medium">
                       {student.profile?.full_name?.[0] || student.profile?.email?.[0]?.toUpperCase() || "S"}
                     </div>
                     <div>

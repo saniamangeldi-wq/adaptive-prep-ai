@@ -185,7 +185,7 @@ export function CountryDeepDiveDrawer({ country, onClose, onAskAdvisor }: Countr
                   {/* Expand Toggle */}
                   <button
                     onClick={() => setExpandedUni(expandedUni === uni.id ? null : uni.id)}
-                    className="flex items-center gap-1.5 mt-2.5 text-xs font-medium text-emerald-400 hover:text-emerald-300 transition-colors"
+                    className="flex items-center gap-1.5 mt-2.5 text-xs font-medium text-success hover:text-success transition-colors"
                   >
                     {expandedUni === uni.id ? (
                       <>

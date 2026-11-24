@@ -118,7 +118,7 @@ function TutorBillingView() {
         </div>
 
         {/* Current Plan */}
-        <Card className="border-primary/50 bg-gradient-to-br from-primary/5 to-transparent">
+        <Card className="border-primary/50 bg-primary/5">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -347,7 +347,7 @@ function StudentBillingView() {
         </div>
 
         {/* Current Plan Overview */}
-        <Card className="border-primary/50 bg-gradient-to-br from-primary/5 to-transparent">
+        <Card className="border-primary/50 bg-primary/5">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -593,7 +593,7 @@ function StudentBillingView() {
         </Card>
 
         {/* What is Perplexity Section */}
-        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
+        <Card className="border-primary/30 bg-primary/5">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/20">
@@ -651,7 +651,7 @@ function StudentBillingView() {
         </Card>
 
          {/* Elite University Match Highlight */}
-         <Card className="border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 via-transparent to-primary/5">
+         <Card className="border-yellow-500/30 bg-accent/10">
            <CardHeader>
              <div className="flex items-center gap-3">
                <div className="p-2 rounded-lg bg-yellow-500/20">
