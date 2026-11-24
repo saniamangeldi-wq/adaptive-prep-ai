@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChat } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -61,7 +62,7 @@ serve(async (req) => {
       return json({ error: "No credits remaining" }, 402);
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const LOVABLE_API_KEY = (Deno.env.get("AI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
     if (!LOVABLE_API_KEY) return json({ error: "AI not configured" }, 500);
 
     const questionsPerPassage = 13;
@@ -81,13 +82,7 @@ Requirements:
 Return JSON only, no prose, in this exact shape:
 {"title":"set title","passages":[{"number":1,"title":"...","text":"...","questions":[{"id":"p1q1","type":"...","prompt":"...","options":["..."],"answer":"...","explanation":"...","evidence":"..."}]}]}`;
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": LOVABLE_API_KEY,
-      },
-      body: JSON.stringify({
+    const aiRes = await aiChat({
         model: "google/gemini-3.8-flash",
         messages: [
           {
@@ -98,8 +93,7 @@ Return JSON only, no prose, in this exact shape:
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
-      }),
-    });
+      });
 
     if (!aiRes.ok) {
       const detail = await aiRes.text();

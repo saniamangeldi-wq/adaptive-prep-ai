@@ -38,16 +38,16 @@ export function TierBadge() {
   };
 
   const getBadgeColor = () => {
-    if (isTrialUser) return "from-yellow-500/20 to-orange-500/20 border-yellow-500/30";
+    if (isTrialUser) return "bg-muted border-yellow-500/30";
     switch (profile.tier) {
       case "tier_3":
-        return "from-purple-500/20 to-pink-500/20 border-purple-500/30";
+        return "bg-muted border-purple-500/30";
       case "tier_2":
-        return "from-primary/20 to-teal-500/20 border-primary/30";
+        return "bg-muted border-primary/30";
       case "tier_1":
-        return "from-blue-500/20 to-cyan-500/20 border-blue-500/30";
+        return "bg-muted border-blue-500/30";
       default:
-        return "from-muted/50 to-muted/30 border-border";
+        return "bg-muted border-border";
     }
   };
 
@@ -68,7 +68,7 @@ export function TierBadge() {
   return (
     <div className="p-3 border-t border-sidebar-border">
       <div className={cn(
-        "p-3 rounded-lg bg-gradient-to-r border",
+        "p-3 rounded-lg border",
         getBadgeColor()
       )}>
         {/* Plan name and price */}

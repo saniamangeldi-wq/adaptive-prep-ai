@@ -111,7 +111,7 @@ export default function Grades() {
 
         {/* GPA Overview */}
         <div className="grid sm:grid-cols-3 gap-4">
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-teal-500/10 border border-primary/30">
+          <div className="p-6 rounded-2xl bg-primary/5 border border-primary/30">
             <div className="flex items-center gap-3 mb-2">
               <Trophy className="w-6 h-6 text-primary" />
               <span className="text-sm text-muted-foreground">Overall GPA</span>

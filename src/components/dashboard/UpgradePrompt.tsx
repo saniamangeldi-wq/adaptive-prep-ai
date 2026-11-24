@@ -57,7 +57,7 @@ export function UpgradePrompt({ type, featureName, className }: UpgradePromptPro
   };
 
   return (
-    <div className={`p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 ${className}`}>
+    <div className={`p-4 rounded-xl bg-primary/5 border border-primary/20 ${className}`}>
       <div className="flex items-start gap-3">
         <div className="p-2 rounded-lg bg-primary/20">
           <AlertTriangle className="w-5 h-5 text-primary" />

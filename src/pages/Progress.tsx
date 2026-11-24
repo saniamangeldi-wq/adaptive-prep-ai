@@ -662,7 +662,7 @@ function RecommendationsSection({
   const emojis = { danger: "🔴", warning: "🟡", success: "✅" };
 
   return (
-    <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+    <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20">
       <h2 className="text-lg font-semibold text-foreground mb-4">🎯 Recommendations</h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {items.map((item, i) => (

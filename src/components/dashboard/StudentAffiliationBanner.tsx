@@ -28,7 +28,7 @@ export function StudentAffiliationBanner() {
   if (!affiliation) {
     return (
       <>
-        <div className="p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/30">
+        <div className="p-4 rounded-xl bg-primary/5 border border-primary/30">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
               <BookOpen className="w-6 h-6 text-primary" />
@@ -71,8 +71,8 @@ export function StudentAffiliationBanner() {
   return (
     <div className={`p-4 rounded-xl border ${
       affiliation.type === "school" 
-        ? "bg-gradient-to-r from-primary/10 to-teal-500/10 border-primary/30"
-        : "bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30"
+        ? "bg-primary/5 border-primary/30"
+        : "bg-muted border-purple-500/30"
     }`}>
       <div className="flex items-center gap-4">
         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${

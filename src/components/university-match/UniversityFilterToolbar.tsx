@@ -116,7 +116,7 @@ export function UniversityFilterToolbar({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs gap-1.5 border-emerald-500/50 text-emerald-500 hover:bg-emerald-500 hover:text-white"
+            className="h-8 text-xs gap-1.5 border-success/50 text-success hover:bg-success hover:text-white"
             onClick={onRefreshScholarships}
             disabled={refreshing}
           >
@@ -134,7 +134,7 @@ export function UniversityFilterToolbar({
           className={cn(
             "text-xs px-3 py-1.5 rounded-full border transition-colors flex items-center gap-1.5",
             filters.scholarshipOnly
-              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-500"
+              ? "bg-success/20 border-success/40 text-success"
               : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
           )}
         >
@@ -231,7 +231,7 @@ export function EmptyFilterState({ onClear }: { onClear: () => void }) {
       <Button
         variant="outline"
         onClick={onClear}
-        className="border-emerald-500/50 text-emerald-500 hover:bg-emerald-500 hover:text-white"
+        className="border-success/50 text-success hover:bg-success hover:text-white"
       >
         Clear All Filters
       </Button>

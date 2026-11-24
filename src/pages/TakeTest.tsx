@@ -130,18 +130,9 @@ export default function TakeTest() {
 
       // Decrement questions remaining by the number of questions taken
       const questionsUsed = test.questions.length;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tests_remaining")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profile) {
-        await supabase
-          .from("profiles")
-          .update({ tests_remaining: Math.max(0, (profile.tests_remaining || 0) - questionsUsed) })
-          .eq("user_id", user.id);
-      }
+      // Quota columns are server-controlled; decrement through the RPC.
+      const { error: quotaError } = await supabase.rpc("consume_tests", { p_count: questionsUsed });
+      if (quotaError) console.error("Failed to update test quota:", quotaError);
 
       await refreshProfile();
 

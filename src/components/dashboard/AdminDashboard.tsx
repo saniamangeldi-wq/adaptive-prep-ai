@@ -335,7 +335,7 @@ function StatCard({
   return (
     <div className="p-5 rounded-xl bg-card border border-border/50">
       <div className="flex items-center justify-between mb-3">
-        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${color} p-0.5`}>
+        <div className={`w-10 h-10 rounded-md border border-border p-0.5`}>
           <div className="w-full h-full rounded-[6px] bg-card flex items-center justify-center">
             <Icon className="w-5 h-5 text-foreground" />
           </div>
@@ -366,9 +366,9 @@ function QuickAction({
   return (
     <Link 
       to={href}
-      className="group p-5 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+      className="group p-5 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 hover:bg-muted/40"
     >
-      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} p-0.5 mb-4 group-hover:scale-110 transition-transform duration-300`}>
+      <div className={`w-12 h-12 rounded-md border border-border p-0.5 mb-4`}>
         <div className="w-full h-full rounded-[10px] bg-card flex items-center justify-center">
           <Icon className="w-6 h-6 text-foreground" />
         </div>

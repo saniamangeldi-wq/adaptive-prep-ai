@@ -382,6 +382,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cohort_leads: {
+        Row: {
+          cohort: string
+          contact: string
+          created_at: string
+          grade: string | null
+          id: string
+          language: string | null
+          name: string
+          note: string | null
+          source: string | null
+          status: string
+          target_score: number | null
+        }
+        Insert: {
+          cohort: string
+          contact: string
+          created_at?: string
+          grade?: string | null
+          id?: string
+          language?: string | null
+          name: string
+          note?: string | null
+          source?: string | null
+          status?: string
+          target_score?: number | null
+        }
+        Update: {
+          cohort?: string
+          contact?: string
+          created_at?: string
+          grade?: string | null
+          id?: string
+          language?: string | null
+          name?: string
+          note?: string | null
+          source?: string | null
+          status?: string
+          target_score?: number | null
+        }
+        Relationships: []
+      }
       conversation_attachments: {
         Row: {
           conversation_id: string | null
@@ -3703,6 +3745,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_tests: { Args: { p_count: number }; Returns: number }
       assign_self_student_role: { Args: never; Returns: undefined }
       check_trial_expiration: { Args: never; Returns: undefined }
       consume_ai_credits: {

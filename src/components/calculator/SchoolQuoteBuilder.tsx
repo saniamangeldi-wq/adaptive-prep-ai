@@ -340,7 +340,7 @@ export default function SchoolQuoteBuilder() {
                   }`}
                 >
                   <div className="font-semibold leading-tight">{PERIODS[p].label}</div>
-                  <div className="text-[9.5px] text-emerald-500 leading-tight">
+                  <div className="text-[9.5px] text-success leading-tight">
                     {PERIODS[p].discount > 0 ? `Save ${PERIODS[p].discount * 100}%` : p === "custom" ? "Set own" : "Standard"}
                   </div>
                 </button>
@@ -378,7 +378,7 @@ export default function SchoolQuoteBuilder() {
                       className={`p-1.5 rounded-md border text-[11px] ${upfrontMode === "auto" ? "border-primary bg-primary/10 text-primary" : "border-border bg-background"}`}
                     >
                       <div className="font-semibold">Auto</div>
-                      <div className="text-[9.5px] text-emerald-500">1st month + 10%</div>
+                      <div className="text-[9.5px] text-success">1st month + 10%</div>
                     </button>
                     <button
                       onClick={() => setUpfrontMode("custom")}
@@ -640,7 +640,7 @@ export default function SchoolQuoteBuilder() {
             <Row label="Base plan price/mo" value={fmt(basePrice)} />
             <Row label="Billing period" value={periodInfo.label + (periodInfo.discount > 0 ? ` (-${(periodInfo.discount * 100).toFixed(0)}%)` : "")} />
             {periodInfo.discount > 0 && (
-              <Row label="Period discount" value={"−" + fmt(calc.discount * periodInfo.months)} valueClass="text-emerald-500" />
+              <Row label="Period discount" value={"−" + fmt(calc.discount * periodInfo.months)} valueClass="text-success" />
             )}
             <Row label="Topics add-on" value={calc.topicFee > 0 ? fmt(calc.topicFee) : "$0"} />
             <Row label="Extra add-ons" value={calc.addonTotal > 0 ? fmt(calc.addonTotal) : "$0"} />
@@ -656,7 +656,7 @@ export default function SchoolQuoteBuilder() {
 
             <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground/70 font-semibold mt-3 mb-1">
               Kazakhstan Tax · {calc.taxRegime === "simplified" ? "Simplified (СНР 4%)" : "General (VAT 16% + CIT 20%)"}
-              {taxAuto && <span className="ml-1 text-emerald-500 normal-case">(auto)</span>}
+              {taxAuto && <span className="ml-1 text-success normal-case">(auto)</span>}
             </div>
             {calc.taxRegime === "general" && (
               <Row label="VAT 16% (collected, pass-through)" value={"+" + fmt(calc.vat)} valueClass="text-amber-500" />
@@ -678,7 +678,7 @@ export default function SchoolQuoteBuilder() {
             ) : (
               <Row label="CIT 20% (on profit)" value={"−" + fmt(calc.citTax)} valueClass="text-amber-500" />
             )}
-            <Row label="Net profit" value={fmt(calc.profit)} valueClass="text-emerald-500 font-semibold" />
+            <Row label="Net profit" value={fmt(calc.profit)} valueClass="text-success font-semibold" />
             <Row label="Net margin" value={calc.margin.toFixed(1) + "%"} />
 
             <Separator className="my-4" />

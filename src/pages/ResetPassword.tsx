@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,16 +69,13 @@ export default function ResetPassword() {
       description="Set a new password for your AdaptivePrep account and get back to your SAT prep in seconds."
       path="/reset-password"
     />
-    <div className="min-h-screen flex items-center justify-center p-8 bg-background dark text-foreground">
+    <div className="min-h-screen flex items-center justify-center p-8 paper text-foreground">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold text-foreground">AdaptivePrep</span>
+              <span className="font-display text-2xl font-semibold tracking-tight">AdaptivePrep</span>
           </Link>
-          <h1 className="text-2xl font-bold text-foreground">Set new password</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Set new password</h1>
           <p className="text-muted-foreground mt-2">Enter your new password below</p>
         </div>
 

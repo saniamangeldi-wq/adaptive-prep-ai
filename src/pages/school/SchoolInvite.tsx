@@ -110,7 +110,7 @@ export default function SchoolInvite() {
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-teal-400 flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
             <UserPlus className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">Invite Members</h1>

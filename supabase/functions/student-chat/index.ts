@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChat } from "../_shared/ai.ts";
 
 // Tier credit limits for daily reset
 const TIER_CREDIT_LIMITS: Record<string, number> = {
@@ -455,7 +456,7 @@ async function callLovableAI(
   systemPrompt: string, 
   model: string
 ): Promise<Response> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const LOVABLE_API_KEY = (Deno.env.get("AI_API_KEY") ?? Deno.env.get("LOVABLE_API_KEY"));
   if (!LOVABLE_API_KEY) {
     throw new Error("LOVABLE_API_KEY is not configured");
   }
@@ -471,14 +472,8 @@ async function callLovableAI(
     ...(m.startsWith("openai/gpt-5.6") ? { reasoning_effort: "none" } : {}),
   });
 
-  const send = (m: string) => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: buildBody(m),
-  });
+  // Provider and model mapping live in ../_shared/ai.ts (Lovable or Gemini).
+  const send = (m: string) => aiChat(JSON.parse(buildBody(m)));
 
   let response = await send(model);
 
@@ -603,6 +598,13 @@ serve(async (req) => {
       });
     }
 
+    // Service-role client for credit writes: profile billing columns are
+    // locked against the user's own client (migration 20261123120000).
+    const creditAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
     // Check if credits need to be reset (new day)
     let currentCredits = profile.credits_remaining;
     const needsReset = shouldResetCredits(profile.credits_reset_at);
@@ -612,7 +614,7 @@ serve(async (req) => {
       currentCredits = dailyLimit;
       
       // Reset credits in database
-      const { error: resetError } = await supabase
+      const { error: resetError } = await creditAdmin
         .from("profiles")
         .update({ 
           credits_remaining: dailyLimit,
@@ -630,10 +632,6 @@ serve(async (req) => {
     const { messages, taskType, subject: explicitSubject, modelOverride, quizContext } = await req.json();
 
     // Atomically check-and-deduct 1 credit (prevents concurrent double-spend)
-    const creditAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
     const { data: remainingCredits, error: creditError } = await creditAdmin.rpc("consume_ai_credits", {
       _user_id: userId,
       _cost: 1,

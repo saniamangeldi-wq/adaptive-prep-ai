@@ -46,4 +46,11 @@ i18n
     },
   });
 
+// Keep <html lang> in sync so screen readers and search engines get the right language.
+const syncLang = (lng: string) => {
+  if (typeof document !== "undefined") document.documentElement.lang = (lng || "en").split("-")[0];
+};
+i18n.on("languageChanged", syncLang);
+if (i18n.language) syncLang(i18n.language);
+
 export default i18n;

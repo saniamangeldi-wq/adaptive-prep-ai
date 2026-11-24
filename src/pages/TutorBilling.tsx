@@ -122,7 +122,7 @@ export default function TutorBilling() {
                 className={cn(
                   "p-6 rounded-2xl border transition-all",
                   plan.popular
-                    ? "bg-gradient-to-b from-primary/10 to-transparent border-primary/50"
+                    ? "bg-primary/5 border-primary/50"
                     : "bg-card border-border/50"
                 )}
               >

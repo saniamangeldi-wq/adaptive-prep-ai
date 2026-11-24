@@ -327,7 +327,7 @@ export default function SchoolTeachers() {
               {pendingRequests.map((request) => (
                 <div key={request.id} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-warning to-accent flex items-center justify-center text-sm font-medium text-primary-foreground">
+                    <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium text-primary-foreground">
                       {request.student_name?.[0] || request.student_email?.[0]?.toUpperCase() || "T"}
                     </div>
                     <div>
@@ -394,7 +394,7 @@ export default function SchoolTeachers() {
                 <div key={teacher.id} className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-medium text-primary-foreground">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-sm font-medium text-primary-foreground">
                         {teacher.profile?.full_name?.[0] || teacher.profile?.email?.[0]?.toUpperCase() || "T"}
                       </div>
                       <div>
